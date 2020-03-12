@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import { LatexParser } from "./LatexParser";
 
 export class InteractiveLaTeX {
     private activeDocumentPath: fs.PathLike;
@@ -22,13 +23,15 @@ export class InteractiveLaTeX {
                 }, 100);
 
                 console.log(`${filename} changed.`);
+                this.parseActiveDocument();
             }
         });
     }
 
     private parseActiveDocument(): void {
         fs.readFile(this.activeDocumentPath, (error, data) =>  {
-            // TODO
+            const fileContent = data.toString();
+            LatexParser.parse(fileContent);
         });
     }
 }
