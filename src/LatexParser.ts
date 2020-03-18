@@ -1,26 +1,95 @@
 import * as P from "parsimmon";
 
+// Parser output wrapper (for a nicer AST)
+enum ASTNodeType {
+    Latex = "Latex",
+    Text = "Text",
+    Environement = "Environement",
+    Command = "Command",
+    InlineMathBlock = "InlineMathBlock",
+    MathBlock = "MathBlock",
+    Block = "Block",
+    CurlyBracesBlock = "CurlyBracesBlock",
+    SquareBracesBlock = "SquareBracesBlock",
+    Parameter = "Parameter",
+    ParameterKey = "ParameterKey",
+    ParameterValue = "ParameterValue",
+    ParameterAssigment = "ParameterAssigment",
+    SpecialSymbol = "SpecialSymbol",
+    Comment = "Comment"
+}
+
+interface ASTNode<V> {
+    name: string,
+    type: ASTNodeType,
+    value: V,
+    start: P.Index,
+    end: P.Index
+}
+
+function createASTNode<V>(type: ASTNodeType, name: string = "") {
+    return function(parser: P.Parser<V>) {
+        return P.seqMap(P.index, parser, P.index, (start, value, end) => {
+            return Object.freeze({
+                name: name,
+                type: type,
+                value: value,
+                start: start,
+                end: end
+            } as ASTNode<V>);
+        });
+    };
+}
+
+
 // To be redefined later
 let latex: P.Parser<any> = P.lazy(() => P.any);
 
 const alphanum = P.regexp(/^[a-z0-9]+/i);
 const regularCharacters = P.regexp(/[^\\\$&_%{}#]+/);
+const text = regularCharacters
+    .thru(createASTNode(ASTNodeType.Text));
 
-const comment = P.regexp(/%.*/); 
+// Comments
+const comment = P.regexp(/%.*/)
+    .thru(createASTNode(ASTNodeType.Comment)); 
 
+// Special symbols
 const backslash = P.string("\\");
 const singleBackslash = backslash.notFollowedBy(backslash);
-const doubleBackslash = P.string("\\\\");
+const doubleBackslash = P.string("\\\\")
+    .thru(createASTNode(ASTNodeType.SpecialSymbol, "double-backslash"));
 
-const anyCommand = P.seq(singleBackslash, P.regexp(/\\([^\\])|(([a-z]+\*?))/i));
+const ampersand = P.string("&")
+    .thru(createASTNode(ASTNodeType.SpecialSymbol, "ampersand")); 
+const underscore = P.string("_")
+    .thru(createASTNode(ASTNodeType.SpecialSymbol, "underscore"));
+const sharp = P.string("#")
+    .thru(createASTNode(ASTNodeType.SpecialSymbol, "sharp")); 
 
+const specialSymbols = P.alt(
+    doubleBackslash,
+    ampersand,
+    underscore,
+    sharp
+);
+
+// Maths
 const dollar = P.string("$");
 const singleDollar = dollar.notFollowedBy(dollar);
 const doubleDollar = P.string("$$");
 
-const ampersand = P.string("&");
-const underscore = P.string("_");
-const sharp = P.string("#");
+const mathContent = P.alt(
+    comment,
+    P.regexp(/[^\$%]*/)
+);
+
+const inlineMathBlock = P.seqMap(singleDollar, mathContent, singleDollar, ($1, c, $2) => c)
+    .thru(createASTNode(ASTNodeType.InlineMathBlock)); 
+const mathBlock = P.seqMap(doubleDollar, mathContent, doubleDollar, ($$1, c, $$2) => c)
+    .thru(createASTNode(ASTNodeType.MathBlock)); 
+
+// Curly/square braces blocks
 const equal = P.string("=");
 const comma = P.string(",");
 const openCurlyBracket = P.string("{");
@@ -28,27 +97,37 @@ const closeCurlyBracket = P.string("}");
 const openSquareBracket = P.string("[");
 const closeSquareBracket = P.string("]");
 
-const inlineMathBlock = P.seq(singleDollar, P.regexp(/[^\$%]*/), singleDollar);
-const mathBlock = P.seq(doubleDollar, P.regexp(/[^\$%]*/), doubleDollar);
+const anyCommand = P.seq(singleBackslash, P.regexp(/\\([^\\])|(([a-z]+\*?))/i))
+    .thru(createASTNode(ASTNodeType.Command)); 
 
-function curlyBracesBlock<T>(content: P.Parser<T>): P.Parser<[string, T, string]> {
-    return P.seq(openCurlyBracket, content, closeCurlyBracket);
+function curlyBracesBlock<T>(content: P.Parser<T>) {
+    return P.seqMap(openCurlyBracket, content, closeCurlyBracket, (b1, c, b2) => c)
+        .thru(createASTNode(ASTNodeType.CurlyBracesBlock));
 }
 
-function squareBracesBlock<T>(content: P.Parser<T>): P.Parser<[string, T, string]> {
-    return P.seq(openSquareBracket, content, closeSquareBracket);
+function squareBracesBlock<T>(content: P.Parser<T>) {
+    return P.seqMap(openSquareBracket, content, closeSquareBracket, (b1, c, b2) => c)
+        .thru(createASTNode(ASTNodeType.SquareBracesBlock));
 }
 
-const parameterKey = alphanum;
-const parameterValue: P.Parser<any> = P.lazy(() => P.alt(
-    anyCommand,
-    inlineMathBlock,
-    curlyBracesBlock(latex),//parameterValue),
-    //squareBracesBlock(parameterAssignments),
-    P.regexp(/[^\\\$&_%{}#\]\[,]+/)
-).many());
+// Command parameters
+const parameterKey = alphanum
+    .thru(createASTNode(ASTNodeType.ParameterKey));
+const parameterValue: P.Parser<any> = P.lazy(
+    () => P.alt(
+        anyCommand,
+        inlineMathBlock,
+        curlyBracesBlock(latex),
+        //squareBracesBlock(parameterAssignments),
+        P.regexp(/[^\\\$&_%{}#\]\[,]+/)
+    ).many())
+    .thru(createASTNode(ASTNodeType.ParameterValue));
 
-const parameterAssignment = P.seq(parameterKey, P.optWhitespace, equal, P.optWhitespace, parameterValue);
+const parameterAssignment = P.seqMap(parameterKey, P.optWhitespace, equal, P.optWhitespace, parameterValue,
+    (key, sp1, eq, sp2, value) => {
+        return {key: key, value: value};
+    })
+    .thru(createASTNode(ASTNodeType.ParameterAssigment));
 const parameterAssignments = parameterAssignment.sepBy(comma.trim(P.optWhitespace));
 
 interface CommandParameter {
@@ -58,16 +137,18 @@ interface CommandParameter {
 }
 
 function ensureArray(parameters?: CommandParameter | CommandParameter[]): CommandParameter[] {
+    if (parameters === undefined) {
+        return [];
+    }
+
     return (Array.isArray(parameters)
          ? parameters
          : [parameters]) as CommandParameter[];
 }
 
+// Commands
 function command(name: string, parameters?: CommandParameter | CommandParameter[]): P.Parser<any> {
-    let parser = P.seq(singleBackslash, P.string(name)); // as P.Parser<any>
-    if (parameters === undefined) {
-        return parser;
-    }
+    let parser = P.seq(singleBackslash, P.string(name)).tie();
 
     // Append the parser of each parameter after the current parser value
     const parametersParsers = [];
@@ -81,60 +162,86 @@ function command(name: string, parameters?: CommandParameter | CommandParameter[
         // If the argument is optional, the parser can be applied zero or one time
         // Otherwise, it must appear exactly one time
         const minNbTimes = parameter.optional ? 0 : 1;
-        parametersParsers.push(parameterParser.times(minNbTimes, 1));
+        parametersParsers.push(
+            parameterParser
+                .times(minNbTimes, 1)
+        );
     }
 
-    return P.seq(parser, ...parametersParsers);
+    return P.seq(parser, ...parametersParsers)
+        .map(([name, ...parameters]: [string, Array<Array<{}>>]) => {
+            const flattenedParameters = [];
+            for (let parameter of parameters) {
+                if (parameter.length === 1) {
+                    flattenedParameters.push(parameter[0]);
+                }
+            }
+
+            return {
+                name: name,
+                parameters: flattenedParameters
+            };
+        })
+        .thru(createASTNode(ASTNodeType.Command, name));
 }
 
-function environnement(name: string,  parameters?: CommandParameter | CommandParameter[]): P.Parser<any> {
+// Environements
+function environnement(name: string,  parameters?: CommandParameter | CommandParameter[]) {
     const environnementNameParameter: CommandParameter = {
         type: "curly",
         optional: false,
         parser: P.string(name).trim(P.optWhitespace)
     };
 
-    return P.seq(
+    return P.seqMap(
         command("begin", [environnementNameParameter, ...ensureArray(parameters)]),
         latex,
-        command("end", environnementNameParameter)
-    );
+        command("end", environnementNameParameter),
+        (begin, content, end) => {
+            return {
+                begin: begin,
+                content: content,
+                end: end    
+            };
+        }
+    ).thru(createASTNode(ASTNodeType.Environement, name));
 }
+
+// Commands and environements of interest
 
 // \includegraphics[assignments*]{path}
 const includegraphics = command("includegraphics", [
     {type: "square", parser: parameterAssignments, optional: true},
-    {type: "curly", parser: regularCharacters}
+    {type: "curly", parser: parameterValue}
 ]);
 
 // \begin{tabular}{columns} ... \end{tabular}
-const tabular = environnement("tabular", {type: "curly", parser: latex});
+const tabular = environnement("tabular",
+    {type: "curly", parser: parameterValue}
+);
 
 // Actually define latex parser here
 latex = P.lazy(() => P.alt(
+        // Comments
         comment,
 
-        // Commands and environements we want to detect
+        // Commands and environements of interest
         includegraphics,
         tabular,
-
-        //anyCommand,
 
         // Special blocks
         inlineMathBlock,
         mathBlock,
         curlyBracesBlock(latex),
 
-        // Special characters
+        // Special symbols
         singleBackslash,
-        doubleBackslash,
-        ampersand,
-        underscore,
-        sharp,
+        specialSymbols,
 
-        regularCharacters
+        // Text (and whitespaces)
+        text
     ).many()
-);
+).thru(createASTNode(ASTNodeType.Latex));
 
 export class LatexParser {
     static parse(data: string) {
