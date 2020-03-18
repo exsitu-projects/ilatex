@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import { LatexParser } from "./LatexParser";
+import { LatexAST } from './ast/LatexAST';
 
 export class InteractiveLaTeX {
     private activeDocumentPath: fs.PathLike;
@@ -31,7 +31,14 @@ export class InteractiveLaTeX {
     private parseActiveDocument(): void {
         fs.readFile(this.activeDocumentPath, (error, data) =>  {
             const fileContent = data.toString();
-            LatexParser.parse(fileContent);
+
+            try {
+                const ast = new LatexAST(fileContent);
+                console.log(ast.root);
+            }
+            catch (error) {
+                console.error(error);
+            }
         });
     }
 }
