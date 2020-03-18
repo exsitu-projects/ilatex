@@ -7,6 +7,7 @@ It is written in TypeScript, using a baisc VSC extension template. The extension
 
 ## Build instructions
 The extension can be easily built and tested using VSC:
-- Clone this repository (`git clone git@bitbucket.org:daru13/interactive-latex.git`);
-- Open it in VSC (`code <repo. directory>`);
-- Start the debugger to compile and test the extension (F5).
+
+* Clone this repository (`git clone git@bitbucket.org:daru13/interactive-latex.git`);
+* Open it in VSC (`code <repo. directory>`);
+* Start the debugger to compile and test the extension (F5).
