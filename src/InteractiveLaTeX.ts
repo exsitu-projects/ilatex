@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import { LatexAST } from './ast/LatexAST';
+import { LatexASTFormatter } from './ast/LatexASTFormatter';
 
 export class InteractiveLaTeX {
     private activeDocumentPath: fs.PathLike;
@@ -34,7 +35,11 @@ export class InteractiveLaTeX {
 
             try {
                 const ast = new LatexAST(fileContent);
-                console.log(ast.root);
+
+                const formatter = new LatexASTFormatter();
+                ast.visit(formatter);
+
+                console.log(formatter.formattedAST);
             }
             catch (error) {
                 console.error(error);

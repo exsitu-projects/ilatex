@@ -3,15 +3,14 @@ Some text before the document begins...
 \begin{document}
     Lorem ipsum dolor sit amet. % With a comment
 
-    \commandA
-    \commandB{{a block} inside a block (with a \command)}
+    %\commandA
+    %\commandB{{a block} inside a block (with a \command)}
 
     { another block here }
 
-    Some inline maths: $x^2 = x \times x$
-
-    Other special characters: _ # &
-
-    \includegraphics % parsed differently if it has no argument!
-    \includegraphics[width = 0.5\textwidth]{path/to/file.png}
+    Some inline maths: % $x^2 = x \times x$
+    Some special characters: _ # &
+    
+    %\includegraphics % parsed differently if it has no argument!
+    %\includegraphics[width = 0.5\textwidth]{path/to/file.png}
 \end{document}
