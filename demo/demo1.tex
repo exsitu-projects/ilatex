@@ -8,9 +8,15 @@ Some text before the document begins...
 
     { another block here }
 
+
     Some inline maths: % $x^2 = x \times x$
     Some special characters: _ # &
+
+    \begin{tabular}{lr}
+        aaa & bbb \\[1cm]
+        abc & xyz
+    \end{tabular}
     
     %\includegraphics % parsed differently if it has no argument!
-    %\includegraphics[width = 0.5\textwidth]{path/to/file.png}
+    \includegraphics[width = 4cm]{path/to/file.png}
 \end{document}
