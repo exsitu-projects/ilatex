@@ -139,6 +139,7 @@ const language = P.createLanguage<{
     block: ASTBlockNode,
     curlyBracesParameterBlock: ASTCurlyBracesParameterBlock,
     parameter: ASTParameterNode,
+    optionalParameter: ASTParameterNode,
     environementNameParameter: ASTParameterNode,
     squareBracesParameterBlock: ASTSquareBracesParameterBlock,
     parameterKey: ASTParameterKeyNode,
@@ -195,7 +196,7 @@ const language = P.createLanguage<{
                         specification.parser,
                         endParser,
 
-                        (nodes: any) => {
+                        (...nodes: any) => {
                             const end = nodes.pop();
                             const content = nodes.pop();
                             const parameters = nodes;
@@ -226,32 +227,24 @@ const language = P.createLanguage<{
                         .thru(createParserOutputASTAdapter(ASTNodeType.Environement, environementName));
                 }
             });
-
-        // \begin{tabular}{columns} ... \end{tabular}
-        // const tabular = environnement(
-        //     "tabular",
-        //     P.string("tabular"),
-        //     lang.latex,
-        //     [{type: "curly", parser: lang.parameter}]
-        // );
-
-        // return P.alt(
-        //     tabular,
-        //     //environnement(alphanum, lang.latex, [])
-        // );
     },
 
     // Commands of interest
     command: lang => {
         // \includegraphics[assignments*]{path}
-        const includegraphics = command("includegraphics", P.string("\\includegraphics"), [
-            {type: "square", parser: lang.parameterAssignments, optional: true},
-            {type: "curly", parser: lang.parameter}
-        ]);
+        const specifiedCommands = [
+            command("includegraphics", P.string("\\includegraphics"), [
+                {type: "square", parser: lang.parameterAssignments, optional: true},
+                {type: "curly", parser: lang.parameter}
+            ]),
 
-        return P.alt(
-            includegraphics
-        ).or(lang.anyCommand);
+            command("\\\\", P.string("\\\\"), [
+                {type: "square", parser: lang.optionalParameter, optional: true}
+            ]),
+        ];
+
+        return P.alt(...specifiedCommands);
+            //.or(lang.anyCommand);
     },
 
     anyCommand: lang => {
@@ -292,7 +285,14 @@ const language = P.createLanguage<{
     },
 
     parameter: lang => {
-        return alphanum // TODO: use a more robust approach
+        // TODO: use a more robust approach
+        return P.regexp(/[^%}]*/)
+            .thru(createParserOutputASTAdapter(ASTNodeType.Parameter));
+    },
+
+    optionalParameter: lang => {
+        // TODO: use a more robust approach
+        return P.regexp(/[^%\]]*/)
             .thru(createParserOutputASTAdapter(ASTNodeType.Parameter));
     },
 
@@ -356,7 +356,7 @@ const language = P.createLanguage<{
 
             // Environements and commands
             lang.environement,
-            //lang.command,
+            lang.command,
             //lang.anyCommand,
 
             // Special blocks
