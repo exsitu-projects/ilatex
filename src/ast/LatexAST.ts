@@ -51,7 +51,7 @@ export class LatexAST {
             const node = root as ASTCommandNode;
             
             for (let parameterNodeArray of node.value.parameters) {
-                // Absent optional parameters yield wero-length arrays
+                // Absent optional parameters yield zero-length arrays
                 // Therefore, they should be ignored during the tree visit
                 if (parameterNodeArray.length === 1) {
                     this.visitTree(parameterNodeArray[0], depth + 1, visitor);
