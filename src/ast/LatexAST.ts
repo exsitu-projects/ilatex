@@ -61,6 +61,15 @@ export class LatexAST {
         else if (nodeType === ASTNodeType.Environement) {
             const node = root as ASTEnvironementNode;
             this.visitTree(node.value.begin, depth + 1, visitor);
+
+            for (let parameterNodeArray of node.value.parameters) {
+                // Absent optional parameters yield zero-length arrays
+                // Therefore, they should be ignored during the tree visit
+                if (parameterNodeArray.length === 1) {
+                    this.visitTree(parameterNodeArray[0], depth + 1, visitor);
+                }
+            }
+
             this.visitTree(node.value.content, depth + 1, visitor);
             this.visitTree(node.value.end, depth + 1, visitor);
         }
