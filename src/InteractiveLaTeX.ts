@@ -1,44 +1,61 @@
+import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { LatexAST } from './ast/LatexAST';
 import { LatexASTFormatter } from './ast/LatexASTFormatter';
+import { VisualisationManager } from './visualisations/VisualisationManager';
 
 export class InteractiveLaTeX {
-    private activeDocumentPath: fs.PathLike;
+    private document: vscode.TextDocument;
+    private visualisationManager: VisualisationManager;
     
-    constructor(path: fs.PathLike) {
-        this.activeDocumentPath = path;
-        this.startWatching();
+    constructor(document: vscode.TextDocument) {
+        this.document = document;
+        this.visualisationManager = new VisualisationManager(document);
+        
+        this.parseActiveDocument();
+        this.startObservingDocumentChanges();
     }
 
-    private startWatching(): void {
-        let fsWait = false;
-        fs.watch(this.activeDocumentPath, (event, filename) => {
+    private startObservingDocumentChanges(): void {
+        const documentPath = this.document.uri.fsPath;
+
+        let waitBeforeNextObservation = false;
+        fs.watch(documentPath, (event, filename) => {
             if (filename) {
-                if (fsWait) {
+                if (waitBeforeNextObservation) {
                     return;
                 }
 
-                fsWait = true;
+                waitBeforeNextObservation = true;
                 setTimeout(() => {
-                    fsWait = false;
+                    waitBeforeNextObservation = false;
                 }, 100);
 
-                console.log(`${filename} changed.`);
-                this.parseActiveDocument();
+                this.onDocumentChange();
             }
         });
     }
 
-    private parseActiveDocument(): void {
-        fs.readFile(this.activeDocumentPath, (error, data) =>  {
+    private onDocumentChange(): void {
+        // console.log(`${filename} changed.`);
+        this.parseActiveDocument();
+    }
+
+    private async parseActiveDocument() {
+        const documentPath = this.document.uri.fsPath;
+
+        fs.readFile(documentPath, (error, data) =>  {
             const fileContent = data.toString();
 
             try {
                 const ast = new LatexAST(fileContent);
 
+                // Update the visualisations
+                this.visualisationManager.updateVisualisations(ast);
+
+                // Pretty-print the AST for debugging purposes
                 const formatter = new LatexASTFormatter();
                 ast.visit(formatter);
-
                 console.log(formatter.formattedAST);
             }
             catch (error) {
