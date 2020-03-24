@@ -1,8 +1,8 @@
-import { ASTNode, ASTParameterAssigmentNode, ASTEnvironementNode, ASTNodeType, ASTCommandNode } from "./LatexASTNode";
-import { LatexASTVisitor } from "./LatexASTVisitor";
+import { ASTParameterAssigmentNode, ASTParameterNode } from "./LatexASTNode";
+import { LatexASTVisitorAdapter } from "./LatexASTVisitorAdapter";
 
  
-export class LatexASTFormatter extends LatexASTVisitor {
+export class LatexASTFormatter extends LatexASTVisitorAdapter {
     static prefix = "| ";
     static indent = 4;
 
@@ -17,9 +17,11 @@ export class LatexASTFormatter extends LatexASTVisitor {
         return this.formattedStrings.join("\n");
     }
 
-    private addFormattedString(node: ASTNode, depth: number): void {
-        console.log(node);
+    reset(): void {
+        this.formattedStrings = [];
+    }
 
+    protected visitNode(node: ASTParameterNode, depth: number): void {
         const padding = LatexASTFormatter.createPadding(depth);
         const str = node.name.length > 0
                   ? `${padding}${LatexASTFormatter.prefix}${node.type} [${node.name}]`
@@ -28,26 +30,18 @@ export class LatexASTFormatter extends LatexASTVisitor {
         this.formattedStrings.push(str);
     }
 
-    protected visitParameterAssigmentNode(node: ASTParameterAssigmentNode, depth: number) {
+    protected visitParameterNode(node: ASTParameterNode, depth: number): void {
         const padding = LatexASTFormatter.createPadding(depth);
-        const str = `${padding}${LatexASTFormatter.prefix}${node.type} [${node.value.key.value} = ${node.value.value.value}]`;
+        const str = `${padding}${LatexASTFormatter.prefix}${node.type} [${node.value}]`;
 
         this.formattedStrings.push(str);
     }
 
-    visit(node: ASTNode, depth: number): void {
-        if (node.type === ASTNodeType.ParameterAssigment) {
-            this.visitParameterAssigmentNode(node as ASTParameterAssigmentNode, depth);
-        }
-        else {
-            this.addFormattedString(node, depth);
-        }
+    protected visitParameterAssigmentNode(node: ASTParameterAssigmentNode, depth: number): void {
+        const padding = LatexASTFormatter.createPadding(depth);
+        const str = `${padding}${LatexASTFormatter.prefix}${node.type} [${node.value.key.value} = ${node.value.value.value}]`;
 
-        //super.visit(node, depth);
-    }
-
-    reset(): void {
-        this.formattedStrings = [];
+        this.formattedStrings.push(str);
     }
 
     static createPadding(depth: number): string {
