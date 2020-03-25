@@ -1,6 +1,6 @@
 import { ASTNode } from "../ast/LatexASTNode";
 
-export interface CodePattern {
+export interface CodePattern<T extends ASTNode = ASTNode> {
     match: (node: ASTNode) => boolean;
-    onMatch: (node: ASTNode) => void;
+    onMatch: (node: T) => void;
 }

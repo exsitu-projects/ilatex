@@ -3,8 +3,8 @@ import { ASTNode, ASTEnvironementNode, ASTCommandNode } from "../ast/LatexASTNod
 import { CodePattern } from "./CodePattern";
 
 export class CodePatternDetector extends LatexASTVisitorAdapter {
-    readonly commandPatterns: CodePattern[];
-    readonly environementsPatterns: CodePattern[];
+    readonly commandPatterns: CodePattern<ASTCommandNode>[];
+    readonly environementsPatterns: CodePattern<ASTEnvironementNode>[];
 
     constructor() {
         super();
@@ -28,9 +28,9 @@ export class CodePatternDetector extends LatexASTVisitorAdapter {
         }
     }
 
-    private static attemptMatch(pattern: CodePattern, node: ASTNode) {
+    private static attemptMatch<T extends ASTNode>(pattern: CodePattern<T>, node: ASTNode) {
         if (pattern.match(node)) {
-            pattern.onMatch(node);
+            pattern.onMatch(node as T);
         }
     }
 }

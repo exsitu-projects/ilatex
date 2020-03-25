@@ -8,20 +8,21 @@ export function activate(context: vscode.ExtensionContext) {
 
 		const activeDocument = vscode.window.activeTextEditor?.document;
 		if (activeDocument) {
-			const iLatex = new InteractiveLaTeX(activeDocument);
-			console.log(iLatex);
-
 			// Create and show a new panel
 			const fileName = activeDocument.fileName;
-			const panel = vscode.window.createWebviewPanel(
+			const webviewPanel = vscode.window.createWebviewPanel(
 				"ilatex",
 				`iLatex – ${fileName}`,
 				vscode.ViewColumn.Two,
 				{}
 			);
+
+			// Initialise the top-level class of the extension
+			const iLatex = new InteractiveLaTeX(activeDocument, webviewPanel);
+			console.log(iLatex);
 		
 			// Set the panel's content
-			panel.webview.html = "Hello, world!";
+			webviewPanel.webview.html = "Hello, world!";
 		}
 	});
 

@@ -7,11 +7,13 @@ import { TabularVisualisation } from './TabularVisualisation';
 
 export class VisualisationManager {
     private document: vscode.TextDocument;
+    private webviewPanel: vscode.WebviewPanel;
     private visualisations: Visualisation[];
     private patternDetector: CodePatternDetector;
 
-    constructor(document: vscode.TextDocument) {
+    constructor(document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel) {
         this.document = document;
+        this.webviewPanel = webviewPanel;
         this.visualisations = [];
 
         this.patternDetector = new CodePatternDetector();
@@ -44,13 +46,31 @@ export class VisualisationManager {
         ast.visit(this.patternDetector);
     }
 
+    private renderAllVisualisationsAsHTML(): string {
+        const contentHTML = this.visualisations
+            .map(visualisation => visualisation.renderAsHTML())
+            .join("\n");
+
+        return `
+            <!DOCTYPE>
+            <html>
+                <body>
+                    ${contentHTML}
+                </body>
+            </html>
+        `;
+    }
+
     updateVisualisations(ast: LatexAST): void {
+        // Re-create the visualisations from the (new) AST
         this.visualisations = [];
         this.createVisualisationsFromPatterns(ast);
 
-        // TODO: update the view at this point
-        
-        console.log("The view should be updated with the following visualisations:");
+        // Update the view
+        console.log("The view will be updated with the following visualisations:");
         console.log(this.visualisations);
+
+        console.log(this.renderAllVisualisationsAsHTML())
+        this.webviewPanel.webview.html = this.renderAllVisualisationsAsHTML(); 
     }
 }

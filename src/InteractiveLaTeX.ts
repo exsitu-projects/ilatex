@@ -6,11 +6,13 @@ import { VisualisationManager } from './visualisations/VisualisationManager';
 
 export class InteractiveLaTeX {
     private document: vscode.TextDocument;
+    private webviewPanel: vscode.WebviewPanel;
     private visualisationManager: VisualisationManager;
     
-    constructor(document: vscode.TextDocument) {
+    constructor(document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel) {
         this.document = document;
-        this.visualisationManager = new VisualisationManager(document);
+        this.webviewPanel = webviewPanel;
+        this.visualisationManager = new VisualisationManager(document, webviewPanel);
         
         this.parseActiveDocument();
         this.startObservingDocumentChanges();
@@ -50,13 +52,13 @@ export class InteractiveLaTeX {
             try {
                 const ast = new LatexAST(fileContent);
 
-                // Update the visualisations
-                this.visualisationManager.updateVisualisations(ast);
-
                 // Pretty-print the AST for debugging purposes
                 const formatter = new LatexASTFormatter();
                 ast.visit(formatter);
                 console.log(formatter.formattedAST);
+
+                // Update the visualisations
+                this.visualisationManager.updateVisualisations(ast);
             }
             catch (error) {
                 console.error(error);
