@@ -1,4 +1,4 @@
-import { LatexASTVisitorAdapter } from "../ast/LatexASTVisitorAdapter";
+import { LatexASTVisitorAdapter } from "../ast/visitors/LatexASTVisitorAdapter";
 import { ASTNode, ASTEnvironementNode, ASTCommandNode } from "../ast/LatexASTNode";
 import { CodePattern } from "./CodePattern";
 
@@ -13,16 +13,13 @@ export class CodePatternDetector extends LatexASTVisitorAdapter {
         this.environementsPatterns = [];
     }
 
-    // Unused
-    protected visitNode(node: ASTNode, depth: number): void {}
-
-    protected visitCommandNode(node: ASTCommandNode, depth: number): void {
+    protected visitCommandNode(node: ASTCommandNode): void {
         for (let pattern of this.commandPatterns) {
             CodePatternDetector.attemptMatch(pattern, node);
         }
     }
 
-    protected visitEnvironementNode(node: ASTEnvironementNode, depth: number): void {
+    protected visitEnvironementNode(node: ASTEnvironementNode): void {
         for (let pattern of this.environementsPatterns) {
             CodePatternDetector.attemptMatch(pattern, node);
         }

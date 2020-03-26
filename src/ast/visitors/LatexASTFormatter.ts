@@ -1,4 +1,4 @@
-import { ASTParameterAssigmentNode, ASTParameterNode } from "./LatexASTNode";
+import { ASTParameterAssigmentNode, ASTParameterNode } from "../LatexASTNode";
 import { LatexASTVisitorAdapter } from "./LatexASTVisitorAdapter";
 
  

@@ -13,13 +13,13 @@ function createParserOutputASTAdapter<
 >(type: T, name: string = "") {
     return function(parser: P.Parser<V>) {
         return P.seqMap(P.index, parser, P.index, (start, value, end) => {
-            return Object.freeze({
-                name: name,
-                type: type,
-                value: value,
-                start: start,
-                end: end
-            } as ASTNode<T, V>);
+            return new ASTNode<T, V>(
+                name,
+                type,
+                value,
+                start,
+                end
+            );
         });
     };
 }

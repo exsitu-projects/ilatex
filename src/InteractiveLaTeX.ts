@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { LatexAST } from './ast/LatexAST';
-import { LatexASTFormatter } from './ast/LatexASTFormatter';
+import { LatexASTFormatter } from './ast/visitors/LatexASTFormatter';
 import { VisualisationManager } from './visualisations/VisualisationManager';
 
 export class InteractiveLaTeX {
@@ -54,7 +54,7 @@ export class InteractiveLaTeX {
 
                 // Pretty-print the AST for debugging purposes
                 const formatter = new LatexASTFormatter();
-                ast.visit(formatter);
+                ast.visitWith(formatter);
                 console.log(formatter.formattedAST);
 
                 // Update the visualisations

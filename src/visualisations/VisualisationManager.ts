@@ -45,7 +45,7 @@ export class VisualisationManager {
     }
 
     private createVisualisationsFromPatterns(ast: LatexAST): void {
-        ast.visit(this.patternDetector);
+        ast.visitWith(this.patternDetector);
     }
 
     private renderAllVisualisationsAsHTML(): string {

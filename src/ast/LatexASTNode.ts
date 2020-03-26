@@ -1,4 +1,5 @@
 import * as P from "parsimmon";
+import { LatexASTVisitor } from "./visitors/LatexASTVisitor";
 
 
 /** Possible types of an AST node. */
@@ -52,15 +53,74 @@ export type ASTEnvironementValue = {
 };
 
 /** Generic interface of an AST node. */
-export interface ASTNode<
+export class ASTNode<
     T extends ASTNodeType = ASTNodeType,
     V extends ASTNodeValue = ASTNodeValue
 >{
-    name: string,
-    type: T,
-    value: V,
-    start: P.Index,
-    end: P.Index
+    readonly name: string;
+    readonly type: T;
+    readonly value: V;
+    readonly start: P.Index;
+    readonly end: P.Index;
+
+    constructor(name: string, type: T, value: V, start: P.Index, end: P.Index) {
+        this.name = name;
+        this.type = type;
+        this.value = value;
+        this.start = start;
+        this.end = end;
+    }
+
+    visitWith(visitor: LatexASTVisitor, depth: number = 0): void {
+        // Visit this node
+        visitor.visit(this, depth);
+
+        // Visit the subtree(s) rooted in this node (if any)
+        const type = this.type;
+        if (type === ASTNodeType.Command) {
+            const root = this as ASTCommandNode;
+            
+            for (let parameterNodeArray of root.value.parameters) {
+                // Absent optional parameters yield zero-length arrays
+                // Therefore, they should be ignored during the tree visit
+                if (parameterNodeArray.length === 1) {
+                    parameterNodeArray[0].visitWith(visitor, depth + 1);
+                }
+            }    
+        }
+        else if (type === ASTNodeType.Environement) {
+            const root = this as ASTEnvironementNode;
+            root.value.begin.visitWith(visitor, depth + 1);
+
+            for (let parameterNodeArray of root.value.parameters) {
+                // Absent optional parameters yield zero-length arrays
+                // Therefore, they should be ignored during the tree visit
+                if (parameterNodeArray.length === 1) {
+                    parameterNodeArray[0].visitWith(visitor, depth + 1);
+                }
+            }
+
+            root.value.content.visitWith(visitor, depth + 1);
+            root.value.end.visitWith(visitor, depth + 1);
+        }
+        else if (type === ASTNodeType.Block
+             ||  type === ASTNodeType.InlineMathBlock
+             ||  type === ASTNodeType.MathBlock
+             ||  type === ASTNodeType.CurlyBracesParameterBlock
+             ||  type === ASTNodeType.SquareBracesParameterBlock) {
+            const root = this.value as ASTNode;
+            root.visitWith(visitor, depth + 1);
+        }
+        else if (type === ASTNodeType.Latex
+             ||  type === ASTNodeType.ParameterAssigments) {
+            for (let root of this.value as ASTNode[]) {
+                root.visitWith(visitor, depth + 1);
+            }  
+        }
+        else /* string values */ {
+            // Nothing to do
+        }
+    }
 }
 
 // Specific AST node interfaces

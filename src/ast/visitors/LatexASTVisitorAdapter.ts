@@ -1,11 +1,12 @@
 import { LatexASTVisitor } from "./LatexASTVisitor";
-import { ASTLatexNode, ASTTextNode, ASTEnvironementNode, ASTCommandNode, ASTInlineMathBlockNode, ASTMathBlockNode, ASTBlockNode, ASTParameterNode, ASTParameterKeyNode, ASTParameterValueNode, ASTParameterAssigmentNode, ASTSpecialSymbolNode, ASTCommentNode, ASTNode, ASTNodeType, ASTCurlyBracesParameterBlock, ASTSquareBracesParameterBlock, ASTParameterAssigmentsNode, ASTMathNode } from "./LatexASTNode";
+import { ASTLatexNode, ASTTextNode, ASTEnvironementNode, ASTCommandNode, ASTInlineMathBlockNode, ASTMathBlockNode, ASTBlockNode, ASTParameterNode, ASTParameterKeyNode, ASTParameterValueNode, ASTParameterAssigmentNode, ASTSpecialSymbolNode, ASTCommentNode, ASTNode, ASTNodeType, ASTCurlyBracesParameterBlock, ASTSquareBracesParameterBlock, ASTParameterAssigmentsNode, ASTMathNode } from "../LatexASTNode";
 
 export abstract class LatexASTVisitorAdapter implements LatexASTVisitor {
-    constructor() {}
-
-    /** Default visit on any type of node. */
-    protected abstract visitNode(node: ASTNode, depth: number): void;
+    /**
+     * Default visit on any type of node.
+     * It does nothing by default: override to implement.
+     */
+    protected visitNode(node: ASTNode, depth: number) {};
 
     protected visitLatexNode(node: ASTLatexNode, depth: number): void {
         this.visitNode(node, depth);
@@ -94,7 +95,7 @@ export abstract class LatexASTVisitorAdapter implements LatexASTVisitor {
                 break;
 
             case ASTNodeType.Math:
-                this.visitCommandNode(node as ASTCommandNode, depth);
+                this.visitMathNode(node as ASTMathNode, depth);
                 break;
 
             case ASTNodeType.InlineMathBlock:
