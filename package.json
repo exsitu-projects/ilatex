@@ -3,6 +3,7 @@
 	"displayName": "InteractiveLaTeX",
 	"description": "Interactive visualisations for LaTeX documents.",
 	"version": "0.0.1",
+	"publisher": "exsitu",
 	"engines": {
 		"vscode": "^1.42.0"
 	},
