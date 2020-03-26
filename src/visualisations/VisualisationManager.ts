@@ -14,13 +14,14 @@ export class VisualisationManager {
     constructor(document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel) {
         this.document = document;
         this.webviewPanel = webviewPanel;
+
         this.visualisations = [];
 
         this.patternDetector = new CodePatternDetector();
         this.initPatternDetector();
     }
 
-    private initPatternDetector() {
+    private initPatternDetector(): void {
         // Commands to detect
         this.patternDetector.commandPatterns.push(
             {
@@ -48,19 +49,10 @@ export class VisualisationManager {
         ast.visitWith(this.patternDetector);
     }
 
-    private renderAllVisualisationsAsHTML(): string {
-        const contentHTML = this.visualisations
+    renderAllVisualisationsAsHTML(): string {
+        return this.visualisations
             .map(visualisation => visualisation.renderAsHTML())
             .join("\n");
-
-        return `
-            <!DOCTYPE>
-            <html>
-                <body>
-                    ${contentHTML}
-                </body>
-            </html>
-        `;
     }
 
     updateVisualisations(ast: LatexAST): void {
@@ -69,10 +61,10 @@ export class VisualisationManager {
         this.createVisualisationsFromPatterns(ast);
 
         // Update the view
-        console.log("The view will be updated with the following visualisations:");
+        console.log("Updated visualisations:");
         console.log(this.visualisations);
 
-        console.log(this.renderAllVisualisationsAsHTML());
-        this.webviewPanel.webview.html = this.renderAllVisualisationsAsHTML(); 
+        //console.log(this.renderAllVisualisationsAsHTML());
+        //this.webviewPanel.webview.html = this.renderAllVisualisationsAsHTML(); 
     }
 }

@@ -14,7 +14,9 @@ export function activate(context: vscode.ExtensionContext) {
 				"ilatex",
 				`iLatex – ${fileName}`,
 				vscode.ViewColumn.Two,
-				{}
+				{
+					enableScripts: true
+				}
 			);
 
 			// Initialise the top-level class of the extension
