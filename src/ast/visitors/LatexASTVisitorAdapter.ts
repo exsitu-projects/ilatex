@@ -1,5 +1,5 @@
 import { LatexASTVisitor } from "./LatexASTVisitor";
-import { ASTLatexNode, ASTTextNode, ASTEnvironementNode, ASTCommandNode, ASTInlineMathBlockNode, ASTMathBlockNode, ASTBlockNode, ASTParameterNode, ASTParameterKeyNode, ASTParameterValueNode, ASTParameterAssigmentNode, ASTSpecialSymbolNode, ASTCommentNode, ASTNode, ASTNodeType, ASTCurlyBracesParameterBlock, ASTSquareBracesParameterBlock, ASTParameterAssigmentsNode, ASTMathNode } from "../LatexASTNode";
+import { ASTLatexNode, ASTTextNode, ASTEnvironementNode, ASTCommandNode, ASTInlineMathBlockNode, ASTMathBlockNode, ASTBlockNode, ASTParameterNode, ASTParameterKeyNode, ASTParameterValueNode, ASTParameterAssignmentNode, ASTSpecialSymbolNode, ASTCommentNode, ASTNode, ASTNodeType, ASTCurlyBracesParameterBlock, ASTSquareBracesParameterBlock, ASTParameterAssignmentsNode, ASTMathNode } from "../LatexASTNode";
 
 export abstract class LatexASTVisitorAdapter implements LatexASTVisitor {
     /**
@@ -60,11 +60,11 @@ export abstract class LatexASTVisitorAdapter implements LatexASTVisitor {
         this.visitNode(node, depth);
     }
 
-    protected visitParameterAssigmentNode(node: ASTParameterAssigmentNode, depth: number): void {
+    protected visitParameterAssignmentNode(node: ASTParameterAssignmentNode, depth: number): void {
         this.visitNode(node, depth);
     }
 
-    protected visitParameterAssigmentsNode(node: ASTParameterAssigmentsNode, depth: number): void {
+    protected visitParameterAssignmentsNode(node: ASTParameterAssignmentsNode, depth: number): void {
         this.visitNode(node, depth);
     }
 
@@ -130,12 +130,12 @@ export abstract class LatexASTVisitorAdapter implements LatexASTVisitor {
                 this.visitParameterValueNode(node as ASTParameterValueNode, depth);
                 break;
 
-            case ASTNodeType.ParameterAssigment:
-                this.visitParameterAssigmentNode(node as ASTParameterAssigmentNode, depth);
+            case ASTNodeType.ParameterAssignment:
+                this.visitParameterAssignmentNode(node as ASTParameterAssignmentNode, depth);
                 break;
 
-            case ASTNodeType.ParameterAssigments:
-                this.visitParameterAssigmentsNode(node as ASTParameterAssigmentsNode, depth);
+            case ASTNodeType.ParameterAssignments:
+                this.visitParameterAssignmentsNode(node as ASTParameterAssignmentsNode, depth);
                 break;
 
             case ASTNodeType.SpecialSymbol:

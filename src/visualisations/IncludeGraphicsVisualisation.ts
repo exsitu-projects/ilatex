@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { resolve } from "path";
 import { Visualisation } from "./Visualisation";
-import { ASTCommandNode, ASTParameterNode, ASTParameterAssigmentsNode } from "../ast/LatexASTNode";
+import { ASTCommandNode, ASTParameterNode, ASTParameterAssignmentsNode } from "../ast/LatexASTNode";
 
 interface Graphics {
     path: string;
@@ -36,7 +36,7 @@ export class IncludeGraphicsVisualisation implements Visualisation {
         if (hasOptionNode) {
             //console.log("has option node");
             //console.log(this.node.value.parameters);
-            const optionNode = this.node.value.parameters[0][0] as ASTParameterAssigmentsNode;
+            const optionNode = this.node.value.parameters[0][0] as ASTParameterAssignmentsNode;
 
             for (let paramAssignmentNode of optionNode.value) {
                 const possibleKeys = ["width", "height"];
