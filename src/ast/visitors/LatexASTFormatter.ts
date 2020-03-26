@@ -4,7 +4,7 @@ import { LatexASTVisitorAdapter } from "./LatexASTVisitorAdapter";
  
 export class LatexASTFormatter extends LatexASTVisitorAdapter {
     static prefix = "| ";
-    static indent = 4;
+    static indent = 2;
 
     private formattedStrings: string[];
 
