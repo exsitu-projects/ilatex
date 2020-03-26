@@ -26,7 +26,9 @@ export class VisualisationManager {
             {
                 match: node => node.name === "includegraphics",
                 onMatch: node => {
-                    this.visualisations.push(new IncludeGraphicsVisualisation(node));
+                    this.visualisations.push(
+                        new IncludeGraphicsVisualisation(node, this.document, this.webviewPanel.webview)
+                    );
                 }
             }
         );
@@ -36,7 +38,7 @@ export class VisualisationManager {
             {
                 match: node => node.name === "tabular",
                 onMatch: node => {
-                    this.visualisations.push(new TabularVisualisation(node));
+                    this.visualisations.push(new TabularVisualisation(node, this.document));
                 }
             }
         );
@@ -70,7 +72,7 @@ export class VisualisationManager {
         console.log("The view will be updated with the following visualisations:");
         console.log(this.visualisations);
 
-        console.log(this.renderAllVisualisationsAsHTML())
+        console.log(this.renderAllVisualisationsAsHTML());
         this.webviewPanel.webview.html = this.renderAllVisualisationsAsHTML(); 
     }
 }

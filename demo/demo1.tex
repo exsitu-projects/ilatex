@@ -6,17 +6,18 @@ Some text before the document begins...
     %\commandA
     %\commandB{{a block} inside a block (with a \command)}
 
-    { another block here }
 
+    { another block here }
+    
 
     Some inline maths: % $x^2 = x \times x$
     Some special characters: _ # &
-
+    
     \begin{tabular}{lr}
-        aaa & bbb \\[1cm]
+        aaa & bbb { test } \\
         abc & xyz
     \end{tabular}
     
     %\includegraphics % parsed differently if it has no argument!
-    \includegraphics[width = 4cm]{path/to/file.png}
+    \includegraphics[height = 2cm, width = 2cm]{./cat.jpg}
 \end{document}

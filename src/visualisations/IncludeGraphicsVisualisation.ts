@@ -1,3 +1,5 @@
+import * as vscode from "vscode";
+import { resolve } from "path";
 import { Visualisation } from "./Visualisation";
 import { ASTCommandNode, ASTParameterNode, ASTParameterAssigmentsNode } from "../ast/LatexASTNode";
 
@@ -11,10 +13,14 @@ interface Graphics {
 
 export class IncludeGraphicsVisualisation implements Visualisation {
     private node: ASTCommandNode;
+    private document: vscode.TextDocument;
+    private webview: vscode.Webview;
     private graphics: Graphics;
     
-    constructor(node: ASTCommandNode) {
+    constructor(node: ASTCommandNode, document: vscode.TextDocument, webview: vscode.Webview) {
         this.node = node;
+        this.document = document;
+        this.webview = webview;
         this.graphics = {
             path: "",
             options: {}
@@ -49,9 +55,19 @@ export class IncludeGraphicsVisualisation implements Visualisation {
     }
     
     renderAsHTML(): string {
+        const documentPath = this.document.uri.path;
+        const lastSlashIndex = documentPath.lastIndexOf("/");
+        const documentDirectoryPath = documentPath.slice(0, lastSlashIndex);
+
+        const imagePath = resolve(documentDirectoryPath, this.graphics.path);
+        const webviewImagePath = this.webview.asWebviewUri(vscode.Uri.file(imagePath));
+
+        const width = this.graphics.options.width ?? "256px";
+        const height = this.graphics.options.height ?? "256px";
+
         return `
-            <div class="ilatex-includegraphics">
-                <img src="${this.graphics.path}">
+            <div class="ilatex-includegraphics" style="border: 1px dashed black;">
+                <img src="${webviewImagePath}" style="width: ${width}; height: ${height};">
             </div>
         `;
     }
