@@ -4,20 +4,20 @@ import { CodePatternDetector } from "../patterns/CodePatternDetector";
 import { Visualisation } from './Visualisation';
 import { IncludeGraphicsVisualisation } from './IncludeGraphicsVisualisation';
 import { TabularVisualisation } from './TabularVisualisation';
+import { WebviewManager } from '../webview/WebviewManager';
 
 export class VisualisationManager {
     private document: vscode.TextDocument;
-    private webviewPanel: vscode.WebviewPanel;
+    private webviewManager: WebviewManager;
     private visualisations: Visualisation[];
     private patternDetector: CodePatternDetector;
 
-    constructor(document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel) {
+    constructor(document: vscode.TextDocument, webviewManager: WebviewManager) {
         this.document = document;
-        this.webviewPanel = webviewPanel;
-
+        this.webviewManager = webviewManager;
         this.visualisations = [];
-
         this.patternDetector = new CodePatternDetector();
+
         this.initPatternDetector();
     }
 
@@ -28,7 +28,7 @@ export class VisualisationManager {
                 match: node => node.name === "includegraphics",
                 onMatch: node => {
                     this.visualisations.push(
-                        new IncludeGraphicsVisualisation(node, this.document, this.webviewPanel.webview)
+                        new IncludeGraphicsVisualisation(node, this.document, this.webviewManager)
                     );
                 }
             }
@@ -43,6 +43,21 @@ export class VisualisationManager {
                 }
             }
         );
+    }
+
+    getVisualisationAtPosition(position: vscode.Position): Visualisation | null {
+        const result = this.visualisations.find(visualisation => {
+            const start = visualisation.node.start;
+            const end = visualisation.node.end;
+            
+            const startPos = new vscode.Position(start.line - 1, start.column - 1);
+            const endPos = new vscode.Position(end.line - 1, end.column - 1);
+
+            return position.isAfterOrEqual(startPos)
+                && position.isBeforeOrEqual(endPos);
+        });
+
+        return result ?? null;
     }
 
     private createVisualisationsFromPatterns(ast: LatexAST): void {

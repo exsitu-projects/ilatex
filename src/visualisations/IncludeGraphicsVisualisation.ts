@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import { Visualisation } from "./Visualisation";
 import { ASTCommandNode, ASTParameterNode, ASTParameterAssignmentsNode } from "../ast/LatexASTNode";
+import { WebviewManager } from "../webview/WebviewManager";
 
 interface GraphicsOptions {
     width?: string;
@@ -21,19 +22,21 @@ interface WebviewImage {
     height: string;
 }
 
-export class IncludeGraphicsVisualisation implements Visualisation {
-    private node: ASTCommandNode;
+export class IncludeGraphicsVisualisation extends Visualisation<ASTCommandNode> {
+    readonly name = "tabular";
+
     private document: vscode.TextDocument;
-    private webview: vscode.Webview;
+    private webviewManager: WebviewManager;
 
     private graphics: Graphics;
     private webviewImage: WebviewImage;
     
     
-    constructor(node: ASTCommandNode, document: vscode.TextDocument, webview: vscode.Webview) {
-        this.node = node;
+    constructor(node: ASTCommandNode, document: vscode.TextDocument, webviewManager: WebviewManager) {
+        super(node);
+        
         this.document = document;
-        this.webview = webview;
+        this.webviewManager = webviewManager;
 
         this.graphics = {
             path: "",
@@ -48,6 +51,18 @@ export class IncludeGraphicsVisualisation implements Visualisation {
 
         this.extractGraphics();
         this.prepareWebviewImage();
+        this.initProps();
+    }
+
+    protected initProps(): void {
+        super.initProps();
+
+        // Add node location information
+        this.props["data-loc-start"] = `${this.node.start.line};${this.node.start.column}`;
+        this.props["data-loc-end"] = `${this.node.end.line};${this.node.end.column}`;
+
+        // Enable the selection of the associated block of code on click
+        this.props["class"] += " selectable";
     }
 
     private extractGraphicsPath(node: ASTParameterNode): void {
@@ -93,7 +108,7 @@ export class IncludeGraphicsVisualisation implements Visualisation {
         const documentDirectoryPath = documentPath.slice(0, lastSlashIndex);
 
         const imagePath = path.resolve(documentDirectoryPath, this.graphics.path);
-        this.webviewImage.uri = this.webview.asWebviewUri(vscode.Uri.file(imagePath));
+        this.webviewImage.uri = this.webviewManager.adaptURI(vscode.Uri.file(imagePath));
 
         // TODO: get the standard dimensions of the image
         // TODO: adapt the units if need be
@@ -101,23 +116,21 @@ export class IncludeGraphicsVisualisation implements Visualisation {
         this.webviewImage.height = this.graphics.options.height ?? "256px";
     }
 
-    renderAsHTML(): string {
+    renderContentAsHTML(): string {
         const styleProperties: Record<string, string> = {
             "width": this.webviewImage.width,
             "height": this.webviewImage.height,
         };
 
         return `
-            <div class="ilatex-includegraphics" style="border: 1px dashed black;">
-                <img
-                    src="${this.webviewImage.uri}"
-                    style="${
-                        Object.keys(styleProperties)
-                            .map(prop => `${prop}: ${styleProperties[prop]};`)
-                            .join("")
-                    }"
-                />
-            </div>
+            <img
+                src="${this.webviewImage.uri}"
+                style="${
+                    Object.keys(styleProperties)
+                        .map(prop => `${prop}: ${styleProperties[prop]};`)
+                        .join("")
+                }"
+            />
         `;
     }
 }

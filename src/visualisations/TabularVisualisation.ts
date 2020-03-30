@@ -10,17 +10,31 @@ interface Cell {
     textContent: string;
 }
 
-export class TabularVisualisation implements Visualisation {
-    private node: ASTEnvironementNode;
+export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
+    readonly name = "tabular";
+
     private document: vscode.TextDocument;
     private cellRows: Cell[][];
     
     constructor(node: ASTEnvironementNode, document: vscode.TextDocument) {
-        this.node = node;
+        super(node);
+
         this.document = document;
         this.cellRows = [];
 
         this.extractCells();
+        this.initProps();
+    }
+
+    protected initProps(): void {
+        super.initProps();
+
+        // Add node location information
+        this.props["data-loc-start"] = `${this.node.start.line};${this.node.start.column}`;
+        this.props["data-loc-end"] = `${this.node.end.line};${this.node.end.column}`;
+
+        // Enable the selection of the associated block of code on click
+        this.props["class"] += " selectable";
     }
 
     // TODO: refactor by allowing visitors to visit any AST subtree
@@ -102,9 +116,9 @@ export class TabularVisualisation implements Visualisation {
         }
     }
     
-    renderAsHTML(): string {
+    renderContentAsHTML(): string {
         return `
-            <table class="ilatex-tabular">
+            <table>
                 ${this.cellRows.map(TabularVisualisation.renderRowAsHTML).join("\n")}
             </table>
         `;

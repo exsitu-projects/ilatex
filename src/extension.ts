@@ -6,7 +6,9 @@ export function activate(context: vscode.ExtensionContext) {
 	let disposable = vscode.commands.registerCommand('ilatex.init', () => {
 		vscode.window.showInformationMessage("iLatex has been initialised!");
 
-		const activeDocument = vscode.window.activeTextEditor?.document;
+		const activeEditor = vscode.window.activeTextEditor;
+		const activeDocument = activeEditor?.document;
+
 		if (activeDocument) {
 			// Create and show a new panel
 			const fileName = activeDocument.fileName;
@@ -18,13 +20,15 @@ export function activate(context: vscode.ExtensionContext) {
 					enableScripts: true
 				}
 			);
-
-			// Initialise the top-level class of the extension
-			const iLatex = new InteractiveLaTeX(activeDocument, webviewPanel);
-			console.log(iLatex);
 		
 			// Set the panel's content
 			webviewPanel.webview.html = "Hello, world!";
+
+			// Initialise the top-level class of the extension
+			if (activeEditor) {
+				const iLatex = new InteractiveLaTeX(activeEditor, webviewPanel);
+				console.log(iLatex);
+			}
 		}
 	});
 

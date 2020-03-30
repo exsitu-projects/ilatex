@@ -1,44 +1,38 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import * as path from 'path';
 import { LatexAST } from './ast/LatexAST';
 import { LatexASTFormatter } from './ast/visitors/LatexASTFormatter';
 import { VisualisationManager } from './visualisations/VisualisationManager';
+import { WebviewManager } from './webview/WebviewManager';
+import { WebviewMessageType, SelectTextMessage, FocusVisualisationMessage } from './webview/WebviewMessage';
 
 export class InteractiveLaTeX {
-    // The path must be relative to the root directory of the extension
-    private static readonly WEBVIEW_TEMPLATE_PATH = "./templates/webview.html";
-    // private static readonly WEBVIEW_TEMPLATE_PATH = "./templates/frame.html";
-
+    private editor: vscode.TextEditor;
     private document: vscode.TextDocument;
-    private webviewPanel: vscode.WebviewPanel;
-    private webviewTemplate: string;
+    private webviewManager: WebviewManager;
     private visualisationManager: VisualisationManager;
     
-    constructor(document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel) {
-        this.document = document;
-        this.webviewPanel = webviewPanel;
-        this.webviewTemplate = "";
-        this.visualisationManager = new VisualisationManager(document, webviewPanel);
+    constructor(editor: vscode.TextEditor, panel: vscode.WebviewPanel) {
+        this.editor = editor;
+        this.document = editor.document;
+        this.webviewManager = new WebviewManager(panel);
+        this.visualisationManager = new VisualisationManager(this.document, this.webviewManager);
         
-        this.loadWebviewTemplate();
-
-        this.parseActiveDocument();
+        this.initWebviewMessageHandlers();
         this.startObservingDocumentChanges();
+        this.startObservingSelectionChanges();
+        this.parseActiveDocument();
     }
 
-    private loadWebviewTemplate(): void {
-        const thisExtension = vscode.extensions.getExtension("exsitu.interactive-latex");
-        if (thisExtension !== undefined) {
-            const extensionDirectoryPath = thisExtension.extensionPath;
-            const templatePath = path.resolve(
-                extensionDirectoryPath,
-                InteractiveLaTeX.WEBVIEW_TEMPLATE_PATH
-            );
-
-            const templateFileBuffer = fs.readFileSync(templatePath);
-            this.webviewTemplate = templateFileBuffer.toString();
-        }
+    initWebviewMessageHandlers(): void {
+        // Text must be selected
+        this.webviewManager.setHandlerFor(WebviewMessageType.SelectText, (message) => {
+            const selectTextMessage = message as SelectTextMessage;
+            this.editor.selections = [new vscode.Selection(
+                new vscode.Position(selectTextMessage.from.lineIndex, selectTextMessage.from.columnIndex),
+                new vscode.Position(selectTextMessage.to.lineIndex, selectTextMessage.to.columnIndex)
+            )];
+        });
     }
 
     private startObservingDocumentChanges(): void {
@@ -65,6 +59,28 @@ export class InteractiveLaTeX {
         this.parseActiveDocument();
     }
 
+    private startObservingSelectionChanges(): void {
+        vscode.window.onDidChangeTextEditorSelection((event) => {
+            // If the user moves the cursor WITHOUT selecting text,
+            // check if it is inside the code associated to a visualisation.
+            const selectionStartPos = event.selections[0].start;
+            const selectionEndPos = event.selections[0].end;
+
+            if (selectionStartPos.isEqual(selectionEndPos)) {
+                // If it is, tell the webview to highlight the related visualisation.
+                const visualisation = this.visualisationManager.getVisualisationAtPosition(selectionStartPos);
+                console.log("Cursor is inside visualisation:", visualisation);
+                
+                if (visualisation) {
+                    this.webviewManager.sendMessage({
+                        type: WebviewMessageType.FocusVisualisation,
+                        id: visualisation.id
+                    } as FocusVisualisationMessage);
+                }
+            }
+        });
+    }
+
     private async parseActiveDocument() {
         const documentPath = this.document.uri.fsPath;
 
@@ -83,24 +99,12 @@ export class InteractiveLaTeX {
                 this.visualisationManager.updateVisualisations(ast);
 
                 // Update the webview
-                this.updateWebview();
+                const content = this.visualisationManager.renderAllVisualisationsAsHTML();
+                this.webviewManager.updateWebviewWith(content);
             }
             catch (error) {
                 console.error(error);
             }
         });
-    }
-
-    private renderWebviewContentAsHTML(): string {
-        // return this.webviewTemplate;
-
-        return this.webviewTemplate.replace(
-            "<!--VISUALISATIONS-->",
-            this.visualisationManager.renderAllVisualisationsAsHTML()
-        );
-    }
-
-    private updateWebview(): void {
-        this.webviewPanel.webview.html = this.renderWebviewContentAsHTML();
     }
 }
