@@ -5,19 +5,23 @@ import { ASTNodeType, ASTNode, ASTNodeValue, ASTParameterValueNode, ASTLatexNode
  * Return a function which creates a wrapper function when called.
  * 
  * A wrapper function takes a parser as input and returns a parser
- * which yields an AST node as output (using the given type and name, if any).
+ * which yields an AST node as output (using the given type and name/start position, if any).
  */
 function createParserOutputASTAdapter<
     T extends ASTNodeType,
     V extends ASTNodeValue
->(type: T, name: string = "") {
+>(type: T, name: string = "", startPos?: P.Index) {
     return function(parser: P.Parser<V>) {
         return P.seqMap(P.index, parser, P.index, (start, value, end) => {
+            if (startPos !== start) {
+                console.log(name, "diff start pos", startPos, start);
+            }
+
             return new ASTNode<T, V>(
                 name,
                 type,
                 value,
-                start,
+                (startPos ?? start),
                 end
             );
         });
@@ -209,7 +213,7 @@ const language = P.createLanguage<{
                             };
                         }
                     )
-                        .thru(createParserOutputASTAdapter(ASTNodeType.Environement, environementName));
+                        .thru(createParserOutputASTAdapter(ASTNodeType.Environement, environementName, beginNode.start));
                 }
                 else {
                     return P.seqMap(
@@ -224,7 +228,7 @@ const language = P.createLanguage<{
                             };
                         }
                     )
-                        .thru(createParserOutputASTAdapter(ASTNodeType.Environement, environementName));
+                        .thru(createParserOutputASTAdapter(ASTNodeType.Environement, environementName, beginNode.start));
                 }
             });
     },
