@@ -3,6 +3,7 @@ import * as path from "path";
 import { Visualisation } from "./Visualisation";
 import { ASTCommandNode, ASTParameterNode, ASTParameterAssignmentsNode } from "../ast/LatexASTNode";
 import { WebviewManager } from "../webview/WebviewManager";
+import { LatexLength } from "../utils/LatexLength";
 
 interface GraphicsOptions {
     width?: string;
@@ -23,15 +24,14 @@ interface WebviewImage {
 }
 
 export class IncludeGraphicsVisualisation extends Visualisation<ASTCommandNode> {
-    readonly name = "tabular";
+    readonly name = "includegraphics";
 
     private document: vscode.TextDocument;
     private webviewManager: WebviewManager;
 
     private graphics: Graphics;
     private webviewImage: WebviewImage;
-    
-    
+
     constructor(node: ASTCommandNode, document: vscode.TextDocument, webviewManager: WebviewManager) {
         super(node);
         
@@ -110,10 +110,16 @@ export class IncludeGraphicsVisualisation extends Visualisation<ASTCommandNode> 
         const imagePath = path.resolve(documentDirectoryPath, this.graphics.path);
         this.webviewImage.uri = this.webviewManager.adaptURI(vscode.Uri.file(imagePath));
 
-        // TODO: get the standard dimensions of the image
-        // TODO: adapt the units if need be
-        this.webviewImage.width = this.graphics.options.width ?? "256px";
-        this.webviewImage.height = this.graphics.options.height ?? "256px";
+        // TODO: get the standard dimensions of the image (for default values)
+        const widthLength = new LatexLength(this.graphics.options.width ?? "");
+        const heightLength = new LatexLength(this.graphics.options.height ?? "");
+
+        // TODO: handle non-convertible units (e.g. 0.5\textlength)
+        const widthInPixels = widthLength.canBeConverted ? widthLength.px : "256px";
+        const heightInPixels = heightLength.canBeConverted ? heightLength.px : "256px";
+
+        this.webviewImage.width = `${widthInPixels}px`;
+        this.webviewImage.height = `${heightInPixels}px`;
     }
 
     renderContentAsHTML(): string {
@@ -122,15 +128,28 @@ export class IncludeGraphicsVisualisation extends Visualisation<ASTCommandNode> 
             "height": this.webviewImage.height,
         };
 
+        const styleAttrValue = Object.keys(styleProperties)
+            .map(prop => `${prop}: ${styleProperties[prop]};`)
+            .join("");
+
         return `
-            <img
-                src="${this.webviewImage.uri}"
-                style="${
-                    Object.keys(styleProperties)
-                        .map(prop => `${prop}: ${styleProperties[prop]};`)
-                        .join("")
-                }"
-            />
+            <p class="text"></p>
+            <div class="frame">
+                <img
+                    class="ghost"
+                    src="${this.webviewImage.uri}"
+                    style="${styleAttrValue}"
+                />
+                <div class="inner">
+                    <img
+                        class="image"
+                        src="${this.webviewImage.uri}"
+                        style="${styleAttrValue}"
+                    />
+                </div>
+                <div class="resize"></div>
+            </div>
+            
         `;
     }
 }

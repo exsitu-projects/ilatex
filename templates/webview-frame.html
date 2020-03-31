@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <!-- Image redim./cropping styling (from pdf.html)-->
+        <style type="text/css">
+            .frame {
+                position: absolute;
+                width: 200px;
+                height: 200px;
+                left: 200px;
+                border: solid 1px grey;
+            }
+            
+            .frame > .ghost {
+                position: absolute;
+                overflow: visible;
+                opacity: 0.3;
+            }
+            
+            .frame > .ghost.hidden {
+                visibility: hidden;
+            }
+            
+            .frame > .inner {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+            }
+            
+            .frame > .inner > .image {
+                position: absolute;
+            }
+            
+            .frame > .resize {
+                position: absolute;
+                right: -5px;
+                bottom: -5px;
+                width: 10px;
+                height: 10px;
+                border: solid 1px grey;
+                background-color: white;
+                opacity: 0.8;
+            }
+        </style>
+
+        <!-- Generic visualisation styling -->
+        <style>
+            * {
+                user-select: none;
+            }
+
+            html {
+                font-size: 16px;
+            }
+
+            body {
+                font-size: 1.2rem;
+            }
+
+            .visualisation {
+                position: relative;
+                margin: 0 0 5px 0;
+                padding: 5px;
+                border: 1px dotted gray;
+            }
+
+            .visualisation:hover,
+            .visualisation.focused {
+                background-color: lightgray;
+            }
+        </style>
+    </head>
+
+    <body>
+        <!--CONTENT-->
+    </body>
+
+    <!-- Image redim./cropping-specific code (adapted from pdf.html) -->
+    <script type="text/javascript">
+        // Return a CSS pixel value (rounded to closest integer)
+        function px(n) {
+            return `${Math.round(n)}px`;
+        }
+
+        // Return the number of pixels of a CSS length in pixels (without the 'px' suffix)
+        function nbPx(str) {
+            return parseFloat(str, 10);
+        }
+
+        class ImageFrame {
+            constructor(includegraphicsVisElement) {
+                this.text = includegraphicsVisElement.querySelector('.text');
+                this.frame = includegraphicsVisElement.querySelector(".frame");
+                this.ghost = this.frame.querySelector('.ghost');
+                this.inner = this.frame.querySelector('.inner');
+                this.img = this.inner.querySelector('.image');
+                this.resize = this.frame.querySelector('.resize');
+
+                this.initialWidth = this.img.style.width;
+                this.initialHeight = this.img.style.height;
+                this.scale = 1; // TODO: use includegraphics parameter
+
+                // image transform
+                this.imageWidth = nbPx(this.initialWidth);
+                this.imageHeight = nbPx(this.initialHeight);
+                this.offsetX = 0;
+                this.offsetY = 0;
+
+                // frame resize
+                this.frameWidth = 200; // TODO: use includegraphics parameter
+                this.frameHeight = 200; // TODO: use includegraphics parameter
+
+                // interaction state
+                this.dragInfo = {
+                    type: null,
+                    cursorX: 0,
+                    cursorY: 0,
+                    dx: 0,
+                    dy: 0
+                };
+
+                this.dragAction = {};
+                
+                this.initDragActions();
+                this.addEventListeners();
+
+                console.log(this);
+            }
+
+            initDragActions() {
+                // Drag image in frame
+                this.dragAction.image = (ev) => {
+                    this.offsetX += this.dragInfo.dx;
+                    this.offsetY += this.dragInfo.dy;
+                    this.ghost.style.left = this.img.style.left = px(this.offsetX);
+                    this.ghost.style.top = this.img.style.top = px(this.offsetY);
+                }
+
+                this.dragAction.resize = (ev) => {
+                    this.frameWidth += this.dragInfo.dx;
+                    this.frameHeight += this.dragInfo.dy;
+                    this.frame.style.width = px(this.frameWidth);
+                    this.frame.style.height = px(this.frameHeight);
+                }
+            }
+
+            // Update the dimensions of the image
+            // updateImageSize() {
+            //     this.imageWidth = this.ghost.width;
+            //     this.imageHeight = this.ghost.height;
+
+            //     this.updateLayout();
+            // }
+
+             // Record cursor position and drag type
+            startDrag(ev, type) {
+                this.dragInfo.cursorX = ev.screenX;
+                this.dragInfo.cursorY = ev.screenY;
+                this.dragInfo.type = type;
+
+                ev.preventDefault();
+            }
+
+            // Dispatch drag event
+            doDrag(ev) {
+                if (! this.dragInfo.type)
+                    return;
+
+                ev.preventDefault();
+
+                this.dragInfo.dx = ev.screenX - this.dragInfo.cursorX;
+                this.dragInfo.dy = ev.screenY - this.dragInfo.cursorY;
+                this.dragInfo.cursorX = ev.screenX;
+                this.dragInfo.cursorY = ev.screenY;
+
+                this.dragAction[this.dragInfo.type](ev);
+
+                this.updateLayout()
+            }
+
+            // Done dragging
+            endDrag(ev) {
+                this.dragInfo.type = null;
+                ev.preventDefault();
+            }
+
+            addEventListeners() {
+                // Mouse listeners (image dragging)
+                this.ghost.addEventListener('mousedown', ev => this.startDrag(ev, 'image'));
+                this.img.addEventListener('mousedown', ev => this.startDrag(ev, 'image'));
+                this.resize.addEventListener('mousedown', ev => this.startDrag(ev, 'resize'));
+
+                document.addEventListener('mousemove', ev => this.doDrag(ev));
+                document.addEventListener('mouseup', ev => this.endDrag(ev));
+
+                // Scroll wheel listener (image zoom)
+                document.addEventListener('wheel', ev => {
+                    ev.preventDefault();
+
+                    let ds;
+                    if (ev.deltaY > 0) // enlarge
+                        ds = 1 + ev.deltaY/50;
+                    else if (ev.deltaY < 0) // shrink
+                        ds = 1/(1 - ev.deltaY/50);
+                    else
+                        return;
+
+                    let newScale = this.scale * ds;
+                    if (newScale > 0.1) {
+                        // Update the scale of the images
+                        this.scale = newScale;
+                        this.rescaleImages();
+                        
+                        const rect = this.ghost.getBoundingClientRect();
+
+                        this.offsetX += (1 - ds)*(ev.clientX - rect.x);
+                        this.offsetY += (1 - ds)*(ev.clientY - rect.y);
+                        this.ghost.style.left = this.img.style.left = px(this.offsetX);
+                        this.ghost.style.top = this.img.style.top = px(this.offsetY);
+
+                        this.updateLayout();
+                    }
+                })
+
+                // Keyboard listner (turn the ghost on/off)
+                document.addEventListener('keydown', ev => {
+                    if (ev.key === ' ') {
+                        this.ghost.classList.toggle('hidden');
+                    }
+                })
+            }
+
+            // Update the scale factor of the image and the ghost
+            rescaleImages() {
+                const transformValue = `scale(${this.scale})`;
+
+                this.img.style.transform = transformValue;
+                this.ghost.style.transform = transformValue;
+            }
+
+            // Display image layout
+            updateLayout() {
+                let scale = this.scale;
+                let frame = `frame=${px(this.frameWidth)}, ${px(this.frameHeight)} - offset=${px(this.offsetX)}, ${px(this.offsetY)} - scale=${Math.round(scale*1000)/1000}`;
+
+                let width = this.frameWidth;
+                let height = this.frameHeight;
+                let right = this.offsetX + this.imageWidth*scale;
+                let bottom = this.offsetY + this.imageHeight*scale;
+
+                console.log("offsetX", this.offsetX);
+                console.log("imageWidth", this.imageWidth);
+                console.log("scale", scale);
+
+                if (this.offsetX > this.frameWidth || this.offsetY > this.frameHeight || right < 0 || bottom < 0) {
+                    this.text.innerHTML = frame + ' image out of bounds';
+                    return;
+                }
+
+                let trim = {
+                    left: 0, bottom: 0, right: 0, top: 0
+                };
+
+                if (this.offsetX > 0)
+                    width -= this.offsetX;
+                else if (this.offsetX < 0)
+                    trim.left = -this.offsetX;
+
+                if (right < this.frameWidth)
+                    width -= this.frameWidth - right;
+                else
+                    trim.right = right - this.frameWidth;
+
+                if (this.offsetY > 0)
+                    height -= this.offsetY;
+                else if (this.offsetY < 0)
+                    trim.top = -this.offsetY;
+
+                if (bottom < this.frameHeight)
+                    height -= this.frameHeight - bottom;
+                else
+                    trim.bottom = bottom - this.frameHeight;
+
+                // frame += `<br>width=${px(width)}, height=${px(height)}`
+                let latex = `width=${px(width)}`;
+                if (trim.left !== 0 || trim.bottom !== 0 || trim.right !== 0 || trim.top !== 0) {
+                    // frame += ` - trim: left=${px(trim.left/scale)}, bottom=${px(trim.bottom/scale)}, right=${px(trim.right/scale)}, top=${px(trim.top/scale)}`
+                    console.log(scale, trim)
+                    let clip = `, trim=${px(trim.left/scale)} ${px(trim.bottom/scale)} ${px(trim.right/scale)} ${px(trim.top/scale)}, clip`;
+                    if (clip !== ', trim=0px 0px 0px 0px, clip')	// to take rounding into account
+                        latex += clip;
+                }
+
+                this.text.innerHTML = frame + `<br>\\includegraphics[${latex}]{URL}`;
+            }
+        }
+
+        // Get started: center image
+        // function Load() {
+        //     view = new PDFView(url, img)
+        //     ghostView = new PDFView(url, ghost)
+        //     let loaded = [view.loadPage(1).then(() => view.renderPage()), 
+        //                   ghostView.loadPage(1).then(() => ghostView.renderPage())]
+
+        //     Promise.all(loaded).then(() => {
+        //         setTimeout(() => {
+        //             getGhostSize()
+
+        //             offsetX = -(img.width - frameWidth) / 2
+        //             offsetY = -(img.height - frameHeight) / 2
+        //             console.log(`img=${img.height}, frame=${frameHeight}, offset=${offsetY}`)
+
+        //             ghost.style.left = img.style.left = px(offsetX)
+        //             ghost.style.top = img.style.top = px(offsetY)
+
+        //             updateLayout()
+        //         })
+        //     }, 0)
+        // }
+    </script>
+
+    <!-- General setup and communication with the extension -->
+    <script type="text/javascript">
+        // Get access to the VSCode API
+        const vscode = acquireVsCodeApi();
+
+        // Current element with focus
+        let currentlyFocusedElement = null;
+
+        // Available types of messages (from/to the extension)
+        const MessageTypes = {
+            FocusVisualisation: "FocusVisualisation",
+            SelectText: "SelectText"
+        };
+        
+        // Handle clicks on selectable elements
+        // (the extension will select the associated block of code on click)
+        function parseLocationFromAttribute(attrValue) {
+            const [_, line, column] = /(\d+);(\d+)/.exec(attrValue);
+            return {
+                lineIndex: Number(line) - 1,
+                columnIndex: Number(column) - 1
+            };
+        }
+
+        const selectableElements = document.getElementsByClassName("selectable");
+        for (let element of selectableElements) {
+            element.addEventListener("click", () => {
+                const from = parseLocationFromAttribute(element.getAttribute("data-loc-start"));
+                const to = parseLocationFromAttribute(element.getAttribute("data-loc-end"));
+
+                vscode.postMessage({
+                    type: MessageTypes.SelectText,
+                    from: from,
+                    to: to
+                });
+            });
+        }
+
+        // Extension message handlers
+        function focusVisualisation(id) {
+            // Remove the focus from the currently focused element (if any)
+            if (currentlyFocusedElement) {
+                currentlyFocusedElement.classList.remove("focused");
+            }
+
+            // Bring focus to the visualisation with the given id (if any)
+            const visualisationElement = document.querySelector(`.visualisation[data-id="${id}"]`);
+            if (visualisationElement) {
+                currentlyFocusedElement = visualisationElement;
+                visualisationElement.classList.add("focused");
+            }
+        }
+
+        // Handle extension messages
+        window.addEventListener("message", message => {
+            console.log("Received message:", message);
+
+            const messageType = message.data.type;
+            if (! (message && messageType)) {
+                console.error("iLatex's webview is unable to handle the following message:", message);
+                return;
+            }
+
+            switch (messageType) {
+                case MessageTypes.FocusVisualisation:
+                    focusVisualisation(message.data.id);
+                    break;
+                
+                default:
+                    console.error("iLatex's webview does not know message type:", messageType);
+            }
+        });
+
+        // Setup image frame objects for includegraphics visualisations
+        const includegraphicsVisElements = document.querySelectorAll(`.visualisation[data-name="includegraphics"]`)
+        for (let element of includegraphicsVisElements) {
+            new ImageFrame(element);
+        }
+    </script>
+</html>

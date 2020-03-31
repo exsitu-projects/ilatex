@@ -8,8 +8,8 @@ export type MessageHandler<T extends WebviewMessageType = WebviewMessageType> =
 
 export class WebviewManager {
     // The path must be relative to the root directory of the extension
-    private static readonly WEBVIEW_TEMPLATE_PATH = "./templates/webview.html";
-    // private static readonly WEBVIEW_TEMPLATE_PATH = "./templates/frame.html";
+    // private static readonly WEBVIEW_TEMPLATE_PATH = "./templates/webview.html";
+    private static readonly WEBVIEW_TEMPLATE_PATH = "./templates/webview-frame.html";
 
     private readonly panel: vscode.WebviewPanel;
     private readonly webview: vscode.Webview;
