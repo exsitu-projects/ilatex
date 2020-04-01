@@ -3,11 +3,13 @@
     <head>
         <!-- Image redim./cropping styling (from pdf.html)-->
         <style type="text/css">
+            .visualisation[data-name="includegraphics"] {
+                min-height: 100px;
+            }
+
             .frame {
                 position: absolute;
-                width: 200px;
-                height: 200px;
-                left: 200px;
+                left: 50%;
                 border: solid 1px grey;
             }
             
@@ -36,13 +38,23 @@
             
             .frame > .resize {
                 position: absolute;
-                right: -5px;
-                bottom: -5px;
-                width: 10px;
-                height: 10px;
+                right: -4px;
+                bottom: -4px;
+                width: 9px;
+                height: 9px;
                 border: solid 1px grey;
                 background-color: white;
-                opacity: 0.8;
+            }
+
+            /* Hide the demo text (output of the command, etc). */
+            .text {
+                display: none;
+            }
+
+            /* Required to cancel a CSS rule enforced by VSCode. */
+            img {
+                max-width: none;
+                max-height: none;
             }
         </style>
 
@@ -104,22 +116,29 @@
                 this.img = this.inner.querySelector('.image');
                 this.resize = this.frame.querySelector('.resize');
 
+                // length of the string of the last generated command (>=0 if any)
+                // this is temporarily required to replace the right amound of text
+                // without re-parsing the entire document after each change
+                this.lastGeneratedCommandLength = -1;
+
                 // path and options of the command
-                this.path = this.visualisation.getAttribute("data-path");
+                this.path = this.visualisation.getAttribute("data-img-path");
                 this.options = {};
                 this.initOptions();
                 
                 // frame resize
                 this.frameWidth = firstDefined(this.options.width, 200); // TODO: use better defaults
                 this.frameHeight = firstDefined(this.options.height, 200); // TODO: use better defaults
-                
-                // image transform
-                this.imageWidth = this.frameWidth;
-                this.imageHeight = this.frameHeight;
-                this.scale = firstDefined(this.options.scale, 1);
-                this.offsetX = 0;
-                this.offsetY = 0;
+                this.updateFrameDimensions();
 
+                // image transform
+                this.imageWidth = parseFloat(this.visualisation.getAttribute("data-img-width"));
+                this.imageHeight = parseFloat(this.visualisation.getAttribute("data-img-height"));
+                this.scale = firstDefined(this.options.scale, 1);
+                this.offsetX = 0; // TODO: compute from parameters
+                this.offsetY = 0; // TODO: compute from parameters
+                this.updateImagesDimensions();
+                
                 // interaction state
                 this.dragInfo = {
                     type: null,
@@ -135,6 +154,32 @@
                 this.addEventListeners();
 
                 console.log(this);
+            }
+
+            updateFrameDimensions() {
+                this.frame.style.width = px(this.frameWidth);
+                this.frame.style.height = px(this.frameHeight);
+
+                // Keep the frame centered
+                this.frame.style.marginLeft = px(-this.frameWidth / 2);
+
+                this.updateVisualisationDimensions();
+            }
+
+            updateImagesDimensions() {
+                this.img.style.width = px(this.imageWidth);
+                this.img.style.height = px(this.imageHeight);
+                this.ghost.style.width = px(this.imageWidth);
+                this.ghost.style.height = px(this.imageHeight);
+                
+                this.updateVisualisationDimensions();
+            }
+
+            updateVisualisationDimensions() {
+                const padding = 5; // px
+                this.visualisation.style.height = px(
+                    this.frameHeight + (2 * padding)
+                );
             }
 
             initOptions() {
@@ -175,28 +220,18 @@
                 this.dragAction.resize = (ev) => {
                     this.frameWidth += this.dragInfo.dx;
                     this.frameHeight += this.dragInfo.dy;
-                    this.frame.style.width = px(this.frameWidth);
-                    this.frame.style.height = px(this.frameHeight);
+                    this.updateFrameDimensions();
                 }
             }
 
-            // Update the dimensions of the image
-            // updateImageSize() {
-            //     this.imageWidth = this.ghost.width;
-            //     this.imageHeight = this.ghost.height;
-
-            //     this.updateLayout();
-            // }
-
             // Center the ghost and the frame
-            centerImages() {
-                this.offsetX = -(this.img.width - this.frameWidth) / 2
-                this.offsetY = -(this.img.height - this.frameHeight) / 2
+            // centerImages() {
+            //     this.offsetX = -(this.img.width - this.frameWidth) / 2
+            //     this.offsetY = -(this.img.height - this.frameHeight) / 2
 
-                this.ghost.style.left = this.img.style.left = px(this.offsetX)
-                this.ghost.style.top = this.img.style.top = px(this.offsetY)
-            }
-            
+            //     this.ghost.style.left = this.img.style.left = px(this.offsetX)
+            //     this.ghost.style.top = this.img.style.top = px(this.offsetY)
+            // }
 
              // Record cursor position and drag type
             startDrag(ev, type) {
@@ -257,12 +292,11 @@
                         this.scale = newScale;
                         this.rescaleImages();
                         
-                        const rect = this.ghost.getBoundingClientRect();
-
-                        this.offsetX += (1 - ds)*(ev.clientX - rect.x);
-                        this.offsetY += (1 - ds)*(ev.clientY - rect.y);
-                        this.ghost.style.left = this.img.style.left = px(this.offsetX);
-                        this.ghost.style.top = this.img.style.top = px(this.offsetY);
+                        // const rect = this.ghost.getBoundingClientRect();
+                        // this.offsetX += (1 - ds)*(ev.clientX - rect.x);
+                        // this.offsetY += (1 - ds)*(ev.clientY - rect.y);
+                        // this.ghost.style.left = this.img.style.left = px(this.offsetX);
+                        // this.ghost.style.top = this.img.style.top = px(this.offsetY);
 
                         this.updateLayout();
                     }
@@ -278,10 +312,14 @@
 
             // Update the scale factor of the image and the ghost
             rescaleImages() {
-                const transformValue = `scale(${this.scale})`;
+                const newImageWidth = this.imageWidth * this.scale;
+                const newImageHeight = this.imageHeight * this.scale;
 
-                this.img.style.transform = transformValue;
-                this.ghost.style.transform = transformValue;
+                this.img.style.width = px(newImageWidth);
+                this.img.style.height = px(newImageHeight);
+
+                this.ghost.style.width = px(newImageWidth);
+                this.ghost.style.height = px(newImageHeight);
             }
 
             // Display image layout
@@ -294,11 +332,12 @@
                 let right = this.offsetX + this.imageWidth*scale;
                 let bottom = this.offsetY + this.imageHeight*scale;
 
-                console.log("offsetX", this.offsetX);
-                console.log("imageWidth", this.imageWidth);
-                console.log("scale", scale);
+                console.log("left", this.offsetX > this.frameWidth, this.offsetX, this.frameWidth);
+                console.log("right", right < 0, right);
 
                 if (this.offsetX > this.frameWidth || this.offsetY > this.frameHeight || right < 0 || bottom < 0) {
+                    console.info("out of bounds");
+                    console.log(this.offsetX > this.frameWidth, this.offsetY > this.frameHeight, right < 0, bottom < 0);
                     this.text.innerHTML = frame + ' image out of bounds';
                     return;
                 }
@@ -339,14 +378,21 @@
                 this.text.innerHTML = frame + `<br>\\includegraphics[${commandParameters}]{${this.path}}`;
 
                 // Modify the underlying document
+                const commandText = `\\includegraphics[${commandParameters}]{${this.path}}`;
+
                 const from = parseLocationFromAttribute(this.visualisation.getAttribute("data-loc-start"));
-                const to = parseLocationFromAttribute(this.visualisation.getAttribute("data-loc-end"));
+                const to = this.lastGeneratedCommandLength >= 0
+                         ? {...from, columnIndex: from.columnIndex + this.lastGeneratedCommandLength}
+                         : parseLocationFromAttribute(this.visualisation.getAttribute("data-loc-end"));
+
                 vscode.postMessage({
                     type: MessageTypes.ReplaceText,
                     from: from,
                     to: to,
-                    with: `\\includegraphics[${commandParameters}]{${this.path}}`
+                    with: commandText
                 });
+
+                this.lastGeneratedCommandLength = commandText.length;
             }
         }
 

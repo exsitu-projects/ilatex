@@ -88,7 +88,12 @@ export class IncludeGraphicsVisualisation extends Visualisation<ASTCommandNode> 
         super.initProps();
 
         // Add the original path of the image
-        this.props["data-path"] = this.graphics.path;
+        this.props["data-img-path"] = this.graphics.path;
+
+        // Add the dimensions of the image
+        // TODO: compute the actual dimensions of the image
+        this.props["data-img-width"] = "256";
+        this.props["data-img-height"] = "256";
 
         // Add node location information
         this.props["data-loc-start"] = `${this.node.start.line};${this.node.start.column}`;
