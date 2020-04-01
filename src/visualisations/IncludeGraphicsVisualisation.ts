@@ -6,10 +6,11 @@ import { WebviewManager } from "../webview/WebviewManager";
 import { LatexLength } from "../utils/LatexLength";
 
 interface GraphicsOptions {
-    width?: string;
-    height?: string;
-    scale?: string;
-    trim?: string;
+    width?: LatexLength;
+    height?: LatexLength;
+    scale?: number;
+    trim?: LatexLength[];
+    clip?: boolean;
 }
 
 interface Graphics {
@@ -19,8 +20,9 @@ interface Graphics {
 
 interface WebviewImage {
     uri: vscode.Uri | null;
-    width: string;
-    height: string;
+    //width: string;
+    //height: string;
+    //scale: string;
 }
 
 export class IncludeGraphicsVisualisation extends Visualisation<ASTCommandNode> {
@@ -45,8 +47,9 @@ export class IncludeGraphicsVisualisation extends Visualisation<ASTCommandNode> 
 
         this.webviewImage = {
             uri: null,
-            width: "",
-            height: ""
+            //width: "",
+            //height: "",
+            //scale: ""
         };
 
         this.extractGraphics();
@@ -61,6 +64,33 @@ export class IncludeGraphicsVisualisation extends Visualisation<ASTCommandNode> 
         this.props["data-loc-start"] = `${this.node.start.line};${this.node.start.column}`;
         this.props["data-loc-end"] = `${this.node.end.line};${this.node.end.column}`;
 
+        // Add graphics option information
+        // TODO: what to do when the length cannot be converted?
+        const options = this.graphics.options;
+
+        if (options.width?.canBeConverted) {
+            this.props[`data-opt-width`] = options.width.px.toString();
+        }
+
+        if (options.height?.canBeConverted) {
+            this.props[`data-opt-height`] = options.height.px.toString();
+        }
+
+        if (options.scale !== undefined) {
+            this.props[`data-opt-scale`] = options.scale.toString();
+        }
+
+        if (options.trim !== undefined) {
+            this.props[`data-opt-trim-left`] = options.trim[0].px.toString();
+            this.props[`data-opt-trim-bottom`] = options.trim[1].px.toString();
+            this.props[`data-opt-trim-right`] = options.trim[2].px.toString();
+            this.props[`data-opt-trim-top`] = options.trim[3].px.toString();
+        }
+
+        if (options.clip !== undefined) {
+            this.props[`data-opt-clip`] = options.clip ? "true" : "false";
+        }
+
         // Enable the selection of the associated block of code on click
         this.props["class"] += " selectable";
     }
@@ -71,16 +101,26 @@ export class IncludeGraphicsVisualisation extends Visualisation<ASTCommandNode> 
 
     private extractGraphicsOptions(node: ASTParameterAssignmentsNode): void {
         for (let paramAssignmentNode of node.value) {
-            const acceptedKeys: (keyof GraphicsOptions)[] = [
-                "width", "height", "scale", "trim"
-            ];
-
             const key = paramAssignmentNode.value.key.value.trim();
-            const keyIndex = (acceptedKeys as string[]).indexOf(key);
-            
-            if (keyIndex >= 0) {
-                const value = paramAssignmentNode.value.value.value.trim();
-                this.graphics.options[acceptedKeys[keyIndex]] = value;
+            const value = paramAssignmentNode.value.value.value.trim();
+
+            if (key === "width") {
+                this.graphics.options.width = new LatexLength(value);
+            }
+            else if (key === "height") {
+                this.graphics.options.height = new LatexLength(value);
+            }
+            else if (key === "scale") {
+                this.graphics.options.scale = parseFloat(value);
+            }
+            else if (key === "trim") {
+                this.graphics.options.trim = value
+                    .split(/\s+/)
+                    .map(lengthText => new LatexLength(lengthText));
+            }
+            else if (key === "clip") {
+                // TODO: handle option declaration with no value in the AST
+                this.graphics.options.clip = value.trim().toLowerCase() === "true";
             }
         }
     }
@@ -109,47 +149,24 @@ export class IncludeGraphicsVisualisation extends Visualisation<ASTCommandNode> 
 
         const imagePath = path.resolve(documentDirectoryPath, this.graphics.path);
         this.webviewImage.uri = this.webviewManager.adaptURI(vscode.Uri.file(imagePath));
-
-        // TODO: get the standard dimensions of the image (for default values)
-        const widthLength = new LatexLength(this.graphics.options.width ?? "");
-        const heightLength = new LatexLength(this.graphics.options.height ?? "");
-
-        // TODO: handle non-convertible units (e.g. 0.5\textlength)
-        const widthInPixels = widthLength.canBeConverted ? widthLength.px : "256px";
-        const heightInPixels = heightLength.canBeConverted ? heightLength.px : "256px";
-
-        this.webviewImage.width = `${widthInPixels}px`;
-        this.webviewImage.height = `${heightInPixels}px`;
     }
 
     renderContentAsHTML(): string {
-        const styleProperties: Record<string, string> = {
-            "width": this.webviewImage.width,
-            "height": this.webviewImage.height,
-        };
-
-        const styleAttrValue = Object.keys(styleProperties)
-            .map(prop => `${prop}: ${styleProperties[prop]};`)
-            .join("");
-
         return `
             <p class="text"></p>
             <div class="frame">
                 <img
                     class="ghost"
                     src="${this.webviewImage.uri}"
-                    style="${styleAttrValue}"
                 />
                 <div class="inner">
                     <img
                         class="image"
                         src="${this.webviewImage.uri}"
-                        style="${styleAttrValue}"
                     />
                 </div>
                 <div class="resize"></div>
             </div>
-            
         `;
     }
 }

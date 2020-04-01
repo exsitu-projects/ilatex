@@ -4,7 +4,7 @@ import { LatexAST } from './ast/LatexAST';
 import { LatexASTFormatter } from './ast/visitors/LatexASTFormatter';
 import { VisualisationManager } from './visualisations/VisualisationManager';
 import { WebviewManager } from './webview/WebviewManager';
-import { WebviewMessageType, SelectTextMessage, FocusVisualisationMessage } from './webview/WebviewMessage';
+import { WebviewMessageType, SelectTextMessage, FocusVisualisationMessage, ReplaceTextMessage } from './webview/WebviewMessage';
 
 export class InteractiveLaTeX {
     private editor: vscode.TextEditor;
@@ -32,6 +32,19 @@ export class InteractiveLaTeX {
                 new vscode.Position(selectTextMessage.from.lineIndex, selectTextMessage.from.columnIndex),
                 new vscode.Position(selectTextMessage.to.lineIndex, selectTextMessage.to.columnIndex)
             )];
+        });
+
+        // Text must be replaced
+        this.webviewManager.setHandlerFor(WebviewMessageType.ReplaceText, (message) => {
+            const replaceTextMessage = message as ReplaceTextMessage;
+            const rangeToEdit = new vscode.Range(
+                new vscode.Position(replaceTextMessage.from.lineIndex, replaceTextMessage.from.columnIndex),
+                new vscode.Position(replaceTextMessage.to.lineIndex, replaceTextMessage.to.columnIndex)
+            );
+
+            this.editor.edit((editBuilder) => {
+                editBuilder.replace(rangeToEdit, replaceTextMessage.with);
+            });
         });
     }
 

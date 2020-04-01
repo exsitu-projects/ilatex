@@ -90,28 +90,33 @@
             return parseFloat(str, 10);
         }
 
+        function firstDefined(value, fallback) {
+            return (value !== undefined) ? value : fallback;
+        }
+
         class ImageFrame {
-            constructor(includegraphicsVisElement) {
-                this.text = includegraphicsVisElement.querySelector('.text');
-                this.frame = includegraphicsVisElement.querySelector(".frame");
+            constructor(visualisationElement) {
+                this.visualisation = visualisationElement;
+                this.text = visualisationElement.querySelector('.text');
+                this.frame = visualisationElement.querySelector(".frame");
                 this.ghost = this.frame.querySelector('.ghost');
                 this.inner = this.frame.querySelector('.inner');
                 this.img = this.inner.querySelector('.image');
                 this.resize = this.frame.querySelector('.resize');
 
-                this.initialWidth = this.img.style.width;
-                this.initialHeight = this.img.style.height;
-                this.scale = 1; // TODO: use includegraphics parameter
-
+                this.options = {};
+                this.initOptions();
+                
+                // frame resize
+                this.frameWidth = firstDefined(this.options.width, 200); // TODO: use better defaults
+                this.frameHeight = firstDefined(this.options.height, 200); // TODO: use better defaults
+                
                 // image transform
-                this.imageWidth = nbPx(this.initialWidth);
-                this.imageHeight = nbPx(this.initialHeight);
+                this.imageWidth = this.frameWidth;
+                this.imageHeight = this.frameHeight;
+                this.scale = firstDefined(this.options.scale, 1);
                 this.offsetX = 0;
                 this.offsetY = 0;
-
-                // frame resize
-                this.frameWidth = 200; // TODO: use includegraphics parameter
-                this.frameHeight = 200; // TODO: use includegraphics parameter
 
                 // interaction state
                 this.dragInfo = {
@@ -128,6 +133,32 @@
                 this.addEventListeners();
 
                 console.log(this);
+            }
+
+            initOptions() {
+                const visualisation = this.visualisation;
+                const options = this.options;
+                function setOptionFromAttr(key, attrName, map = parseFloat, obj = options) {
+                    if (visualisation.hasAttribute(attrName)) {
+                        obj[key] = map(visualisation.getAttribute(attrName));
+                    }
+                }
+
+                setOptionFromAttr("width", "data-opt-width");
+                setOptionFromAttr("height", "data-opt-height");
+                setOptionFromAttr("scale", "data-opt-scale");
+
+                if (["left", "botton", "right", "top"].some(dir =>
+                    visualisation.hasAttribute(`data-opt-trim-${dir}`)
+                )) {
+                    this.options.trim = {};
+                    setOptionFromAttr("left", "data-opt-trim-left", parseFloat, this.options.trim);
+                    setOptionFromAttr("botton", "data-opt-trim-botton", parseFloat, this.options.trim);
+                    setOptionFromAttr("right", "data-opt-trim-right", parseFloat, this.options.trim);
+                    setOptionFromAttr("top", "data-opt-trim-top", parseFloat, this.options.trim);
+                }
+
+                setOptionFromAttr("scale", "data-opt-scale", clipValue => clipValue);
             }
 
             initDragActions() {
@@ -154,6 +185,16 @@
 
             //     this.updateLayout();
             // }
+
+            // Center the ghost and the frame
+            centerImages() {
+                this.offsetX = -(this.img.width - this.frameWidth) / 2
+                this.offsetY = -(this.img.height - this.frameHeight) / 2
+
+                this.ghost.style.left = this.img.style.left = px(this.offsetX)
+                this.ghost.style.top = this.img.style.top = px(this.offsetY)
+            }
+            
 
              // Record cursor position and drag type
             startDrag(ev, type) {
@@ -294,7 +335,18 @@
                         latex += clip;
                 }
 
+                // Display the command in the visualisation (for now)
                 this.text.innerHTML = frame + `<br>\\includegraphics[${latex}]{URL}`;
+
+                // Modify the underlying document
+                const from = parseLocationFromAttribute(this.visualisation.getAttribute("data-loc-start"));
+                const to = parseLocationFromAttribute(this.visualisation.getAttribute("data-loc-end"));
+                vscode.postMessage({
+                    type: MessageTypes.ReplaceText,
+                    from: from,
+                    to: to,
+                    with: `\\includegraphics[${latex}]{${this.img.src}}`
+                });
             }
         }
 
@@ -333,7 +385,8 @@
         // Available types of messages (from/to the extension)
         const MessageTypes = {
             FocusVisualisation: "FocusVisualisation",
-            SelectText: "SelectText"
+            SelectText: "SelectText",
+            ReplaceText: "ReplaceText"
         };
         
         // Handle clicks on selectable elements
