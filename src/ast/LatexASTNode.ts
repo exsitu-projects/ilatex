@@ -18,7 +18,7 @@ export enum ASTNodeType {
     ParameterKey = "ParameterKey",
     ParameterValue = "ParameterValue",
     ParameterAssignment = "ParameterAssignment",
-    ParameterAssignments = "ParameterAssignments",
+    ParameterList = "ParameterList",
     SpecialSymbol = "SpecialSymbol",
     Comment = "Comment"
 }
@@ -28,6 +28,7 @@ export type ASTNodeValue =
 | string
 | ASTMathValue
 | ASTAssignmentValue
+| ASTParameterListValue
 | ASTCommandValue
 | ASTEnvironementValue
 | ASTNode
@@ -40,14 +41,16 @@ export type ASTAssignmentValue = {
     value: ASTParameterValueNode
 };
 
+export type ASTParameterListValue = (ASTParameterNode | ASTParameterAssignmentNode)[];
+
 export type ASTCommandValue = {
     name: string,
-    parameters: (ASTParameterNode[] | ASTParameterAssignmentsNode[])[]
+    parameters: (ASTParameterNode[] | ASTParameterListNode[])[]
 };
 
 export type ASTEnvironementValue = {
     begin: ASTCommandNode,
-    parameters: (ASTParameterNode[] | ASTParameterAssignmentsNode[])[];
+    parameters: (ASTParameterNode[] | ASTParameterListNode[])[];
     content: ASTNode,
     end: ASTCommandNode
 };
@@ -112,7 +115,7 @@ export class ASTNode<
             root.visitWith(visitor, depth + 1);
         }
         else if (type === ASTNodeType.Latex
-             ||  type === ASTNodeType.ParameterAssignments) {
+             ||  type === ASTNodeType.ParameterList) {
             for (let root of this.value as ASTNode[]) {
                 root.visitWith(visitor, depth + 1);
             }  
@@ -176,7 +179,7 @@ export type ASTParameterNode = ASTNode<
 
 export type ASTSquareBracesParameterBlock = ASTNode<
     ASTNodeType.SquareBracesParameterBlock,
-    ASTParameterAssignmentsNode
+    ASTParameterListNode
 >;
 
 export type ASTParameterKeyNode = ASTNode<
@@ -194,9 +197,9 @@ export type ASTParameterAssignmentNode = ASTNode<
     ASTAssignmentValue
 >;
 
-export type ASTParameterAssignmentsNode = ASTNode<
-    ASTNodeType.ParameterAssignments,
-    ASTParameterAssignmentNode[]
+export type ASTParameterListNode = ASTNode<
+    ASTNodeType.ParameterList,
+    ASTParameterListValue
 >;
 
 export type ASTSpecialSymbolNode = ASTNode<

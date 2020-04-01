@@ -1,4 +1,4 @@
-import { ASTParameterAssignmentNode, ASTParameterNode } from "../LatexASTNode";
+import { ASTParameterAssignmentNode, ASTParameterNode, ASTParameterValueNode } from "../LatexASTNode";
 import { LatexASTVisitorAdapter } from "./LatexASTVisitorAdapter";
 
  
@@ -31,6 +31,13 @@ export class LatexASTFormatter extends LatexASTVisitorAdapter {
     }
 
     protected visitParameterNode(node: ASTParameterNode, depth: number): void {
+        const padding = LatexASTFormatter.createPadding(depth);
+        const str = `${padding}${LatexASTFormatter.prefix}${node.type} [${node.value}]`;
+
+        this.formattedStrings.push(str);
+    }
+
+    protected visitParameterValueNode(node: ASTParameterValueNode, depth: number): void {
         const padding = LatexASTFormatter.createPadding(depth);
         const str = `${padding}${LatexASTFormatter.prefix}${node.type} [${node.value}]`;
 

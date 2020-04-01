@@ -1,5 +1,5 @@
 import { LatexASTVisitor } from "./LatexASTVisitor";
-import { ASTLatexNode, ASTTextNode, ASTEnvironementNode, ASTCommandNode, ASTInlineMathBlockNode, ASTMathBlockNode, ASTBlockNode, ASTParameterNode, ASTParameterKeyNode, ASTParameterValueNode, ASTParameterAssignmentNode, ASTSpecialSymbolNode, ASTCommentNode, ASTNode, ASTNodeType, ASTCurlyBracesParameterBlock, ASTSquareBracesParameterBlock, ASTParameterAssignmentsNode, ASTMathNode } from "../LatexASTNode";
+import { ASTLatexNode, ASTTextNode, ASTEnvironementNode, ASTCommandNode, ASTInlineMathBlockNode, ASTMathBlockNode, ASTBlockNode, ASTParameterNode, ASTParameterKeyNode, ASTParameterValueNode, ASTParameterAssignmentNode, ASTSpecialSymbolNode, ASTCommentNode, ASTNode, ASTNodeType, ASTCurlyBracesParameterBlock, ASTSquareBracesParameterBlock, ASTMathNode, ASTParameterListNode } from "../LatexASTNode";
 
 export abstract class LatexASTVisitorAdapter implements LatexASTVisitor {
     /**
@@ -64,7 +64,7 @@ export abstract class LatexASTVisitorAdapter implements LatexASTVisitor {
         this.visitNode(node, depth);
     }
 
-    protected visitParameterAssignmentsNode(node: ASTParameterAssignmentsNode, depth: number): void {
+    protected visitParameterListNode(node: ASTParameterListNode, depth: number): void {
         this.visitNode(node, depth);
     }
 
@@ -134,8 +134,8 @@ export abstract class LatexASTVisitorAdapter implements LatexASTVisitor {
                 this.visitParameterAssignmentNode(node as ASTParameterAssignmentNode, depth);
                 break;
 
-            case ASTNodeType.ParameterAssignments:
-                this.visitParameterAssignmentsNode(node as ASTParameterAssignmentsNode, depth);
+            case ASTNodeType.ParameterList:
+                this.visitParameterListNode(node as ASTParameterListNode, depth);
                 break;
 
             case ASTNodeType.SpecialSymbol:

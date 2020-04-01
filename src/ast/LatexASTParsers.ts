@@ -1,5 +1,5 @@
 import * as P from "parsimmon";
-import { ASTNodeType, ASTNode, ASTNodeValue, ASTParameterValueNode, ASTLatexNode, ASTTextNode, ASTEnvironementNode, ASTCommandNode, ASTInlineMathBlockNode, ASTMathBlockNode, ASTBlockNode, ASTParameterNode, ASTParameterKeyNode, ASTParameterAssignmentNode, ASTSpecialSymbolNode, ASTCommentNode, ASTMathNode, ASTCurlyBracesParameterBlock, ASTSquareBracesParameterBlock, ASTParameterAssignmentsNode } from "./LatexASTNode";
+import { ASTNodeType, ASTNode, ASTNodeValue, ASTParameterValueNode, ASTLatexNode, ASTTextNode, ASTEnvironementNode, ASTCommandNode, ASTInlineMathBlockNode, ASTMathBlockNode, ASTBlockNode, ASTParameterNode, ASTParameterKeyNode, ASTParameterAssignmentNode, ASTSpecialSymbolNode, ASTCommentNode, ASTMathNode, ASTCurlyBracesParameterBlock, ASTSquareBracesParameterBlock, ASTParameterListNode } from "./LatexASTNode";
 
 /**
  * Return a function which creates a wrapper function when called.
@@ -56,7 +56,7 @@ const closeSquareBracket = P.string("]");
 // Command and environement generators
 interface CommandParameter {
     type: "curly" | "square";
-    parser: P.Parser<ASTParameterNode | ASTParameterAssignmentsNode>;
+    parser: P.Parser<ASTParameterNode | ASTParameterListNode>;
     optional?: boolean;
 }
 
@@ -73,7 +73,7 @@ function createSquareBracesBlockParser<V extends ASTNodeValue>(content: P.Parser
     return P.seqMap(openSquareBracket, content, closeSquareBracket, (b1, c, b2) => c);
 }
 
-function createParameterParsers(parameters: CommandParameter[]): P.Parser<(ASTParameterNode | ASTParameterAssignmentsNode)[]>[] {
+function createParameterParsers(parameters: CommandParameter[]): P.Parser<(ASTParameterNode | ASTParameterListNode)[]>[] {
     const parametersParsers = [];
     for (let parameter of parameters) {
         const parameterParser = (parameter.type === "curly")
@@ -101,7 +101,7 @@ function command(name: string, nameParser: P.Parser<string>, parameters: Command
         .map(([name, ...parameters]: [string, any]) => {
             return {
                 name: name as string,
-                parameters: parameters as (ASTParameterNode[] | ASTParameterAssignmentsNode[])[]
+                parameters: parameters as (ASTParameterNode[] | ASTParameterListNode[])[]
             };
         })
         .thru(createParserOutputASTAdapter(ASTNodeType.Command, name));
@@ -149,7 +149,7 @@ const language = P.createLanguage<{
     parameterKey: ASTParameterKeyNode,
     parameterValue: ASTParameterValueNode,
     parameterAssignment: ASTParameterAssignmentNode,
-    parameterAssignments: ASTParameterAssignmentsNode,
+    parameterList: ASTParameterListNode,
     specialSymbol: ASTSpecialSymbolNode,
     comment: ASTCommentNode,
 }>({
@@ -238,7 +238,7 @@ const language = P.createLanguage<{
         // \includegraphics[assignments*]{path}
         const specifiedCommands = [
             command("includegraphics", P.string("\\includegraphics"), [
-                {type: "square", parser: lang.parameterAssignments, optional: true},
+                {type: "square", parser: lang.parameterList, optional: true},
                 {type: "curly", parser: lang.parameter}
             ]),
 
@@ -306,7 +306,7 @@ const language = P.createLanguage<{
     },
 
     squareBracesParameterBlock: lang => {
-        return createSquareBracesBlockParser(lang.parameterAssignments)
+        return createSquareBracesBlockParser(lang.parameterList)
             .thru(createParserOutputASTAdapter(ASTNodeType.SquareBracesParameterBlock));
     },
 
@@ -332,9 +332,13 @@ const language = P.createLanguage<{
             .thru(createParserOutputASTAdapter(ASTNodeType.ParameterAssignment));
     },
 
-    parameterAssignments: lang => {
-        return lang.parameterAssignment.sepBy(comma.trim(P.optWhitespace))
-            .thru(createParserOutputASTAdapter(ASTNodeType.ParameterAssignments));
+    parameterList: lang => {
+        return P.alt(
+            lang.parameterAssignment,
+            lang.parameterValue,
+        )
+            .sepBy(comma.trim(P.optWhitespace))
+            .thru(createParserOutputASTAdapter(ASTNodeType.ParameterList));
     },
 
     specialSymbol: lang => {

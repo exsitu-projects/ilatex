@@ -1,9 +1,10 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import { Visualisation } from "./Visualisation";
-import { ASTCommandNode, ASTParameterNode, ASTParameterAssignmentsNode } from "../ast/LatexASTNode";
+import { ASTCommandNode, ASTParameterNode, ASTParameterListNode, ASTParameterAssignmentNode } from "../ast/LatexASTNode";
 import { WebviewManager } from "../webview/WebviewManager";
 import { LatexLength } from "../utils/LatexLength";
+import { LatexASTVisitorAdapter } from "../ast/visitors/LatexASTVisitorAdapter";
 
 interface GraphicsOptions {
     width?: LatexLength;
@@ -18,11 +19,43 @@ interface Graphics {
     options: GraphicsOptions;
 }
 
-interface WebviewImage {
-    uri: vscode.Uri | null;
-    //width: string;
-    //height: string;
-    //scale: string;
+class GraphicsOptionsSetter extends LatexASTVisitorAdapter {
+    private options: GraphicsOptions;
+
+    constructor(options: GraphicsOptions) {
+        super();
+        this.options = options;
+    }
+
+    protected visitParameterNode(node: ASTParameterNode): void {
+        const parameter = node.value;
+        if (parameter === "clip") {
+            this.options.clip = true;
+        }
+    }
+
+    protected visitParameterAssignmentNode(node: ASTParameterAssignmentNode): void {
+        const key = node.value.key.value.trim();
+        const value = node.value.value.value.trim();
+
+        if (key === "width") {
+            this.options.width = new LatexLength(value);
+        }
+        else if (key === "height") {
+            this.options.height = new LatexLength(value);
+        }
+        else if (key === "scale") {
+            this.options.scale = parseFloat(value);
+        }
+        else if (key === "trim") {
+            this.options.trim = value
+                .split(/\s+/)
+                .map(lengthText => new LatexLength(lengthText));
+        }
+        else if (key === "clip") {
+            this.options.clip = value.trim().toLowerCase() === "true";
+        }
+    }
 }
 
 export class IncludeGraphicsVisualisation extends Visualisation<ASTCommandNode> {
@@ -31,8 +64,8 @@ export class IncludeGraphicsVisualisation extends Visualisation<ASTCommandNode> 
     private document: vscode.TextDocument;
     private webviewManager: WebviewManager;
 
+    private webviewImageUri: vscode.Uri | null;;
     private graphics: Graphics;
-    private webviewImage: WebviewImage;
 
     constructor(node: ASTCommandNode, document: vscode.TextDocument, webviewManager: WebviewManager) {
         super(node);
@@ -40,16 +73,10 @@ export class IncludeGraphicsVisualisation extends Visualisation<ASTCommandNode> 
         this.document = document;
         this.webviewManager = webviewManager;
 
+        this.webviewImageUri = null;
         this.graphics = {
             path: "",
             options: {}
-        };
-
-        this.webviewImage = {
-            uri: null,
-            //width: "",
-            //height: "",
-            //scale: ""
         };
 
         this.extractGraphics();
@@ -59,6 +86,9 @@ export class IncludeGraphicsVisualisation extends Visualisation<ASTCommandNode> 
 
     protected initProps(): void {
         super.initProps();
+
+        // Add the original path of the image
+        this.props["data-path"] = this.graphics.path;
 
         // Add node location information
         this.props["data-loc-start"] = `${this.node.start.line};${this.node.start.column}`;
@@ -99,39 +129,17 @@ export class IncludeGraphicsVisualisation extends Visualisation<ASTCommandNode> 
         this.graphics.path = node.value;
     }
 
-    private extractGraphicsOptions(node: ASTParameterAssignmentsNode): void {
-        for (let paramAssignmentNode of node.value) {
-            const key = paramAssignmentNode.value.key.value.trim();
-            const value = paramAssignmentNode.value.value.value.trim();
-
-            if (key === "width") {
-                this.graphics.options.width = new LatexLength(value);
-            }
-            else if (key === "height") {
-                this.graphics.options.height = new LatexLength(value);
-            }
-            else if (key === "scale") {
-                this.graphics.options.scale = parseFloat(value);
-            }
-            else if (key === "trim") {
-                this.graphics.options.trim = value
-                    .split(/\s+/)
-                    .map(lengthText => new LatexLength(lengthText));
-            }
-            else if (key === "clip") {
-                // TODO: handle option declaration with no value in the AST
-                this.graphics.options.clip = value.trim().toLowerCase() === "true";
-            }
-        }
+    private extractGraphicsOptions(node: ASTParameterListNode): void {
+        const optionsSetter = new GraphicsOptionsSetter(this.graphics.options);
+        node.visitWith(optionsSetter);
     }
     
-    // TODO: refactor by allowing visitors to visit any AST subtree
     private extractGraphics(): void {
         const hasOptionNode = this.node.value.parameters[0].length === 1;
         
         // Extract the options (if any)
         if (hasOptionNode) {
-            const optionsParameterNode = this.node.value.parameters[0][0] as ASTParameterAssignmentsNode;
+            const optionsParameterNode = this.node.value.parameters[0][0] as ASTParameterListNode;
             this.extractGraphicsOptions(optionsParameterNode);
         }
 
@@ -148,7 +156,7 @@ export class IncludeGraphicsVisualisation extends Visualisation<ASTCommandNode> 
         const documentDirectoryPath = documentPath.slice(0, lastSlashIndex);
 
         const imagePath = path.resolve(documentDirectoryPath, this.graphics.path);
-        this.webviewImage.uri = this.webviewManager.adaptURI(vscode.Uri.file(imagePath));
+        this.webviewImageUri = this.webviewManager.adaptURI(vscode.Uri.file(imagePath));
     }
 
     renderContentAsHTML(): string {
@@ -157,12 +165,12 @@ export class IncludeGraphicsVisualisation extends Visualisation<ASTCommandNode> 
             <div class="frame">
                 <img
                     class="ghost"
-                    src="${this.webviewImage.uri}"
+                    src="${this.webviewImageUri}"
                 />
                 <div class="inner">
                     <img
                         class="image"
-                        src="${this.webviewImage.uri}"
+                        src="${this.webviewImageUri}"
                     />
                 </div>
                 <div class="resize"></div>
