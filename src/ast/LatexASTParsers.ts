@@ -13,10 +13,6 @@ function createParserOutputASTAdapter<
 >(type: T, name: string = "", startPos?: P.Index) {
     return function(parser: P.Parser<V>) {
         return P.seqMap(P.index, parser, P.index, (start, value, end) => {
-            if (startPos !== start) {
-                console.log(name, "diff start pos", startPos, start);
-            }
-
             return new ASTNode<T, V>(
                 name,
                 type,
