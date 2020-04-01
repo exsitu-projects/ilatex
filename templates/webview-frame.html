@@ -95,15 +95,17 @@
         }
 
         class ImageFrame {
-            constructor(visualisationElement) {
-                this.visualisation = visualisationElement;
-                this.text = visualisationElement.querySelector('.text');
-                this.frame = visualisationElement.querySelector(".frame");
+            constructor(visualisation) {
+                this.visualisation = visualisation;
+                this.text = visualisation.querySelector('.text');
+                this.frame = visualisation.querySelector(".frame");
                 this.ghost = this.frame.querySelector('.ghost');
                 this.inner = this.frame.querySelector('.inner');
                 this.img = this.inner.querySelector('.image');
                 this.resize = this.frame.querySelector('.resize');
 
+                // path and options of the command
+                this.path = this.visualisation.getAttribute("data-path");
                 this.options = {};
                 this.initOptions();
                 
@@ -326,17 +328,15 @@
                     trim.bottom = bottom - this.frameHeight;
 
                 // frame += `<br>width=${px(width)}, height=${px(height)}`
-                let latex = `width=${px(width)}`;
+                let commandParameters = `width=${px(width)}`;
                 if (trim.left !== 0 || trim.bottom !== 0 || trim.right !== 0 || trim.top !== 0) {
-                    // frame += ` - trim: left=${px(trim.left/scale)}, bottom=${px(trim.bottom/scale)}, right=${px(trim.right/scale)}, top=${px(trim.top/scale)}`
-                    console.log(scale, trim)
                     let clip = `, trim=${px(trim.left/scale)} ${px(trim.bottom/scale)} ${px(trim.right/scale)} ${px(trim.top/scale)}, clip`;
-                    if (clip !== ', trim=0px 0px 0px 0px, clip')	// to take rounding into account
-                        latex += clip;
+                    if (clip !== ', trim=0px 0px 0px 0px, clip') // to take rounding into account
+                        commandParameters += clip;
                 }
 
                 // Display the command in the visualisation (for now)
-                this.text.innerHTML = frame + `<br>\\includegraphics[${latex}]{URL}`;
+                this.text.innerHTML = frame + `<br>\\includegraphics[${commandParameters}]{${this.path}}`;
 
                 // Modify the underlying document
                 const from = parseLocationFromAttribute(this.visualisation.getAttribute("data-loc-start"));
@@ -345,7 +345,7 @@
                     type: MessageTypes.ReplaceText,
                     from: from,
                     to: to,
-                    with: `\\includegraphics[${latex}]{${this.img.src}}`
+                    with: `\\includegraphics[${commandParameters}]{${this.path}}`
                 });
             }
         }
