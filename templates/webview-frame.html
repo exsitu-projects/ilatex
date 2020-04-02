@@ -101,10 +101,98 @@
         <!--CONTENT-->
     </body>
 
+    <!-- General setup and communication with the extension -->
+    <script type="text/javascript">
+        // Get access to the VSCode API
+        const vscode = acquireVsCodeApi();
+
+        // Current element with focus
+        let currentlyFocusedElement = null;
+
+        // Available types of messages (from/to the extension)
+        const MessageTypes = {
+            FocusVisualisation: "FocusVisualisation",
+            SelectText: "SelectText",
+            ReplaceText: "ReplaceText"
+        };
+        
+        // Handle clicks on selectable elements
+        // (the extension will select the associated block of code on click)
+        function parseLocationFromAttribute(attrValue) {
+            const [_, line, column] = /(\d+);(\d+)/.exec(attrValue);
+            return {
+                lineIndex: Number(line) - 1,
+                columnIndex: Number(column) - 1
+            };
+        }
+
+        const selectableElements = document.getElementsByClassName("selectable");
+        for (let element of selectableElements) {
+            element.addEventListener("click", () => {
+                const from = parseLocationFromAttribute(element.getAttribute("data-loc-start"));
+                const to = parseLocationFromAttribute(element.getAttribute("data-loc-end"));
+
+                vscode.postMessage({
+                    type: MessageTypes.SelectText,
+                    from: from,
+                    to: to
+                });
+            });
+        }
+
+        // Extension message handlers
+        function focusVisualisation(id) {
+            // Remove the focus from the currently focused element (if any)
+            if (currentlyFocusedElement) {
+                currentlyFocusedElement.classList.remove("focused");
+            }
+
+            // Bring focus to the visualisation with the given id (if any)
+            const visualisationElement = document.querySelector(`.visualisation[data-id="${id}"]`);
+            if (visualisationElement) {
+                currentlyFocusedElement = visualisationElement;
+                visualisationElement.classList.add("focused");
+            }
+        }
+
+        // Handle extension messages
+        window.addEventListener("message", message => {
+            console.log("Received message:", message);
+
+            const messageType = message.data.type;
+            if (! (message && messageType)) {
+                console.error("iLatex's webview is unable to handle the following message:", message);
+                return;
+            }
+
+            switch (messageType) {
+                case MessageTypes.FocusVisualisation:
+                    focusVisualisation(message.data.id);
+                    break;
+                
+                default:
+                    console.error("iLatex's webview does not know message type:", messageType);
+            }
+        });
+    </script>
+
     <!-- Interactive table specific code (using ag-Grid) -->
     <script type="text/javascript" charset="utf-8">
+        function updateDocumentCellContent(cellLocations, newContent) {
+            vscode.postMessage({
+                type: MessageTypes.ReplaceText,
+                from: cellLocations.start,
+                to: cellLocations.end,
+                with: newContent
+            });
+        }
+
         const tabularVisualisations = document.querySelectorAll(`.visualisation[data-name="tabular"]`);
         for (let visualisation of tabularVisualisations) {
+            // Associate cell positions in the grid to cell locations in the source document
+            // Map row indices to column indices to locations (start and end)
+            const gridIndicesToCellLocations = new Map();
+
             // Extract column definitions from the table header (if any)
             let columns = [];
             const header = visualisation.querySelector("thead");
@@ -118,13 +206,26 @@
             // Extract data from the regular table cells
             const data = [];
             const rows = visualisation.querySelectorAll("tr");
-            for (let row of rows) {
-                const cellData = {};
-                data.push(cellData);
+            for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+                // Create and add an empty object for row data
+                const rowData = {};
+                data.push(rowData);
+                
+                // Create an an empty map to save the positions of the current row's cells
+                gridIndicesToCellLocations.set(rowIndex, new Map());
 
-                const cells = row.querySelectorAll("td");
-                for (let i = 0; i < cells.length; i++) {
-                    cellData[i] = cells[i].textContent;
+                // Process each cell of the current row
+                const cells = rows[rowIndex].querySelectorAll("td");
+                for (let colIndex = 0; colIndex < cells.length; colIndex++) {
+                    const cell = cells[colIndex];
+                    rowData[colIndex] = cell.textContent;
+
+                    // Save the position of the cell (in the document)
+                    gridIndicesToCellLocations.get(rowIndex)
+                        .set(colIndex, {
+                            start: parseLocationFromAttribute(cell.getAttribute("data-loc-start")),
+                            end: parseLocationFromAttribute(cell.getAttribute("data-loc-end"))
+                        });
                 }
             }
 
@@ -165,7 +266,20 @@
             let g = new agGrid.Grid(visualisation, {
                 columnDefs: columns,
                 rowData: data,
-                rowDragManaged: true
+                rowDragManaged: true,
+
+                onCellValueChanged(event) {
+                    console.log("cell value changed", event);
+
+                    const rowIndex = event.rowIndex;
+                    const colIndex = parseInt(event.colDef.field);
+                    const location = gridIndicesToCellLocations.get(rowIndex).get(colIndex);
+
+                    updateDocumentCellContent(location, event.newValue);
+
+                    //console.log("row", rowIndex, "col", colIndex)
+                    //console.log("pos in document: ", gridIndicesToCellLocations.get(rowIndex).get(colIndex));
+                }
             });
 
             console.log(g);
@@ -477,104 +591,6 @@
                 this.lastGeneratedCommandLength = commandText.length;
             }
         }
-
-        // Get started: center image
-        // function Load() {
-        //     view = new PDFView(url, img)
-        //     ghostView = new PDFView(url, ghost)
-        //     let loaded = [view.loadPage(1).then(() => view.renderPage()), 
-        //                   ghostView.loadPage(1).then(() => ghostView.renderPage())]
-
-        //     Promise.all(loaded).then(() => {
-        //         setTimeout(() => {
-        //             getGhostSize()
-
-        //             offsetX = -(img.width - frameWidth) / 2
-        //             offsetY = -(img.height - frameHeight) / 2
-        //             console.log(`img=${img.height}, frame=${frameHeight}, offset=${offsetY}`)
-
-        //             ghost.style.left = img.style.left = px(offsetX)
-        //             ghost.style.top = img.style.top = px(offsetY)
-
-        //             updateLayout()
-        //         })
-        //     }, 0)
-        // }
-    </script>
-
-    <!-- General setup and communication with the extension -->
-    <script type="text/javascript">
-        // Get access to the VSCode API
-        const vscode = acquireVsCodeApi();
-
-        // Current element with focus
-        let currentlyFocusedElement = null;
-
-        // Available types of messages (from/to the extension)
-        const MessageTypes = {
-            FocusVisualisation: "FocusVisualisation",
-            SelectText: "SelectText",
-            ReplaceText: "ReplaceText"
-        };
-        
-        // Handle clicks on selectable elements
-        // (the extension will select the associated block of code on click)
-        function parseLocationFromAttribute(attrValue) {
-            const [_, line, column] = /(\d+);(\d+)/.exec(attrValue);
-            return {
-                lineIndex: Number(line) - 1,
-                columnIndex: Number(column) - 1
-            };
-        }
-
-        const selectableElements = document.getElementsByClassName("selectable");
-        for (let element of selectableElements) {
-            element.addEventListener("click", () => {
-                const from = parseLocationFromAttribute(element.getAttribute("data-loc-start"));
-                const to = parseLocationFromAttribute(element.getAttribute("data-loc-end"));
-
-                vscode.postMessage({
-                    type: MessageTypes.SelectText,
-                    from: from,
-                    to: to
-                });
-            });
-        }
-
-        // Extension message handlers
-        function focusVisualisation(id) {
-            // Remove the focus from the currently focused element (if any)
-            if (currentlyFocusedElement) {
-                currentlyFocusedElement.classList.remove("focused");
-            }
-
-            // Bring focus to the visualisation with the given id (if any)
-            const visualisationElement = document.querySelector(`.visualisation[data-id="${id}"]`);
-            if (visualisationElement) {
-                currentlyFocusedElement = visualisationElement;
-                visualisationElement.classList.add("focused");
-            }
-        }
-
-        // Handle extension messages
-        window.addEventListener("message", message => {
-            console.log("Received message:", message);
-
-            const messageType = message.data.type;
-            if (! (message && messageType)) {
-                console.error("iLatex's webview is unable to handle the following message:", message);
-                return;
-            }
-
-            switch (messageType) {
-                case MessageTypes.FocusVisualisation:
-                    focusVisualisation(message.data.id);
-                    break;
-                
-                default:
-                    console.error("iLatex's webview does not know message type:", messageType);
-            }
-        });
 
         // Setup image frame objects for includegraphics visualisations
         const includegraphicsVisElements = document.querySelectorAll(`.visualisation[data-name="includegraphics"]`)
