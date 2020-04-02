@@ -83,12 +83,94 @@
             .visualisation.focused {
                 background-color: lightgray;
             }
+
+            /* ag-Grid-related styling */
+            .visualisation[data-name="tabular"],
+            .visualisation[data-name="tabular"] > .ag-root-wrapper {
+                height: 150px;
+            }
         </style>
+
+        <!-- Import ag-Grid Community library -->
+        <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
+        <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/dist/styles/ag-grid.css">
+        <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/dist/styles/ag-theme-balham.css">
     </head>
 
     <body>
         <!--CONTENT-->
     </body>
+
+    <!-- Interactive table specific code (using ag-Grid) -->
+    <script type="text/javascript" charset="utf-8">
+        const tabularVisualisations = document.querySelectorAll(`.visualisation[data-name="tabular"]`);
+        for (let visualisation of tabularVisualisations) {
+            // Extract column definitions from the table header (if any)
+            let columns = [];
+            const header = visualisation.querySelector("thead");
+            if (header) {
+                const headerCells = header.querySelectorAll("th");
+                columns = headerCells.map((cell, i) => {
+                    return { headerName: cell.textContent, field: i.toString() };
+                });
+            }
+            
+            // Extract data from the regular table cells
+            const data = [];
+            const rows = visualisation.querySelectorAll("tr");
+            for (let row of rows) {
+                const cellData = {};
+                data.push(cellData);
+
+                const cells = row.querySelectorAll("td");
+                for (let i = 0; i < cells.length; i++) {
+                    cellData[i] = cells[i].textContent;
+                }
+            }
+
+            // console.log("table specs")
+            // console.log(columns);
+            // console.log(data)
+
+            // If the table has no data nor header, skip this visualisation
+            // TODO: use the parameters provided to tabular instead!
+            if (columns.length === 0 && data.length === 0) {
+                continue;
+            }
+
+            // If the table has data but no header, create default column definitions
+            if (columns.length === 0) {
+                const dataRow = data[0];
+                columns = Object.keys(dataRow)
+                    .map(key => {
+                        return { headerName: "", field: key };
+                    });
+
+                // console.log("new col defs");
+                // console.log(columns)
+            }
+
+            // Enable row dragging on the first column
+            columns[0].rowDrag = true;
+
+            // Enable cell editing on all columns
+            for (let column of columns) {
+                column.editable = true;
+            }
+
+            // Create a new instance of ag-Grid
+            // to replace the content of the visualisation node
+            visualisation.innerHTML = "";
+            visualisation.classList.add("ag-theme-balham");
+            let g = new agGrid.Grid(visualisation, {
+                columnDefs: columns,
+                rowData: data,
+                rowDragManaged: true
+            });
+
+            console.log(g);
+        }
+    </script>
 
     <!-- Image redim./cropping-specific code (adapted from pdf.html) -->
     <script type="text/javascript">
