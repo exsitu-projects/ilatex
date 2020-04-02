@@ -7,6 +7,8 @@ interface Cell {
     nodes: ASTNode[];
     row: number;
     column: number;
+    start: P.Index;
+    end: P.Index;
     textContent: string;
 }
 
@@ -38,6 +40,7 @@ export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
     }
 
     // TODO: refactor by allowing visitors to visit any AST subtree
+    // TODO: refactoring needed
     private extractCells(): void {
         let currentRow: Cell[] = [];
         this.cellRows.push(currentRow);
@@ -57,18 +60,61 @@ export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
             ));
         };
 
+        const addCell = (nodes: ASTNode[], row: number, column: number, start: P.Index, end: P.Index) => {
+            // If the cell only contains a single whitespace node,
+            // consider its content as an empty string located at the end of the node
+            if (nodes.length === 1
+                &&  nodes[0].type === ASTNodeType.Whitespace) {
+                    const node = nodes[0];
+                    start = node.end;
+                    end = node.end;
+                }
+            
+            // Otherwise, update the start and end positions
+            // to ignore any leading/trailing whitespace nodes
+            // Note: this works well since there canot be two successive whitespace nodes
+            else {
+                for (let i = 0; i < nodes.length; i++) {
+                    const node = nodes[i];
+                    if (node.type !== ASTNodeType.Whitespace) {
+                        break;
+                    }
+    
+                    start = node.end;
+                }
+    
+                for (let i = nodes.length - 1; i >= 0; i--) {
+                    const node = nodes[i];
+                    if (node.type !== ASTNodeType.Whitespace) {
+                        break;
+                    }
+    
+                    end = node.start;
+                }
+            }
+            
+            currentRow.push({
+                nodes: nodes,
+                row: row,
+                column: column,
+                start: start,
+                end: end,
+                textContent: getCellContent(start, end)
+            });
+        };
+
         const contentNode = this.node.value.content as ASTLatexNode;
         for (let node of contentNode.value) {
+            // if (node.type === ASTNodeType.Whitespace
+            // &&  !isCellFirstNode) {
+            //     // Ignore all whitespace nodes inside tabular environements
+            //     continue;
+            // }
+            // else
             if (node.type === ASTNodeType.Command
             &&  node.name === "\\\\") {
                 if (startPosition && endPosition) {
-                    currentRow.push({
-                        nodes: nodes,
-                        row: row,
-                        column: column,
-                        textContent: getCellContent(startPosition, endPosition)
-                    });
-
+                    addCell(nodes, row, column, startPosition, endPosition);
                     nodes = [];
                 }
 
@@ -82,13 +128,7 @@ export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
             else if (node.type === ASTNodeType.SpecialSymbol
                  &&  node.name === "ampersand") {
                 if (startPosition && endPosition) {
-                    currentRow.push({
-                        nodes: nodes,
-                        row: row,
-                        column: column,
-                        textContent: getCellContent(startPosition, endPosition)
-                    });
-
+                    addCell(nodes, row, column, startPosition, endPosition);
                     nodes = [];
                 }
 
@@ -107,12 +147,7 @@ export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
         }
 
         if (!isCellFirstNode && startPosition && endPosition) {
-            currentRow.push({
-                nodes: nodes,
-                row: row,
-                column: column,
-                textContent: getCellContent(startPosition, endPosition)
-            });
+            addCell(nodes, row, column, startPosition, endPosition);
         }
     }
     
@@ -124,10 +159,25 @@ export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
         `;
     }
 
+    private static renderCellAsHTML(cell: Cell): string {
+        function getAttributesAsHTML(cell: Cell) {
+            const attributes = {
+                "data-loc-start": `${cell.start.line};${cell.start.column}`,
+                "data-loc-end": `${cell.end.line};${cell.end.column}`
+            };
+            
+            return Object.entries(attributes)
+                .map(([key, value]) => `${key}="${value}"`)
+                .join(" ");
+        }
+
+        return `<td ${getAttributesAsHTML(cell)}>${cell.textContent}</td>`;
+    }
+
     private static renderRowAsHTML(row: Cell[]): string {
         return `
             <tr>
-                ${row.map(cell => `<td style="border: 1px solid black;">${cell.textContent}</td>`).join("\n")}
+                ${row.map(cell => TabularVisualisation.renderCellAsHTML(cell)).join("\n")}
             </tr>
         `;
     }
