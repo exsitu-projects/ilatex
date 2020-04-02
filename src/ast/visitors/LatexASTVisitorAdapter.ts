@@ -1,5 +1,5 @@
 import { LatexASTVisitor } from "./LatexASTVisitor";
-import { ASTLatexNode, ASTTextNode, ASTEnvironementNode, ASTCommandNode, ASTInlineMathBlockNode, ASTMathBlockNode, ASTBlockNode, ASTParameterNode, ASTParameterKeyNode, ASTParameterValueNode, ASTParameterAssignmentNode, ASTSpecialSymbolNode, ASTCommentNode, ASTNode, ASTNodeType, ASTCurlyBracesParameterBlock, ASTSquareBracesParameterBlock, ASTMathNode, ASTParameterListNode } from "../LatexASTNode";
+import { ASTLatexNode, ASTTextNode, ASTEnvironementNode, ASTCommandNode, ASTInlineMathBlockNode, ASTMathBlockNode, ASTBlockNode, ASTParameterNode, ASTParameterKeyNode, ASTParameterValueNode, ASTParameterAssignmentNode, ASTSpecialSymbolNode, ASTCommentNode, ASTNode, ASTNodeType, ASTCurlyBracesParameterBlock, ASTSquareBracesParameterBlock, ASTMathNode, ASTParameterListNode, ASTWhitespaceNode } from "../LatexASTNode";
 
 export abstract class LatexASTVisitorAdapter implements LatexASTVisitor {
     /**
@@ -13,6 +13,10 @@ export abstract class LatexASTVisitorAdapter implements LatexASTVisitor {
     }
 
     protected visitTextNode(node: ASTTextNode, depth: number): void {
+        this.visitNode(node, depth);
+    }
+
+    protected visitWhitespaceNode(node: ASTWhitespaceNode, depth: number): void {
         this.visitNode(node, depth);
     }
 
@@ -85,6 +89,10 @@ export abstract class LatexASTVisitorAdapter implements LatexASTVisitor {
             case ASTNodeType.Text:
                 this.visitTextNode(node as ASTTextNode, depth);
                 break;
+
+            case ASTNodeType.Whitespace:
+                    this.visitWhitespaceNode(node as ASTWhitespaceNode, depth);
+                    break;
             
             case ASTNodeType.Environement:
                 this.visitEnvironementNode(node as ASTEnvironementNode, depth);

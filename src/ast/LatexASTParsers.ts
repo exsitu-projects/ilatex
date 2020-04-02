@@ -1,5 +1,5 @@
 import * as P from "parsimmon";
-import { ASTNodeType, ASTNode, ASTNodeValue, ASTParameterValueNode, ASTLatexNode, ASTTextNode, ASTEnvironementNode, ASTCommandNode, ASTInlineMathBlockNode, ASTMathBlockNode, ASTBlockNode, ASTParameterNode, ASTParameterKeyNode, ASTParameterAssignmentNode, ASTSpecialSymbolNode, ASTCommentNode, ASTMathNode, ASTCurlyBracesParameterBlock, ASTSquareBracesParameterBlock, ASTParameterListNode } from "./LatexASTNode";
+import { ASTNodeType, ASTNode, ASTNodeValue, ASTParameterValueNode, ASTLatexNode, ASTTextNode, ASTEnvironementNode, ASTCommandNode, ASTInlineMathBlockNode, ASTMathBlockNode, ASTBlockNode, ASTParameterNode, ASTParameterKeyNode, ASTParameterAssignmentNode, ASTSpecialSymbolNode, ASTCommentNode, ASTMathNode, ASTCurlyBracesParameterBlock, ASTSquareBracesParameterBlock, ASTParameterListNode, ASTWhitespaceNode } from "./LatexASTNode";
 
 /**
  * Return a function which creates a wrapper function when called.
@@ -28,7 +28,9 @@ function createParserOutputASTAdapter<
 // General sets of characters
 const alphanum = P.regexp(/[a-z0-9]+/i);
 const alphastar = P.regexp(/[a-z]+\*?/i);
-const regularCharacters = P.regexp(/[^\\\$&_%{}#]+/i);
+
+// Words written with regular characters and spaced by at most one whitespace char (\s)
+const regularSentences = P.regexp(/([^\\\$&_%{}#\s]+(\s[^\\\$&_%{}#\s])?)+/i);
 
 // Backlash symbol
 //const backslash = P.string("\\");
@@ -130,6 +132,7 @@ function command(name: string, nameParser: P.Parser<string>, parameters: Command
 const language = P.createLanguage<{
     latex: ASTLatexNode,
     text: ASTTextNode,
+    whitespace: ASTWhitespaceNode,
     environement: ASTEnvironementNode,
     command: ASTCommandNode,
     anyCommand: ASTCommandNode,
@@ -150,8 +153,13 @@ const language = P.createLanguage<{
     comment: ASTCommentNode,
 }>({
     text: lang => {
-        return regularCharacters
+        return regularSentences
             .thru(createParserOutputASTAdapter(ASTNodeType.Text));
+    },
+
+    whitespace: lang => {
+        return P.whitespace
+            .thru(createParserOutputASTAdapter(ASTNodeType.Whitespace));
     },
 
     environement: lang => {
@@ -371,8 +379,9 @@ const language = P.createLanguage<{
             // Special symbols
             lang.specialSymbol,
 
-            // Text (and whitespace)
-            lang.text
+            // Text and whitespace
+            lang.text,
+            lang.whitespace
         )
             .atLeast(1)
             .thru(createParserOutputASTAdapter(ASTNodeType.Latex));

@@ -6,6 +6,7 @@ import { LatexASTVisitor } from "./visitors/LatexASTVisitor";
 export enum ASTNodeType {
     Latex = "Latex",
     Text = "Text",
+    Whitespace = "Whitespace",
     Environement = "Environement",
     Command = "Command",
     Math = "Math",
@@ -134,6 +135,11 @@ export type ASTLatexNode = ASTNode<
 
 export type ASTTextNode = ASTNode<
     ASTNodeType.Text,
+    string
+>;
+
+export type ASTWhitespaceNode = ASTNode<
+    ASTNodeType.Whitespace,
     string
 >;
 
