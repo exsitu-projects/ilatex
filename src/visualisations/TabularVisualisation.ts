@@ -1,30 +1,171 @@
 import * as vscode from "vscode";
 import * as P from "parsimmon";
 import { Visualisation } from "./Visualisation";
-import { ASTEnvironementNode, ASTNode, ASTLatexNode, ASTNodeType } from "../ast/LatexASTNode";
+import { ASTEnvironementNode, ASTNode, ASTNodeType, ASTCommandNode, ASTSpecialSymbolNode, ASTParameterNode, ASTLatexNode } from "../ast/LatexASTNode";
+import { LatexASTVisitorAdapter } from "../ast/visitors/LatexASTVisitorAdapter";
+
+interface TabularOptions {
+    columns: string[];
+}
 
 interface Cell {
-    nodes: ASTNode[];
-    row: number;
-    column: number;
+    rowIndex: number;
+    columnIndex: number;
     start: P.Index;
     end: P.Index;
     textContent: string;
+}
+
+interface Tabular {
+    grid: Cell[][];
+    options: TabularOptions;
+}
+
+class TabularGridSetter extends LatexASTVisitorAdapter {
+    private grid: Cell[][];
+    private document: vscode.TextDocument;
+
+    // Current row and cell
+    private currentRow: Cell[];
+    private currentRowIndex: number;
+    private currentColumnIndex: number;
+    private currentCellNodes: ASTNode[];
+
+    constructor(grid: Cell[][], document: vscode.TextDocument) {
+        super();
+        this.grid = grid;
+        this.document = document;
+
+        this.currentRow = [];
+        this.grid.push(this.currentRow);
+
+        this.currentRowIndex = 0;
+        this.currentColumnIndex = 0;
+        this.currentCellNodes = [];
+    }
+
+    isCurrentCellEmpty(): boolean {
+        return this.currentCellNodes.length === 0;
+    }
+
+    // TODO: implement this feature elsewhere
+    private getCellContent = (start: P.Index, end: P.Index): string => {
+        return this.document.getText(new vscode.Range(
+            new vscode.Position(start.line - 1, start.column - 1),
+            new vscode.Position(end.line - 1, end.column - 1)
+        ));
+    };
+
+    private getCurrentCellContentLocation(): {start: P.Index, end: P.Index} {
+        // If the cell only contains a single whitespace node,
+        // consider its content as an empty string located at the end of the node
+        if (this.currentCellNodes.length === 1
+        &&  this.currentCellNodes[0].type === ASTNodeType.Whitespace) {
+            const node = this.currentCellNodes[0];
+            return {
+                start: node.end,
+                end: node.end
+            };
+        }
+        
+        // Otherwise, update the start and end positions
+        // to ignore any leading/trailing whitespace nodes
+        // Note: this works well since there canot be two successive whitespace nodes
+        else {
+            const location = {
+                start: null as any,
+                end: null as any
+            };
+
+            for (let i = 0; i < this.currentCellNodes.length; i++) {
+                const node = this.currentCellNodes[i];
+                if (node.type !== ASTNodeType.Whitespace) {
+                    break;
+                }
+
+                location.start = node.end;
+            }
+
+            for (let i = this.currentCellNodes.length - 1; i >= 0; i--) {
+                const node = this.currentCellNodes[i];
+                if (node.type !== ASTNodeType.Whitespace) {
+                    break;
+                }
+
+                location.end = node.start;
+            }
+
+            return location;
+        }
+    }
+
+    addCurrentCellToGrid(): void {
+        // Add a cell to the current row
+        const {start, end} = this.getCurrentCellContentLocation();
+        this.currentRow.push({
+            rowIndex: this.currentRowIndex,
+            columnIndex: this.currentColumnIndex,
+            start: start,
+            end: end,
+            textContent: this.getCellContent(start, end)
+        });
+
+        // Reset the array of nodes
+        this.currentCellNodes = [];
+    }
+
+    protected visitCommandNode(node: ASTCommandNode) {
+        const commandName = node.name;
+        if (commandName === "\\\\") {
+            if (!this.isCurrentCellEmpty()) {
+                this.addCurrentCellToGrid();
+            }
+
+            // Update the current position in the grid
+            this.currentRowIndex += 1;
+            this.currentColumnIndex = 0;
+
+            // Create a new row in the grid
+            this.currentRow = [];
+            this.grid.push(this.currentRow);
+        }
+    }
+
+    protected visitSpecialSymbolNode(node: ASTSpecialSymbolNode) {
+        const symbolName = node.name;
+        if (symbolName === "ampersand") {
+            if (!this.isCurrentCellEmpty()) {
+                this.addCurrentCellToGrid();
+            }
+
+            // Update the current position in the grid
+            this.currentColumnIndex += 1;
+        }
+    }
+
+    protected visitNode(node: ASTNode) {
+        this.currentCellNodes.push(node);
+    }
 }
 
 export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
     readonly name = "tabular";
 
     private document: vscode.TextDocument;
-    private cellRows: Cell[][];
+    private tabular: Tabular;
     
     constructor(node: ASTEnvironementNode, document: vscode.TextDocument) {
         super(node);
 
         this.document = document;
-        this.cellRows = [];
+        this.tabular = {
+            grid: [],
+            options: {
+                columns: []
+            }
+        };
 
-        this.extractCells();
+        this.extractTabular();
         this.initProps();
     }
 
@@ -39,122 +180,33 @@ export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
         this.props["class"] += " selectable";
     }
 
-    // TODO: refactor by allowing visitors to visit any AST subtree
-    // TODO: refactoring needed
-    private extractCells(): void {
-        let currentRow: Cell[] = [];
-        this.cellRows.push(currentRow);
-
-        let nodes: ASTNode[] = [];
-        let row = 1;
-        let column = 1;
-        let startPosition = null;
-        let endPosition = null;
-
-        let isCellFirstNode = true;
-
-        const getCellContent = (start: P.Index, end: P.Index): string => {
-            return this.document.getText(new vscode.Range(
-                new vscode.Position(start.line - 1, start.column - 1),
-                new vscode.Position(end.line - 1, end.column - 1)
-            ));
-        };
-
-        const addCell = (nodes: ASTNode[], row: number, column: number, start: P.Index, end: P.Index) => {
-            // If the cell only contains a single whitespace node,
-            // consider its content as an empty string located at the end of the node
-            if (nodes.length === 1
-                &&  nodes[0].type === ASTNodeType.Whitespace) {
-                    const node = nodes[0];
-                    start = node.end;
-                    end = node.end;
-                }
-            
-            // Otherwise, update the start and end positions
-            // to ignore any leading/trailing whitespace nodes
-            // Note: this works well since there canot be two successive whitespace nodes
-            else {
-                for (let i = 0; i < nodes.length; i++) {
-                    const node = nodes[i];
-                    if (node.type !== ASTNodeType.Whitespace) {
-                        break;
-                    }
-    
-                    start = node.end;
-                }
-    
-                for (let i = nodes.length - 1; i >= 0; i--) {
-                    const node = nodes[i];
-                    if (node.type !== ASTNodeType.Whitespace) {
-                        break;
-                    }
-    
-                    end = node.start;
-                }
-            }
-            
-            currentRow.push({
-                nodes: nodes,
-                row: row,
-                column: column,
-                start: start,
-                end: end,
-                textContent: getCellContent(start, end)
-            });
-        };
-
-        const contentNode = this.node.value.content as ASTLatexNode;
+    private extractTabularGrid(contentNode: ASTLatexNode): void {
+        const gridSetter = new TabularGridSetter(this.tabular.grid, this.document);
         for (let node of contentNode.value) {
-            // if (node.type === ASTNodeType.Whitespace
-            // &&  !isCellFirstNode) {
-            //     // Ignore all whitespace nodes inside tabular environements
-            //     continue;
-            // }
-            // else
-            if (node.type === ASTNodeType.Command
-            &&  node.name === "\\\\") {
-                if (startPosition && endPosition) {
-                    addCell(nodes, row, column, startPosition, endPosition);
-                    nodes = [];
-                }
-
-                currentRow = [];
-                this.cellRows.push(currentRow);
-
-                row += 1;
-                column = 0;
-                isCellFirstNode = true;
-            }
-            else if (node.type === ASTNodeType.SpecialSymbol
-                 &&  node.name === "ampersand") {
-                if (startPosition && endPosition) {
-                    addCell(nodes, row, column, startPosition, endPosition);
-                    nodes = [];
-                }
-
-                column += 1;
-                isCellFirstNode = true;
-            }
-            else {
-                if (isCellFirstNode) {
-                    startPosition = node.start;
-                    isCellFirstNode = false;
-                }
-
-                nodes.push(node);
-                endPosition = node.end;
-            }
+            node.visitWith(gridSetter, 0, 0);
         }
 
-        if (!isCellFirstNode && startPosition && endPosition) {
-            addCell(nodes, row, column, startPosition, endPosition);
+        // Ensure the last cell of the grid is not forgotten
+        // (in case the last node of the env. content is part of a call)
+        if (!gridSetter.isCurrentCellEmpty()) {
+            gridSetter.addCurrentCellToGrid();
         }
+    }
+
+    private extractTabularOptions(node: ASTParameterNode): void {
+        // TODO
+        console.log("Set tabular options from node", node);
+    }
+
+    private extractTabular(): void {
+        this.extractTabularGrid(this.node.value.content as ASTLatexNode);
+        this.extractTabularOptions(this.node.value.parameters[0][0] as ASTParameterNode);
     }
     
     renderContentAsHTML(): string {
         return `
             <table>
-                ${this.cellRows.map(TabularVisualisation.renderRowAsHTML).join("\n")}
+                ${this.tabular.grid.map(TabularVisualisation.renderRowAsHTML).join("\n")}
             </table>
         `;
     }
