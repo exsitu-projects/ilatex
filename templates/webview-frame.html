@@ -207,9 +207,12 @@
             const header = visualisation.querySelector("thead");
             if (header) {
                 const headerCells = header.querySelectorAll("th");
-                columns = headerCells.map((cell, i) => {
-                    return { headerName: cell.textContent, field: i.toString() };
-                });
+                for (let i = 0; i < headerCells.length; i++) {
+                    columns.push({
+                        headerName: headerCells[i].textContent,
+                        field: i.toString()
+                    });
+                }
             }
             
             // Extract data from the regular table cells

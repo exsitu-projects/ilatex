@@ -148,6 +148,43 @@ class TabularGridSetter extends LatexASTVisitorAdapter {
     }
 }
 
+// Based on https://en.wikibooks.org/wiki/LaTeX/Tables#The_tabular_environment
+// Support the most common values for the required parameter of tabular
+const tabularColumnOptionLanguage = P.createLanguage<{
+    alignedColumn: string,
+    sizedColumn: string,
+    otherCharacter: null,
+    columns: string[]
+}>({
+    alignedColumn: lang => {
+        return P.oneOf("lcr");
+    },
+
+    sizedColumn: lang => {
+        return P.seq(
+            P.oneOf("pmb"),
+            P.string("{"),
+            P.regex(/[^\}]/),
+            P.string("}")
+        ).tie();
+    },
+
+    otherCharacter: lang => {
+        return P.noneOf("lcrpmb")
+            .map(() => null);
+    },
+
+    columns: lang => {
+        return P.alt(
+           lang.alignedColumn,
+           lang.sizedColumn,
+           lang.otherCharacter
+        )
+            .atLeast(1)
+            .map(columns => columns.filter(c => c !== null) as string[]);
+    }
+});
+
 export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
     readonly name = "tabular";
 
@@ -194,8 +231,13 @@ export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
     }
 
     private extractTabularOptions(node: ASTParameterNode): void {
-        // TODO
-        console.log("Set tabular options from node", node);
+        try {
+            const columns = tabularColumnOptionLanguage.columns.tryParse(node.value);
+            this.tabular.options.columns = columns;
+        }
+        catch (error) {
+            console.error("Error during tabular option parsing:", error);
+        }
     }
 
     private extractTabular(): void {
@@ -206,7 +248,12 @@ export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
     renderContentAsHTML(): string {
         return `
             <table>
-                ${this.tabular.grid.map(TabularVisualisation.renderRowAsHTML).join("\n")}
+                <thead>
+                    ${this.tabular.options.columns.map(column => `<th>${column}</th>`).join("\n")}
+                </thead>
+                <tbody>
+                    ${this.tabular.grid.map(TabularVisualisation.renderRowAsHTML).join("\n")}
+                </tbody>
             </table>
         `;
     }
