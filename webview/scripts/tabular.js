@@ -1,0 +1,121 @@
+function selectCellContent(cellLocation) {
+    vscode.postMessage({
+        type: MessageTypes.SelectText,
+        from: cellLocation.start,
+        to: cellLocation.end
+    });
+}
+
+function updateDocumentCellContent(cellLocations, newContent) {
+    vscode.postMessage({
+        type: MessageTypes.ReplaceText,
+        from: cellLocations.start,
+        to: cellLocations.end,
+        with: newContent,
+        reload: true
+    });
+}
+
+const tabularVisualisations = document.querySelectorAll(`.visualisation[data-name="tabular"]`);
+for (let visualisation of tabularVisualisations) {
+    // Associate cell positions in the grid to cell locations in the source document
+    // Map row indices to column indices to locations (start and end)
+    const gridIndicesToCellLocations = new Map();
+
+    // Extract column definitions from the table header (if any)
+    let columns = [];
+    const header = visualisation.querySelector("thead");
+    if (header) {
+        const headerCells = header.querySelectorAll("th");
+        for (let i = 0; i < headerCells.length; i++) {
+            columns.push({
+                headerName: headerCells[i].textContent,
+                field: i.toString()
+            });
+        }
+    }
+    
+    // Extract data from the regular table cells
+    const data = [];
+    const rows = visualisation.querySelectorAll("tbody > tr");
+    for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+        // Create and add an empty object for row data
+        const rowData = {};
+        data.push(rowData);
+        
+        // Create an an empty map to save the positions of the current row's cells
+        gridIndicesToCellLocations.set(rowIndex, new Map());
+
+        // Process each cell of the current row
+        const cells = rows[rowIndex].querySelectorAll("td");
+        for (let colIndex = 0; colIndex < cells.length; colIndex++) {
+            const cell = cells[colIndex];
+            rowData[colIndex] = cell.textContent;
+
+            // Save the position of the cell (in the document)
+            gridIndicesToCellLocations.get(rowIndex)
+                .set(colIndex, {
+                    start: parseLocationFromAttribute(cell.getAttribute("data-loc-start")),
+                    end: parseLocationFromAttribute(cell.getAttribute("data-loc-end"))
+                });
+        }
+    }
+
+    // console.log("table specs")
+    // console.log(columns);
+    // console.log(data)
+
+    // If the table has no data nor header, skip this visualisation
+    // TODO: use the parameters provided to tabular instead!
+    if (columns.length === 0 && data.length === 0) {
+        continue;
+    }
+
+    // If the table has data but no header, create default column definitions
+    if (columns.length === 0) {
+        const dataRow = data[0];
+        columns = Object.keys(dataRow)
+            .map(key => {
+                return { headerName: "", field: key };
+            });
+
+        // console.log("new col defs");
+        // console.log(columns)
+    }
+
+    // Enable row dragging on the first column
+    //columns[0].rowDrag = true;
+
+    // Enable cell editing on all columns
+    for (let column of columns) {
+        column.editable = true;
+    }
+
+    // Create a new instance of ag-Grid
+    // to replace the content of the visualisation node
+    visualisation.innerHTML = "";
+    visualisation.classList.add("ag-theme-balham");
+    let g = new agGrid.Grid(visualisation, {
+        columnDefs: columns,
+        rowData: data,
+        //rowDragManaged: true,
+
+        onCellClicked(event) {
+            const rowIndex = event.rowIndex;
+            const colIndex = parseInt(event.colDef.field);
+            const location = gridIndicesToCellLocations.get(rowIndex).get(colIndex);
+
+            selectCellContent(location);
+        },
+
+        onCellValueChanged(event) {
+            const rowIndex = event.rowIndex;
+            const colIndex = parseInt(event.colDef.field);
+            const location = gridIndicesToCellLocations.get(rowIndex).get(colIndex);
+
+            updateDocumentCellContent(location, event.newValue);
+        }
+    });
+
+    console.log(g);
+}

@@ -1,0 +1,8 @@
+/*
+ * Container of includegraphics visualisations
+ * and top-level wrapper used by ag-Grid library
+*/
+.visualisation[data-name="tabular"],
+.visualisation[data-name="tabular"] > .ag-root-wrapper {
+    height: 150px;
+}
