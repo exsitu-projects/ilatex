@@ -5,6 +5,7 @@
         <style type="text/css">
             .visualisation[data-name="includegraphics"] {
                 min-height: 100px;
+                overflow: hidden;
             }
 
             .frame {
@@ -217,7 +218,7 @@
             
             // Extract data from the regular table cells
             const data = [];
-            const rows = visualisation.querySelectorAll("tr");
+            const rows = visualisation.querySelectorAll("tbody > tr");
             for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
                 // Create and add an empty object for row data
                 const rowData = {};
@@ -264,7 +265,7 @@
             }
 
             // Enable row dragging on the first column
-            columns[0].rowDrag = true;
+            //columns[0].rowDrag = true;
 
             // Enable cell editing on all columns
             for (let column of columns) {
@@ -278,7 +279,7 @@
             let g = new agGrid.Grid(visualisation, {
                 columnDefs: columns,
                 rowData: data,
-                rowDragManaged: true,
+                //rowDragManaged: true,
 
                 onCellClicked(event) {
                     const rowIndex = event.rowIndex;
@@ -486,7 +487,7 @@
                 document.addEventListener('mouseup', ev => this.endDrag(ev));
 
                 // Scroll wheel listener (image zoom)
-                document.addEventListener('wheel', ev => {
+                this.visualisation.addEventListener('wheel', ev => {
                     ev.preventDefault();
 
                     let ds;
