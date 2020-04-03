@@ -22,6 +22,7 @@ export interface ReplaceTextMessage extends WebviewMessage<WebviewMessageType.Re
     from: {lineIndex: number, columnIndex: number}
     to: {lineIndex: number, columnIndex: number};
     with: string;
+    reload?: boolean;
 }
 
 export interface FocusVisualisationMessage extends WebviewMessage<WebviewMessageType.FocusVisualisation> {

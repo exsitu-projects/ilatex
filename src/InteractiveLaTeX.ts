@@ -42,9 +42,15 @@ export class InteractiveLaTeX {
                 new vscode.Position(replaceTextMessage.to.lineIndex, replaceTextMessage.to.columnIndex)
             );
 
-            this.editor.edit((editBuilder) => {
-                editBuilder.replace(rangeToEdit, replaceTextMessage.with);
-            });
+            this.editor
+                .edit((editBuilder) => {
+                    editBuilder.replace(rangeToEdit, replaceTextMessage.with);
+                })
+                .then(() => {
+                    if (replaceTextMessage.reload) {
+                        this.parseActiveDocument();
+                    }
+                });  
         });
     }
 
