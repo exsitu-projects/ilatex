@@ -126,8 +126,8 @@
             };
         }
 
-        const selectableElements = document.getElementsByClassName("selectable");
-        for (let element of selectableElements) {
+        const selectableVisualisations = document.querySelectorAll(".visualisation.selectable");
+        for (let element of selectableVisualisations) {
             element.addEventListener("click", () => {
                 const from = parseLocationFromAttribute(element.getAttribute("data-loc-start"));
                 const to = parseLocationFromAttribute(element.getAttribute("data-loc-end"));
@@ -178,6 +178,14 @@
 
     <!-- Interactive table specific code (using ag-Grid) -->
     <script type="text/javascript" charset="utf-8">
+        function selectCellContent(cellLocation) {
+            vscode.postMessage({
+                type: MessageTypes.SelectText,
+                from: cellLocation.start,
+                to: cellLocation.end
+            });
+        }
+
         function updateDocumentCellContent(cellLocations, newContent) {
             vscode.postMessage({
                 type: MessageTypes.ReplaceText,
@@ -269,17 +277,20 @@
                 rowData: data,
                 rowDragManaged: true,
 
-                onCellValueChanged(event) {
-                    console.log("cell value changed", event);
+                onCellClicked(event) {
+                    const rowIndex = event.rowIndex;
+                    const colIndex = parseInt(event.colDef.field);
+                    const location = gridIndicesToCellLocations.get(rowIndex).get(colIndex);
 
+                    selectCellContent(location);
+                },
+
+                onCellValueChanged(event) {
                     const rowIndex = event.rowIndex;
                     const colIndex = parseInt(event.colDef.field);
                     const location = gridIndicesToCellLocations.get(rowIndex).get(colIndex);
 
                     updateDocumentCellContent(location, event.newValue);
-
-                    //console.log("row", rowIndex, "col", colIndex)
-                    //console.log("pos in document: ", gridIndicesToCellLocations.get(rowIndex).get(colIndex));
                 }
             });
 
