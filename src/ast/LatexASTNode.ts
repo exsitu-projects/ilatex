@@ -75,9 +75,14 @@ export class ASTNode<
         this.end = end;
     }
 
-    visitWith(visitor: LatexASTVisitor, depth: number = 0): void {
+    visitWith(visitor: LatexASTVisitor, depth: number = 0, maxDepth: number = Number.MAX_SAFE_INTEGER): void {
         // Visit this node
         visitor.visit(this, depth);
+
+        const childDepth = depth + 1;
+        if (childDepth > maxDepth) {
+            return;
+        }
 
         // Visit the subtree(s) rooted in this node (if any)
         const type = this.type;
@@ -88,24 +93,24 @@ export class ASTNode<
                 // Absent optional parameters yield zero-length arrays
                 // Therefore, they should be ignored during the tree visit
                 if (parameterNodeArray.length === 1) {
-                    parameterNodeArray[0].visitWith(visitor, depth + 1);
+                    parameterNodeArray[0].visitWith(visitor, childDepth, maxDepth);
                 }
             }    
         }
         else if (type === ASTNodeType.Environement) {
             const root = this as ASTEnvironementNode;
-            root.value.begin.visitWith(visitor, depth + 1);
+            root.value.begin.visitWith(visitor, childDepth, maxDepth);
 
             for (let parameterNodeArray of root.value.parameters) {
                 // Absent optional parameters yield zero-length arrays
                 // Therefore, they should be ignored during the tree visit
                 if (parameterNodeArray.length === 1) {
-                    parameterNodeArray[0].visitWith(visitor, depth + 1);
+                    parameterNodeArray[0].visitWith(visitor, childDepth, maxDepth);
                 }
             }
 
-            root.value.content.visitWith(visitor, depth + 1);
-            root.value.end.visitWith(visitor, depth + 1);
+            root.value.content.visitWith(visitor, childDepth, maxDepth);
+            root.value.end.visitWith(visitor, childDepth, maxDepth);
         }
         else if (type === ASTNodeType.Block
              ||  type === ASTNodeType.InlineMathBlock
@@ -113,16 +118,13 @@ export class ASTNode<
              ||  type === ASTNodeType.CurlyBracesParameterBlock
              ||  type === ASTNodeType.SquareBracesParameterBlock) {
             const root = this.value as ASTNode;
-            root.visitWith(visitor, depth + 1);
+            root.visitWith(visitor, childDepth, maxDepth);
         }
         else if (type === ASTNodeType.Latex
              ||  type === ASTNodeType.ParameterList) {
             for (let root of this.value as ASTNode[]) {
-                root.visitWith(visitor, depth + 1);
+                root.visitWith(visitor, childDepth, maxDepth);
             }  
-        }
-        else /* string values */ {
-            // Nothing to do
         }
     }
 }

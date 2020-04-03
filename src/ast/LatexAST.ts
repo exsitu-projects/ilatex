@@ -41,7 +41,7 @@ export class LatexAST {
         }
     }
 
-    visitWith(visitor: LatexASTVisitor): void {
-        this.root.visitWith(visitor);
+    visitWith(visitor: LatexASTVisitor, maxDepth: number = Number.MAX_SAFE_INTEGER): void {
+        this.root.visitWith(visitor, 0, maxDepth);
     }
 }
