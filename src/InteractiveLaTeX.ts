@@ -101,29 +101,30 @@ export class InteractiveLaTeX {
     }
 
     private async parseActiveDocument() {
-        const documentPath = this.document.uri.fsPath;
+        const firstLine = this.document.lineAt(0);
+        const lastLine = this.document.lineAt(this.document.lineCount - 1);
+        const documentContent = this.document.getText(new vscode.Range(
+            firstLine.range.start,
+            lastLine.range.end
+        ));
 
-        fs.readFile(documentPath, (error, data) => {
-            const fileContent = data.toString();
+        try {
+            const ast = new LatexAST(documentContent);
 
-            try {
-                const ast = new LatexAST(fileContent);
+            // Pretty-print the AST for debugging purposes
+            const formatter = new LatexASTFormatter();
+            ast.visitWith(formatter);
+            console.log(formatter.formattedAST);
 
-                // Pretty-print the AST for debugging purposes
-                const formatter = new LatexASTFormatter();
-                ast.visitWith(formatter);
-                console.log(formatter.formattedAST);
+            // Update the visualisations
+            this.visualisationManager.updateVisualisations(ast);
 
-                // Update the visualisations
-                this.visualisationManager.updateVisualisations(ast);
-
-                // Update the webview
-                const content = this.visualisationManager.renderAllVisualisationsAsHTML();
-                this.webviewManager.updateWebviewWith(content);
-            }
-            catch (error) {
-                console.error(error);
-            }
-        });
+            // Update the webview
+            const content = this.visualisationManager.renderAllVisualisationsAsHTML();
+            this.webviewManager.updateWebviewWith(content);
+        }
+        catch (error) {
+            console.error(error);
+        }
     }
 }
