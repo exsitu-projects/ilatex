@@ -140,18 +140,15 @@ export class IncludeGraphicsVisualisation extends Visualisation<ASTCommandNode> 
     }
     
     private extractGraphics(): void {
-        const hasOptionNode = this.node.value.parameters[0].length === 1;
-        
         // Extract the options (if any)
-        if (hasOptionNode) {
-            const optionsParameterNode = this.node.value.parameters[0][0] as ASTParameterListNode;
-            this.extractGraphicsOptions(optionsParameterNode);
+        const hasOptionsNode = this.node.value.parameters[0].length === 1;
+        if (hasOptionsNode) {
+            const optionsNode = this.node.value.parameters[0][0] as ASTParameterListNode;
+            this.extractGraphicsOptions(optionsNode);
         }
 
         // Extract the path
-        const pathParametetIndex = hasOptionNode ? 1 : 0;
-        const pathParameterNode = this.node.value.parameters[pathParametetIndex][0] as ASTParameterNode;
-
+        const pathParameterNode = this.node.value.parameters[1][0] as ASTParameterNode;
         this.extractGraphicsPath(pathParameterNode);
     }
 
