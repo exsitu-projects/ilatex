@@ -28,9 +28,25 @@ for (let visualisation of tabularVisualisations) {
     if (header) {
         const headerCells = header.querySelectorAll("th");
         for (let i = 0; i < headerCells.length; i++) {
+            const columnOption = headerCells[i].textContent;
+            const className = columnOption === "l" ? "align-left"
+                            : columnOption === "c" ? "align-center"
+                            : columnOption === "r" ? "align-right"
+                            : "align-left"; // align left by default
+
+            // Only columns where cells are paragraphs with a fixed width can be resized
+            const columnCanBeResized = ["p", "m", "b"]
+                .includes(columnOption.charAt(0));
+
+            // TODO: if the column can be resized, set its initial size
+            // according to the specified length parameter (if any)
+
             columns.push({
-                headerName: headerCells[i].textContent,
-                field: i.toString()
+                headerName: columnOption,
+                field: i.toString(),
+                cellClass: className,
+                resizable: columnCanBeResized,
+                suppressSizeToFit: columnCanBeResized
             });
         }
     }
@@ -114,6 +130,10 @@ for (let visualisation of tabularVisualisations) {
             const location = gridIndicesToCellLocations.get(rowIndex).get(colIndex);
 
             updateDocumentCellContent(location, event.newValue);
+        },
+
+        onGridReady(event) {
+            event.api.sizeColumnsToFit();
         }
     });
 

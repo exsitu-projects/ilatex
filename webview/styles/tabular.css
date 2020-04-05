@@ -6,3 +6,15 @@
 .visualisation[data-name="tabular"] > .ag-root-wrapper {
     height: 150px;
 }
+
+.align-left {
+    text-align: left;
+}
+
+.align-center {
+    text-align: center;
+}
+
+.align-right {
+    text-align: right;
+}
