@@ -2,10 +2,11 @@ import * as P from "parsimmon";
 import { ASTNodeType, ASTNode, ASTNodeValue, ASTParameterValueNode, ASTLatexNode, ASTTextNode, ASTEnvironementNode, ASTCommandNode, ASTInlineMathBlockNode, ASTMathBlockNode, ASTBlockNode, ASTParameterNode, ASTParameterKeyNode, ASTParameterAssignmentNode, ASTSpecialSymbolNode, ASTCommentNode, ASTMathNode, ASTCurlyBracesParameterBlock, ASTSquareBracesParameterBlock, ASTParameterListNode, ASTWhitespaceNode } from "./LatexASTNode";
 
 /**
- * Return a function which creates a wrapper function when called.
+ * Return a function which creates an adapter function when called.
  * 
- * A wrapper function takes a parser as input and returns a parser
- * which yields an AST node as output (using the given type and name/start position, if any).
+ * Each adaptee function takes a parser as input and returns a new parser
+ * which yields an AST node which wraps the output of the given parser
+ * (using the given type and name/start position, if any).
  */
 function createParserOutputASTAdapter<
     T extends ASTNodeType,
@@ -32,10 +33,6 @@ const alphastar = P.regexp(/[a-z]+\*?/i);
 // Words written with regular characters and spaced by at most one whitespace char (\s)
 const regularSentences = P.regexp(/([^\\\$&_%{}#\s]+(\s[^\\\$&_%{}#\s])?)+/i);
 
-// Backlash symbol
-//const backslash = P.string("\\");
-//const singleBackslash = backslash.notFollowedBy(backslash);
-
 // Math block symbols
 const dollar = P.string("$");
 const singleDollar = dollar.notFollowedBy(dollar);
@@ -51,24 +48,21 @@ const closeCurlyBracket = P.string("}");
 const openSquareBracket = P.string("[");
 const closeSquareBracket = P.string("]");
 
-// Command and environement generators
-interface CommandParameter {
-    type: "curly" | "square";
-    parser: P.Parser<ASTParameterNode | ASTParameterListNode>;
-    optional?: boolean;
-}
-
-interface EnvironementSpecification {
-    parser: P.Parser<ASTNode>;
-    parameters: CommandParameter[];
-}
-
+// Builders for parsers of common types of blocks
 function createCurlyBracesBlockParser<V extends ASTNodeValue>(content: P.Parser<V>): P.Parser<V> {
     return P.seqMap(openCurlyBracket, content, closeCurlyBracket, (b1, c, b2) => c);
 }
 
 function createSquareBracesBlockParser<V extends ASTNodeValue>(content: P.Parser<V>): P.Parser<V> {
     return P.seqMap(openSquareBracket, content, closeSquareBracket, (b1, c, b2) => c);
+}
+
+// Builder for parsers of command parameters,
+// using a dedicated interface to specify them
+interface CommandParameter {
+    type: "curly" | "square";
+    parser: P.Parser<ASTParameterNode | ASTParameterListNode>;
+    optional?: boolean;
 }
 
 function createParameterParsers(parameters: CommandParameter[]): P.Parser<(ASTParameterNode | ASTParameterListNode)[]>[] {
@@ -87,11 +81,14 @@ function createParameterParsers(parameters: CommandParameter[]): P.Parser<(ASTPa
     return parametersParsers;
 }
 
-// Parser generator for commands
-function command(name: string, nameParser: P.Parser<string>, parameters: CommandParameter[] = []): P.Parser<ASTCommandNode> {
+// Builder for parsers of commands
+// (which can include 0+ mandatory and/or optional parameters)
+function createCommandParser(name: string, nameParser: P.Parser<string>, parameters: CommandParameter[] = []): P.Parser<ASTCommandNode> {
     // Create an array of parsers for all the parameters
     const parametersParsers = createParameterParsers(parameters);
 
+    // Return a parser which expects the command followed by all its parameters
+    // (though optional ones may of course be absent)
     return P.seq(nameParser, ...parametersParsers)
         .map(([name, ...parameters]: [string, any]) => {
             return {
@@ -102,30 +99,14 @@ function command(name: string, nameParser: P.Parser<string>, parameters: Command
         .thru(createParserOutputASTAdapter(ASTNodeType.Command, name));
 }
 
-// Parser generator for environements
-// function environnement(name: string, nameParser: P.Parser<string>, contentParser: P.Parser<ASTNode>, parameters: CommandParameter[] = []): P.Parser<ASTEnvironementNode> {
-//     const environnementNameParameter: CommandParameter = {
-//         type: "curly",
-//         optional: false,
-//         parser: nameParser
-//             .trim(P.optWhitespace)
-//             .thru(createParserOutputASTAdapter(ASTNodeType.Parameter))
-//     };
+// Interface of the description of a specific environement
+interface EnvironementSpecification {
+    parser: P.Parser<ASTNode>;
+    parameters: CommandParameter[];
+}
 
-//     return P.seqMap(
-//         command("begin", P.string("\\begin"), [environnementNameParameter, ...parameters]),
-//         contentParser,
-//         command("end", P.string("\\end"), [environnementNameParameter]),
-//         (begin, content, end) => {
-//             return {
-//                 begin: begin,
-//                 content: content,
-//                 end: end    
-//             };
-//         }
-//     ).thru(createParserOutputASTAdapter(ASTNodeType.Environement, name));
-// }
-
+// Language of a simplified subset of LaTeX
+// It can be parsed by using the 'latex' rule as the axiom of the grammar
 const language = P.createLanguage<{
     latex: ASTLatexNode,
     text: ASTTextNode,
@@ -160,7 +141,7 @@ const language = P.createLanguage<{
     },
 
     environement: lang => {
-        const beginParser = command("begin", P.string("\\begin"), [{
+        const beginParser = createCommandParser("begin", P.string("\\begin"), [{
             type: "curly",
             parser: lang.environementNameParameter
         }]);
@@ -186,7 +167,7 @@ const language = P.createLanguage<{
                 const environementNameParameterNode = beginNode.value.parameters[0] as ASTParameterNode[];
                 const environementName = environementNameParameterNode[0].value;
 
-                const endParser = command("end", P.string("\\end"), [{
+                const endParser = createCommandParser("end", P.string("\\end"), [{
                     type: "curly",
                     parser: P.string(environementName)
                         .thru(createParserOutputASTAdapter(ASTNodeType.Parameter))
@@ -238,12 +219,12 @@ const language = P.createLanguage<{
     command: lang => {
         // \includegraphics[assignments*]{path}
         const specifiedCommands = [
-            command("includegraphics", P.string("\\includegraphics"), [
+            createCommandParser("includegraphics", P.string("\\includegraphics"), [
                 {type: "square", parser: lang.parameterList, optional: true},
                 {type: "curly", parser: lang.parameter}
             ]),
 
-            command("\\\\", P.string("\\\\"), [
+            createCommandParser("\\\\", P.string("\\\\"), [
                 {type: "square", parser: lang.optionalParameter, optional: true}
             ]),
         ];
