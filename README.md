@@ -2,7 +2,7 @@
 
 This repository contains a Visual Studio Code (VSC) extension developed to test prototypes of interactive intermediate visualisations for snippets of LaTeX code. It currently includes the following visualisations:
 
-* a directly-manipulable image frame for the `\\includegraphics` command;
+* a directly-manipulable image frame for the `includegraphics` command;
 * a table with editable cells for the `tabular` environement.
 
 In addition, clicking a visualisation selects the related code snippet in the document, and moving the cursor inside a code snippet attached to a visualisation will highlight the latter.
