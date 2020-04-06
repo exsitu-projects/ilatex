@@ -92,9 +92,6 @@ function command(name: string, nameParser: P.Parser<string>, parameters: Command
     // Create an array of parsers for all the parameters
     const parametersParsers = createParameterParsers(parameters);
 
-    //console.log("in command where params = ", parameters);
-    //console.log([...parametersParsers]);
-
     return P.seq(nameParser, ...parametersParsers)
         .map(([name, ...parameters]: [string, any]) => {
             return {
