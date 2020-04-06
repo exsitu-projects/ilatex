@@ -23,6 +23,7 @@ export class WebviewManager {
     private readonly panel: vscode.WebviewPanel;
     private readonly webview: vscode.Webview;
     private template: string;
+    private templateAroundContent: {before: string, after: string};
     readonly messageHandlers: Map<WebviewMessageType, MessageHandler>;
     private messageHandlerDisposable: vscode.Disposable | null;
 
@@ -30,6 +31,7 @@ export class WebviewManager {
         this.panel = panel;
         this.webview = panel.webview;
         this.template = "";
+        this.templateAroundContent = {before: "", after: ""};
         this.messageHandlers = new Map();
         this.messageHandlerDisposable = null;
 
@@ -120,12 +122,17 @@ export class WebviewManager {
         // Add 'external' styles and scripts to the template
         this.addStylesToWebviewTemplate();
         this.addScriptsToWebviewTemplate();
+
+        // Split the template before and after the content injection site
+        const contentTag = "<!--[CONTENT]-->";
+        const contentTagIndex = this.template.indexOf(contentTag);
+        this.templateAroundContent = {
+            before: this.template.substr(0, contentTagIndex),
+            after: this.template.substr(contentTagIndex + contentTag.length)
+        };
     }
 
     updateWebviewWith(content: string): void {
-        this.webview.html = this.template.replace(
-            "<!--[CONTENT]-->",
-            content
-        );
+        this.webview.html = `${this.templateAroundContent.before}${content}${this.templateAroundContent.after}`;
     }
 }
