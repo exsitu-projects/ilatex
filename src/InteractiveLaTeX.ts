@@ -88,8 +88,6 @@ export class InteractiveLaTeX {
             if (selectionStartPos.isEqual(selectionEndPos)) {
                 // If it is, tell the webview to highlight the related visualisation.
                 const visualisation = this.visualisationManager.getVisualisationAtPosition(selectionStartPos);
-                console.log("Cursor is inside visualisation:", visualisation);
-                
                 if (visualisation) {
                     this.webviewManager.sendMessage({
                         type: WebviewMessageType.FocusVisualisation,
