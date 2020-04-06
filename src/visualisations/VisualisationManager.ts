@@ -74,12 +74,5 @@ export class VisualisationManager {
         // Re-create the visualisations from the (new) AST
         this.visualisations = [];
         this.createVisualisationsFromPatterns(ast);
-
-        // Update the view
-        console.log("Updated visualisations:");
-        console.log(this.visualisations);
-
-        //console.log(this.renderAllVisualisationsAsHTML());
-        //this.webviewPanel.webview.html = this.renderAllVisualisationsAsHTML(); 
     }
 }

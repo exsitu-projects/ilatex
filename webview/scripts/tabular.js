@@ -77,10 +77,6 @@ for (let visualisation of tabularVisualisations) {
         }
     }
 
-    // console.log("table specs")
-    // console.log(columns);
-    // console.log(data)
-
     // If the table has no data nor header, skip this visualisation
     if (columns.length === 0 && data.length === 0) {
         continue;
@@ -93,9 +89,6 @@ for (let visualisation of tabularVisualisations) {
             .map(key => {
                 return { headerName: "", field: key };
             });
-
-        // console.log("new col defs");
-        // console.log(columns)
     }
 
     // Enable row dragging on the first column
@@ -110,7 +103,7 @@ for (let visualisation of tabularVisualisations) {
     // to replace the content of the visualisation node
     visualisation.innerHTML = "";
     visualisation.classList.add("ag-theme-balham");
-    let g = new agGrid.Grid(visualisation, {
+    new agGrid.Grid(visualisation, {
         columnDefs: columns,
         rowData: data,
         //rowDragManaged: true,
@@ -135,6 +128,4 @@ for (let visualisation of tabularVisualisations) {
             event.api.sizeColumnsToFit();
         }
     });
-
-    console.log(g);
 }

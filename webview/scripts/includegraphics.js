@@ -58,8 +58,6 @@ class ImageFrame {
         
         this.initDragActions();
         this.addEventListeners();
-
-        console.log(this);
     }
 
     updateFrameDimensions() {
@@ -121,13 +119,13 @@ class ImageFrame {
             this.offsetY += this.dragInfo.dy;
             this.ghost.style.left = this.img.style.left = px(this.offsetX);
             this.ghost.style.top = this.img.style.top = px(this.offsetY);
-        }
+        };
 
         this.dragAction.resize = (ev) => {
             this.frameWidth += this.dragInfo.dx;
             this.frameHeight += this.dragInfo.dy;
             this.updateFrameDimensions();
-        }
+        };
     }
 
     // Center the ghost and the frame
@@ -150,8 +148,9 @@ class ImageFrame {
 
     // Dispatch drag event
     doDrag(ev) {
-        if (! this.dragInfo.type)
+        if (! this.dragInfo.type) {
             return;
+        }
 
         ev.preventDefault();
 
@@ -162,7 +161,7 @@ class ImageFrame {
 
         this.dragAction[this.dragInfo.type](ev);
 
-        this.updateLayout()
+        this.updateLayout();
     }
 
     // Done dragging
@@ -185,12 +184,15 @@ class ImageFrame {
             ev.preventDefault();
 
             let ds;
-            if (ev.deltaY > 0) // enlarge
+            if (ev.deltaY > 0) { // enlarge
                 ds = 1 + ev.deltaY/50;
-            else if (ev.deltaY < 0) // shrink
+            }
+            else if (ev.deltaY < 0) { // shrink
                 ds = 1/(1 - ev.deltaY/50);
-            else
+            }
+            else {
                 return;
+            }
 
             let newScale = this.scale * ds;
             if (newScale > 0.1) {
@@ -206,14 +208,14 @@ class ImageFrame {
 
                 this.updateLayout();
             }
-        })
+        });
 
         // Keyboard listner (turn the ghost on/off)
         document.addEventListener('keydown', ev => {
             if (ev.key === ' ') {
                 this.ghost.classList.toggle('hidden');
             }
-        })
+        });
     }
 
     // Update the scale factor of the image and the ghost
@@ -238,12 +240,7 @@ class ImageFrame {
         let right = this.offsetX + this.imageWidth*scale;
         let bottom = this.offsetY + this.imageHeight*scale;
 
-        console.log("left", this.offsetX > this.frameWidth, this.offsetX, this.frameWidth);
-        console.log("right", right < 0, right);
-
         if (this.offsetX > this.frameWidth || this.offsetY > this.frameHeight || right < 0 || bottom < 0) {
-            console.info("out of bounds");
-            console.log(this.offsetX > this.frameWidth, this.offsetY > this.frameHeight, right < 0, bottom < 0);
             this.text.innerHTML = frame + ' image out of bounds';
             return;
         }
@@ -252,32 +249,41 @@ class ImageFrame {
             left: 0, bottom: 0, right: 0, top: 0
         };
 
-        if (this.offsetX > 0)
+        if (this.offsetX > 0) {
             width -= this.offsetX;
-        else if (this.offsetX < 0)
+        }
+        else if (this.offsetX < 0) {
             trim.left = -this.offsetX;
+        }
 
-        if (right < this.frameWidth)
+        if (right < this.frameWidth) {
             width -= this.frameWidth - right;
-        else
+        }
+        else {
             trim.right = right - this.frameWidth;
+        }
 
-        if (this.offsetY > 0)
+        if (this.offsetY > 0) {
             height -= this.offsetY;
-        else if (this.offsetY < 0)
+        }
+        else if (this.offsetY < 0) {
             trim.top = -this.offsetY;
+        }
 
-        if (bottom < this.frameHeight)
+        if (bottom < this.frameHeight) {
             height -= this.frameHeight - bottom;
-        else
+        }
+        else {
             trim.bottom = bottom - this.frameHeight;
+        }
 
         // frame += `<br>width=${px(width)}, height=${px(height)}`
         let commandParameters = `width=${px(width)}`;
         if (trim.left !== 0 || trim.bottom !== 0 || trim.right !== 0 || trim.top !== 0) {
             let clip = `, trim=${px(trim.left/scale)} ${px(trim.bottom/scale)} ${px(trim.right/scale)} ${px(trim.top/scale)}, clip`;
-            if (clip !== ', trim=0px 0px 0px 0px, clip') // to take rounding into account
+            if (clip !== ', trim=0px 0px 0px 0px, clip') { // to take rounding into account
                 commandParameters += clip;
+            }
         }
 
         // Display the command in the visualisation (for now)
@@ -303,7 +309,7 @@ class ImageFrame {
 }
 
 // Setup image frame objects for includegraphics visualisations
-const includegraphicsVisElements = document.querySelectorAll(`.visualisation[data-name="includegraphics"]`)
+const includegraphicsVisElements = document.querySelectorAll(`.visualisation[data-name="includegraphics"]`);
 for (let element of includegraphicsVisElements) {
     new ImageFrame(element);
 }
