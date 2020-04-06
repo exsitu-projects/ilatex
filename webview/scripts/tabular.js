@@ -82,7 +82,6 @@ for (let visualisation of tabularVisualisations) {
     // console.log(data)
 
     // If the table has no data nor header, skip this visualisation
-    // TODO: use the parameters provided to tabular instead!
     if (columns.length === 0 && data.length === 0) {
         continue;
     }

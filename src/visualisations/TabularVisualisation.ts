@@ -48,7 +48,6 @@ class TabularGridSetter extends LatexASTVisitorAdapter {
         return this.currentCellNodes.length === 0;
     }
 
-    // TODO: implement this feature elsewhere
     private getCellContent = (start: P.Index, end: P.Index): string => {
         return this.document.getText(new vscode.Range(
             new vscode.Position(start.line - 1, start.column - 1),
