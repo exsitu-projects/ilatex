@@ -1,0 +1,79 @@
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+
+\usepackage{xspace}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{enumitem}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{array}
+\usepackage[
+    paper = a4paper,
+    margin = 2.5cm,
+    top = 2cm,
+    bottom = 2cm
+]{geometry}
+\usepackage[colorlinks = true]{hyperref}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\iLaTeX}{i\LaTeX{}\xspace}
+
+\title{A test file for \iLaTeX}
+\author{Camille Gobert (\texttt{camille.gobert@ens.fr)}}
+\date{\today}
+
+\linespread{1.05}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% You can view the result on Overleaf:
+% https://www.overleaf.com/read/cvhwtykfnzpn
+
+\begin{document}
+    % Title
+    \maketitle
+    
+    % Body
+    Lorem ipsum dolor sit amet.
+    Text \emph{accentu\'e} should be supported.
+    
+    \textbf{This is bold text.}
+    \textit{This is italic text.}
+    
+    This is a \href{https://www.lri.fr/}{hyperlink} to LRI's website.
+    
+    % Example of a table
+    \begin{table}[h]
+        \centering
+        \begin{tabular}{rl}
+            x & 1 \\
+            y & 2 \\
+            w & 3
+        \end{tabular}
+        \caption{Random table.}
+        \label{tab:random}
+    \end{table}
+    
+    % Example of a figure
+    \begin{figure}[h]
+        \centering
+        \includegraphics[width=124px, trim=15px 152px 117px 0px, clip]{img/rabbit.jpg}
+        \caption{Picture of a rabbit.}
+        \label{fig:rabbit}
+    \end{figure}
+    
+    % Bibliography
+    \bibliographystyle{plain}
+    \bibliography{refs}
+\end{document}
