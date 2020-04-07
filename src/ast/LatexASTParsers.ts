@@ -339,9 +339,10 @@ const language = P.createLanguage<{
     },
 
     math: lang => {
+        // TODO: allow math nodes to be regular Latex nodes?
         return P.alt(
-            //lang.comment.map(c => c.value),
-            P.regexp(/[^\$%]*/)
+            lang.comment.map(c => c.value),
+            P.regexp(/[^$%]+/)
         )
             .atLeast(1)
             .thru(createParserOutputASTAdapter(ASTNodeType.Math));

@@ -3,8 +3,8 @@
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
-
 \usepackage{xspace}
+\usepackage{parskip}
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{amssymb}
@@ -53,13 +53,18 @@
     
     This is a \href{https://www.lri.fr/}{hyperlink} to LRI's website.
     
+    % Example of some maths
+    \paragraph{}
+    Inline maths such as $x^2$ are supported, as well as 
+    $$e^{i\pi} + 1 = 0$$
+    
     % Example of a table
     \begin{table}[h]
         \centering
         \begin{tabular}{rl}
-            x & 1 \\
-            y & 2 \\
-            w & 3
+            $x$ & 1 \\
+            $y$ & 2 \\
+            $z$ & 3
         \end{tabular}
         \caption{Random table.}
         \label{tab:random}
