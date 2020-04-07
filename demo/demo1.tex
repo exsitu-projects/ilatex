@@ -3,8 +3,8 @@ Some text before the document begins...
 \begin{document}
     Lorem ipsum dolor sit amet. % With a comment
 
-    %\commandA
-    %\commandB{{a block} inside a block (with a \command)}
+    \commandA{}
+    \commandB{{a block} inside a block (with a \command)}
 
 
     { another block here }
@@ -13,10 +13,10 @@ Some text before the document begins...
     Some special characters: _ # &
 
     \begin{tabular}{lrr}
-        eee & bbeb { test } & yy \\
+        eee & bbeb { test \truc{param} } eee & yy \\
         tt & xyz & eeeee
     \end{tabular}
     
     %\includegraphics % parsed differently if it has no argument!
-    \includegraphics{./cat.jpg}
+    \includegraphics[width=180px, trim=30px 80px 46px 0px, clip]{./cat.jpg}
 \end{document}

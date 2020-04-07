@@ -1,5 +1,10 @@
 import * as P from "parsimmon";
-import { ASTNodeType, ASTNode, ASTNodeValue, ASTParameterValueNode, ASTLatexNode, ASTTextNode, ASTEnvironementNode, ASTCommandNode, ASTInlineMathBlockNode, ASTMathBlockNode, ASTBlockNode, ASTParameterNode, ASTParameterKeyNode, ASTParameterAssignmentNode, ASTSpecialSymbolNode, ASTCommentNode, ASTMathNode, ASTCurlyBracesParameterBlock, ASTSquareBracesParameterBlock, ASTParameterListNode, ASTWhitespaceNode } from "./LatexASTNode";
+import { ASTNodeType, ASTNode, ASTNodeValue, ASTParameterValueNode, ASTLatexNode, ASTTextNode, ASTEnvironementNode, ASTCommandNode, ASTInlineMathBlockNode, ASTMathBlockNode, ASTBlockNode, ASTParameterNode, ASTParameterKeyNode, ASTParameterAssignmentNode, ASTSpecialSymbolNode, ASTCommentNode, ASTMathNode, ASTCurlyBracesParameterBlock, ASTSquareBracesParameterBlock, ASTParameterListNode, ASTWhitespaceNode, ASTEnvironementValue, AST_EMPTY_VALUE, ASTEmptyValue } from "./LatexASTNode";
+
+interface ParserOutputASTAdapterOptions<V extends ASTNodeValue> {
+    name?: string | ((value: V) => string);
+    startPosition?: P.Index;
+}
 
 /**
  * Return a function which creates an adapter function when called.
@@ -11,14 +16,16 @@ import { ASTNodeType, ASTNode, ASTNodeValue, ASTParameterValueNode, ASTLatexNode
 function createParserOutputASTAdapter<
     T extends ASTNodeType,
     V extends ASTNodeValue
->(type: T, name: string = "", startPos?: P.Index) {
+>(type: T, options: ParserOutputASTAdapterOptions<V> = {}) {
+    const name = options.name ?? "";
+    
     return function(parser: P.Parser<V>) {
         return P.seqMap(P.index, parser, P.index, (start, value, end) => {
             return new ASTNode<T, V>(
-                name,
+                (typeof name === "function" ? name(value) : name),
                 type,
                 value,
-                (startPos ?? start),
+                (options.startPosition ?? start),
                 end
             );
         });
@@ -30,7 +37,7 @@ function createParserOutputASTAdapter<
 const alphanum = P.regexp(/[a-z0-9]+/i);
 const alphastar = P.regexp(/[a-z]+\*?/i);
 
-// Words written with regular characters and spaced by at most one whitespace char (\s)
+// Words written with regular characters and spaced by at most one whitespace char (\input)
 const regularSentences = P.regexp(/([^\\\$&_%{}#\s]+(\s[^\\\$&_%{}#\s])?)+/i);
 
 // Math block symbols
@@ -59,13 +66,13 @@ function createSquareBracesBlockParser<V extends ASTNodeValue>(content: P.Parser
 
 // Builder for parsers of command parameters,
 // using a dedicated interface to specify them
-interface CommandParameter {
+interface ParameterSpecification {
     type: "curly" | "square";
     parser: P.Parser<ASTParameterNode | ASTParameterListNode>;
     optional?: boolean;
 }
 
-function createParameterParsers(parameters: CommandParameter[]): P.Parser<(ASTParameterNode | ASTParameterListNode)[]>[] {
+function createParameterParsers(parameters: ParameterSpecification[]): P.Parser<(ASTParameterNode | ASTParameterListNode)[]>[] {
     const parametersParsers = [];
     for (let parameter of parameters) {
         const parameterParser = (parameter.type === "curly")
@@ -83,26 +90,88 @@ function createParameterParsers(parameters: CommandParameter[]): P.Parser<(ASTPa
 
 // Builder for parsers of commands
 // (which can include 0+ mandatory and/or optional parameters)
-function createCommandParser(name: string, nameParser: P.Parser<string>, parameters: CommandParameter[] = []): P.Parser<ASTCommandNode> {
+interface CommandSpecification {
+    name: string;
+    nameParser?: P.Parser<string>; // use P.string(name) if absent
+    parameters: ParameterSpecification[];
+}
+
+function createCommandParser(command: CommandSpecification): P.Parser<ASTCommandNode> {
+    const nameParser = command.nameParser ?? P.string(command.name);
+
     // Create an array of parsers for all the parameters
-    const parametersParsers = createParameterParsers(parameters);
+    const parametersParsers = createParameterParsers(command.parameters);
 
     // Return a parser which expects the command followed by all its parameters
     // (though optional ones may of course be absent)
-    return P.seq(nameParser, ...parametersParsers)
-        .map(([name, ...parameters]: [string, any]) => {
+    return P.seq(P.string("\\"), nameParser, ...parametersParsers)
+        .map(([backslash, name, ...parameters]: [string, string, any]) => {
             return {
                 name: name as string,
-                parameters: parameters as (ASTParameterNode[] | ASTParameterListNode[])[]
+                parameters: parameters as (ASTParameterNode | ASTParameterListNode)[][]
             };
         })
-        .thru(createParserOutputASTAdapter(ASTNodeType.Command, name));
+        .thru(createParserOutputASTAdapter(ASTNodeType.Command, { name: command.name }));
 }
 
-// Interface of the description of a specific environement
+// Builder for parsers of environements
 interface EnvironementSpecification {
-    parser: P.Parser<ASTNode>;
-    parameters: CommandParameter[];
+    name: string;
+    nameParser?: P.Parser<string>;  // use P.string(name) if absent
+    parameters: ParameterSpecification[];
+    contentParser: P.Parser<ASTNode>;
+}
+
+function createEnvironementParser(environement: EnvironementSpecification): P.Parser<ASTEnvironementNode> {
+    const nameParser = environement.nameParser ?? P.string(environement.name);
+    
+    // Create parsers for \begin and \end commands
+    const beginParser = createCommandParser({
+        name: "begin",
+        parameters: [{
+            type: "curly",
+            parser: nameParser
+                .thru(createParserOutputASTAdapter(ASTNodeType.Parameter))
+        }]
+    });
+
+    const endParser = createCommandParser({
+        name: "end",
+        parameters: [{
+            type: "curly",
+            parser: nameParser
+                .thru(createParserOutputASTAdapter(ASTNodeType.Parameter))
+        }]
+    });
+
+    // Create parsers for the environement parameters
+    const parametersParsers = createParameterParsers(environement.parameters);
+
+    // Return a parser which expects the begin command, followed by all the env. parameters,
+    // followed by the content of the environement, followed by the end command
+    //const seq = P.seq as (...parsers: P.Parser<ASTNode>[]) => P.Parser<ASTNode[]>;
+    return P.seqMap(
+        beginParser,
+        P.seq(...parametersParsers),
+        environement.contentParser,
+        endParser,
+
+        (beginNode, parameterNodes, contentNode, endNode) => {
+                return {
+                    begin: beginNode,
+                    parameters: parameterNodes,
+                    content: contentNode,
+                    end: endNode
+                };
+        })
+        .thru(createParserOutputASTAdapter(ASTNodeType.Environement, {
+            // If a name parser is specified, use the value it output as the environement name
+            // Otherwise, use the given name
+            name: (environement.nameParser
+                ? (node => (node.begin.value.parameters[0][0] as ASTParameterNode).value)
+                : environement.name)
+        }));
+
 }
 
 // Language of a simplified subset of LaTeX
@@ -111,9 +180,11 @@ const language = P.createLanguage<{
     latex: ASTLatexNode,
     text: ASTTextNode,
     whitespace: ASTWhitespaceNode,
-    environement: ASTEnvironementNode,
-    command: ASTCommandNode,
+    specificEnvironement: ASTEnvironementNode,
+    anyEnvironement: ASTEnvironementNode,
+    specificCommand: ASTCommandNode,
     anyCommand: ASTCommandNode,
+    command: ASTCommandNode | ASTEnvironementNode,
     math: ASTMathNode,
     inlineMathBlock: ASTInlineMathBlockNode,
     mathBlock: ASTMathBlockNode,
@@ -139,106 +210,132 @@ const language = P.createLanguage<{
         return P.whitespace
             .thru(createParserOutputASTAdapter(ASTNodeType.Whitespace));
     },
-
-    environement: lang => {
-        const beginParser = createCommandParser("begin", P.string("\\begin"), [{
-            type: "curly",
-            parser: lang.environementNameParameter
-        }]);
-
-        // Spec. of the environements of interest
-        const specifiedEnvironements: Record<string, EnvironementSpecification> = {
-            "tabular": {
-                parser: lang.latex,
-                parameters: [{
-                    type: "curly",
-                    parser: lang.parameter,
-                }]
+    
+    specificEnvironement: lang => {
+        // Specifications of the environements of interest
+        const specifiedEnvironements: EnvironementSpecification[] = [
+            {
+                name: "tabular",
+                parameters: [
+                    { type: "curly", parser: lang.parameter }
+                ],
+                contentParser: lang.latex,
             },
-
-            "itemize": {
-                parser: lang.latex,
-                parameters: []
+            {
+                name: "itemize",
+                parameters: [],
+                contentParser: lang.latex
             }
-        };
-
-        return beginParser
-            .chain(beginNode => {
-                const environementNameParameterNode = beginNode.value.parameters[0] as ASTParameterNode[];
-                const environementName = environementNameParameterNode[0].value;
-
-                const endParser = createCommandParser("end", P.string("\\end"), [{
-                    type: "curly",
-                    parser: P.string(environementName)
-                        .thru(createParserOutputASTAdapter(ASTNodeType.Parameter))
-                }]);
-
-                if (environementName in specifiedEnvironements) {
-                    const specification = specifiedEnvironements[environementName];
-                    
-                    const seqMap = P.seqMap as (...args: any) => any;
-                    return seqMap(
-                        ...createParameterParsers(specification.parameters),
-                        specification.parser,
-                        endParser,
-
-                        (...nodes: any) => {
-                            const end = nodes.pop();
-                            const content = nodes.pop();
-                            const parameters = nodes;
-
-                            return {
-                                begin: beginNode,
-                                parameters: parameters,
-                                content: content,
-                                end: end
-                            };
-                        }
-                    )
-                        .thru(createParserOutputASTAdapter(ASTNodeType.Environement, environementName, beginNode.start));
-                }
-                else {
-                    return P.seqMap(
-                        lang.latex,
-                        endParser,
-                        (content, end) => {
-                            return {
-                                begin: beginNode,
-                                parameters: [],
-                                content: content,
-                                end: end
-                            };
-                        }
-                    )
-                        .thru(createParserOutputASTAdapter(ASTNodeType.Environement, environementName, beginNode.start));
-                }
-            });
-    },
-
-    // Commands of interest
-    command: lang => {
-        // \includegraphics[assignments*]{path}
-        const specifiedCommands = [
-            createCommandParser("includegraphics", P.string("\\includegraphics"), [
-                {type: "square", parser: lang.parameterList, optional: true},
-                {type: "curly", parser: lang.parameter}
-            ]),
-
-            createCommandParser("\\\\", P.string("\\\\"), [
-                {type: "square", parser: lang.optionalParameter, optional: true}
-            ]),
         ];
 
-        return P.alt(...specifiedCommands);
-            //.or(lang.anyCommand);
+        return P.alt(
+            ...specifiedEnvironements.map(environement => createEnvironementParser(environement))
+        );
+    },
+
+    anyEnvironement: lang => {
+        return createEnvironementParser({
+            name: "<non-specific environement>",
+            nameParser: alphastar,
+            parameters: [],
+            contentParser: lang.latex
+        });
+    },
+
+    specificCommand: lang => {
+        // Specifications of the commands of interest
+        const specifiedCommands: CommandSpecification[] = [
+            {
+                name: "includegraphics",
+                parameters: [
+                    {type: "square", parser: lang.parameterList, optional: true},
+                    {type: "curly", parser: lang.parameter}
+                ]
+            },
+            {
+                name: "\\",
+                parameters: [
+                    {type: "square", parser: lang.optionalParameter, optional: true}
+                ]
+            }
+        ];
+
+        return P.alt(
+            ...specifiedCommands.map(command => createCommandParser(command))
+        );
     },
 
     anyCommand: lang => {
         return P.regexp(/\\(([^a-z])|(([a-z]+\*?)))/i)
             .map(commandName => {
-                return {name: commandName, parameters: []};
+                return { name: commandName, parameters: [] };
             })
-            .thru(createParserOutputASTAdapter(ASTNodeType.Command));
+            .thru(createParserOutputASTAdapter(ASTNodeType.Command, {
+                // Extract the name of the command (without the leading backslash)
+                name: node => node.name.substr(1)
+            }));
+    },
+
+    command: lang => {
+        const specificEnvironementNames = ["tabular", "itemize"];
+        function isStartingWithSpecificEnvironementBeginning(input: string): boolean {
+            return specificEnvironementNames.some(name => input.startsWith(`begin{${name}}`));
+        }
+
+        const specificCommandNames = ["includegraphics", "\\"];
+        function isStartingWithSpecificCommandName(input: string): boolean {
+            return specificCommandNames.some(name => input.startsWith(name));
+        }
+
+        // Define a custom Parsimmon parser which expects something starting with a backslash,
+        // and either return a more-or-less specific command/emvironement parser
+        // or fail if what follows the backslash was not expected here.
+        // It does not consume any character, as it delegates the parsing to the parser it returns
+        function selectCommandParser(): P.Parser<P.Parser<ASTCommandNode> | P.Parser<ASTCommandNode>> {
+            const createParserSelector = (input: string, index: number) => {
+                if (input.charAt(index) !== "\\") {
+                    return P.makeFailure(index, "\\<any command>");
+                }
+
+                const remainingInput = input.substring(index + 1);
+                // console.log("remaining input",
+                //     remainingInput.length > 15 ? remainingInput.substr(0, 12) + "..." : remainingInput);
+
+                // Case 1 — it is the beginning of an environement
+                if (remainingInput.startsWith("begin{")) {
+                    // Case 1.1 — it is a specific environement (with a known name)
+                    if (isStartingWithSpecificEnvironementBeginning(remainingInput)) {
+                        return P.makeSuccess(index, lang.specificEnvironement);
+                    }
+
+                    // Case 1.2 — it is an unknown environement
+                    return P.makeSuccess(index, lang.anyEnvironement);
+                }
+
+                // Case 2 — it is the end of an environement
+                // This should not happen: \end commands should only be read by env. parsers.
+                // They must NOT be consumed as regular commands; otherwise, env. parsers
+                // will not be able to read the \end command they expect!
+                else if (remainingInput.startsWith("end{")) {
+                    return P.makeFailure(index, "\\<any command> (unexpected \\end)");
+                }
+
+                // Case 3 — it is a specific command (with a known name)
+                else if (isStartingWithSpecificCommandName(remainingInput)) {
+                    return P.makeSuccess(index, lang.specificCommand);
+                }
+
+                // Case 4 — it is an unknown command
+                else {
+                    return P.makeSuccess(index, lang.anyCommand);
+                }
+            };
+            
+            // The cast seems to be required to work around a weird typing issue
+            return P(createParserSelector as any);
+        }
+    
+        return selectCommandParser().chain(parser => parser);
     },
 
     math: lang => {
@@ -261,7 +358,11 @@ const language = P.createLanguage<{
     },
 
     block: lang => {
-        return createCurlyBracesBlockParser(lang.latex)
+        // TODO: attempt to remove the cast
+        const emptyStringParser = P.string("")
+            .map(_ => AST_EMPTY_VALUE) as P.Parser<ASTEmptyValue>;
+
+        return createCurlyBracesBlockParser(lang.latex.or(emptyStringParser))
             .thru(createParserOutputASTAdapter(ASTNodeType.Block));
     },
 
@@ -326,11 +427,11 @@ const language = P.createLanguage<{
     specialSymbol: lang => {
         return P.alt(
             P.string("&")
-                .thru(createParserOutputASTAdapter(ASTNodeType.SpecialSymbol, "ampersand")),
+                .thru(createParserOutputASTAdapter(ASTNodeType.SpecialSymbol, { name: "ampersand" })),
             P.string("_")
-                .thru(createParserOutputASTAdapter(ASTNodeType.SpecialSymbol, "underscore")),
+                .thru(createParserOutputASTAdapter(ASTNodeType.SpecialSymbol, { name: "underscore" })),
             P.string("#")
-                .thru(createParserOutputASTAdapter(ASTNodeType.SpecialSymbol, "sharp"))
+                .thru(createParserOutputASTAdapter(ASTNodeType.SpecialSymbol, { name: "sharp" }))
         );
     },
 
@@ -344,10 +445,8 @@ const language = P.createLanguage<{
             // Comments
             lang.comment,
 
-            // Environements and commands
-            lang.environement,
+            // Commands and environements
             lang.command,
-            //lang.anyCommand,
 
             // Special blocks
             lang.mathBlock,

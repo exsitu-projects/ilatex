@@ -33,7 +33,11 @@ export type ASTNodeValue =
 | ASTCommandValue
 | ASTEnvironementValue
 | ASTNode
+| (ASTNode | ASTEmptyValue)
 | ASTNode[];
+
+export const AST_EMPTY_VALUE: unique symbol = Symbol("Empty AST value");
+export type ASTEmptyValue = typeof AST_EMPTY_VALUE;
 
 export type ASTMathValue = (string | ASTCommentNode)[];
 
@@ -46,12 +50,12 @@ export type ASTParameterListValue = (ASTParameterNode | ASTParameterAssignmentNo
 
 export type ASTCommandValue = {
     name: string,
-    parameters: (ASTParameterNode[] | ASTParameterListNode[])[]
+    parameters: (ASTParameterNode | ASTParameterListNode)[][]
 };
 
 export type ASTEnvironementValue = {
     begin: ASTCommandNode,
-    parameters: (ASTParameterNode[] | ASTParameterListNode[])[];
+    parameters: (ASTParameterNode | ASTParameterListNode)[][],
     content: ASTNode,
     end: ASTCommandNode
 };
@@ -117,6 +121,11 @@ export class ASTNode<
              ||  type === ASTNodeType.MathBlock
              ||  type === ASTNodeType.CurlyBracesParameterBlock
              ||  type === ASTNodeType.SquareBracesParameterBlock) {
+            // If the block is empty, do not attempt to visit its (non-existinbg) content    
+            if (this.value === AST_EMPTY_VALUE) {
+                return;
+            }
+
             const root = this.value as ASTNode;
             root.visitWith(visitor, childDepth, maxDepth);
         }
@@ -172,7 +181,7 @@ export type ASTMathBlockNode = ASTNode<
 
 export type ASTBlockNode = ASTNode<
     ASTNodeType.Block,
-    ASTLatexNode
+    (ASTLatexNode | typeof AST_EMPTY_VALUE)
 >;
 
 export type ASTCurlyBracesParameterBlock = ASTNode<

@@ -115,7 +115,7 @@ class TabularGridSetter extends LatexASTVisitorAdapter {
 
     protected visitCommandNode(node: ASTCommandNode) {
         const commandName = node.name;
-        if (commandName === "\\\\") {
+        if (commandName === "\\") {
             if (!this.isCurrentCellEmpty()) {
                 this.addCurrentCellToGrid();
             }
