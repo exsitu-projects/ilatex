@@ -112,9 +112,13 @@ function displayPDFPage(page) {
 // which is associated to an interactive visualisation (which can be displayed/edited)
 async function getVisualisableContentAnnotations(page) {
     const annotations = await page.getAnnotations();
-    console.log("All annotations: ", annotations);
+    // console.log("All annotations: ", annotations);
 
-    return annotations;
+    // Filter all annotations to only keep links using a custom "ilatex" protocol
+    return annotations.filter(annotation => {
+        return annotation.annotationType === 2 // link
+            && annotation.unsafeUrl.startsWith("ilatex://");
+    });
 }
 
 
