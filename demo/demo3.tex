@@ -29,7 +29,7 @@
 \newcommand{\iLaTeX}{i\LaTeX{}\xspace}
 
 \title{A test file for \iLaTeX}
-\author{Camille Gobert (\texttt{camille.gobert@ens.fr)}}
+\author{Camille Gobert (\url{camille.gobert@ens.fr})}
 \date{\today}
 
 \linespread{1.05}
@@ -62,9 +62,13 @@
     \begin{table}[h]
         \centering
         \begin{tabular}{rl}
+            \toprule
+            \textbf{Symbol} & \textbf{Value} \\
+            \midrule
             $x$ & 1 \\
             $y$ & 2 \\
-            $z$ & 3
+            $z$ & 3 \\
+            \bottomrule
         \end{tabular}
         \caption{Random table.}
         \label{tab:random}
@@ -73,7 +77,7 @@
     % Example of a figure
     \begin{figure}[h]
         \centering
-        \includegraphics[width=124px, trim=15px 152px 117px 0px, clip]{img/rabbit.jpg}
+        \includegraphics[width=201px, trim=0px 40px 38px 0px, clip]{img/rabbit.jpg}
         \caption{Picture of a rabbit.}
         \label{fig:rabbit}
     \end{figure}
