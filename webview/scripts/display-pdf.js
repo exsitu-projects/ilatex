@@ -68,6 +68,24 @@ async function getPDFPage(pdf, pageNumber) {
 // Function to call when a page is loaded
 async function onPDFPageLoaded(pdf, page) {
     displayPDFPage(page);
+
+    // Draw rectangles around each annotation
+    // TODO: distinguish special annotations
+    const annotations = await page.getAnnotations();
+    console.log("Annotations: ", annotations);
+
+    canvasContext.save();
+    canvasContext.lineWidth = 1;
+    canvasContext.strokeStyle = "red";
+
+    for (let annotation of annotations) {
+        let [x1, y1, x2, y2] = annotation.rect;
+        
+        console.log("draw annotation at", x1, y1, " of size ", Math.abs(x2 - x1), Math.abs(y2 - y1));
+        canvasContext.strokeRect(x1, y1, Math.abs(x2 - x1), Math.abs(y2 - y1));
+    }
+
+    canvasContext.restore();
 }
 
 
