@@ -43,7 +43,7 @@ async function onPDFDocumentLoaded(pdf) {
     }
 
     // Load the first page
-    // TODO: handle more pages + page change?
+    // TODO: handle more pages/page change
     const page = await getPDFPage(pdf, 1);
 
     console.log("First page loaded: ", page);
@@ -72,25 +72,31 @@ async function onPDFPageLoaded(pdf, page) {
 
 
 // Function to display a page from the PDF
-// By default, the page is scaled so that its width is equal to the width of the webview
 function displayPDFPage(page) {
+    // Scale the page so it horizontally fits in the webview
     const webviewWidth = document.body.clientWidth;
     const pageWidth = page.view[2];
     const scale = webviewWidth / pageWidth;
 
-    console.log("client width", webviewWidth);
-
     const viewport = page.getViewport({ scale: scale });
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
+
+    // Make the dimensions of the canvas match those of the page
+    // Use the device pixel ratio and the transform property to make the PDF crisp on HDPI displays
+    // (from https://github.com/mozilla/pdf.js/issues/10509#issuecomment-585062007)
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const transform = [devicePixelRatio, 0 , 0, devicePixelRatio, 0, 0];
+    
+    canvas.width = viewport.width * devicePixelRatio;
+    canvas.height = viewport.height * devicePixelRatio;
+
     canvas.style.width = `${viewport.width}px`;
     canvas.style.height = `${viewport.height}px`;
-
+    
     page.render({
         canvasContext: canvasContext,
-        viewport: viewport
+        viewport: viewport,
+        transform: transform
     });
 
     console.log("The PDF page has been successfully rendered!");
-    console.log("scale = " + scale + ", viewport = ", viewport);
 }
