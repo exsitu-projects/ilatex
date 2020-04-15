@@ -67,25 +67,11 @@ async function getPDFPage(pdf, pageNumber) {
 
 // Function to call when a page is loaded
 async function onPDFPageLoaded(pdf, page) {
-    displayPDFPage(page);
+    const viewport = displayPDFPage(page);
 
-    // Draw rectangles around each annotation
-    // TODO: distinguish special annotations
-    const annotations = await page.getAnnotations();
-    console.log("Annotations: ", annotations);
-
-    canvasContext.save();
-    canvasContext.lineWidth = 1;
-    canvasContext.strokeStyle = "red";
-
-    for (let annotation of annotations) {
-        let [x1, y1, x2, y2] = annotation.rect;
-        
-        console.log("draw annotation at", x1, y1, " of size ", Math.abs(x2 - x1), Math.abs(y2 - y1));
-        canvasContext.strokeRect(x1, y1, Math.abs(x2 - x1), Math.abs(y2 - y1));
-    }
-
-    canvasContext.restore();
+    const annotations = await getVisualisableContentAnnotations(page);
+    drawVisualisableContentAnnotations(annotations);
+    startHandlingCanvasClicks(annotations, viewport);
 }
 
 
@@ -117,4 +103,60 @@ function displayPDFPage(page) {
     });
 
     console.log("The PDF page has been successfully rendered!");
+    return viewport;
+}
+
+
+// Function to compute the list of visualisable content annotations
+// A visualisable content annotation is a special annotation of a part of the content of the PDF
+// which is associated to an interactive visualisation (which can be displayed/edited)
+async function getVisualisableContentAnnotations(page) {
+    const annotations = await page.getAnnotations();
+    console.log("All annotations: ", annotations);
+
+    return annotations;
+}
+
+
+function drawVisualisableContentAnnotations(annotations) {
+    canvasContext.save();
+    canvasContext.lineWidth = 1;
+    canvasContext.strokeStyle = "red";
+
+    for (let annotation of annotations) {
+        const [x1, y1, x2, y2] = annotation.rect;
+        
+        console.log("draw annotation at", x1, y1, " of size ", Math.abs(x2 - x1), Math.abs(y2 - y1));
+        canvasContext.strokeRect(x1, y1, Math.abs(x2 - x1), Math.abs(y2 - y1));
+    }
+
+    canvasContext.restore();
+}
+
+
+// Function to listen to and process clicks on the canvas
+// For now, only clicks on visualisable content annotations are processed
+function startHandlingCanvasClicks(annotations, viewport) {
+    // console.log("viewport = ", viewport);
+
+    function isAnnotationClicked(annotation, event) {
+        // TODO: better explain the role of the values taken fron the transform matrix
+        const mouseX = event.clientX / viewport.transform[0];
+        const mouseY = (event.clientY - viewport.transform[5]) / viewport.transform[3];
+        const [x1, y1, x2, y2] = annotation.rect;
+
+        return mouseX >= x1
+            && mouseX <= x2
+            && mouseY >= y1
+            && mouseY <= y2;
+    }
+
+    canvas.addEventListener("click", event => {
+        // console.log("click at", event.clientX, event.clientY);
+        for (let annotation of annotations) {
+            if (isAnnotationClicked(annotation, event)) {
+                console.log("An annotation is clicked: ", annotation);
+            }
+        }
+    }); 
 }
