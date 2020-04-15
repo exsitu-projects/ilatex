@@ -5,6 +5,7 @@ import { LatexASTFormatter } from './ast/visitors/LatexASTFormatter';
 import { VisualisationManager } from './visualisations/VisualisationManager';
 import { WebviewManager } from './webview/WebviewManager';
 import { WebviewMessageType, SelectTextMessage, FocusVisualisationMessage, ReplaceTextMessage } from './webview/WebviewMessage';
+import { FileReader } from './utils/FileReader';
 
 export class InteractiveLaTeX {
     private editor: vscode.TextEditor;
@@ -98,6 +99,38 @@ export class InteractiveLaTeX {
         });
     }
 
+    private renderDocumentPDFViewerAsHTML(): string {
+        // TODO: use a more robust technique
+
+        // Assume that, if it exists, the PDF of the document
+        // has the same path than the LaTeX document with a .pdf extension instead
+        const pdfPath = this.document.uri.path.replace(".tex", ".pdf");
+        const pdfUri = vscode.Uri.file(pdfPath);
+
+        // If the PDF file exists, return the HTML code of the PDF viewer
+        // Otherwise, return an empty string
+        console.log("Checking if PDF file exists at path: ", pdfPath);
+        if (fs.existsSync(pdfPath)) {
+            console.log("PDF file exists");
+
+            // Compute the absolute path to the PDF.js worker script
+            const pdfjsWorkerPath = FileReader.resolvePathFromExtensionRoot("./webview/scripts/lib/pdf.worker.js");
+            const pdfjsWorkerUri = vscode.Uri.file(pdfjsWorkerPath);
+
+            return `
+                <div
+                    id="pdf-viewer"
+                    data-pdf-uri="${this.webviewManager.adaptURI(pdfUri)}"
+                    data-pdfjs-worker-uri="${this.webviewManager.adaptURI(pdfjsWorkerUri)}"
+                ></div>
+            `;
+        }
+        else {
+            console.log("PDF file does not exist");
+            return "";
+        }
+    }
+
     private async parseActiveDocument() {
         const firstLine = this.document.lineAt(0);
         const lastLine = this.document.lineAt(this.document.lineCount - 1);
@@ -118,7 +151,11 @@ export class InteractiveLaTeX {
             this.visualisationManager.updateVisualisations(ast);
 
             // Update the webview
-            const content = this.visualisationManager.renderAllVisualisationsAsHTML();
+            const content = [
+                this.renderDocumentPDFViewerAsHTML(),
+                this.visualisationManager.renderAllVisualisationsAsHTML()
+            ].join("\n");
+
             this.webviewManager.updateWebviewWith(content);
         }
         catch (error) {

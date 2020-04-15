@@ -8,14 +8,21 @@ export type MessageHandler<T extends WebviewMessageType = WebviewMessageType> =
 export class WebviewManager {
     // Paths for the template, the styles and the scripts to use in the webview
     // must be relative to the root directory of the extension
-    private static readonly WEBVIEW_TEMPLATE_PATH = "./webview/templates/main-template.html";
+    private static readonly WEBVIEW_TEMPLATE_PATH = "./webview/templates/pdf-template.html";
     private static readonly WEBVIEW_STYLES_PATHS = [
+        "./webview/styles/lib/ag-grid.css",
+        "./webview/styles/lib/ag-theme-balham.css",
+
         "./webview/styles/main.css",
         "./webview/styles/includegraphics.css",
         "./webview/styles/tabular.css"
     ];
     private static readonly WEBVIEW_SCRIPT_PATHS = [
+        "./webview/scripts/lib/ag-grid-community.min.noStyle.js",
+        "./webview/scripts/lib/pdf.js",
+
         "./webview/scripts/main.js",
+        "./webview/scripts/display-pdf.js",
         "./webview/scripts/includegraphics.js",
         "./webview/scripts/tabular.js"
     ];
@@ -86,7 +93,7 @@ export class WebviewManager {
             .map(fileRecord =>
                 `
                     <!-- ${fileRecord.filename} -->
-                    <style>
+                    <style rel="stylesheet">
                         ${fileRecord.content}
                     </style>
                 `

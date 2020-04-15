@@ -19,11 +19,15 @@ export class FileReader {
         return path.substr(lastSlashIndex + 1);
     }
 
+    static resolvePathFromExtensionRoot(relativePath: string): string {
+        return path.resolve(FileReader.EXTENSION_ROOT_PATH, relativePath);
+    }
+
     // Create a file record for a file of this extension
     // The path to the file must be relative to the root directory of the extension
     static readExtensionFile(relativePath: string): FileRecord {
         // Absolute path of the file
-        const absolutePath = path.resolve(FileReader.EXTENSION_ROOT_PATH, relativePath);
+        const absolutePath = FileReader.resolvePathFromExtensionRoot(relativePath);
 
         // Name of the file
         const lastSlashIndex = relativePath.lastIndexOf("/");
