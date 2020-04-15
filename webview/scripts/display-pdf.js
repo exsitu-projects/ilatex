@@ -141,8 +141,9 @@ function startHandlingCanvasClicks(annotations, viewport) {
 
     function isAnnotationClicked(annotation, event) {
         // TODO: better explain the role of the values taken fron the transform matrix
-        const mouseX = event.clientX / viewport.transform[0];
-        const mouseY = (event.clientY - viewport.transform[5]) / viewport.transform[3];
+        // TODO: take the position of the canvas into account in case the page is scrolled?
+        const mouseX = (window.scrollX + event.clientX) / viewport.transform[0];
+        const mouseY = ((window.scrollY + event.clientY) - viewport.transform[5]) / viewport.transform[3];
         const [x1, y1, x2, y2] = annotation.rect;
 
         return mouseX >= x1
