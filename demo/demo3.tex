@@ -76,10 +76,14 @@
     
     % Example of a figure
     \begin{figure}[h]
-        \centering
-        \includegraphics[width=201px, trim=0px 40px 38px 0px, clip]{img/rabbit.jpg}
-        \caption{Picture of a rabbit.}
-        \label{fig:rabbit}
+    \href{{custom://some-invalid-uri/12345#abc?def=ghi}}{%
+        \parbox{\textwidth}{
+            \centering
+            \includegraphics[width=201px, trim=0px 40px 38px 0px, clip]{img/rabbit.jpg}
+            \caption{Picture of a rabbit.}
+            \label{fig:rabbit}
+        }
+    }
     \end{figure}
     
     % Bibliography
