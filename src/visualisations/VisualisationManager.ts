@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { LatexAST } from "../ast/LatexAST";
 import { CodePatternDetector } from "../patterns/CodePatternDetector";
-import { Visualisation } from './Visualisation';
+import { Visualisation, VisualisationID } from './Visualisation';
 import { IncludeGraphicsVisualisation } from './IncludeGraphicsVisualisation';
 import { TabularVisualisation } from './TabularVisualisation';
 import { WebviewManager } from '../webview/WebviewManager';
@@ -45,6 +45,20 @@ export class VisualisationManager {
         );
     }
 
+    getVisualisation(id: VisualisationID): Visualisation | null {
+        const result = this.visualisations
+            .find(visualisation => visualisation.id === id);
+
+        return result ?? null;
+    }
+
+    getVisualisationAtIndex(sourceIndex: number): Visualisation | null {
+        const result = this.visualisations
+            .find(visualisation => visualisation.sourceIndex === sourceIndex);
+
+        return result ?? null;
+    }
+
     getVisualisationAtPosition(position: vscode.Position): Visualisation | null {
         const result = this.visualisations.find(visualisation => {
             const start = visualisation.node.start;
@@ -71,6 +85,10 @@ export class VisualisationManager {
     }
 
     updateVisualisations(ast: LatexAST): void {
+        // Reset the source index counter of the visualisations
+        // to assign a fresh order to the new visualisations
+        Visualisation.resetSourceIndex();
+
         // Re-create the visualisations from the (new) AST
         this.visualisations = [];
         this.createVisualisationsFromPatterns(ast);
