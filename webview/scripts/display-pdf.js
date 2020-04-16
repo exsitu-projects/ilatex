@@ -69,6 +69,11 @@ async function getPDFPage(pdf, pageNumber) {
 async function onPDFPageLoaded(pdf, page) {
     const viewport = displayPDFPage(page);
 
+    // Log/draw all annotations (for debugging purposes)
+    const allAnnotations = await page.getAnnotations();
+    console.log("All annotations:", allAnnotations);
+    // drawAnnotations(allAnnotations);
+
     const annotations = await getVisualisableContentAnnotations(page);
     drawVisualisableContentAnnotations(annotations);
     startHandlingCanvasClicks(annotations, viewport);
@@ -112,13 +117,25 @@ function displayPDFPage(page) {
 // which is associated to an interactive visualisation (which can be displayed/edited)
 async function getVisualisableContentAnnotations(page) {
     const annotations = await page.getAnnotations();
-    // console.log("All annotations: ", annotations);
 
-    // Filter all annotations to only keep links using a custom "ilatex" protocol
+    // Only keep "widget" annotations (created as tooltips using pdfcomment package)
     return annotations.filter(annotation => {
-        return annotation.annotationType === 2 // link
-            && annotation.unsafeUrl.startsWith("ilatex://");
+        return annotation.annotationType === 20; // tooltip
     });
+}
+
+
+function drawAnnotations(annotations) {
+    canvasContext.save();
+    canvasContext.lineWidth = 1;
+    canvasContext.strokeStyle = "green";
+
+    for (let annotation of annotations) {
+        const [x1, y1, x2, y2] = annotation.rect;
+        canvasContext.strokeRect(x1, y1, Math.abs(x2 - x1), Math.abs(y2 - y1));
+    }
+
+    canvasContext.restore();
 }
 
 

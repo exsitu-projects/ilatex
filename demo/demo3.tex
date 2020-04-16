@@ -22,6 +22,7 @@
     bottom = 2cm
 ]{geometry}
 \usepackage[colorlinks = true]{hyperref}
+\usepackage{pdfcomment}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -61,32 +62,40 @@
     % Example of a table
     \begin{table}[h]
         \centering
-        \begin{tabular}{rl}
-            \toprule
-            \textbf{Symbol} & \textbf{Value} \\
-            \midrule
-            $x$ & 1 \\
-            $y$ & 2 \\
-            $z$ & 3 \\
-            \bottomrule
-        \end{tabular}
+        \pdftooltip{%
+            \begin{tabular}{rl}
+                \toprule
+                \textbf{Symbol} & \textbf{Value} \\
+                \midrule
+                $x$ & 1 \\
+                $y$ & 2 \\
+                $z$ & 3 \\
+                \bottomrule
+            \end{tabular}
+        }{xyz}%
         \caption{Random table.}
         \label{tab:random}
     \end{table}
     
     % Example of a figure
+    % \begin{figure}[h]
+    % \href{{ilatex://data-to-identify-the-figure}}{%
+    %     \parbox{\textwidth}{
+    %         \centering
+    %         \includegraphics[width=28px]{img/rabbit.jpg}
+    %         \caption{Picture of a rabbit.}
+    %         \label{fig:rabbit}
+    %     }
+    % }
+    % \end{figure}
+
+    % Example of a figure
     \begin{figure}[h]
-    \href{{ilatex://data-to-identify-the-figure}}{%
-        \parbox{\textwidth}{
-            \centering
-            \includegraphics[width=201px, trim=0px 40px 38px 0px, clip]{img/rabbit.jpg}
-            \caption{Picture of a rabbit.}
-            \label{fig:rabbit}
-        }
-    }
+        \centering
+        \pdftooltip{
+            \includegraphics[width=190px]{img/rabbit.jpg}
+        }{Some image comment}
+        \caption{Picture of a rabbit --- 2.}
+        \label{fig:rabbit2}
     \end{figure}
-    
-    % Bibliography
-    \bibliographystyle{plain}
-    \bibliography{refs}
 \end{document}
