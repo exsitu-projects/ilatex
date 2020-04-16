@@ -14,6 +14,7 @@ export class WebviewManager {
         "./webview/styles/lib/ag-theme-balham.css",
 
         "./webview/styles/main.css",
+        "./webview/styles/display-pdf.css",
         "./webview/styles/includegraphics.css",
         "./webview/styles/tabular.css"
     ];

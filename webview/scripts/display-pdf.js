@@ -174,11 +174,50 @@ function startHandlingCanvasClicks(annotations, viewport) {
     }
 
     canvas.addEventListener("click", event => {
-        // console.log("click at", event.clientX, event.clientY);
         for (let annotation of annotations) {
             if (isAnnotationClicked(annotation, event)) {
-                console.log("An annotation is clicked: ", annotation);
+                onAnnotationClick(event, annotation);
             }
         }
     }); 
+}
+
+// Function to process a click on an annotation
+// It assumes the annotation is a visualisable content annotation,
+// since only those are considered on a canvas click
+function onAnnotationClick(event, annotation) {
+    console.log("An annotation is clicked: ", annotation);
+
+    const annotationText = annotation.alternativeText;
+    if (annotationText.startsWith("ilatex-visualisation")) {
+        const [_, sourceIndexStr] = annotationText.match(/[^\d]+(\d+)/);
+        const sourceIndex = parseInt(sourceIndexStr);
+        const yOffset = canvas.getBoundingClientRect().top + annotation.rect[3];
+
+        displayVisualisationAtIndex(sourceIndex, yOffset);
+    }
+}
+
+function displayVisualisationAtIndex(sourceIndex, yOffset) {
+    const maskNode = document.createElement("div");
+    maskNode.classList.add("visualisation-mask");
+    document.body.prepend(maskNode);
+
+    const containerNode = document.createElement("div");
+    containerNode.classList.add("visualisation-container");
+    containerNode.style.top = `${yOffset}px`;
+    maskNode.append(containerNode);
+
+    const visualisationNode = document.querySelector(`.visualisation[data-source-index="${sourceIndex}"]`);
+    containerNode.append(visualisationNode);
+    console.log("Source index matches node: ", visualisationNode);
+
+    maskNode.addEventListener("click", event => {
+        if (event.target !== maskNode) {
+            return;
+        }
+
+        document.body.append(visualisationNode);
+        maskNode.remove();
+    });
 }

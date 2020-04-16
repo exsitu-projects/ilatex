@@ -1,0 +1,33 @@
+.visualisation-mask {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.visualisation-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+}
+
+.visualisation {
+    display: none;
+    margin: 0;
+    border: none;
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.7);
+}
+
+.visualisation-mask .visualisation {
+    display: block;
+    padding: 15px 0;
+    background-color: #FFF;
+}
+
+.visualisation-mask .visualisation:hover,
+.visualisation-mask .visualisation.focused {
+    border-style: none;
+}
