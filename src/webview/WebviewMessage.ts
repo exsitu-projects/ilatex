@@ -3,6 +3,7 @@ import { VisualisationID } from "../visualisations/Visualisation";
 export const enum WebviewMessageType {
     // From extension to webview
     FocusVisualisation = "FocusVisualisation",
+    ReloadPDF = "ReloadPDF",
 
     // From webview to extension
     SelectText = "SelectText",
@@ -27,4 +28,8 @@ export interface ReplaceTextMessage extends WebviewMessage<WebviewMessageType.Re
 
 export interface FocusVisualisationMessage extends WebviewMessage<WebviewMessageType.FocusVisualisation> {
     id: VisualisationID;
+}
+
+export interface ReloadPDFMessage extends WebviewMessage<WebviewMessageType.ReloadPDF> {
+    uri: string;
 }

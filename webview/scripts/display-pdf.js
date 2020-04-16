@@ -10,27 +10,21 @@ const canvas = document.createElement("canvas");
 const canvasContext = canvas.getContext("2d");
 pdfViewerNode.append(canvas);
 
+function loadPDFDocument() {
+    if (pdfViewerNode) {
+        // Specify the URI to the required worker
+        const workerUri = pdfViewerNode.getAttribute("data-pdfjs-worker-uri");
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "https://unpkg.com/pdfjs-dist@2.3.200/build/pdf.worker.min.js";
 
-// Load the PDF document
-if (pdfViewerNode) {
-    const pdfUri = pdfViewerNode.getAttribute("data-pdf-uri");
-    const workerUri = pdfViewerNode.getAttribute("data-pdfjs-worker-uri");
-
-    // Specify the URI to the required worker
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://unpkg.com/pdfjs-dist@2.3.200/build/pdf.worker.min.js";
-
-    console.log("Start loading the PDF...");
-    pdfjsLib
-        .getDocument(pdfUri)
-        .promise
-        .then(function(pdf) {
-            console.log("The PDF has finished loading!");
-            console.log(pdf);
-            return pdf;
-        })
-        .then(onPDFDocumentLoaded);
+        const pdfUri = pdfViewerNode.getAttribute("data-pdf-uri");
+        
+        console.log("Start loading the PDF...");
+        pdfjsLib
+            .getDocument(pdfUri)
+            .promise
+            .then(onPDFDocumentLoaded);
+    }
 }
-
 
 // Map from page numbers to pages
 const pages = new Map();
@@ -72,10 +66,12 @@ async function onPDFPageLoaded(pdf, page) {
     // Log/draw all annotations (for debugging purposes)
     const allAnnotations = await page.getAnnotations();
     console.log("All annotations:", allAnnotations);
-    // drawAnnotations(allAnnotations);
+    // drawAnnotationFrames(allAnnotations);
 
     const annotations = await getVisualisableContentAnnotations(page);
-    drawVisualisableContentAnnotations(annotations);
+    drawAnnotationFrames(annotations);
+    
+    // startHandlingCanvasMouseMoves(annotations, viewport);
     startHandlingCanvasClicks(annotations, viewport);
 }
 
@@ -125,11 +121,12 @@ async function getVisualisableContentAnnotations(page) {
 }
 
 
-function drawAnnotations(annotations) {
+// Function to draw a rectangle around the given annotations
+function drawAnnotationFrames(annotations) {
     canvasContext.save();
-    canvasContext.lineWidth = 1;
-    canvasContext.strokeStyle = "green";
-
+    canvasContext.lineWidth = 2;
+    canvasContext.strokeStyle = "#0074D9";
+    
     for (let annotation of annotations) {
         const [x1, y1, x2, y2] = annotation.rect;
         canvasContext.strokeRect(x1, y1, Math.abs(x2 - x1), Math.abs(y2 - y1));
@@ -139,52 +136,38 @@ function drawAnnotations(annotations) {
 }
 
 
-function drawVisualisableContentAnnotations(annotations) {
-    canvasContext.save();
-    canvasContext.lineWidth = 1;
-    canvasContext.strokeStyle = "red";
+// Function to check if a mouse event occured inside an annotation
+// It assumes the given annotation to be visualisable content annotation
+// It also expects a reference to the viewport of the page (to transform coordinates)
+function isMousePointerInsideAnnotation(mouseEvent, annotation, viewport) {
+    // TODO: better explain the role of the values taken fron the transform matrix
+    // TODO: take the position of the canvas into account in case the page is scrolled?
+    const mouseX = (window.scrollX + mouseEvent.clientX) / viewport.transform[0];
+    const mouseY = ((window.scrollY + mouseEvent.clientY) - viewport.transform[5]) / viewport.transform[3];
+    const [x1, y1, x2, y2] = annotation.rect;
 
-    for (let annotation of annotations) {
-        const [x1, y1, x2, y2] = annotation.rect;
-        
-        console.log("draw annotation at", x1, y1, " of size ", Math.abs(x2 - x1), Math.abs(y2 - y1));
-        canvasContext.strokeRect(x1, y1, Math.abs(x2 - x1), Math.abs(y2 - y1));
-    }
-
-    canvasContext.restore();
+    return mouseX >= x1
+        && mouseX <= x2
+        && mouseY >= y1
+        && mouseY <= y2;
 }
 
 
 // Function to listen to and process clicks on the canvas
-// For now, only clicks on visualisable content annotations are processed
+// It assumes all given annotations to be visualisable content annotations
 function startHandlingCanvasClicks(annotations, viewport) {
-    // console.log("viewport = ", viewport);
-
-    function isAnnotationClicked(annotation, event) {
-        // TODO: better explain the role of the values taken fron the transform matrix
-        // TODO: take the position of the canvas into account in case the page is scrolled?
-        const mouseX = (window.scrollX + event.clientX) / viewport.transform[0];
-        const mouseY = ((window.scrollY + event.clientY) - viewport.transform[5]) / viewport.transform[3];
-        const [x1, y1, x2, y2] = annotation.rect;
-
-        return mouseX >= x1
-            && mouseX <= x2
-            && mouseY >= y1
-            && mouseY <= y2;
-    }
-
     canvas.addEventListener("click", event => {
         for (let annotation of annotations) {
-            if (isAnnotationClicked(annotation, event)) {
+            if (isMousePointerInsideAnnotation(event, annotation, viewport)) {
                 onAnnotationClick(event, annotation);
             }
         }
     }); 
 }
 
+
 // Function to process a click on an annotation
-// It assumes the annotation is a visualisable content annotation,
-// since only those are considered on a canvas click
+// It assumes the given annotation to be visualisable content annotation
 function onAnnotationClick(event, annotation) {
     console.log("An annotation is clicked: ", annotation);
 
@@ -196,6 +179,26 @@ function onAnnotationClick(event, annotation) {
 
         displayVisualisationAtIndex(sourceIndex, yOffset);
     }
+}
+
+
+// Function to listen to and process mouse moves on the canvas
+// It assumes all given annotations to be visualisable content annotations
+function startHandlingCanvasMouseMoves(annotations, viewport) {
+    canvas.addEventListener("mousemove", event => {
+        for (let annotation of annotations) {
+            if (isMousePointerInsideAnnotation(event, annotation, viewport)) {
+                onAnnotationHovering(event, annotation);
+            }
+        }
+    }); 
+}
+
+
+// Function to process a click on an annotation
+// It assumes the given annotation to be visualisable content annotation
+function onAnnotationHovering(event, annotation) {
+    drawAnnotationFrames([annotation]);
 }
 
 function displayVisualisationAtIndex(sourceIndex, yOffset) {
@@ -221,3 +224,6 @@ function displayVisualisationAtIndex(sourceIndex, yOffset) {
         maskNode.remove();
     });
 }
+
+// Start loading the PDF document
+loadPDFDocument();

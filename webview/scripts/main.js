@@ -7,6 +7,8 @@ let currentlyFocusedElement = null;
 // Available types of messages (from/to the extension)
 const MessageTypes = {
     FocusVisualisation: "FocusVisualisation",
+    ReloadPDF: "ReloadPDF",
+    
     SelectText: "SelectText",
     ReplaceText: "ReplaceText"
 };
