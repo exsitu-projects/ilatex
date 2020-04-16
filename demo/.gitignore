@@ -4,3 +4,7 @@
 *.fls
 *.synctex.gz
 *.fdb_latexmk
+*.bbl
+*.blg
+*.upa
+*.upb
