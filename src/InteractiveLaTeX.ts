@@ -65,6 +65,11 @@ export class InteractiveLaTeX {
                     }
                 });  
         });
+
+        // The document must be saved
+        this.webviewManager.setHandlerFor(WebviewMessageType.SaveDocument, (message) => {
+            this.document.save();
+        });
     }
 
     private getDocumentPDFPath(): string {

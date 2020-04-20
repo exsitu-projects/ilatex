@@ -12,7 +12,8 @@ const MessageTypes = {
     UpdatePDF: "UpdatePDF",
     
     SelectText: "SelectText",
-    ReplaceText: "ReplaceText"
+    ReplaceText: "ReplaceText",
+    SaveDocument: "SaveDocument"
 };
 
 // Helper function to extract a location (in the LaTeX document)

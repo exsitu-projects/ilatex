@@ -23,6 +23,12 @@ function isMousePointerInsideAnnotation(mouseEvent, annotation, viewport) {
         && mouseY <= y2;
 }
 
+function saveDocument() {
+    vscode.postMessage({
+        type: MessageTypes.SaveDocument
+    });
+}
+
 
 // TODO: handle the update of visualisations while a popup is open?
 class VisualisationPopup {
@@ -80,6 +86,10 @@ class VisualisationPopup {
 
     close() {
         this.maskNode.remove();
+
+        // Tell the extension to save the document
+        // (which will further trigger an update of the webview)
+        saveDocument();
 
         // Emit an event to signal that a visualisation has just been hidden
         pdfNode.dispatchEvent(new CustomEvent("visualisation-hidden", {
