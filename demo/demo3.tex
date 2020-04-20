@@ -78,11 +78,53 @@
     % Example of a figure
     \begin{figure}[h]
         \centering
-        \ilatex{\includegraphics[width=6cm]{img/rabbit.jpg}}
+        \ilatex{\includegraphics[width=170px, trim=1px 56px 85px 0px, clip]{img/rabbit.jpg}}
         \caption{Picture of a rabbit.}
         \label{fig:rabbit}
     \end{figure}
 
     \newpage
     This text should appear on the second page.
+
+    % A larger picture on the second page
+    \begin{figure}
+        \centering
+        \begin{subfigure}[b]{.5\textwidth}
+            \centering
+            \ilatex{\includegraphics[width=.4\linewidth]{img/cat.jpg}}
+            \caption{Picture of a cat.}
+            \label{fig:cat1}
+        \end{subfigure}%
+        \begin{subfigure}[b]{.5\textwidth}
+            \centering
+            \ilatex{\includegraphics[width=.4\linewidth]{img/cat-drawing.png}}
+            \caption{Drawing of a cat.}
+            \label{fig:cat2}
+        \end{subfigure}
+        \caption{Two kinds of images in a single picture.}
+        \label{fig:cats}
+    \end{figure}
+
+    % A more complex table example taken from
+    % https://www.overleaf.com/learn/latex/tables
+    % \begin{table}[h]
+    %     \centering
+    %     \ilatex{\begin{tabular}{|p{3cm}||p{3cm}|p{3cm}|p{3cm}|}
+    %         \hline
+    %         \multicolumn{4}{|c|}{Country List} \\
+    %         \hline
+    %         Country Name or Area Name & ISO ALPHA 2 Code & ISO ALPHA 3 Code & ISO numeric Code \\
+    %         \hline
+    %         Afghanistan & AF & AFG & 004 \\
+    %         Aland Islands & AX & ALA & 248 \\
+    %         Albania & AL & ALB & 008 \\
+    %         Algeria & DZ & DZA & 012 \\
+    %         American Samoa & AS & ASM & 016 \\
+    %         Andorra & AD & AND & 020 \\
+    %         Angola & AO & AGO & 024 \\
+    %         \hline
+    %         \end{tabular}}
+    %     \caption{Another meaningless table.}
+    %     \label{tab:meaningless}
+    % \end{table}
 \end{document}
