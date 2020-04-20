@@ -24,8 +24,7 @@ function isMousePointerInsideAnnotation(mouseEvent, annotation, viewport) {
 }
 
 
-// TODO: handle the update of visualisations while a popup is open
-// In particular, do not reinject the old vis. into the pool of vis. when the popup is closed
+// TODO: handle the update of visualisations while a popup is open?
 class VisualisationPopup {
     constructor(visualisationNode, yOffset) {
         this.visualisationNode = visualisationNode;
@@ -71,7 +70,7 @@ class VisualisationPopup {
     open() {
         document.body.prepend(this.maskNode);
 
-        // Emit an event to signal that a visualisatiuon has just been displayed
+        // Emit an event to signal that a visualisation has just been displayed
         pdfNode.dispatchEvent(new CustomEvent("visualisation-displayed", {
             detail: {
                 visualisationNode: this.visualisationNode
@@ -80,10 +79,9 @@ class VisualisationPopup {
     }
 
     close() {
-        // visualisationsNode.append(this.visualisationNode);
         this.maskNode.remove();
 
-        // Emit an event to signal that a visualisatiuon has just been hidden
+        // Emit an event to signal that a visualisation has just been hidden
         pdfNode.dispatchEvent(new CustomEvent("visualisation-hidden", {
             detail: {
                 visualisationNode: this.visualisationNode
@@ -130,7 +128,7 @@ class DisplayablePDFPage {
         
         this.computeViewport();
         this.resizeCanvas();
-        this.draw();
+        await this.draw();
 
         this.startHandlingCanvasClicks();
     }
@@ -162,11 +160,11 @@ class DisplayablePDFPage {
         this.canvas.style.height = `${this.viewport.height}px`;
     }
 
-    drawPage() {
+    async drawPage() {
         // Use the device pixel ratio and the transform property
         // to make the PDF look crisp on HDPI displays
         // (cf. https://github.com/mozilla/pdf.js/issues/10509#issuecomment-585062007)
-        this.page.render({
+        await this.page.render({
             canvasContext: this.canvasContext,
             viewport: this.viewport,
             transform: this.transformMatrix
@@ -176,24 +174,40 @@ class DisplayablePDFPage {
     drawAnnotationFrames(annotations) {
         this.canvasContext.save();
         
-        this.canvasContext.lineWidth = 2;
+        this.canvasContext.setTransform(1, 0, 0, 1, 0, 0);
+        this.canvasContext.lineWidth = 3;
         this.canvasContext.strokeStyle = "#0074D9";
-        
+
+        // Define functions to adapt PDF coordinates to canvax coordinates
+        // In addition to the transform matrix of the viewport,
+        // the scaling must be further adapted to take the HDPI fix into account
+        const viewportTransform = this.viewport.transform;
+        const adaptX = x => DEVICE_PIXEL_RATIO * (x * viewportTransform[0]);
+        const adaptY = y => DEVICE_PIXEL_RATIO * ((y * viewportTransform[3]) + viewportTransform[5]);
+        function adaptRect([x1, y1, x2, y2]) {
+            return [adaptX(x1), adaptY(y1), adaptX(x2), adaptY(y2)];
+        }
+
         for (let annotation of annotations) {
-            const [x1, y1, x2, y2] = annotation.rect;
-            this.canvasContext.strokeRect(x1, y1, Math.abs(x2 - x1), Math.abs(y2 - y1));
+            let [x1, y1, x2, y2] = adaptRect(annotation.rect);
+            this.canvasContext.strokeRect(
+                x1,
+                y1,
+                x2 - x1,
+                y2 - y1
+            );
         }
     
         this.canvasContext.restore();
     }
 
     drawVisualisationAnnotations() {
-        // this.drawAnnotationFrames(this.annotations);
         this.drawAnnotationFrames(this.visualisationAnnotations);
     }
 
-    draw() {
-        this.drawPage();
+    async draw() {
+        await this.drawPage();
+        // this.drawAnnotationFrames(this.annotations);
         this.drawVisualisationAnnotations();
 
         console.log("The PDF page has been successfully rendered!");
@@ -251,7 +265,6 @@ class DisplayablePDF {
         this.pageContainerNode.classList.add("pdf-page-container");
 
         this.nbPages = pdf.numPages;
-        //this.nbLoadedPages = 0;
         this.displayablePages = new Map();
     }
 
@@ -263,8 +276,6 @@ class DisplayablePDF {
         const displayablePage = await DisplayablePDFPage.fromPDFDocument(this.pdf, pageNumber);
         this.displayablePages.set(pageNumber, displayablePage);
         this.pageContainerNode.append(displayablePage.canvas);
-
-        //this.nbLoadedPages += 1;
     }
 
     async loadAllPages() {
@@ -280,7 +291,6 @@ class DisplayablePDF {
 
     displayInside(node) {
         node.append(this.pageContainerNode);
-        console.log("The PDF has been displayed inside: ", node);
     }
 
     static async fromURI(uri) {
@@ -291,228 +301,6 @@ class DisplayablePDF {
         await displayablePdf.init();
 
         return displayablePdf;
-    }
-}
-
-// Get the PDF viewer node
-// If it does not exist (i.e. no PDF file was found), skip the rest of the script
-// const pdfViewerNode = document.querySelector("#pdf-viewer");
-
-// // Add a canvas to the DOM (to display pages from the PDF afterwards)
-// const canvas = document.createElement("canvas");
-// const canvasContext = canvas.getContext("2d");
-// pdfNode.append(canvas);
-
-// function loadPDFDocument() {
-//     if (pdfViewerNode) {
-//         // Specify the URI to the required worker
-//         const workerUri = pdfViewerNode.getAttribute("data-pdfjs-worker-uri");
-//         pdfjsLib.GlobalWorkerOptions.workerSrc = "https://unpkg.com/pdfjs-dist@2.3.200/build/pdf.worker.min.js";
-
-//         const pdfUri = pdfViewerNode.getAttribute("data-pdf-uri");
-        
-//         console.log("Start loading the PDF...");
-//         pdfjsLib
-//             .getDocument(pdfUri)
-//             .promise
-//             .then(onPDFDocumentLoaded);
-//     }
-// }
-
-// Map from page numbers to pages
-// const pages = new Map();
-
-// Function to call once the PDF document is loaded
-// async function onPDFDocumentLoaded(pdf) {
-//     if (pdf.numPages === 0) {
-//         console.log("The PDF contains no pages: it cannot be displayed.");
-//         return;
-//     }
-
-//     // Load the first page
-//     // TODO: handle more pages/page change
-//     const page = await getPDFPage(pdf, 1);
-
-//     console.log("First page loaded: ", page);
-//     onPDFPageLoaded(pdf, page);
-// }
-
-
-// Function to get a page from the PDF
-// Either retrieve if (if it has previously been loaded) or load it
-// async function getPDFPage(pdf, pageNumber) {
-//     if (pages.has(pageNumber)) {
-//         return pages.get(pageNumber);
-//     }
-
-//     const page = await pdf.getPage(pageNumber);
-//     pages.set(pageNumber, page);
-
-//     return page;
-// }
-
-
-// Function to call when a page is loaded
-// async function onPDFPageLoaded(pdf, page) {
-//     const viewport = displayPDFPage(page);
-
-    // Log/draw all annotations (for debugging purposes)
-    // const allAnnotations = await page.getAnnotations();
-    // console.log("All annotations:", allAnnotations);
-    // // drawAnnotationFrames(allAnnotations);
-
-    // const annotations = await getVisualisableContentAnnotations(page);
-    // drawAnnotationFrames(annotations);
-    
-    // startHandlingCanvasMouseMoves(annotations, viewport);
-//     startHandlingCanvasClicks(annotations, viewport);
-// }
-
-
-// Function to display a page from the PDF
-// function displayPDFPage(page) {
-//     // Scale the page so it horizontally fits in the webview
-//     const webviewWidth = document.body.clientWidth;
-//     const pageWidth = page.view[2];
-//     const scale = webviewWidth / pageWidth;
-
-//     const viewport = page.getViewport({ scale: scale });
-
-//     // Make the dimensions of the canvas match those of the page
-//     // Use the device pixel ratio and the transform property to make the PDF crisp on HDPI displays
-//     // (from https://github.com/mozilla/pdf.js/issues/10509#issuecomment-585062007)
-//     const DEVICE_PIXEL_RATIO = window.DEVICE_PIXEL_RATIO || 1;
-//     const transform = [DEVICE_PIXEL_RATIO, 0 , 0, DEVICE_PIXEL_RATIO, 0, 0];
-    
-//     canvas.width = viewport.width * DEVICE_PIXEL_RATIO;
-//     canvas.height = viewport.height * DEVICE_PIXEL_RATIO;
-
-//     canvas.style.width = `${viewport.width}px`;
-//     canvas.style.height = `${viewport.height}px`;
-    
-//     page.render({
-//         canvasContext: canvasContext,
-//         viewport: viewport,
-//         transform: transform
-//     });
-
-//     console.log("The PDF page has been successfully rendered!");
-//     return viewport;
-// }
-
-
-// Function to compute the list of visualisable content annotations
-// A visualisable content annotation is a special annotation of a part of the content of the PDF
-// which is associated to an interactive visualisation (which can be displayed/edited)
-// async function getVisualisableContentAnnotations(page) {
-//     const annotations = await page.getAnnotations();
-
-//     // Only keep "widget" annotations (created as tooltips using pdfcomment package)
-//     return annotations.filter(annotation => {
-//         return annotation.annotationType === 20; // tooltip
-//     });
-// }
-
-
-// Function to draw a rectangle around the given annotations
-// function drawAnnotationFrames(annotations) {
-//     canvasContext.save();
-//     canvasContext.lineWidth = 2;
-//     canvasContext.strokeStyle = "#0074D9";
-    
-//     for (let annotation of annotations) {
-//         const [x1, y1, x2, y2] = annotation.rect;
-//         canvasContext.strokeRect(x1, y1, Math.abs(x2 - x1), Math.abs(y2 - y1));
-//     }
-
-//     canvasContext.restore();
-// }
-
-
-
-
-
-// Function to listen to and process clicks on the canvas
-// It assumes all given annotations to be visualisable content annotations
-// function startHandlingCanvasClicks(annotations, viewport) {
-//     canvas.addEventListener("click", event => {
-//         for (let annotation of annotations) {
-//             if (isMousePointerInsideAnnotation(event, annotation, viewport)) {
-//                 onAnnotationClick(event, annotation);
-//             }
-//         }
-//     }); 
-// }
-
-
-// Function to process a click on an annotation
-// It assumes the given annotation to be visualisable content annotation
-// function onAnnotationClick(event, annotation) {
-//     console.log("An annotation is clicked: ", annotation);
-
-//     const annotationText = annotation.alternativeText;
-//     if (annotationText.startsWith("ilatex-visualisation")) {
-//         const [_, sourceIndexStr] = annotationText.match(/[^\d]+(\d+)/);
-//         const sourceIndex = parseInt(sourceIndexStr);
-//         const yOffset = canvas.getBoundingClientRect().top + annotation.rect[3];
-
-//         displayVisualisationAtIndex(sourceIndex, yOffset);
-//     }
-// }
-
-
-// Function to listen to and process mouse moves on the canvas
-// It assumes all given annotations to be visualisable content annotations
-// function startHandlingCanvasMouseMoves(annotations, viewport) {
-//     canvas.addEventListener("mousemove", event => {
-//         for (let annotation of annotations) {
-//             if (isMousePointerInsideAnnotation(event, annotation, viewport)) {
-//                 onAnnotationHovering(event, annotation);
-//             }
-//         }
-//     }); 
-// }
-
-
-// // Function to process a click on an annotation
-// // It assumes the given annotation to be visualisable content annotation
-// function onAnnotationHovering(event, annotation) {
-//     drawAnnotationFrames([annotation]);
-// }
-
-// function displayVisualisationAtIndex(sourceIndex, yOffset) {
-//     const maskNode = document.createElement("div");
-//     maskNode.classList.add("visualisation-mask");
-//     document.body.prepend(maskNode);
-
-//     const containerNode = document.createElement("div");
-//     containerNode.classList.add("visualisation-container");
-//     containerNode.style.top = `${yOffset}px`;
-//     maskNode.append(containerNode);
-
-//     const visualisationNode = document.querySelector(`.visualisation[data-source-index="${sourceIndex}"]`);
-//     containerNode.append(visualisationNode);
-//     console.log("Source index matches node: ", visualisationNode);
-
-//     maskNode.addEventListener("click", event => {
-//         if (event.target !== maskNode) {
-//             return;
-//         }
-
-//         document.body.append(visualisationNode);
-//         maskNode.remove();
-//     });
-// }
-
-// Start loading the PDF document
-// loadPDFDocument();
-
-
-// Setup image frame objects for includegraphics visualisations
-function createImageFrames() {
-    const includegraphicsVisElements = visualisationsNode.querySelectorAll(`.visualisation[data-name="includegraphics"]`);
-    for (let element of includegraphicsVisElements) {
-        new ImageFrame(element);
     }
 }
 

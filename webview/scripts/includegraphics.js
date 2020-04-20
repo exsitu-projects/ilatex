@@ -308,18 +308,6 @@ class ImageFrame {
     }
 }
 
-// Setup image frame objects for includegraphics visualisations
-// function createImageFrames() {
-//     const includegraphicsVisElements = visualisationsNode.querySelectorAll(`.visualisation[data-name="includegraphics"]`);
-//     for (let element of includegraphicsVisElements) {
-//         new ImageFrame(element);
-//     }
-// }
-
-// visualisationsNode.addEventListener("visualisations-changed", event => {
-//     createImageFrames();
-// });
-
 pdfNode.addEventListener("visualisation-displayed", event => {
     const visualisationNode = event.detail.visualisationNode;
     

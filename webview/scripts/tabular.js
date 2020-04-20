@@ -154,24 +154,11 @@ class InteractiveTable {
     }
 }
 
-// Setup interactive table objects for tabular visualisations
-// function createInteractiveTables() {
-//     const tabularVisualisations = visualisationsNode.querySelectorAll(`.visualisation[data-name="tabular"]`);
-//     for (let visualisation of tabularVisualisations) {
-//         new InteractiveTable(visualisation);
-//     }
-// }
-
-// visualisationsNode.addEventListener("visualisations-changed", event => {
-//     createInteractiveTables();
-// });
-
 pdfNode.addEventListener("visualisation-displayed", event => {
     const visualisationNode = event.detail.visualisationNode;
     
     if (visualisationNode.getAttribute("data-name") === "tabular") {
-        let i = new InteractiveTable(visualisationNode);
-        console.log("Created int table: ", i);
+        new InteractiveTable(visualisationNode);
     }
 });
 
