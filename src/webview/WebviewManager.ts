@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { WebviewMessage, WebviewMessageType, SelectTextMessage } from './WebviewMessage';
+import { WebviewMessage, WebviewMessageType, SelectTextMessage, UpdateVisualisationsMessage, UpdatePDFMessage } from './WebviewMessage';
 import { FileReader } from '../utils/FileReader';
 
 export type MessageHandler<T extends WebviewMessageType = WebviewMessageType> =
@@ -45,6 +45,7 @@ export class WebviewManager {
 
         this.prepareWebviewTemplate();
         this.startHandlingMessages();
+        this.updateWebviewWith("");
     }
 
     startHandlingMessages(): void {
@@ -132,15 +133,29 @@ export class WebviewManager {
         this.addScriptsToWebviewTemplate();
 
         // Split the template before and after the content injection site
-        const contentTag = "<!--[CONTENT]-->";
-        const contentTagIndex = this.template.indexOf(contentTag);
-        this.templateAroundContent = {
-            before: this.template.substr(0, contentTagIndex),
-            after: this.template.substr(contentTagIndex + contentTag.length)
-        };
+        // const contentTag = "<!--[CONTENT]-->";
+        // const contentTagIndex = this.template.indexOf(contentTag);
+        // this.templateAroundContent = {
+        //     before: this.template.substr(0, contentTagIndex),
+        //     after: this.template.substr(contentTagIndex + contentTag.length)
+        // };
     }
 
     updateWebviewWith(content: string): void {
-        this.webview.html = `${this.templateAroundContent.before}${content}${this.templateAroundContent.after}`;
+        this.webview.html = this.template;
+    }
+
+    updateWebviewVisualisations(visualisationsHtml: string) {
+        this.sendMessage({
+            type: WebviewMessageType.UpdateVisualisations,
+            with: visualisationsHtml
+        } as UpdateVisualisationsMessage);
+    }
+
+    updateWebviewPDF(pdfUri: vscode.Uri) {
+        this.sendMessage({
+            type: WebviewMessageType.UpdatePDF,
+            uri: this.adaptURI(pdfUri).toString()
+        } as UpdatePDFMessage);
     }
 }

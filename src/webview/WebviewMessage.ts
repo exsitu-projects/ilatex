@@ -3,7 +3,8 @@ import { VisualisationID } from "../visualisations/Visualisation";
 export const enum WebviewMessageType {
     // From extension to webview
     FocusVisualisation = "FocusVisualisation",
-    ReloadPDF = "ReloadPDF",
+    UpdateVisualisations = "UpdateVisualisations",
+    UpdatePDF = "UpdatePDF",
 
     // From webview to extension
     SelectText = "SelectText",
@@ -14,6 +15,22 @@ export interface WebviewMessage<T extends WebviewMessageType = WebviewMessageTyp
     type: T;
 }
 
+
+// From extension to webview
+export interface FocusVisualisationMessage extends WebviewMessage<WebviewMessageType.FocusVisualisation> {
+    id: VisualisationID;
+}
+
+export interface UpdateVisualisationsMessage extends WebviewMessage<WebviewMessageType.UpdateVisualisations> {
+    with: string;
+}
+
+export interface UpdatePDFMessage extends WebviewMessage<WebviewMessageType.UpdatePDF> {
+    uri: string;
+}
+
+
+// From webview to extension
 export interface SelectTextMessage extends WebviewMessage<WebviewMessageType.SelectText> {
     from: {lineIndex: number, columnIndex: number}
     to: {lineIndex: number, columnIndex: number};
@@ -24,12 +41,4 @@ export interface ReplaceTextMessage extends WebviewMessage<WebviewMessageType.Re
     to: {lineIndex: number, columnIndex: number};
     with: string;
     reload?: boolean;
-}
-
-export interface FocusVisualisationMessage extends WebviewMessage<WebviewMessageType.FocusVisualisation> {
-    id: VisualisationID;
-}
-
-export interface ReloadPDFMessage extends WebviewMessage<WebviewMessageType.ReloadPDF> {
-    uri: string;
 }

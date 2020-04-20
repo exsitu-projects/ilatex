@@ -4,7 +4,7 @@ import { LatexAST } from './ast/LatexAST';
 import { LatexASTFormatter } from './ast/visitors/LatexASTFormatter';
 import { VisualisationManager } from './visualisations/VisualisationManager';
 import { WebviewManager } from './webview/WebviewManager';
-import { WebviewMessageType, SelectTextMessage, FocusVisualisationMessage, ReplaceTextMessage, ReloadPDFMessage } from './webview/WebviewMessage';
+import { WebviewMessageType, SelectTextMessage, FocusVisualisationMessage, ReplaceTextMessage } from './webview/WebviewMessage';
 import { FileReader } from './utils/FileReader';
 
 export class InteractiveLaTeX {
@@ -31,7 +31,10 @@ export class InteractiveLaTeX {
         this.startObservingSelectionChanges();
 
         this.parseActiveDocument();
-        this.updateWebviewContent();
+
+        // TODO: handle the absence of the PDF at init
+        this.updateWebviewVisualisations();
+        this.updateWebviewPDF();
     }
 
     initWebviewMessageHandlers(): void {
@@ -96,7 +99,7 @@ export class InteractiveLaTeX {
                 waitBeforeNextObservation = true;
                 setTimeout(() => {
                     waitBeforeNextObservation = false;
-                }, 1500);
+                }, 500);
 
                 this.onDocumentChange();
             }
@@ -121,7 +124,7 @@ export class InteractiveLaTeX {
                 waitBeforeNextObservation = true;
                 setTimeout(() => {
                     waitBeforeNextObservation = false;
-                }, 1500);
+                }, 500);
 
                 this.onDocumentPDFChange();
             }
@@ -136,15 +139,21 @@ export class InteractiveLaTeX {
         vscode.commands.executeCommand("latex.build");
         this.parseActiveDocument();
 
+        // Update the webview
+        this.updateWebviewVisualisations();
+
         // this.updateWebviewContent();
     }
 
     private onDocumentPDFChange(): void {
         const date = new Date();
         console.log(`(${date.getSeconds()}) PDF has changed`);
+
+        // Update the webview
+        this.updateWebviewPDF();
         
         // Once the PDF document has changed, update the webview
-        this.updateWebviewContent();
+        // this.updateWebviewContent();
     }
 
     private startObservingSelectionChanges(): void {
@@ -167,28 +176,28 @@ export class InteractiveLaTeX {
         });
     }
 
-    private renderDocumentPDFViewerAsHTML(): string {
-        // If the PDF file does not exist, return an empty string
-        if (!this.documentPDFExists()) {
-            console.log("PDF file does not exist");
-            return "";
-        }
+    // private renderDocumentPDFViewerAsHTML(): string {
+    //     // If the PDF file does not exist, return an empty string
+    //     if (!this.documentPDFExists()) {
+    //         console.log("PDF file does not exist");
+    //         return "";
+    //     }
 
-        // Get the URI of the PDF document
-        const pdfUri = this.getDocumentPDFUri();
+    //     // Get the URI of the PDF document
+    //     const pdfUri = this.getDocumentPDFUri();
 
-        // Compute the URI of the script for PDF.js' worker
-        const pdfjsWorkerPath = FileReader.resolvePathFromExtensionRoot("./webview/scripts/lib/pdf.worker.js");
-        const pdfjsWorkerUri = vscode.Uri.file(pdfjsWorkerPath);
+    //     // Compute the URI of the script for PDF.js' worker
+    //     const pdfjsWorkerPath = FileReader.resolvePathFromExtensionRoot("./webview/scripts/lib/pdf.worker.js");
+    //     const pdfjsWorkerUri = vscode.Uri.file(pdfjsWorkerPath);
 
-        return `
-            <div
-                id="pdf-viewer"
-                data-pdf-uri="${this.webviewManager.adaptURI(pdfUri)}"
-                data-pdfjs-worker-uri="${this.webviewManager.adaptURI(pdfjsWorkerUri)}"
-            ></div>
-        `;
-    }
+    //     return `
+    //         <div
+    //             id="pdf-viewer"
+    //             data-pdf-uri="${this.webviewManager.adaptURI(pdfUri)}"
+    //             data-pdfjs-worker-uri="${this.webviewManager.adaptURI(pdfjsWorkerUri)}"
+    //         ></div>
+    //     `;
+    // }
 
     private async parseActiveDocument() {
         const firstLine = this.document.lineAt(0);
@@ -214,12 +223,22 @@ export class InteractiveLaTeX {
         }
     }
 
-    private updateWebviewContent(): void {
-        const content = [
-            this.renderDocumentPDFViewerAsHTML(),
-            this.visualisationManager.renderAllVisualisationsAsHTML()
-        ].join("\n");
+    // private updateWebviewContent(): void {
+    //     const content = [
+    //         this.renderDocumentPDFViewerAsHTML(),
+    //         this.visualisationManager.renderAllVisualisationsAsHTML()
+    //     ].join("\n");
         
-        this.webviewManager.updateWebviewWith(content);
+    //     this.webviewManager.updateWebviewWith(content);
+    // }
+
+    updateWebviewVisualisations() {
+        const visualisationsHtml = this.visualisationManager.renderAllVisualisationsAsHTML();
+        this.webviewManager.updateWebviewVisualisations(visualisationsHtml);
+    }
+
+    updateWebviewPDF() {
+        const pdfUri = this.getDocumentPDFUri();
+        this.webviewManager.updateWebviewPDF(pdfUri);
     }
 }
