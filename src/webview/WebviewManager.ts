@@ -41,8 +41,14 @@ export class WebviewManager {
         this.messageHandlers = new Map();
         this.messageHandlerDisposable = null;
 
-        this.prepareWebviewTemplate();
+        this.init();
+    }
+
+    private init() {
         this.startHandlingMessages();
+        
+        this.prepareWebviewTemplate();
+        this.webview.html = this.template;
     }
 
     startHandlingMessages(): void {
