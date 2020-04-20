@@ -48,22 +48,20 @@ export class InteractiveLaTeX {
         });
 
         // Text must be replaced
-        this.webviewManager.setHandlerFor(WebviewMessageType.ReplaceText, (message) => {
+        this.webviewManager.setHandlerFor(WebviewMessageType.ReplaceText, async (message) => {
             const replaceTextMessage = message as ReplaceTextMessage;
             const rangeToEdit = new vscode.Range(
                 new vscode.Position(replaceTextMessage.from.lineIndex, replaceTextMessage.from.columnIndex),
                 new vscode.Position(replaceTextMessage.to.lineIndex, replaceTextMessage.to.columnIndex)
             );
 
-            this.editor
-                .edit((editBuilder) => {
-                    editBuilder.replace(rangeToEdit, replaceTextMessage.with);
-                })
-                .then(() => {
-                    if (replaceTextMessage.reload) {
-                        this.parseActiveDocument();
-                    }
-                });  
+            await this.editor.edit((editBuilder) => {
+                editBuilder.replace(rangeToEdit, replaceTextMessage.with);
+            });
+
+            if (replaceTextMessage.saveDocument) {
+                this.document.save();
+            }
         });
 
         // The document must be saved

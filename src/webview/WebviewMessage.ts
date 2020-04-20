@@ -41,7 +41,7 @@ export interface ReplaceTextMessage extends WebviewMessage<WebviewMessageType.Re
     from: {lineIndex: number, columnIndex: number}
     to: {lineIndex: number, columnIndex: number};
     with: string;
-    reload?: boolean;
+    saveDocument?: boolean;
 }
 
-export interface SaveDocumentMessage extends WebviewMessage<WebviewMessageType.SaveDocument> {}
+export interface SaveDocumentMessage extends WebviewMessage<WebviewMessageType.SaveDocument> {};

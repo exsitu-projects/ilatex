@@ -11,8 +11,7 @@ function updateDocumentCellContent(cellLocations, newContent) {
         type: MessageTypes.ReplaceText,
         from: cellLocations.start,
         to: cellLocations.end,
-        with: newContent,
-        reload: true
+        with: newContent
     });
 }
 
@@ -156,7 +155,7 @@ class InteractiveTable {
 
 pdfNode.addEventListener("visualisation-displayed", event => {
     const visualisationNode = event.detail.visualisationNode;
-    
+
     if (visualisationNode.getAttribute("data-name") === "tabular") {
         new InteractiveTable(visualisationNode);
     }
