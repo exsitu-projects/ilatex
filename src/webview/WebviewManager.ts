@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { WebviewMessage, WebviewMessageType, SelectTextMessage, UpdateVisualisationsMessage, UpdatePDFMessage } from './WebviewMessage';
+import { WebviewMessage, WebviewMessageType, UpdateVisualisationsMessage, UpdatePDFMessage } from './WebviewMessage';
 import { FileReader } from '../utils/FileReader';
 
 export type MessageHandler<T extends WebviewMessageType = WebviewMessageType> =
@@ -31,7 +31,6 @@ export class WebviewManager {
     private readonly panel: vscode.WebviewPanel;
     private readonly webview: vscode.Webview;
     private template: string;
-    private templateAroundContent: {before: string, after: string};
     readonly messageHandlers: Map<WebviewMessageType, MessageHandler>;
     private messageHandlerDisposable: vscode.Disposable | null;
 
@@ -39,13 +38,11 @@ export class WebviewManager {
         this.panel = panel;
         this.webview = panel.webview;
         this.template = "";
-        this.templateAroundContent = {before: "", after: ""};
         this.messageHandlers = new Map();
         this.messageHandlerDisposable = null;
 
         this.prepareWebviewTemplate();
         this.startHandlingMessages();
-        this.updateWebviewWith("");
     }
 
     startHandlingMessages(): void {
@@ -131,18 +128,6 @@ export class WebviewManager {
         // Add 'external' styles and scripts to the template
         this.addStylesToWebviewTemplate();
         this.addScriptsToWebviewTemplate();
-
-        // Split the template before and after the content injection site
-        // const contentTag = "<!--[CONTENT]-->";
-        // const contentTagIndex = this.template.indexOf(contentTag);
-        // this.templateAroundContent = {
-        //     before: this.template.substr(0, contentTagIndex),
-        //     after: this.template.substr(contentTagIndex + contentTag.length)
-        // };
-    }
-
-    updateWebviewWith(content: string): void {
-        this.webview.html = this.template;
     }
 
     updateWebviewVisualisations(visualisationsHtml: string) {

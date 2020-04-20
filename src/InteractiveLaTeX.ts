@@ -5,7 +5,6 @@ import { LatexASTFormatter } from './ast/visitors/LatexASTFormatter';
 import { VisualisationManager } from './visualisations/VisualisationManager';
 import { WebviewManager } from './webview/WebviewManager';
 import { WebviewMessageType, SelectTextMessage, FocusVisualisationMessage, ReplaceTextMessage } from './webview/WebviewMessage';
-import { FileReader } from './utils/FileReader';
 
 export class InteractiveLaTeX {
     private editor: vscode.TextEditor;
@@ -31,8 +30,6 @@ export class InteractiveLaTeX {
         this.startObservingSelectionChanges();
 
         this.parseActiveDocument();
-
-        // TODO: handle the absence of the PDF at init
         this.updateWebviewVisualisations();
         this.updateWebviewPDF();
     }
@@ -136,27 +133,22 @@ export class InteractiveLaTeX {
 
     private onDocumentChange(): void {
         const date = new Date();
-        console.log(`(${date.getSeconds()}) Latex has changed`);
+        console.log(`(${date.getMinutes()}:${date.getSeconds()}) The LaTeX document has changed`);
 
         // Re-build and re-parse the document
         vscode.commands.executeCommand("latex.build");
         this.parseActiveDocument();
 
-        // Update the webview
+        // Update the visualisations in the webview
         this.updateWebviewVisualisations();
-
-        // this.updateWebviewContent();
     }
 
     private onDocumentPDFChange(): void {
         const date = new Date();
-        console.log(`(${date.getSeconds()}) PDF has changed`);
+        console.log(`(${date.getMinutes()}:${date.getSeconds()}) The PDF document has changed`);
 
-        // Update the webview
+        // Update the PDF in the webview
         this.updateWebviewPDF();
-        
-        // Once the PDF document has changed, update the webview
-        // this.updateWebviewContent();
     }
 
     private startObservingSelectionChanges(): void {
@@ -179,29 +171,6 @@ export class InteractiveLaTeX {
         });
     }
 
-    // private renderDocumentPDFViewerAsHTML(): string {
-    //     // If the PDF file does not exist, return an empty string
-    //     if (!this.documentPDFExists()) {
-    //         console.log("PDF file does not exist");
-    //         return "";
-    //     }
-
-    //     // Get the URI of the PDF document
-    //     const pdfUri = this.getDocumentPDFUri();
-
-    //     // Compute the URI of the script for PDF.js' worker
-    //     const pdfjsWorkerPath = FileReader.resolvePathFromExtensionRoot("./webview/scripts/lib/pdf.worker.js");
-    //     const pdfjsWorkerUri = vscode.Uri.file(pdfjsWorkerPath);
-
-    //     return `
-    //         <div
-    //             id="pdf-viewer"
-    //             data-pdf-uri="${this.webviewManager.adaptURI(pdfUri)}"
-    //             data-pdfjs-worker-uri="${this.webviewManager.adaptURI(pdfjsWorkerUri)}"
-    //         ></div>
-    //     `;
-    // }
-
     private async parseActiveDocument() {
         const firstLine = this.document.lineAt(0);
         const lastLine = this.document.lineAt(this.document.lineCount - 1);
@@ -214,9 +183,9 @@ export class InteractiveLaTeX {
             const ast = new LatexAST(documentContent);
 
             // Pretty-print the AST for debugging purposes
-            //const formatter = new LatexASTFormatter();
-            //ast.visitWith(formatter);
-            //console.log(formatter.formattedAST);
+            // const formatter = new LatexASTFormatter();
+            // ast.visitWith(formatter);
+            // console.log(formatter.formattedAST);
 
             // Update the visualisations
             this.visualisationManager.updateVisualisations(ast);
@@ -225,15 +194,6 @@ export class InteractiveLaTeX {
             console.error(error);
         }
     }
-
-    // private updateWebviewContent(): void {
-    //     const content = [
-    //         this.renderDocumentPDFViewerAsHTML(),
-    //         this.visualisationManager.renderAllVisualisationsAsHTML()
-    //     ].join("\n");
-        
-    //     this.webviewManager.updateWebviewWith(content);
-    // }
 
     updateWebviewVisualisations() {
         const visualisationsHtml = this.visualisationManager.renderAllVisualisationsAsHTML();
