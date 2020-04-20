@@ -10,11 +10,11 @@ const DEVICE_PIXEL_RATIO = window.devicePixelRatio || 1.0;
 
 // Function to check if a mouse event occured inside a visualisation annotation
 // It also expects a reference to the viewport of the page (to transform coordinates)
-function isMousePointerInsideAnnotation(mouseEvent, annotation, viewport) {
-    // TODO: better explain the role of the values taken fron the transform matrix
-    // TODO: take the position of the canvas into account in case the page is scrolled?
-    const mouseX = (window.scrollX + mouseEvent.clientX) / viewport.transform[0];
-    const mouseY = ((window.scrollY + mouseEvent.clientY) - viewport.transform[5]) / viewport.transform[3];
+function isMousePointerInsideAnnotation(mouseEvent, annotation, canvas, viewport) {
+    // TODO: better explain the role of the values taken from the transform matrix
+    const canvasBox = canvas.getBoundingClientRect();
+    const mouseX = (mouseEvent.pageX - canvasBox.left - window.scrollX) / viewport.transform[0];
+    const mouseY = ((mouseEvent.pageY - canvasBox.top - window.scrollY) - viewport.transform[5]) / viewport.transform[3];
     const [x1, y1, x2, y2] = annotation.rect;
 
     return mouseX >= x1
@@ -231,7 +231,7 @@ class DisplayablePDFPage {
 
     handleCanvasClick(event) {
         for (let annotation of this.annotations) {
-            if (isMousePointerInsideAnnotation(event, annotation, this.viewport)) {
+            if (isMousePointerInsideAnnotation(event, annotation, this.canvas, this.viewport)) {
                 this.handleVisualisationAnnotationClick(annotation);
             }
         }
