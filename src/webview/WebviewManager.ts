@@ -8,7 +8,7 @@ export type MessageHandler<T extends WebviewMessageType = WebviewMessageType> =
 export class WebviewManager {
     // Paths for the template, the styles and the scripts to use in the webview
     // must be relative to the root directory of the extension
-    private static readonly WEBVIEW_TEMPLATE_PATH = "./webview/templates/pdf-template.html";
+    private static readonly WEBVIEW_TEMPLATE_PATH = "./webview/templates/main-template.html";
     private static readonly WEBVIEW_STYLES_PATHS = [
         "./webview/styles/lib/ag-grid.css",
         "./webview/styles/lib/ag-theme-balham.css",
