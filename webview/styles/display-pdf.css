@@ -1,3 +1,9 @@
+.pdf-page-container {
+    z-index: 0;
+}
+
+
+
 .visualisation-mask {
     position: fixed;
     top: 0;
@@ -5,6 +11,7 @@
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.4);
+    z-index: 200;
 }
 
 .visualisation-container {
@@ -12,6 +19,7 @@
     top: 0;
     left: 0;
     width: 100%;
+    z-index: 300;
 }
 
 .visualisation {
@@ -21,13 +29,30 @@
     box-shadow: 0 0 25px rgba(0, 0, 0, 0.7);
 }
 
-.visualisation-mask .visualisation {
+.visualisation-container .visualisation {
     display: block;
     padding: 15px;
     background-color: #FFF;
+    z-index: 1000;
 }
 
-.visualisation-mask .visualisation:hover,
-.visualisation-mask .visualisation.focused {
+.visualisation-container .visualisation:hover,
+.visualisation-container .visualisation.focused {
     border-style: none;
+}
+
+
+
+.pdf-annotation-mask-container {
+    position: absolute;
+    top: 0;
+    width: 0;
+    overflow: visible;
+    z-index: 50;
+}
+
+.annotation-mask {
+    position: absolute;
+    border: 1px dashed red;
+    z-index: 100;
 }

@@ -54,7 +54,6 @@ class VisualisationPopup {
     createContainer() {
         this.containerNode = document.createElement("div");
         this.containerNode.classList.add("visualisation-container");
-        this.maskNode.append(this.containerNode);
         
         // TODO: better position the container
         this.containerNode.style.top = `${this.yOffset}px`;
@@ -74,6 +73,7 @@ class VisualisationPopup {
     }
 
     open() {
+        document.body.prepend(this.containerNode);
         document.body.prepend(this.maskNode);
 
         // Emit an event to signal that a visualisation has just been displayed
@@ -86,6 +86,7 @@ class VisualisationPopup {
 
     close() {
         this.maskNode.remove();
+        this.containerNode.remove();
 
         // Tell the extension to save the document
         // (which will further trigger an update of the webview)
@@ -131,6 +132,10 @@ class DisplayablePDFPage {
         // PDF annotations
         this.annotations = [];
         this.visualisationAnnotations = [];
+
+        // Masks for visualisation annotations (DOM nodes acting as masks to detect events,
+        // positionned on top of the annotations, in absolute webpage coordinates)
+        this.visualisationAnnotationMaskNodes = [];
     }
 
     async init() {
@@ -140,7 +145,7 @@ class DisplayablePDFPage {
         this.resizeCanvas();
         await this.draw();
 
-        this.startHandlingCanvasClicks();
+        //this.startHandlingCanvasClicks();
     }
 
     computeViewport() {
@@ -156,9 +161,38 @@ class DisplayablePDFPage {
     async extractAnnotations() {
         this.annotations = await this.page.getAnnotations();
         this.visualisationAnnotations = this.annotations.filter(annotation => {
-            return annotation.annotationType === 20; // tooltip
+            return annotation.annotationType === 20 // tooltip
+                && annotation.alternativeText.startsWith("ilatex-visualisation");
         });
-        
+    }
+
+    // Warning: this method requires the canvas to be appended in the DOM
+    // to retrieve the correct absolute coordinates
+    createAnnotationMasks() {
+        for (let annotation of this.visualisationAnnotations) {
+            const maskNode = document.createElement("div");
+            maskNode.classList.add("annotation-mask");
+
+            // Set the position and the size of the mask
+            const maskRect = this.convertPdfRectToAbsoluteWebpageRect(annotation.rect);
+            const [x1, y1, x2, y2] = maskRect;
+            maskNode.style.top = `${y1}px`;
+            maskNode.style.left = `${x1}px`;
+            maskNode.style.width = `${x2 - x1}px`;
+            maskNode.style.height = `${y2 - y1}px`;
+
+            console.log("height", `${y2 - y1}px`);
+
+            // Handle clicks on this mask
+            maskNode.addEventListener("click", event => {
+                DisplayablePDFPage.handleAnnotationMaskClick(annotation, maskRect);
+            });
+
+            console.log("Mask node created: ", maskNode);
+            console.log(maskRect, maskNode.style);
+
+            this.visualisationAnnotationMaskNodes.push(maskNode);
+        }
     }
 
     resizeCanvas() {
@@ -181,6 +215,39 @@ class DisplayablePDFPage {
         });
     }
 
+    convertPdfRectToCanvasRect(pdfRect) {
+        // In addition to the transform matrix of the viewport,
+        // the scaling must be further adapted to take the HDPI fix into account
+        const viewportTransform = this.viewport.transform;
+        const adaptX = x => DEVICE_PIXEL_RATIO * ((x * viewportTransform[0]) + viewportTransform[2]);
+        const adaptY = y => DEVICE_PIXEL_RATIO * ((y * viewportTransform[3]) + viewportTransform[5]);
+        
+        // y1 and y2 must be swapped to change the origin from bottom-left to top-left 
+        const [x1, y1, x2, y2] = pdfRect;
+        return [adaptX(x1), adaptY(y2), adaptX(x2), adaptY(y1)];
+    }
+
+    // Warning: this method requires the canvas to be appended in the DOM
+    // to retrieve the correct absolute coordinates
+    convertPdfRectToAbsoluteWebpageRect(pdfRect) {
+        // Since the canvas element itself is not scaled up (only its content is),
+        // the HDPI fix does not have to be taken into account here.
+        // However, the current scroll of the page must be considered
+        // since it affects the DOMRect returned by getBoudingClientRect().
+        const canvasBox = this.canvas.getBoundingClientRect();
+        const viewportTransform = this.viewport.transform;
+        const adaptX = x => ((x * viewportTransform[0]) + viewportTransform[2])
+                            + canvasBox.left
+                            + window.scrollX;
+        const adaptY = y => ((y * viewportTransform[3]) + viewportTransform[5])
+                            + canvasBox.top 
+                            + window.scrollY;
+        
+        // y1 and y2 must be swapped to change the origin from bottom-left to top-left 
+        const [x1, y1, x2, y2] = pdfRect;
+        return [adaptX(x1), adaptY(y2), adaptX(x2), adaptY(y1)];    
+    }
+
     drawAnnotationFrames(annotations) {
         this.canvasContext.save();
         
@@ -188,18 +255,8 @@ class DisplayablePDFPage {
         this.canvasContext.lineWidth = 3;
         this.canvasContext.strokeStyle = "#0074D9";
 
-        // Define functions to adapt PDF coordinates to canvax coordinates
-        // In addition to the transform matrix of the viewport,
-        // the scaling must be further adapted to take the HDPI fix into account
-        const viewportTransform = this.viewport.transform;
-        const adaptX = x => DEVICE_PIXEL_RATIO * (x * viewportTransform[0]);
-        const adaptY = y => DEVICE_PIXEL_RATIO * ((y * viewportTransform[3]) + viewportTransform[5]);
-        function adaptRect([x1, y1, x2, y2]) {
-            return [adaptX(x1), adaptY(y1), adaptX(x2), adaptY(y2)];
-        }
-
         for (let annotation of annotations) {
-            let [x1, y1, x2, y2] = adaptRect(annotation.rect);
+            let [x1, y1, x2, y2] = this.convertPdfRectToCanvasRect(annotation.rect);
             this.canvasContext.strokeRect(
                 x1,
                 y1,
@@ -211,48 +268,56 @@ class DisplayablePDFPage {
         this.canvasContext.restore();
     }
 
-    drawVisualisationAnnotations() {
-        this.drawAnnotationFrames(this.visualisationAnnotations);
-    }
-
     async draw() {
         await this.drawPage();
         // this.drawAnnotationFrames(this.annotations);
-        this.drawVisualisationAnnotations();
+        this.drawAnnotationFrames(this.visualisationAnnotations);
 
         console.log("The PDF page has been successfully rendered!");
     }
 
-    startHandlingCanvasClicks() {
-        this.canvas.addEventListener("click", event => {
-            this.handleCanvasClick(event);
-        }); 
-    }
+    // startHandlingCanvasClicks() {
+    //     this.canvas.addEventListener("click", event => {
+    //         this.handleCanvasClick(event);
+    //     }); 
+    // }
 
-    handleCanvasClick(event) {
-        for (let annotation of this.annotations) {
-            if (isMousePointerInsideAnnotation(event, annotation, this.canvas, this.viewport)) {
-                this.handleVisualisationAnnotationClick(annotation);
-            }
-        }
-    }
+    // handleCanvasClick(event) {
+    //     for (let annotation of this.annotations) {
+    //         if (isMousePointerInsideAnnotation(event, annotation, this.canvas, this.viewport)) {
+    //             this.handleVisualisationAnnotationClick(annotation);
+    //         }
+    //     }
+    // }
 
-    handleVisualisationAnnotationClick(annotation) {
-        console.log("A vis. annotation has been clicked: ", annotation);
+    // handleVisualisationAnnotationClick(annotation) {
+    //     console.log("A vis. annotation has been clicked: ", annotation);
 
-        const annotationText = annotation.alternativeText;
-        if (annotationText.startsWith("ilatex-visualisation")) {
-            // Extract the source index of the visualisation
-            // This is required to fetch the right visualisation node
-            const [_, sourceIndexStr] = annotationText.match(/[^\d]+(\d+)/);
-            const sourceIndex = parseInt(sourceIndexStr);
+    //     const annotationText = annotation.alternativeText;
+    //     if (annotationText.startsWith("ilatex-visualisation")) {
+    //         // Extract the source index of the visualisation
+    //         // This is required to fetch the right visualisation node
+    //         const [_, sourceIndexStr] = annotationText.match(/[^\d]+(\d+)/);
+    //         const sourceIndex = parseInt(sourceIndexStr);
 
-            // Compute the vertical position of the visualisation
-            // according to the position of the click
-            const yOffset = this.canvas.getBoundingClientRect().top + annotation.rect[3];
+    //         // Compute the vertical position of the visualisation
+    //         // according to the position of the click
+    //         const yOffset = this.canvas.getBoundingClientRect().top + annotation.rect[3];
     
-            VisualisationPopup.fromSourceIndex(sourceIndex, yOffset);
-        }
+    //         VisualisationPopup.fromSourceIndex(sourceIndex, yOffset);
+    //     }
+    // }
+
+    static handleAnnotationMaskClick(annotation, maskRect) {
+        // Extract the source index of the visualisation to fetch the right visualisation node
+        const [_, sourceIndexStr] = annotation.alternativeText.match(/[^\d]+(\d+)/);
+        const sourceIndex = parseInt(sourceIndexStr);
+
+        // Position the visualisation popup just below the mask
+        // TODO: consider refining this policy?
+        const yOffset = maskRect[3] + 20;
+    
+        VisualisationPopup.fromSourceIndex(sourceIndex, yOffset);
     }
 
     static async fromPDFDocument(pdf, pageNumber) {
@@ -273,6 +338,10 @@ class DisplayablePDF {
         // Create a container for the canvases of the pages
         this.pageContainerNode = document.createElement("div");
         this.pageContainerNode.classList.add("pdf-page-container");
+
+        // Create a container for the annotation masks
+        this.annotationMaskContainerNode = document.createElement("div");
+        this.annotationMaskContainerNode.classList.add("pdf-annotation-mask-container");
 
         this.nbPages = pdf.numPages;
         this.displayablePages = new Map();
@@ -300,7 +369,21 @@ class DisplayablePDF {
     }
 
     displayInside(node) {
+        // Display the pages first
         node.append(this.pageContainerNode);
+
+        // Create and display the annotation masks second
+        // This can only be perforned once the canvas have been appended to the DOM
+        // since their positions in the page is required to compute the absolute positions
+        // of the masks (see the related methods in DisplayablePDFPage)
+        for (let displayablePage of this.displayablePages.values()) {
+            displayablePage.createAnnotationMasks();
+            this.annotationMaskContainerNode.append(
+                ...displayablePage.visualisationAnnotationMaskNodes
+            );
+        }
+
+        node.append(this.annotationMaskContainerNode);
     }
 
     static async fromURI(uri) {
