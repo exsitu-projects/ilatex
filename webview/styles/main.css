@@ -13,6 +13,7 @@ body {
     overflow-y: scroll;
 }
 
+/*
 .visualisation {
     position: relative;
     margin: 5px 5px 0 5px;
@@ -26,3 +27,4 @@ body {
     border-color: var(--vscode-panelTitle-activeBorder);
     background-color: var(--vscode-editor-lineHighlightBackground);
 }
+*/

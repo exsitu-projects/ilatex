@@ -8,21 +8,6 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = "https://unpkg.com/pdfjs-dist@2.3.200/b
 // Get the pixel ratio of the user's device
 const DEVICE_PIXEL_RATIO = window.devicePixelRatio || 1.0;
 
-// Function to check if a mouse event occured inside a visualisation annotation
-// It also expects a reference to the viewport of the page (to transform coordinates)
-function isMousePointerInsideAnnotation(mouseEvent, annotation, canvas, viewport) {
-    // TODO: better explain the role of the values taken from the transform matrix
-    const canvasBox = canvas.getBoundingClientRect();
-    const mouseX = (mouseEvent.pageX - canvasBox.left - window.scrollX) / viewport.transform[0];
-    const mouseY = ((mouseEvent.pageY - canvasBox.top - window.scrollY) - viewport.transform[5]) / viewport.transform[3];
-    const [x1, y1, x2, y2] = annotation.rect;
-
-    return mouseX >= x1
-        && mouseX <= x2
-        && mouseY >= y1
-        && mouseY <= y2;
-}
-
 function saveDocument() {
     vscode.postMessage({
         type: MessageTypes.SaveDocument
@@ -36,35 +21,33 @@ class VisualisationPopup {
         this.visualisationNode = visualisationNode;
         this.yOffset = yOffset;
 
-        this.maskNode = null;
-        this.containerNode = null;
+        this.backgroundNode = null;
+        this.contentNode = null;
 
-        this.createMask();
-        this.createContainer();
+        this.createBackground();
+        this.createContent();
 
-        this.startHandlingMaskClicks();
+        this.startHandlingBackgroundClicks();
         this.open();
     }
 
-    createMask() {
-        this.maskNode = document.createElement("div");
-        this.maskNode.classList.add("visualisation-mask");
+    createBackground() {
+        this.backgroundNode = document.createElement("div");
+        this.backgroundNode.classList.add("visualisation-popup-background");
     }
 
-    createContainer() {
-        this.containerNode = document.createElement("div");
-        this.containerNode.classList.add("visualisation-container");
-        
-        // TODO: better position the container
-        this.containerNode.style.top = `${this.yOffset}px`;
+    createContent() {
+        this.contentNode = document.createElement("div");
+        this.contentNode.classList.add("visualisation-popup-content");
+        this.contentNode.style.top = `${this.yOffset}px`;
 
         // Move the visualisation inside the popup
-        this.containerNode.append(this.visualisationNode);   
+        this.contentNode.append(this.visualisationNode);   
     }
 
-    startHandlingMaskClicks() {
-        this.maskNode.addEventListener("click", event => {
-            if (event.target !== this.maskNode) {
+    startHandlingBackgroundClicks() {
+        this.backgroundNode.addEventListener("click", event => {
+            if (event.target !== this.backgroundNode) {
                 return;
             }
     
@@ -73,8 +56,8 @@ class VisualisationPopup {
     }
 
     open() {
-        document.body.prepend(this.containerNode);
-        document.body.prepend(this.maskNode);
+        document.body.prepend(this.contentNode);
+        document.body.prepend(this.backgroundNode);
 
         // Emit an event to signal that a visualisation has just been displayed
         pdfNode.dispatchEvent(new CustomEvent("visualisation-displayed", {
@@ -85,8 +68,8 @@ class VisualisationPopup {
     }
 
     close() {
-        this.maskNode.remove();
-        this.containerNode.remove();
+        this.backgroundNode.remove();
+        this.contentNode.remove();
 
         // Tell the extension to save the document
         // (which will further trigger an update of the webview)
@@ -144,8 +127,6 @@ class DisplayablePDFPage {
         this.computeViewport();
         this.resizeCanvas();
         await this.draw();
-
-        //this.startHandlingCanvasClicks();
     }
 
     computeViewport() {
@@ -215,17 +196,17 @@ class DisplayablePDFPage {
         });
     }
 
-    convertPdfRectToCanvasRect(pdfRect) {
-        // In addition to the transform matrix of the viewport,
-        // the scaling must be further adapted to take the HDPI fix into account
-        const viewportTransform = this.viewport.transform;
-        const adaptX = x => DEVICE_PIXEL_RATIO * ((x * viewportTransform[0]) + viewportTransform[2]);
-        const adaptY = y => DEVICE_PIXEL_RATIO * ((y * viewportTransform[3]) + viewportTransform[5]);
+    // convertPdfRectToCanvasRect(pdfRect) {
+    //     // In addition to the transform matrix of the viewport,
+    //     // the scaling must be further adapted to take the HDPI fix into account
+    //     const viewportTransform = this.viewport.transform;
+    //     const adaptX = x => DEVICE_PIXEL_RATIO * ((x * viewportTransform[0]) + viewportTransform[2]);
+    //     const adaptY = y => DEVICE_PIXEL_RATIO * ((y * viewportTransform[3]) + viewportTransform[5]);
         
-        // y1 and y2 must be swapped to change the origin from bottom-left to top-left 
-        const [x1, y1, x2, y2] = pdfRect;
-        return [adaptX(x1), adaptY(y2), adaptX(x2), adaptY(y1)];
-    }
+    //     // y1 and y2 must be swapped to change the origin from bottom-left to top-left 
+    //     const [x1, y1, x2, y2] = pdfRect;
+    //     return [adaptX(x1), adaptY(y2), adaptX(x2), adaptY(y1)];
+    // }
 
     // Warning: this method requires the canvas to be appended in the DOM
     // to retrieve the correct absolute coordinates
@@ -248,65 +229,31 @@ class DisplayablePDFPage {
         return [adaptX(x1), adaptY(y2), adaptX(x2), adaptY(y1)];    
     }
 
-    drawAnnotationFrames(annotations) {
-        this.canvasContext.save();
+    // drawAnnotationFrames(annotations) {
+    //     this.canvasContext.save();
         
-        this.canvasContext.setTransform(1, 0, 0, 1, 0, 0);
-        this.canvasContext.lineWidth = 3;
-        this.canvasContext.strokeStyle = "#0074D9";
+    //     this.canvasContext.setTransform(1, 0, 0, 1, 0, 0);
+    //     this.canvasContext.lineWidth = 3;
+    //     this.canvasContext.strokeStyle = "#0074D9";
 
-        for (let annotation of annotations) {
-            let [x1, y1, x2, y2] = this.convertPdfRectToCanvasRect(annotation.rect);
-            this.canvasContext.strokeRect(
-                x1,
-                y1,
-                x2 - x1,
-                y2 - y1
-            );
-        }
+    //     for (let annotation of annotations) {
+    //         let [x1, y1, x2, y2] = this.convertPdfRectToCanvasRect(annotation.rect);
+    //         this.canvasContext.strokeRect(
+    //             x1,
+    //             y1,
+    //             x2 - x1,
+    //             y2 - y1
+    //         );
+    //     }
     
-        this.canvasContext.restore();
-    }
+    //     this.canvasContext.restore();
+    // }
 
     async draw() {
         await this.drawPage();
         // this.drawAnnotationFrames(this.annotations);
-        this.drawAnnotationFrames(this.visualisationAnnotations);
-
-        console.log("The PDF page has been successfully rendered!");
+        // this.drawAnnotationFrames(this.visualisationAnnotations);
     }
-
-    // startHandlingCanvasClicks() {
-    //     this.canvas.addEventListener("click", event => {
-    //         this.handleCanvasClick(event);
-    //     }); 
-    // }
-
-    // handleCanvasClick(event) {
-    //     for (let annotation of this.annotations) {
-    //         if (isMousePointerInsideAnnotation(event, annotation, this.canvas, this.viewport)) {
-    //             this.handleVisualisationAnnotationClick(annotation);
-    //         }
-    //     }
-    // }
-
-    // handleVisualisationAnnotationClick(annotation) {
-    //     console.log("A vis. annotation has been clicked: ", annotation);
-
-    //     const annotationText = annotation.alternativeText;
-    //     if (annotationText.startsWith("ilatex-visualisation")) {
-    //         // Extract the source index of the visualisation
-    //         // This is required to fetch the right visualisation node
-    //         const [_, sourceIndexStr] = annotationText.match(/[^\d]+(\d+)/);
-    //         const sourceIndex = parseInt(sourceIndexStr);
-
-    //         // Compute the vertical position of the visualisation
-    //         // according to the position of the click
-    //         const yOffset = this.canvas.getBoundingClientRect().top + annotation.rect[3];
-    
-    //         VisualisationPopup.fromSourceIndex(sourceIndex, yOffset);
-    //     }
-    // }
 
     static handleAnnotationMaskClick(annotation, maskRect) {
         // Extract the source index of the visualisation to fetch the right visualisation node

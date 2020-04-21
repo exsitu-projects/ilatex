@@ -4,7 +4,7 @@
 
 
 
-.visualisation-mask {
+.visualisation-popup-background {
     position: fixed;
     top: 0;
     left: 0;
@@ -12,33 +12,34 @@
     height: 100%;
     background-color: rgba(0, 0, 0, 0.4);
     z-index: 200;
+    transition: background-color 200ms ease;
 }
 
-.visualisation-container {
+.visualisation-popup-content {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
+    overflow: hidden;
+    box-shadow: 0 0 25px rgba(0, 0, 0, .7);
     z-index: 300;
 }
 
-.visualisation {
+/* Hide visualisations when they are not displayed inside a popup. */
+.visualisation,
+.visualisation:hover
+.visualisation.focused {
     display: none;
-    margin: 0;
     border: none;
-    box-shadow: 0 0 25px rgba(0, 0, 0, 0.7);
 }
 
-.visualisation-container .visualisation {
+.visualisation-popup-content .visualisation {
     display: block;
+    margin: 0;
     padding: 15px;
     background-color: #FFF;
     z-index: 1000;
-}
-
-.visualisation-container .visualisation:hover,
-.visualisation-container .visualisation.focused {
-    border-style: none;
+    transition: height 250ms ease;
 }
 
 
@@ -53,6 +54,14 @@
 
 .annotation-mask {
     position: absolute;
-    border: 1px dashed red;
+    /* border: 2px solid #0074d9; */
+    box-shadow: 0 0 5px #0074D9;
     z-index: 100;
+    transition: height 100ms ease;
+}
+
+.annotation-mask:hover {
+    position: absolute;
+    /* border: 1px solid #FF851B; */
+    box-shadow: 0 0 10px #FF851B;
 }
