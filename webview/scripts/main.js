@@ -26,14 +26,15 @@ function parseLocationFromAttribute(attrValue) {
     };
 }
 
-function selectVisualisedCode(visualisationNode) {
+function selectVisualisedCode(visualisationNode, scroll = false) {
     const from = parseLocationFromAttribute(visualisationNode.getAttribute("data-loc-start"));
     const to = parseLocationFromAttribute(visualisationNode.getAttribute("data-loc-end"));
 
     vscode.postMessage({
         type: MessageTypes.SelectText,
         from: from,
-        to: to
+        to: to,
+        scroll: scroll
     });
 }
 

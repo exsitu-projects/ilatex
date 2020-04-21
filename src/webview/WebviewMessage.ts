@@ -33,12 +33,13 @@ export interface UpdatePDFMessage extends WebviewMessage<WebviewMessageType.Upda
 
 // From webview to extension
 export interface SelectTextMessage extends WebviewMessage<WebviewMessageType.SelectText> {
-    from: {lineIndex: number, columnIndex: number}
+    from: {lineIndex: number, columnIndex: number};
     to: {lineIndex: number, columnIndex: number};
+    scroll?: boolean;
 }
 
 export interface ReplaceTextMessage extends WebviewMessage<WebviewMessageType.ReplaceText> {
-    from: {lineIndex: number, columnIndex: number}
+    from: {lineIndex: number, columnIndex: number};
     to: {lineIndex: number, columnIndex: number};
     with: string;
     saveDocument?: boolean;

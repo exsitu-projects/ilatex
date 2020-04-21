@@ -38,10 +38,17 @@ export class InteractiveLaTeX {
         // Text must be selected
         this.webviewManager.setHandlerFor(WebviewMessageType.SelectText, (message) => {
             const selectTextMessage = message as SelectTextMessage;
-            this.editor.selections = [new vscode.Selection(
-                new vscode.Position(selectTextMessage.from.lineIndex, selectTextMessage.from.columnIndex),
-                new vscode.Position(selectTextMessage.to.lineIndex, selectTextMessage.to.columnIndex)
-            )];
+            const startPosition = new vscode.Position(selectTextMessage.from.lineIndex, selectTextMessage.from.columnIndex)
+            const endPosition = new vscode.Position(selectTextMessage.to.lineIndex, selectTextMessage.to.columnIndex);
+
+            this.editor.selections = [new vscode.Selection(startPosition, endPosition)];
+
+            if (selectTextMessage.scroll) {
+                this.editor.revealRange(
+                    new vscode.Range(startPosition, endPosition),
+                    vscode.TextEditorRevealType.InCenterIfOutsideViewport
+                );
+            }
         });
 
         // Text must be replaced
