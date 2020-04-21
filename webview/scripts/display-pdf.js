@@ -17,9 +17,9 @@ function saveDocument() {
 
 // TODO: handle the update of visualisations while a popup is open?
 class VisualisationPopup {
-    constructor(visualisationNode, yOffset) {
+    constructor(visualisationNode, maskRect) {
         this.visualisationNode = visualisationNode;
-        this.yOffset = yOffset;
+        this.maskRect = maskRect;
 
         // Create the different components of the popup
         // The popup node is the root container of the popup in the DOM
@@ -54,7 +54,15 @@ class VisualisationPopup {
         this.popupNode.append(this.frameNode);
         
         // Position the frame at the given vertical offset
-        this.frameNode.style.top = `${this.yOffset}px`;
+        const maskTop = this.maskRect[1];
+        if (maskTop > window.scrollY + (window.innerHeight / 2)) {
+            const maskTopToWebpageBottom = document.documentElement.clientHeight - maskTop;
+            this.frameNode.style.bottom = `${maskTopToWebpageBottom + 20}px`;
+        }
+        else {
+            const maskBottom = this.maskRect[3];
+            this.frameNode.style.top = `${maskBottom + 20}px`;
+        }
     }
 
     createTitleBar() {
@@ -144,7 +152,7 @@ class VisualisationPopup {
         }));
     }
 
-    static fromSourceIndex(sourceIndex, yOffset) {
+    static fromSourceIndex(sourceIndex, maskRect) {
         // The visualisation node to be displayed is duplicated beforehand
         // This allows other scripts to alter the displayed visualisation nodes
         // without requiring a reset mechanism when the popup is closed
@@ -152,7 +160,7 @@ class VisualisationPopup {
             .querySelector(`.visualisation[data-source-index="${sourceIndex}"]`)
             .cloneNode(true);
         
-        return new VisualisationPopup(visualisationNode, yOffset);
+        return new VisualisationPopup(visualisationNode, maskRect);
     }
 }
 
@@ -321,11 +329,7 @@ class DisplayablePDFPage {
         const [_, sourceIndexStr] = annotation.alternativeText.match(/[^\d]+(\d+)/);
         const sourceIndex = parseInt(sourceIndexStr);
 
-        // Position the visualisation popup just below the mask
-        // TODO: consider refining this policy?
-        const yOffset = maskRect[3] + 20;
-    
-        VisualisationPopup.fromSourceIndex(sourceIndex, yOffset);
+        VisualisationPopup.fromSourceIndex(sourceIndex, maskRect);
     }
 
     static async fromPDFDocument(pdf, pageNumber) {
