@@ -21,10 +21,19 @@ class VisualisationPopup {
         this.visualisationNode = visualisationNode;
         this.yOffset = yOffset;
 
+        // Create the different components of the popup
+        // The popup node is the root container of the popup in the DOM
+        this.popupNode = document.createElement("div");
+        this.popupNode.classList.add("visualisation-popup");
+
         this.backgroundNode = null;
+        this.frameNode = null;
+        this.titleBarNode = null;
         this.contentNode = null;
 
         this.createBackground();
+        this.createFrame();
+        this.createTitleBar();
         this.createContent();
 
         this.startHandlingBackgroundClicks();
@@ -33,13 +42,67 @@ class VisualisationPopup {
 
     createBackground() {
         this.backgroundNode = document.createElement("div");
-        this.backgroundNode.classList.add("visualisation-popup-background");
+        this.backgroundNode.classList.add("popup-background");
+
+        this.popupNode.append(this.backgroundNode);
+    }
+
+    createFrame() {
+        this.frameNode = document.createElement("div");
+        this.frameNode.classList.add("popup-frame");
+
+        this.popupNode.append(this.frameNode);
+        
+        // Position the frame at the given vertical offset
+        this.frameNode.style.top = `${this.yOffset}px`;
+    }
+
+    createTitleBar() {
+        this.titleBarNode = document.createElement("div");
+        this.titleBarNode.classList.add("popup-title-bar");
+        this.frameNode.append(this.titleBarNode);
+
+        // Add the name of the visualisation
+        const name = this.visualisationNode.getAttribute("data-name");
+        const nameNode = document.createElement("span");
+        nameNode.classList.add("name");
+        nameNode.textContent = name;
+
+        this.titleBarNode.append(nameNode);
+
+        // Add the location of the visualisation
+        const startLocation = parseLocationFromAttribute(this.visualisationNode.getAttribute("data-loc-start"));
+        const endLocation = parseLocationFromAttribute(this.visualisationNode.getAttribute("data-loc-end"));
+        const locationNode = document.createElement("span");
+        locationNode.classList.add("location");
+        locationNode.innerHTML = startLocation.lineIndex === endLocation.lineIndex
+                               ? `Line ${startLocation.lineIndex + 1}`
+                               : `Lines ${startLocation.lineIndex + 1}&#8198;–&#8198;${endLocation.lineIndex + 1}`;
+
+        // Select the code of the visualisation on click
+        locationNode.addEventListener("click", event => {
+            selectVisualisedCode(this.visualisationNode);
+        });
+
+        this.titleBarNode.append(locationNode);
+
+        // Add a button to close the popup
+        const closeButtonNode = document.createElement("button");
+        closeButtonNode.classList.add("close-button");
+
+        // Close the popup on click
+        closeButtonNode.addEventListener("click", event => {
+            this.close();
+        });
+
+        this.titleBarNode.append(closeButtonNode);
     }
 
     createContent() {
         this.contentNode = document.createElement("div");
-        this.contentNode.classList.add("visualisation-popup-content");
-        this.contentNode.style.top = `${this.yOffset}px`;
+        this.contentNode.classList.add("popup-content");
+
+        this.frameNode.append(this.contentNode);
 
         // Move the visualisation inside the popup
         this.contentNode.append(this.visualisationNode);   
@@ -56,8 +119,7 @@ class VisualisationPopup {
     }
 
     open() {
-        document.body.prepend(this.contentNode);
-        document.body.prepend(this.backgroundNode);
+        document.body.prepend(this.popupNode);
 
         // Emit an event to signal that a visualisation has just been displayed
         pdfNode.dispatchEvent(new CustomEvent("visualisation-displayed", {
@@ -68,8 +130,7 @@ class VisualisationPopup {
     }
 
     close() {
-        this.backgroundNode.remove();
-        this.contentNode.remove();
+        this.popupNode.remove();
 
         // Tell the extension to save the document
         // (which will further trigger an update of the webview)

@@ -26,6 +26,17 @@ function parseLocationFromAttribute(attrValue) {
     };
 }
 
+function selectVisualisedCode(visualisationNode) {
+    const from = parseLocationFromAttribute(visualisationNode.getAttribute("data-loc-start"));
+    const to = parseLocationFromAttribute(visualisationNode.getAttribute("data-loc-end"));
+
+    vscode.postMessage({
+        type: MessageTypes.SelectText,
+        from: from,
+        to: to
+    });
+}
+
 // Extension message handlers
 let currentlyFocusedElement = null;
 

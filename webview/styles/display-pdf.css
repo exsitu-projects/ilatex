@@ -2,9 +2,27 @@
     z-index: 0;
 }
 
+.pdf-annotation-mask-container {
+    position: absolute;
+    top: 0;
+    width: 0;
+    overflow: visible;
+}
+
+.annotation-mask {
+    position: absolute;
+    box-shadow: 0 0 5px #0074D9;
+    z-index: 100;
+    transition: box-shadow 100ms ease;
+}
+
+.annotation-mask:hover {
+    box-shadow: 0 0 10px #FF851B;
+}
 
 
-.visualisation-popup-background {
+
+.visualisation-popup .popup-background {
     position: fixed;
     top: 0;
     left: 0;
@@ -15,14 +33,57 @@
     transition: background-color 200ms ease;
 }
 
-.visualisation-popup-content {
+.visualisation-popup .popup-title-bar {
+    display: flex;
+    height: 25px;
+    background-color: #DDDDDD;
+    color: #111111;
+    z-index: 2000;
+    line-height: 25px;
+    vertical-align: middle;
+}
+
+.visualisation-popup .popup-title-bar .name {
+    flex-grow: 1;
+    padding: 0 0 0 10px;
+    font-family: monospace;
+}
+
+.visualisation-popup .popup-title-bar .location {
+    padding: 0 5px;
+}
+
+.visualisation-popup .popup-title-bar .location:hover,
+.visualisation-popup .popup-title-bar .location:active {
+    background-color: #BBBBBB;
+}
+
+.visualisation-popup .popup-title-bar .close-button {
+    width: 25px;
+    height: 25px;
+    margin: 0;
+    padding: 5px;
+    background-color: transparent;
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23111111" width="18px" height="18px"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
+    background-repeat: no-repeat;
+    background-position: center;
+    border: none;
+}
+
+.visualisation-popup .popup-title-bar .close-button:hover,
+.visualisation-popup .popup-title-bar .close-button:active {
+    background-color: #FF4136;
+    /* background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23FF4136" width="18px" height="18px"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/><path d="M0 0h24v24H0z" fill="none"/></svg>'); */
+}
+
+.visualisation-popup .popup-frame {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     overflow: hidden;
     box-shadow: 0 0 25px rgba(0, 0, 0, .7);
-    z-index: 300;
+    z-index: 500;
 }
 
 /* Hide visualisations when they are not displayed inside a popup. */
@@ -33,35 +94,11 @@
     border: none;
 }
 
-.visualisation-popup-content .visualisation {
+.visualisation-popup .popup-content .visualisation {
     display: block;
     margin: 0;
     padding: 15px;
     background-color: #FFF;
     z-index: 1000;
     transition: height 250ms ease;
-}
-
-
-
-.pdf-annotation-mask-container {
-    position: absolute;
-    top: 0;
-    width: 0;
-    overflow: visible;
-    z-index: 50;
-}
-
-.annotation-mask {
-    position: absolute;
-    /* border: 2px solid #0074d9; */
-    box-shadow: 0 0 5px #0074D9;
-    z-index: 100;
-    transition: height 100ms ease;
-}
-
-.annotation-mask:hover {
-    position: absolute;
-    /* border: 1px solid #FF851B; */
-    box-shadow: 0 0 10px #FF851B;
 }
