@@ -3,7 +3,7 @@ import * as path from "path";
 import { Visualisation } from "./Visualisation";
 import { ASTCommandNode, ASTParameterNode, ASTParameterListNode, ASTParameterAssignmentNode } from "../ast/LatexASTNode";
 import { WebviewManager } from "../webview/WebviewManager";
-import { LatexLength } from "../utils/LatexLength";
+import { LatexLength, LatexLengthOptions } from "../utils/LatexLength";
 import { LatexASTVisitorAdapter } from "../ast/visitors/LatexASTVisitorAdapter";
 
 interface GraphicsOptions {
@@ -20,6 +20,11 @@ interface Graphics {
 }
 
 class GraphicsOptionsSetter extends LatexASTVisitorAdapter {
+    private static readonly LATEX_LENGTH_OPTIONS: LatexLengthOptions = {
+         // big points is the default unit for includegraphics (in graphicx package)
+        defaultUnit: "bp"
+    };
+
     private options: GraphicsOptions;
 
     constructor(options: GraphicsOptions) {
@@ -39,10 +44,10 @@ class GraphicsOptionsSetter extends LatexASTVisitorAdapter {
         const value = node.value.value.value.trim();
 
         if (key === "width") {
-            this.options.width = new LatexLength(value);
+            this.options.width = LatexLength.from(value, GraphicsOptionsSetter.LATEX_LENGTH_OPTIONS);
         }
         else if (key === "height") {
-            this.options.height = new LatexLength(value);
+            this.options.height = LatexLength.from(value, GraphicsOptionsSetter.LATEX_LENGTH_OPTIONS);
         }
         else if (key === "scale") {
             this.options.scale = parseFloat(value);
@@ -50,7 +55,7 @@ class GraphicsOptionsSetter extends LatexASTVisitorAdapter {
         else if (key === "trim") {
             this.options.trim = value
                 .split(/\s+/)
-                .map(lengthText => new LatexLength(lengthText));
+                .map(lengthAsText => LatexLength.from(lengthAsText, GraphicsOptionsSetter.LATEX_LENGTH_OPTIONS));
         }
         else if (key === "clip") {
             this.options.clip = value.trim().toLowerCase() === "true";
