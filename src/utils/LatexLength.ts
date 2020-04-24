@@ -1,83 +1,116 @@
-export class ImpossibleConversionError {}
+export class LengthParsingError {}
+export class LengthConversionError {}
+
+type LengthParsingResult = {
+    success: false;
+} | {
+    success: true;
+    value: number;
+    unit: string;
+    suffix: string;
+};
+
 
 export class LatexLength {
     // PPI = Pixels Per Inch (see https://en.wikipedia.org/wiki/Pixel_density)
     private static readonly PPI = 72;
-    private static readonly ACCEPTED_UNITS = ["pt", "in", "cm", "mm", "px"];
+    private static readonly CONVERTIBLE_UNITS = ["pt", "in", "cm", "mm", "px"];
 
-    readonly text: string | null;
+    readonly text: string;
+    readonly value: number;
+    readonly unit: string;
+    readonly suffix: string;
     readonly canBeConverted: boolean;
-    private points: number;
+    private valueInPoints: number;
 
     constructor(text: string);
-    constructor(value: number, unit: string);
-    constructor(textOrValue: string | number, unit: string = "pt")
+    constructor(value: number, unit: string, suffix?: string);
+    constructor(textOrValue: string | number, unit?: string, suffix: string = "")
     {
+        // First constructor
         if (typeof textOrValue === "string") {
             this.text = textOrValue;
-            const numericValue = LatexLength.parseNumericValue(this.text);
-            const unit = LatexLength.parseUnit(this.text);
 
-            this.canBeConverted =  (numericValue !== null)
-                                && (unit !== null)
-                                && LatexLength.isAcceptedUnit(unit);
+            const parsingResult = LatexLength.parseLength(this.text);
+            if (parsingResult.success === false) {
+                throw new LengthParsingError();
+            }
 
-            this.points = this.canBeConverted
-                        ? LatexLength.convertToPoints(numericValue as number, unit as string)
-                        : 0;
+            this.value = parsingResult.value;
+            this.unit = parsingResult.unit;
+            this.suffix = parsingResult.suffix;
         }
+        // Second constructor
         else {
-            this.text = `${textOrValue.toString()}${unit}`;
-            this.canBeConverted = LatexLength.isAcceptedUnit(unit);
-            this.points = this.canBeConverted
-                        ? LatexLength.convertToPoints(textOrValue as number, unit)
-                        : 0;
+            this.value = textOrValue;
+            this.unit = unit!.trim();
+            this.suffix = suffix.trim();
+            this.text = `${this.value.toString()}${this.unit}${this.suffix}`;
         }
+
+        this.canBeConverted = LatexLength.isConvertibleUnit(this.unit);
+        this.valueInPoints = this.canBeConverted
+                           ? LatexLength.convertToPoints(this.value, this.unit)
+                           : NaN;
     }
 
     get pt(): number {
         this.assertConversionIsPossible();
-        return this.points;
+        return this.valueInPoints;
     }
 
     get in(): number {
         this.assertConversionIsPossible();
-        return this.points / 72.27; // pt -> in
+        return this.valueInPoints / 72.27; // pt -> in
     }
 
     get cm(): number {
         this.assertConversionIsPossible();
-        return (this.points / 72.27) * 2.54; // pt -> in -> cm
+        return (this.valueInPoints / 72.27) * 2.54; // pt -> in -> cm
     }
 
     get mm(): number {
         this.assertConversionIsPossible();
-        return (this.points / 72.27) * 25.4; // pt -> in -> mm
+        return (this.valueInPoints / 72.27) * 25.4; // pt -> in -> mm
     }
 
     get px(): number {
         this.assertConversionIsPossible();
-        return (this.points / 72.27) * LatexLength.PPI; // pt -> in -> px
+        return (this.valueInPoints / 72.27) * LatexLength.PPI; // pt -> in -> px
     }
-
-    private static isAcceptedUnit(unit: string) {
-        return LatexLength.ACCEPTED_UNITS.includes(unit);
-    }
-
-    private static parseNumericValue(lengthText: string): number | null {
-        const potentialValue = parseFloat(lengthText);
-        return Number.isNaN(potentialValue) ? null : potentialValue;
-    }
-
-    private static parseUnit(lengthText: string): string | null {
-        const regExpResults = /\d*\.?\d*\s*(.+)/i.exec(lengthText);
-        return regExpResults === null ? null : regExpResults[1];
-    }
-
+    
     assertConversionIsPossible(): void {
         if (!this.canBeConverted) {
-            throw new ImpossibleConversionError();
+            throw new LengthConversionError();
         }
+    }
+
+    withValue(value: number): LatexLength {
+        return new LatexLength(value, this.unit, this.suffix);
+    }
+
+    private static parseLength(text: string): LengthParsingResult {
+        const regExpResult = /(\d*\.?\d*)(\s*[^\s]+)(.*)/s.exec(text);
+        if (regExpResult === null) {
+            return { success: false };
+        }
+
+        const [_, valueStr, unit, suffix] = regExpResult;
+        const value = parseFloat(valueStr);
+        if (Number.isNaN(value)) {
+            return { success: false };
+        }
+
+        return {
+            success: true,
+            value: value,
+            unit: unit.trim(),
+            suffix: suffix.trim()
+        };
+    }
+
+    private static isConvertibleUnit(unit: string) {
+        return LatexLength.CONVERTIBLE_UNITS.includes(unit);
     }
 
     // Based on units and rates listed on webpages such as
@@ -95,8 +128,9 @@ export class LatexLength {
             case "px":
                 return (value / LatexLength.PPI) * 72.27; // px -> in -> pt
             case "pt":
-            default:
                 return value;
+            default:
+                throw new LengthConversionError();
         }
     }
 }
