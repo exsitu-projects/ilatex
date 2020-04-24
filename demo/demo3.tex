@@ -78,7 +78,7 @@
     % Example of a figure
     \begin{figure}[h]
         \centering
-        \ilatex{\includegraphics[width=170px, trim=1px 56px 85px 0px, clip]{img/rabbit.jpg}}
+        \ilatex{\includegraphics[width=224px, height=296px, trim=29px 163px 126px 73px, clip]{img/rabbit.jpg}}
         \caption{Picture of a rabbit.}
         \label{fig:rabbit}
     \end{figure}
@@ -91,18 +91,32 @@
         \centering
         \begin{subfigure}[b]{.5\textwidth}
             \centering
-            \ilatex{\includegraphics[width=.4\linewidth]{img/cat.jpg}}
+            \ilatex{\includegraphics[width=90bp]{img/cat.jpg}}
             \caption{Picture of a cat.}
-            \label{fig:cat1}
         \end{subfigure}%
         \begin{subfigure}[b]{.5\textwidth}
             \centering
-            \ilatex{\includegraphics[width=.4\linewidth]{img/cat-drawing.png}}
+            \ilatex{\includegraphics[width=4cm]{img/cat-drawing.png}}
             \caption{Drawing of a cat.}
-            \label{fig:cat2}
         \end{subfigure}
         \caption{Two kinds of images in a single picture.}
         \label{fig:cats}
+    \end{figure}
+
+    \begin{figure}
+        \centering
+        \begin{subfigure}[b]{.5\textwidth}
+            \centering
+            \ilatex{\includegraphics[width=6cm]{img/cat.jpg}}
+            \caption{Normal picture.}
+        \end{subfigure}%
+        \begin{subfigure}[b]{.5\textwidth}
+            \centering
+            \ilatex{\includegraphics[width=142px, height=142px, trim=64px 103px 88px 49px, clip]{img/cat.jpg}}
+            \caption{Zoomed \& trimmed picture.}
+        \end{subfigure}
+        \caption{Some more cats.}
+        \label{fig:more-cats}
     \end{figure}
 
     % A more complex table example taken from
