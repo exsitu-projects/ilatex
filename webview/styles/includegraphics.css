@@ -44,11 +44,6 @@
     background-color: white;
 }
 
-/* Hide the demo text (output of the command, etc). */
-.text {
-    display: none;
-}
-
 /* Required to cancel a CSS rule enforced by VSCode. */
 .visualisation[data-name="includegraphics"] img {
     max-width: none;

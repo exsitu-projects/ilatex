@@ -12,6 +12,7 @@ interface GraphicsOptions {
     scale?: number;
     trim?: LatexLength[];
     clip?: boolean;
+    keepaspectratio?: boolean;
 }
 
 interface Graphics {
@@ -37,6 +38,10 @@ class GraphicsOptionsSetter extends LatexASTVisitorAdapter {
         if (parameter === "clip") {
             this.options.clip = true;
         }
+
+        if (parameter === "keepaspectratio") {
+            this.options.keepaspectratio = true;
+        }
     }
 
     protected visitParameterAssignmentNode(node: ASTParameterAssignmentNode): void {
@@ -58,6 +63,9 @@ class GraphicsOptionsSetter extends LatexASTVisitorAdapter {
                 .map(lengthAsText => LatexLength.from(lengthAsText, GraphicsOptionsSetter.LATEX_LENGTH_OPTIONS));
         }
         else if (key === "clip") {
+            this.options.clip = value.trim().toLowerCase() === "true";
+        }
+        else if (key === "keepaspectratio") {
             this.options.clip = value.trim().toLowerCase() === "true";
         }
     }
@@ -168,7 +176,6 @@ export class IncludeGraphicsVisualisation extends Visualisation<ASTCommandNode> 
 
     renderContentAsHTML(): string {
         return `
-            <p class="text"></p>
             <div class="frame">
                 <img
                     class="ghost"
