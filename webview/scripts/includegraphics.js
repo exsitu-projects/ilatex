@@ -33,17 +33,168 @@ class ImageFrame {
         this.initOptions();
         
         // frame resize
-        this.frameWidth = firstDefined(this.options.width, 200); // TODO: use better defaults
-        this.frameHeight = firstDefined(this.options.height, 200); // TODO: use better defaults
+        const sourceIndex = parseInt(visualisation.getAttribute("data-source-index"));
+        const annotationMaskNode = findMaskNodeWithIndex(sourceIndex);
+        const naturalScale = this.img.naturalWidth / this.img.naturalHeight;
+        this.initFrameScale = annotationMaskNode.clientWidth / annotationMaskNode.clientHeight;
+
+        const pdfPageNumberStr = annotationMaskNode.getAttribute("data-page-number");
+        const pdfPageNode = findPageNode(pdfPageNumberStr);
+        const viewportScale = parseFloat(pdfPageNode.getAttribute("data-viewport-scale"));
+
+        this.frameWidth = annotationMaskNode.clientWidth;
+        this.frameHeight = annotationMaskNode.clientHeight;
+/*
+        if (this.options.width && !this.options.height) {
+            this.frameWidth = this.options.width;
+            this.frameHeight = this.options.width / naturalScale;
+        }
+        else if (!this.options.width && this.options.height) {
+            this.frameWidth = this.options.height * naturalScale;
+            this.frameHeight = this.options.height;
+        }
+        else if (this.options.width && this.options.height) {
+            this.frameWidth = this.frameWidth / this.img.naturalWidth;
+            this.frameHeight = this.frameHeight / this.img.naturalHeight;
+        }
+        else if (this.options.scale) {
+            const commonScale = this.options.scale;
+            this.frameWidth = commonScale;
+            this.frameHeight = commonScale;
+        }
+*/
         this.updateFrameDimensions();
 
         // image transform
-        this.imageWidth = parseFloat(this.visualisation.getAttribute("data-img-width"));
-        this.imageHeight = parseFloat(this.visualisation.getAttribute("data-img-height"));
-        this.scale = firstDefined(this.options.scale, 1);
-        this.offsetX = 0; // TODO: compute from parameters
-        this.offsetY = 0; // TODO: compute from parameters
+        this.scaleX = 1;//firstDefined(this.options.scale, 1);
+        this.scaleY = 1;//firstDefined(this.options.scale, 1);
+/*
+        if (this.options.width && !this.options.height) {
+            const commonScale = this.frameWidth / this.img.naturalWidth;
+            this.scaleX = commonScale;
+            this.scaleY = commonScale;
+        }
+        else if (!this.options.width && this.options.height) {
+            const commonScale = this.frameHeight / this.img.naturalHeight;
+            this.scaleX = commonScale;
+            this.scaleY = commonScale;
+        }
+        else if (this.options.width && this.options.height) {
+            this.scaleX = this.frameWidth / this.img.naturalWidth;
+            this.scaleY = this.frameHeight / this.img.naturalHeight;
+        }
+        else if (this.options.scale) {
+            const commonScale = this.options.scale;
+            this.scaleX = commonScale;
+            this.scaleY = commonScale;
+        }
+*/
+
+        // Trim values are given in px (possibly converted from the source code)
+        // and must therefore be scaled to match the size of the pixels of the rendered PDF
+        // (since the PDF is scaled to fit in the canvas, they may be of different sizes)
+        
+        const top = firstDefined(this.options.trim.top, 0);
+        const bottom = firstDefined(this.options.trim.bottom, 0);
+        const left = firstDefined(this.options.trim.left, 0);
+        const right = firstDefined(this.options.trim.right, 0);
+
+        const topPercent = top / this.img.naturalHeight;
+        const bottomPercent = bottom / this.img.naturalHeight;
+        const leftPercent = left / this.img.naturalWidth;
+        const rightPercent = right / this.img.naturalWidth;
+
+        const croppedNaturalWidth = this.img.naturalWidth - left - right;
+        const croppedNaturalHeight = this.img.naturalHeight - top - bottom;
+
+        let horizontalScale = 1;
+        let verticalScale = 1;
+
+        if (this.options.width && !this.options.height) {
+            const scaleToFitSizeParameter = this.options.width / croppedNaturalWidth;
+            horizontalScale = scaleToFitSizeParameter;
+            verticalScale = scaleToFitSizeParameter;
+        }
+        else if (!this.options.width && this.options.height) {
+            const scaleToFitSizeParameter = this.options.height / croppedNaturalHeight;
+            horizontalScale = scaleToFitSizeParameter;
+            verticalScale = scaleToFitSizeParameter;           
+        }
+        else if (this.options.width && this.options.height) {
+            horizontalScale = this.options.width / croppedNaturalWidth;
+            verticalScale = this.options.height / croppedNaturalHeight;
+        }
+        else if (this.options.scale) {
+            // TODO
+        }
+
+        console.log("scales");
+        console.log("horiz", horizontalScale, "vert", verticalScale);
+
+        let scaledTop = top * verticalScale;
+        let scaledBottom = bottom * verticalScale;
+        let scaledLeft = left * horizontalScale;
+        let scaledRight = right * horizontalScale;
+
+        console.log(
+            "scaledTop", scaledTop,
+            "scaledBottom", scaledBottom,
+            "scaledLeft", scaledLeft,
+            "scaledRight", scaledRight,
+        );
+        
+        // const pixelRatio = this.options.width  ? (this.frameWidth / (this.options.width - left - right))
+        //                  : this.options.height ? (this.frameHeight / (this.options.height - top - bottom))
+        //                  : (this.frameWidth / (this.img.naturalWidth - left - right));
+
+        const pixelRatio = viewportScale;
+
+        this.scaleX = 1;//((top + this.frameWidth + bottom) / this.frameWidth);
+        this.scaleY = 1;//((left + this.frameHeight + right) / this.frameHeight);
+
+        this.offsetX = -scaledLeft * pixelRatio;//-leftPercent * this.frameWidth;// * pixelRatio;
+        this.offsetY = -scaledTop * pixelRatio;//-topPercent * this.frameWidth;// * pixelRatio;
+
+        //this.imageWidth = this.img.naturalWidth;
+        //this.imageHeight = this.img.naturalHeight;
+
+        // TODO: handle cases where both width and height are specified?
+        // i.e. if the aspect ratio is broken, this will not hold true
+        //const horizontalScale = ((left + this.frameWidth + right) / this.frameWidth);
+        //const verticalScale = ((top + this.frameHeight + bottom) / this.frameHeight);
+        //const imageDimScale = Math.max(horizontalScale, verticalScale);
+
+        this.imageWidth = ((scaledLeft + scaledRight) * pixelRatio) + this.frameWidth;// * pixelRatio;
+        this.imageHeight = ((scaledTop + scaledBottom) * pixelRatio) + this.frameHeight;// * pixelRatio;
+
+        // if (this.options.width && !this.options.height) {
+        //     this.imageWidth *= horizontalScale;
+        //     this.imageHeight *= horizontalScale;
+        // }
+        // else if (!this.options.width && this.options.height) {
+        //     this.imageWidth *= verticalScale;
+        //     this.imageHeight *= verticalScale;
+        // }
+        // else if (this.options.width && this.options.height) {
+        //     this.imageWidth *= horizontalScale;
+        //     this.imageHeight *= verticalScale;
+        // }
+
+        //this.imageWidth *= imageDimScale;
+        //this.imageHeight *= imageDimScale;
+
+        console.log("Image " + this.img.src);
+        console.log("options", this.options);
+        console.log(this);
+
+        console.log("img width and height");
+        console.log("frm", this.frameWidth, this.frameHeight, "img", this.imageWidth, this.imageHeight);
+        console.log("pixel ratio: ", pixelRatio);
+
+
         this.updateImagesDimensions();
+        this.updateImagesPositions();
+
         
         // interaction state
         this.dragInfo = {
@@ -71,19 +222,27 @@ class ImageFrame {
     }
 
     updateImagesDimensions() {
-        this.img.style.width = px(this.imageWidth);
-        this.img.style.height = px(this.imageHeight);
-        this.ghost.style.width = px(this.imageWidth);
-        this.ghost.style.height = px(this.imageHeight);
-        
-        this.updateVisualisationDimensions();
+        const newImageWidth = this.imageWidth * this.scaleX;
+        const newImageHeight = this.imageHeight * this.scaleY;
+
+        this.img.style.width = px(newImageWidth);
+        this.img.style.height = px(newImageHeight);
+
+        this.ghost.style.width = px(newImageWidth);
+        this.ghost.style.height = px(newImageHeight);
+    }
+
+    updateImagesPositions() {
+        this.img.style.left = px(this.offsetX);
+        this.img.style.top = px(this.offsetY);
+
+        this.ghost.style.left = px(this.offsetX);
+        this.ghost.style.top = px(this.offsetY);
     }
 
     updateVisualisationDimensions() {
         const padding = 5; // px
-        this.visualisation.style.height = px(
-            this.frameHeight + (2 * padding)
-        );
+        this.visualisation.style.height = px(this.frameHeight + (2 * padding));
     }
 
     initOptions() {
@@ -99,17 +258,14 @@ class ImageFrame {
         setOptionFromAttr("height", "data-opt-height");
         setOptionFromAttr("scale", "data-opt-scale");
 
-        if (["left", "botton", "right", "top"].some(dir =>
-            visualisation.hasAttribute(`data-opt-trim-${dir}`)
-        )) {
-            this.options.trim = {};
-            setOptionFromAttr("left", "data-opt-trim-left", parseFloat, this.options.trim);
-            setOptionFromAttr("botton", "data-opt-trim-botton", parseFloat, this.options.trim);
-            setOptionFromAttr("right", "data-opt-trim-right", parseFloat, this.options.trim);
-            setOptionFromAttr("top", "data-opt-trim-top", parseFloat, this.options.trim);
-        }
+        this.options.trim = {};
+        ["left", "bottom", "right", "top"]
+            .filter(direction => visualisation.hasAttribute(`data-opt-trim-${direction}`))
+            .forEach(direction =>
+                setOptionFromAttr(direction, `data-opt-trim-${direction}`, parseFloat, this.options.trim)
+            );
 
-        setOptionFromAttr("scale", "data-opt-scale", clipValue => clipValue);
+        setOptionFromAttr("clip", "data-opt-clip", clipValue => clipValue);
     }
 
     initDragActions() {
@@ -117,8 +273,7 @@ class ImageFrame {
         this.dragAction.image = (ev) => {
             this.offsetX += this.dragInfo.dx;
             this.offsetY += this.dragInfo.dy;
-            this.ghost.style.left = this.img.style.left = px(this.offsetX);
-            this.ghost.style.top = this.img.style.top = px(this.offsetY);
+            this.updateImagesPositions();
         };
 
         this.dragAction.resize = (ev) => {
@@ -128,16 +283,7 @@ class ImageFrame {
         };
     }
 
-    // Center the ghost and the frame
-    // centerImages() {
-    //     this.offsetX = -(this.img.width - this.frameWidth) / 2
-    //     this.offsetY = -(this.img.height - this.frameHeight) / 2
-
-    //     this.ghost.style.left = this.img.style.left = px(this.offsetX)
-    //     this.ghost.style.top = this.img.style.top = px(this.offsetY)
-    // }
-
-     // Record cursor position and drag type
+    // Record cursor position and drag type
     startDrag(ev, type) {
         this.dragInfo.cursorX = ev.screenX;
         this.dragInfo.cursorY = ev.screenY;
@@ -176,6 +322,7 @@ class ImageFrame {
         this.img.addEventListener('mousedown', ev => this.startDrag(ev, 'image'));
         this.resize.addEventListener('mousedown', ev => this.startDrag(ev, 'resize'));
 
+        // TODO: add the listeners elsewhere or remove them at some point
         document.addEventListener('mousemove', ev => this.doDrag(ev));
         document.addEventListener('mouseup', ev => this.endDrag(ev));
 
@@ -194,11 +341,14 @@ class ImageFrame {
                 return;
             }
 
-            let newScale = this.scale * ds;
-            if (newScale > 0.1) {
+            let newScaleX = this.scaleX * ds;
+            let newScaleY = this.scaleY * ds;
+            if (newScaleX > 0.1 && newScaleY > 0.1) {
                 // Update the scale of the images
-                this.scale = newScale;
-                this.rescaleImages();
+                this.scaleX = newScaleX;
+                this.scaleY = newScaleY;
+
+                this.updateImagesDimensions();
                 
                 // const rect = this.ghost.getBoundingClientRect();
                 // this.offsetX += (1 - ds)*(ev.clientX - rect.x);
@@ -218,30 +368,18 @@ class ImageFrame {
         });
     }
 
-    // Update the scale factor of the image and the ghost
-    rescaleImages() {
-        const newImageWidth = this.imageWidth * this.scale;
-        const newImageHeight = this.imageHeight * this.scale;
-
-        this.img.style.width = px(newImageWidth);
-        this.img.style.height = px(newImageHeight);
-
-        this.ghost.style.width = px(newImageWidth);
-        this.ghost.style.height = px(newImageHeight);
-    }
-
     // Display image layout
     updateLayout() {
-        let scale = this.scale;
-        let frame = `frame=${px(this.frameWidth)}, ${px(this.frameHeight)} - offset=${px(this.offsetX)}, ${px(this.offsetY)} - scale=${Math.round(scale*1000)/1000}`;
+        let scaleX = this.scaleX;
+        let scaleY = this.scaleY;
 
         let width = this.frameWidth;
         let height = this.frameHeight;
-        let right = this.offsetX + this.imageWidth*scale;
-        let bottom = this.offsetY + this.imageHeight*scale;
+        let right = this.offsetX + this.imageWidth*scaleX;
+        let bottom = this.offsetY + this.imageHeight*scaleY;
 
         if (this.offsetX > this.frameWidth || this.offsetY > this.frameHeight || right < 0 || bottom < 0) {
-            this.text.innerHTML = frame + ' image out of bounds';
+            //this.text.innerHTML = frame + ' image out of bounds';
             return;
         }
 
@@ -278,16 +416,27 @@ class ImageFrame {
         }
 
         // frame += `<br>width=${px(width)}, height=${px(height)}`
-        let commandParameters = `width=${px(width)}`;
+        let commandParameters = `width=${px(width)}, height=${px(height)}`;
         if (trim.left !== 0 || trim.bottom !== 0 || trim.right !== 0 || trim.top !== 0) {
-            let clip = `, trim=${px(trim.left/scale)} ${px(trim.bottom/scale)} ${px(trim.right/scale)} ${px(trim.top/scale)}, clip`;
+            console.log("before clip");
+            console.log(trim);
+            console.log((trim.left / this.imageWidth), (trim.left / this.imageWidth) * this.img.naturalWidth / scaleX);
+            //console.log(trim.bottom, bottom, this.frameHeight, this.imageHeight);
+
+            const left = px((trim.left / this.imageWidth) * this.img.naturalWidth / scaleX);
+            const bottom = px((trim.bottom / this.imageHeight) * this.img.naturalHeight / scaleY);
+            const right = px((trim.right / this.imageWidth) * this.img.naturalWidth / scaleX);
+            const top = px((trim.top / this.imageHeight) * this.img.naturalHeight / scaleY);
+            let clip = `, trim=${left} ${bottom} ${right} ${top}, clip`;
+
+            //let clip = `, trim=${px(trim.left/scaleX)} ${px(trim.bottom/scaleY)} ${px(trim.right/scaleX)} ${px(trim.top/scaleY)}, clip`;
             if (clip !== ', trim=0px 0px 0px 0px, clip') { // to take rounding into account
                 commandParameters += clip;
             }
         }
 
         // Display the command in the visualisation (for now)
-        this.text.innerHTML = frame + `<br>\\includegraphics[${commandParameters}]{${this.path}}`;
+        //this.text.innerHTML = frame + `<br>\\includegraphics[${commandParameters}]{${this.path}}`;
 
         // Modify the underlying document
         const commandText = `\\includegraphics[${commandParameters}]{${this.path}}`;

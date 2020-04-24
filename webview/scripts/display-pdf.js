@@ -8,6 +8,18 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = "https://unpkg.com/pdfjs-dist@2.3.200/b
 // Get the pixel ratio of the user's device
 const DEVICE_PIXEL_RATIO = window.devicePixelRatio || 1.0;
 
+function findMaskNodeWithIndex(sourceIndex) {
+    return pdfNode.querySelector(
+        `.pdf-annotation-mask-container .annotation-mask[data-source-index="${sourceIndex}"]`
+    );
+}
+
+function findPageNode(pageNumber) {
+    return pdfNode.querySelector(
+        `.pdf-page-container .pdf-page[data-page-number="${pageNumber}"]`
+    );
+}
+
 function saveDocument() {
     vscode.postMessage({
         type: MessageTypes.SaveDocument
@@ -156,6 +168,7 @@ class VisualisationPopup {
         // The visualisation node to be displayed is duplicated beforehand
         // This allows other scripts to alter the displayed visualisation nodes
         // without requiring a reset mechanism when the popup is closed
+        console.log("looking for source index " + sourceIndex + " in ", visualisationsNode);
         const visualisationNode = visualisationsNode
             .querySelector(`.visualisation[data-source-index="${sourceIndex}"]`)
             .cloneNode(true);
@@ -172,9 +185,6 @@ class DisplayablePDFPage {
 
         // Create a canvas for the page
         this.canvas = document.createElement("canvas");
-        this.canvas.classList.add("pdf-page");
-        this.canvas.setAttribute("data-page-number", pageNumber.toString());
-        
         this.canvasContext = this.canvas.getContext("2d");
 
         // Structures for the page renderer
@@ -194,11 +204,23 @@ class DisplayablePDFPage {
         await this.extractAnnotations();
         
         this.computeViewport();
+        this.setCanvasAttributes();
         this.resizeCanvas();
         await this.draw();
     }
 
+    setCanvasAttributes() {
+        this.canvas.classList.add("pdf-page");
+        this.canvas.setAttribute("data-page-number", this.pageNumber);
+
+        // Note: the viewport must be computed before setting the following attributes
+        this.canvas.setAttribute("data-viewport-width", this.viewport.width);
+        this.canvas.setAttribute("data-viewport-height", this.viewport.height);
+        this.canvas.setAttribute("data-viewport-scale", this.viewport.scale);
+    }
+
     computeViewport() {
+        // TODO: use the same scale for all pages? or display it somewhere?
         const webviewWidth = document.body.clientWidth;
         const pageWidth = this.page.view[2];
         const scale = webviewWidth / pageWidth;
@@ -220,8 +242,14 @@ class DisplayablePDFPage {
     // to retrieve the correct absolute coordinates
     createAnnotationMasks() {
         for (let annotation of this.visualisationAnnotations) {
+            // Extract the source index of the visualisation
+            const [_, sourceIndexStr] = annotation.alternativeText.match(/[^\d]+(\d+)/);
+            const sourceIndex = parseInt(sourceIndexStr);
+
             const maskNode = document.createElement("div");
             maskNode.classList.add("annotation-mask");
+            maskNode.setAttribute("data-page-number", this.pageNumber);
+            maskNode.setAttribute("data-source-index", sourceIndexStr);
 
             // Set the position and the size of the mask
             const maskRect = this.convertPdfRectToAbsoluteWebpageRect(annotation.rect);
@@ -231,15 +259,10 @@ class DisplayablePDFPage {
             maskNode.style.width = `${x2 - x1}px`;
             maskNode.style.height = `${y2 - y1}px`;
 
-            console.log("height", `${y2 - y1}px`);
-
             // Handle clicks on this mask
             maskNode.addEventListener("click", event => {
-                DisplayablePDFPage.handleAnnotationMaskClick(annotation, maskRect);
+                DisplayablePDFPage.handleAnnotationMaskClick(annotation, sourceIndex, maskRect);
             });
-
-            console.log("Mask node created: ", maskNode);
-            console.log(maskRect, maskNode.style);
 
             this.visualisationAnnotationMaskNodes.push(maskNode);
         }
@@ -324,11 +347,7 @@ class DisplayablePDFPage {
         // this.drawAnnotationFrames(this.visualisationAnnotations);
     }
 
-    static handleAnnotationMaskClick(annotation, maskRect) {
-        // Extract the source index of the visualisation to fetch the right visualisation node
-        const [_, sourceIndexStr] = annotation.alternativeText.match(/[^\d]+(\d+)/);
-        const sourceIndex = parseInt(sourceIndexStr);
-
+    static handleAnnotationMaskClick(annotation, sourceIndex, maskRect) {
         VisualisationPopup.fromSourceIndex(sourceIndex, maskRect);
     }
 

@@ -64,7 +64,7 @@ export class IncludeGraphicsVisualisation extends Visualisation<ASTCommandNode> 
     private document: vscode.TextDocument;
     private webviewManager: WebviewManager;
 
-    private webviewImageUri: vscode.Uri | null;;
+    private webviewImageUri: vscode.Uri | null;
     private graphics: Graphics;
 
     constructor(node: ASTCommandNode, document: vscode.TextDocument, webviewManager: WebviewManager) {
@@ -92,8 +92,8 @@ export class IncludeGraphicsVisualisation extends Visualisation<ASTCommandNode> 
 
         // Add the dimensions of the image
         // TODO: compute the actual dimensions of the image
-        this.props["data-img-width"] = "256";
-        this.props["data-img-height"] = "256";
+        //this.props["data-img-width"] = "256";
+        //this.props["data-img-height"] = "256";
 
         // Add node location information
         this.props["data-loc-start"] = `${this.node.start.line};${this.node.start.column}`;
