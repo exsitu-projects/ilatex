@@ -25,7 +25,7 @@ function parseLocationFromAttribute(attrValue) {
     };
 }
 
-function notifyVisualisation(visualisationNode, subject, payload) {
+function notifyVisualisation(visualisationNode, subject, payload, reparse) {
     const id = parseInt(visualisationNode.getAttribute("data-id"));
     const sourceIndex = parseInt(visualisationNode.getAttribute("data-source-index"));
 
@@ -34,7 +34,8 @@ function notifyVisualisation(visualisationNode, subject, payload) {
         id: id,
         sourceIndex: sourceIndex,
         subject: subject,
-        payload: payload
+        payload: payload,
+        reparseDocument: reparse
     });
 }
 

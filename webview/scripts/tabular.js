@@ -100,7 +100,7 @@ class InteractiveTable {
             rowIndex: cellLocation.rowIndex,
             columnIndex: cellLocation.columnIndex,
             newContent: newContent
-        });
+        }, true);
     }
     
     // Create a new instance of ag-Grid to replace the content of the visualisation node

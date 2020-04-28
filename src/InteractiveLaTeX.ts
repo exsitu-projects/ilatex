@@ -47,10 +47,20 @@ export class InteractiveLaTeX {
         let dispatchIsOngoing = false;
         let notificationQueue: NotifyVisualisationMessage[] = [];
 
-        const dispatchNotification = async (message: WebviewMessage) => {
+        const dispatchNotification = async (message: NotifyVisualisationMessage) => {
+            // Lock the dispatch mechanism
             dispatchIsOngoing = true;
-            const notifyVisualisationMessage = message as NotifyVisualisationMessage;
-            await this.visualisationManager.dispatchWebviewNotification(notifyVisualisationMessage);
+
+            // Dispatch the event and re-parse the document if required
+            // (e.g. to generate a new AST with correct start/end positions)
+            await this.visualisationManager.dispatchWebviewNotification(message);
+            if (message.reparseDocument) {
+                // Note: this creates a new AST and new visualisations,
+                // but it does not update the webview
+                this.parseActiveDocument();
+            }
+
+            // Unlock the dispatch mechanism
             dispatchIsOngoing = false;
         
             if (notificationQueue.length > 0) {
@@ -68,7 +78,7 @@ export class InteractiveLaTeX {
                 return;
             }
             
-            dispatchNotification(message);
+            dispatchNotification(message as NotifyVisualisationMessage);
         });
     }
 

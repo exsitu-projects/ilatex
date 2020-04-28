@@ -38,4 +38,5 @@ export interface NotifyVisualisationMessage extends WebviewMessage<WebviewMessag
     sourceIndex: number;
     subject: string;
     payload?: object;
+    reparseDocument?: boolean;
 };
