@@ -4,7 +4,7 @@ import { LatexAST } from './ast/LatexAST';
 import { LatexASTFormatter } from './ast/visitors/LatexASTFormatter';
 import { VisualisationManager } from './visualisations/VisualisationManager';
 import { WebviewManager } from './webview/WebviewManager';
-import { WebviewMessageType, SelectTextMessage, FocusVisualisationMessage, ReplaceTextMessage } from './webview/WebviewMessage';
+import { WebviewMessageType, SelectTextMessage, FocusVisualisationMessage, ReplaceTextMessage, NotifyVisualisationMessage } from './webview/WebviewMessage';
 
 export class InteractiveLaTeX {
     private editor: vscode.TextEditor;
@@ -19,7 +19,7 @@ export class InteractiveLaTeX {
         this.editor = editor;
         this.document = editor.document;
         this.webviewManager = new WebviewManager(panel);
-        this.visualisationManager = new VisualisationManager(this.document, this.webviewManager);
+        this.visualisationManager = new VisualisationManager(this.editor, this.webviewManager);
         
         this.documentChangeWatcher = null;
         this.documentPDFChangeWatcher = null;
@@ -38,7 +38,7 @@ export class InteractiveLaTeX {
         // Text must be selected
         this.webviewManager.setHandlerFor(WebviewMessageType.SelectText, (message) => {
             const selectTextMessage = message as SelectTextMessage;
-            const startPosition = new vscode.Position(selectTextMessage.from.lineIndex, selectTextMessage.from.columnIndex)
+            const startPosition = new vscode.Position(selectTextMessage.from.lineIndex, selectTextMessage.from.columnIndex);
             const endPosition = new vscode.Position(selectTextMessage.to.lineIndex, selectTextMessage.to.columnIndex);
 
             this.editor.selections = [new vscode.Selection(startPosition, endPosition)];
@@ -71,6 +71,12 @@ export class InteractiveLaTeX {
         // The document must be saved
         this.webviewManager.setHandlerFor(WebviewMessageType.SaveDocument, (message) => {
             this.document.save();
+        });
+
+        // Dispatch a webview notification to the right visualisation
+        this.webviewManager.setHandlerFor(WebviewMessageType.NotifyVisualisation, (message) => {
+            const notifyVisualisationMessage = message as NotifyVisualisationMessage;
+            this.visualisationManager.dispatchWebviewNotification(notifyVisualisationMessage);
         });
     }
 

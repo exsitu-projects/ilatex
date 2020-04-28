@@ -323,39 +323,39 @@ class ImageFrame {
             trim.bottom = bottom - this.frameHeight;
         }
 
-        let commandParameters = `width=${px(width)}, height=${px(height)}`;
-        if (trim.left !== 0 || trim.bottom !== 0 || trim.right !== 0 || trim.top !== 0) {
-            // console.log("before clip");
-            // console.log(trim);
+        // Object of option name/value tuples to set in the code
+        let optionsAsStr = `width=${px(width)}, height=${px(height)}`;
+        const options = {
+            width: px(width),
+            height: px(height)
+        };
 
-            const left = px((trim.left / this.imageWidth) * this.img.naturalWidth / scale);
-            const bottom = px((trim.bottom / this.imageHeight) * this.img.naturalHeight / scale);
-            const right = px((trim.right / this.imageWidth) * this.img.naturalWidth / scale);
-            const top = px((trim.top / this.imageHeight) * this.img.naturalHeight / scale);
-            
-            const clip = `, trim=${left} ${bottom} ${right} ${top}, clip`;
-            if (clip !== ', trim=0px 0px 0px 0px, clip') { // to take rounding into account
-                commandParameters += clip;
-            }
+        if (trim.left !== 0 || trim.bottom !== 0 || trim.right !== 0 || trim.top !== 0) {
+            options.left = px((trim.left / this.imageWidth) * this.img.naturalWidth / scale);
+            options.bottom = px((trim.bottom / this.imageHeight) * this.img.naturalHeight / scale);
+            options.right = px((trim.right / this.imageWidth) * this.img.naturalWidth / scale);
+            options.top = px((trim.top / this.imageHeight) * this.img.naturalHeight / scale);
+
+            options.clip = true;
+
+            optionsAsStr += `, trim=${options.left} ${options.bottom} ${options.right} ${options.top}, clip`;
         }
+
+        notifyVisualisation(this.visualisation, "set-options", {
+            options: options,
+            optionsAsStr: optionsAsStr
+        });
 
         // Modify the underlying document
         // TODO: use a better approach
-        const commandText = `\\includegraphics[${commandParameters}]{${this.path}}`;
+        // const commandText = `\\includegraphics[${commandParameters}]{${this.path}}`;
 
-        const from = parseLocationFromAttribute(this.visualisation.getAttribute("data-loc-start"));
-        const to = this.lastGeneratedCommandLength >= 0
-                 ? {...from, columnIndex: from.columnIndex + this.lastGeneratedCommandLength}
-                 : parseLocationFromAttribute(this.visualisation.getAttribute("data-loc-end"));
+        // const from = parseLocationFromAttribute(this.visualisation.getAttribute("data-loc-start"));
+        // const to = this.lastGeneratedCommandLength >= 0
+        //          ? {...from, columnIndex: from.columnIndex + this.lastGeneratedCommandLength}
+        //          : parseLocationFromAttribute(this.visualisation.getAttribute("data-loc-end"));
 
-        vscode.postMessage({
-            type: MessageTypes.ReplaceText,
-            from: from,
-            to: to,
-            with: commandText
-        });
-
-        this.lastGeneratedCommandLength = commandText.length;
+        //this.lastGeneratedCommandLength = commandText.length;
     }
 }
 

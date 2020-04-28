@@ -3,6 +3,7 @@ import * as P from "parsimmon";
 import { Visualisation } from "./Visualisation";
 import { ASTEnvironementNode, ASTNode, ASTNodeType, ASTCommandNode, ASTSpecialSymbolNode, ASTParameterNode, ASTLatexNode } from "../ast/LatexASTNode";
 import { LatexASTVisitorAdapter } from "../ast/visitors/LatexASTVisitorAdapter";
+import { WebviewManager } from "../webview/WebviewManager";
 
 interface TabularOptions {
     columns: string[];
@@ -21,7 +22,7 @@ interface Tabular {
     options: TabularOptions;
 }
 
-class TabularGridSetter extends LatexASTVisitorAdapter {
+class GridCellsReader extends LatexASTVisitorAdapter {
     private grid: Cell[][];
     private document: vscode.TextDocument;
 
@@ -187,13 +188,11 @@ const tabularColumnOptionLanguage = P.createLanguage<{
 export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
     readonly name = "tabular";
 
-    private document: vscode.TextDocument;
     private tabular: Tabular;
     
-    constructor(node: ASTEnvironementNode, document: vscode.TextDocument) {
-        super(node);
+    constructor(node: ASTEnvironementNode, editor: vscode.TextEditor, webviewManager: WebviewManager) {
+        super(node, editor, webviewManager);
 
-        this.document = document;
         this.tabular = {
             grid: [],
             options: {
@@ -217,15 +216,15 @@ export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
     }
 
     private extractTabularGrid(contentNode: ASTLatexNode): void {
-        const gridSetter = new TabularGridSetter(this.tabular.grid, this.document);
+        const gridCellReader = new GridCellsReader(this.tabular.grid, this.editor.document);
         for (let node of contentNode.value) {
-            node.visitWith(gridSetter, 0, 0);
+            node.visitWith(gridCellReader, 0, 0);
         }
 
         // Ensure the last cell of the grid is not forgotten
         // (in case the last node of the env. content is part of a call)
-        if (!gridSetter.isCurrentCellEmpty()) {
-            gridSetter.addCurrentCellToGrid();
+        if (!gridCellReader.isCurrentCellEmpty()) {
+            gridCellReader.addCurrentCellToGrid();
         }
     }
 

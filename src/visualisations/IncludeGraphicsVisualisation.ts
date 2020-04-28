@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { Visualisation } from "./Visualisation";
+import * as P from "parsimmon";
+import { Visualisation, WebviewNotificationHandlerSpecification } from "./Visualisation";
 import { ASTCommandNode, ASTParameterNode, ASTParameterListNode, ASTParameterAssignmentNode } from "../ast/LatexASTNode";
 import { WebviewManager } from "../webview/WebviewManager";
 import { LatexLength, LatexLengthOptions } from "../utils/LatexLength";
@@ -20,7 +21,7 @@ interface Graphics {
     options: GraphicsOptions;
 }
 
-class GraphicsOptionsSetter extends LatexASTVisitorAdapter {
+class GraphicsOptionsReader extends LatexASTVisitorAdapter {
     private static readonly LATEX_LENGTH_OPTIONS: LatexLengthOptions = {
          // big points is the default unit for includegraphics (in graphicx package)
         defaultUnit: "bp"
@@ -49,10 +50,10 @@ class GraphicsOptionsSetter extends LatexASTVisitorAdapter {
         const value = node.value.value.value.trim();
 
         if (key === "width") {
-            this.options.width = LatexLength.from(value, GraphicsOptionsSetter.LATEX_LENGTH_OPTIONS);
+            this.options.width = LatexLength.from(value, GraphicsOptionsReader.LATEX_LENGTH_OPTIONS);
         }
         else if (key === "height") {
-            this.options.height = LatexLength.from(value, GraphicsOptionsSetter.LATEX_LENGTH_OPTIONS);
+            this.options.height = LatexLength.from(value, GraphicsOptionsReader.LATEX_LENGTH_OPTIONS);
         }
         else if (key === "scale") {
             this.options.scale = parseFloat(value);
@@ -60,7 +61,7 @@ class GraphicsOptionsSetter extends LatexASTVisitorAdapter {
         else if (key === "trim") {
             this.options.trim = value
                 .split(/\s+/)
-                .map(lengthAsText => LatexLength.from(lengthAsText, GraphicsOptionsSetter.LATEX_LENGTH_OPTIONS));
+                .map(lengthAsText => LatexLength.from(lengthAsText, GraphicsOptionsReader.LATEX_LENGTH_OPTIONS));
         }
         else if (key === "clip") {
             this.options.clip = value.trim().toLowerCase() === "true";
@@ -74,23 +75,42 @@ class GraphicsOptionsSetter extends LatexASTVisitorAdapter {
 export class IncludeGraphicsVisualisation extends Visualisation<ASTCommandNode> {
     readonly name = "includegraphics";
 
-    private document: vscode.TextDocument;
-    private webviewManager: WebviewManager;
-
     private webviewImageUri: vscode.Uri | null;
     private graphics: Graphics;
 
-    constructor(node: ASTCommandNode, document: vscode.TextDocument, webviewManager: WebviewManager) {
-        super(node);
-        
-        this.document = document;
-        this.webviewManager = webviewManager;
+    private hasOptionsNode: boolean;
+    private optionsNode: ASTParameterListNode | null;
+    private pathNode: ASTParameterNode;
 
+    private optionsStartPosition: vscode.Position;
+    private optionsEndPosition: vscode.Position;
+
+    constructor(node: ASTCommandNode, editor: vscode.TextEditor, webviewManager: WebviewManager) {
+        super(node, editor, webviewManager);
+        
         this.webviewImageUri = null;
         this.graphics = {
             path: "",
             options: {}
         };
+
+        this.hasOptionsNode = this.node.value.parameters[0].length === 1;
+        this.optionsNode = this.hasOptionsNode
+                         ? this.node.value.parameters[0][0] as ASTParameterListNode
+                         : null;
+        this.pathNode = this.node.value.parameters[1][0] as ASTParameterNode;
+        
+        // Pre-compute values required to determine where to insert/replace command options
+        const optionsStart = this.hasOptionsNode
+                           ? this.optionsNode!.start
+                           : this.node.value.nameEnd;
+        const optionsEnd = this.hasOptionsNode
+                         ? this.optionsNode!.end
+                         : this.node.value.nameEnd;
+
+        this.optionsStartPosition = new vscode.Position(optionsStart.line - 1, optionsStart.column - 1);
+        this.optionsEndPosition = new vscode.Position(optionsEnd.line - 1, optionsEnd.column - 1);
+        
 
         this.extractGraphics();
         this.prepareWebviewImage();
@@ -143,30 +163,63 @@ export class IncludeGraphicsVisualisation extends Visualisation<ASTCommandNode> 
         this.props["class"] += " selectable";
     }
 
-    private extractGraphicsPath(node: ASTParameterNode): void {
-        this.graphics.path = node.value;
+    protected getWebviewNotificationHandlerSpecifications(): WebviewNotificationHandlerSpecification[] {
+        return [
+            ...super.getWebviewNotificationHandlerSpecifications(),
+
+            {
+                subject: "set-options",
+                handler: async (payload) => {
+                    const optionsAsStr = payload.optionsAsStr as string;
+                    await this.setGraphicsOptions(optionsAsStr);
+                }
+            }
+        ];
     }
 
-    private extractGraphicsOptions(node: ASTParameterListNode): void {
-        const optionsSetter = new GraphicsOptionsSetter(this.graphics.options);
-        node.visitWith(optionsSetter);
+    private extractGraphicsPath(): void {
+        this.graphics.path = this.pathNode.value;
+    }
+
+    private extractGraphicsOptions(): void {
+        const optionsReader = new GraphicsOptionsReader(this.graphics.options);
+        this.optionsNode!.visitWith(optionsReader);
     }
     
     private extractGraphics(): void {
         // Extract the options (if any)
-        const hasOptionsNode = this.node.value.parameters[0].length === 1;
-        if (hasOptionsNode) {
-            const optionsNode = this.node.value.parameters[0][0] as ASTParameterListNode;
-            this.extractGraphicsOptions(optionsNode);
+        if (this.hasOptionsNode) {
+            this.extractGraphicsOptions();
         }
 
         // Extract the path
-        const pathParameterNode = this.node.value.parameters[1][0] as ASTParameterNode;
-        this.extractGraphicsPath(pathParameterNode);
+        this.extractGraphicsPath();
+    }
+
+    private async setGraphicsOptions(optionsAsStr: string) {
+        // Surround the options with squre brackets if the parameter does not exist in the AST
+        // It may exist in the document, but since the AST is used to determine where to inject code,
+        // the existence witness must be the AST to get correct positions
+        // (this prevents brackets from being duplicated)
+        const replacementText = this.hasOptionsNode ? optionsAsStr : `[${optionsAsStr}]`;
+
+        // TODO: create a generic editor/document editing tool?
+        const rangeToEdit = new vscode.Range(this.optionsStartPosition, this.optionsEndPosition);
+
+        console.log("======== Replacement ========");
+        console.log(this.editor.document.getText(rangeToEdit));
+        console.log("by");
+        console.log(replacementText);
+
+        await this.editor.edit((editBuilder) => {
+            editBuilder.replace(rangeToEdit, replacementText);
+        });
+
+        this.optionsEndPosition = this.optionsStartPosition.translate(0, replacementText.length);
     }
 
     private prepareWebviewImage(): void {
-        const documentPath = this.document.uri.path;
+        const documentPath = this.editor.document.uri.path;
         const lastSlashIndex = documentPath.lastIndexOf("/");
         const documentDirectoryPath = documentPath.slice(0, lastSlashIndex);
 

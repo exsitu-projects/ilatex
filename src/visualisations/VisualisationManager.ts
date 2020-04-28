@@ -5,15 +5,16 @@ import { Visualisation, VisualisationID } from './Visualisation';
 import { IncludeGraphicsVisualisation } from './IncludeGraphicsVisualisation';
 import { TabularVisualisation } from './TabularVisualisation';
 import { WebviewManager } from '../webview/WebviewManager';
+import { NotifyVisualisationMessage } from '../webview/WebviewMessage';
 
 export class VisualisationManager {
-    private document: vscode.TextDocument;
+    private editor: vscode.TextEditor;
     private webviewManager: WebviewManager;
     private visualisations: Visualisation[];
     private patternDetector: CodePatternDetector;
 
-    constructor(document: vscode.TextDocument, webviewManager: WebviewManager) {
-        this.document = document;
+    constructor(editor: vscode.TextEditor, webviewManager: WebviewManager) {
+        this.editor = editor;
         this.webviewManager = webviewManager;
         this.visualisations = [];
         this.patternDetector = new CodePatternDetector();
@@ -28,7 +29,7 @@ export class VisualisationManager {
                 match: node => node.name === "includegraphics",
                 onMatch: node => {
                     this.visualisations.push(
-                        new IncludeGraphicsVisualisation(node, this.document, this.webviewManager)
+                        new IncludeGraphicsVisualisation(node, this.editor, this.webviewManager)
                     );
                 }
             }
@@ -39,7 +40,7 @@ export class VisualisationManager {
             {
                 match: node => node.name === "tabular",
                 onMatch: node => {
-                    this.visualisations.push(new TabularVisualisation(node, this.document));
+                    this.visualisations.push(new TabularVisualisation(node, this.editor, this.webviewManager));
                 }
             }
         );
@@ -76,6 +77,16 @@ export class VisualisationManager {
 
     private createVisualisationsFromPatterns(ast: LatexAST): void {
         ast.visitWith(this.patternDetector);
+    }
+
+    dispatchWebviewNotification(message: NotifyVisualisationMessage) {
+        const visualisation = this.getVisualisationAtIndex(message.sourceIndex);
+        if (visualisation === null) {
+            console.error(`iLatex cannot dispatch the notification: there is no visualisation at source index ${message.sourceIndex}.`);
+            return;
+        }
+
+        visualisation.handleWebviewNotification(message);
     }
 
     renderAllVisualisationsAsHTML(): string {

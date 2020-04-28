@@ -9,7 +9,8 @@ export const enum WebviewMessageType {
     // From webview to extension
     SelectText = "SelectText",
     ReplaceText = "ReplaceText",
-    SaveDocument = "SaveDocument"
+    SaveDocument = "SaveDocument",
+    NotifyVisualisation = "NotifyVisualisation"
 }
 
 export interface WebviewMessage<T extends WebviewMessageType = WebviewMessageType> {
@@ -46,3 +47,10 @@ export interface ReplaceTextMessage extends WebviewMessage<WebviewMessageType.Re
 }
 
 export interface SaveDocumentMessage extends WebviewMessage<WebviewMessageType.SaveDocument> {};
+
+export interface NotifyVisualisationMessage extends WebviewMessage<WebviewMessageType.NotifyVisualisation> {
+    id: VisualisationID;
+    sourceIndex: number;
+    subject: string;
+    payload?: object;
+};

@@ -13,7 +13,8 @@ const MessageTypes = {
     
     SelectText: "SelectText",
     ReplaceText: "ReplaceText",
-    SaveDocument: "SaveDocument"
+    SaveDocument: "SaveDocument",
+    NotifyVisualisation: "NotifyVisualisation"
 };
 
 // Helper function to extract a location (in the LaTeX document)
@@ -35,6 +36,19 @@ function selectVisualisedCode(visualisationNode, scroll = false) {
         from: from,
         to: to,
         scroll: scroll
+    });
+}
+
+function notifyVisualisation(visualisation, subject, payload) {
+    const id = parseInt(visualisation.getAttribute("data-id"));
+    const sourceIndex = parseInt(visualisation.getAttribute("data-source-index"));
+
+    vscode.postMessage({
+        type: MessageTypes.NotifyVisualisation,
+        id: id,
+        sourceIndex: sourceIndex,
+        subject: subject,
+        payload: payload
     });
 }
 
