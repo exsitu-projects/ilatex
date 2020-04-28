@@ -4,7 +4,7 @@ import { LatexAST } from './ast/LatexAST';
 import { LatexASTFormatter } from './ast/visitors/LatexASTFormatter';
 import { VisualisationManager } from './visualisations/VisualisationManager';
 import { WebviewManager } from './webview/WebviewManager';
-import { WebviewMessageType, SelectTextMessage, FocusVisualisationMessage, ReplaceTextMessage, NotifyVisualisationMessage, WebviewMessage } from './webview/WebviewMessage';
+import { WebviewMessageType, FocusVisualisationMessage, NotifyVisualisationMessage } from './webview/WebviewMessage';
 
 export class InteractiveLaTeX {
     private editor: vscode.TextEditor;
