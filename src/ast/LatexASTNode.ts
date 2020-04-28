@@ -50,6 +50,8 @@ export type ASTParameterListValue = (ASTParameterNode | ASTParameterAssignmentNo
 
 export type ASTCommandValue = {
     name: string,
+    nameStart: P.Index; 
+    nameEnd: P.Index; 
     parameters: (ASTParameterNode | ASTParameterListNode)[][]
 };
 

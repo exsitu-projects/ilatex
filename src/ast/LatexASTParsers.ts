@@ -98,16 +98,19 @@ interface CommandSpecification {
 
 function createCommandParser(command: CommandSpecification): P.Parser<ASTCommandNode> {
     const nameParser = command.nameParser ?? P.string(command.name);
+    const nameParserWithPositions = P.seq(P.index, nameParser, P.index);
 
     // Create an array of parsers for all the parameters
     const parametersParsers = createParameterParsers(command.parameters);
 
     // Return a parser which expects the command followed by all its parameters
     // (though optional ones may of course be absent)
-    return P.seq(P.string("\\"), nameParser, ...parametersParsers)
-        .map(([backslash, name, ...parameters]: [string, string, any]) => {
+    return P.seq(P.string("\\"), nameParserWithPositions, ...parametersParsers)
+        .map(([backslash, [nameStart, name, nameEnd], ...parameters]: [string, [P.Index, string, P.Index], any]) => {
             return {
                 name: name as string,
+                nameStart: nameStart,
+                nameEnd: nameEnd,
                 parameters: parameters as (ASTParameterNode | ASTParameterListNode)[][]
             };
         })
@@ -266,9 +269,14 @@ const language = P.createLanguage<{
     },
 
     anyCommand: lang => {
-        return P.regexp(/\\(([^a-z])|(([a-z]+\*?)))/i)
-            .map(commandName => {
-                return { name: commandName, parameters: [] };
+        return P.seq(P.index, P.regexp(/\\(([^a-z])|(([a-z]+\*?)))/i), P.index)
+            .map(([nameStart, name, nameEnd]: [P.Index, string, P.Index]) => {
+                return { 
+                    name: name,
+                    nameStart: nameStart,
+                    nameEnd: nameEnd,
+                    parameters: []
+                };
             })
             .thru(createParserOutputASTAdapter(ASTNodeType.Command, {
                 // Extract the name of the command (without the leading backslash)
