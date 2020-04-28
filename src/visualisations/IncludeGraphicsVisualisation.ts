@@ -197,18 +197,17 @@ export class IncludeGraphicsVisualisation extends Visualisation<ASTCommandNode> 
     }
 
     private async setGraphicsOptions(optionsAsStr: string): Promise<void> {
-        // Surround the options with squre brackets if the parameter does not exist in the AST
+        // Surround the options with square brackets if the parameter does not exist in the AST
         // It may exist in the document, but since the AST is used to determine where to inject code,
-        // the existence witness must be the AST to get correct positions
-        // (this prevents brackets from being duplicated)
+        // the existence witness must be the AST to get correct positions!
         const replacementText = this.hasOptionsNode ? optionsAsStr : `[${optionsAsStr}]`;
 
         // TODO: create a generic editor/document editing tool?
         const rangeToEdit = new vscode.Range(this.optionsStartPosition, this.optionsEndPosition);
 
-        console.log("======== Replacement ========");
-        console.log("BEFORE REPLACE: ", this.editor.document.getText(rangeToEdit));
-        console.log("BY", replacementText);
+        // console.log("======== Replacement ========");
+        // console.log("BEFORE REPLACE: ", this.editor.document.getText(rangeToEdit));
+        // console.log("BY", replacementText);
 
         await this.editor.edit(editBuilder => {
             editBuilder.replace(rangeToEdit, replacementText);
@@ -216,9 +215,9 @@ export class IncludeGraphicsVisualisation extends Visualisation<ASTCommandNode> 
  
         this.optionsEndPosition = this.optionsStartPosition.translate(0, replacementText.length);
 
-        console.log("AFTER REPLACE: ", this.editor.document.getText(
-            new vscode.Range(this.optionsStartPosition, this.optionsEndPosition)
-        ));
+        // console.log("AFTER REPLACE: ", this.editor.document.getText(
+        //     new vscode.Range(this.optionsStartPosition, this.optionsEndPosition)
+        // ));
     }
 
     private prepareWebviewImage(): void {

@@ -94,12 +94,12 @@ class ImageFrame {
         this.imageWidth = ((scaledLeft + scaledRight) * viewportScale) + this.frameWidth;
         this.imageHeight = ((scaledTop + scaledBottom) * viewportScale) + this.frameHeight;
 
-        console.log("Image " + this.img.src);
-        console.log("options", this.options);
-        console.log(
-            "frame", this.frameWidth, this.frameHeight,
-            "image", this.imageWidth, this.imageHeight
-        );
+        // console.log("Image " + this.img.src);
+        // console.log("options", this.options);
+        // console.log(
+        //     "frame", this.frameWidth, this.frameHeight,
+        //     "image", this.imageWidth, this.imageHeight
+        // );
 
         this.updateImagesDimensions();
         this.updateImagesPositions();
@@ -345,17 +345,7 @@ class ImageFrame {
             options: options,
             optionsAsStr: optionsAsStr
         });
-
-        // Modify the underlying document
-        // TODO: use a better approach
-        // const commandText = `\\includegraphics[${commandParameters}]{${this.path}}`;
-
-        // const from = parseLocationFromAttribute(this.visualisation.getAttribute("data-loc-start"));
-        // const to = this.lastGeneratedCommandLength >= 0
-        //          ? {...from, columnIndex: from.columnIndex + this.lastGeneratedCommandLength}
-        //          : parseLocationFromAttribute(this.visualisation.getAttribute("data-loc-end"));
-
-        //this.lastGeneratedCommandLength = commandText.length;
+        
     }
 }
 
