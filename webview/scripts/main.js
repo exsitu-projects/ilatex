@@ -27,21 +27,9 @@ function parseLocationFromAttribute(attrValue) {
     };
 }
 
-function selectVisualisedCode(visualisationNode, scroll = false) {
-    const from = parseLocationFromAttribute(visualisationNode.getAttribute("data-loc-start"));
-    const to = parseLocationFromAttribute(visualisationNode.getAttribute("data-loc-end"));
-
-    vscode.postMessage({
-        type: MessageTypes.SelectText,
-        from: from,
-        to: to,
-        scroll: scroll
-    });
-}
-
-function notifyVisualisation(visualisation, subject, payload) {
-    const id = parseInt(visualisation.getAttribute("data-id"));
-    const sourceIndex = parseInt(visualisation.getAttribute("data-source-index"));
+function notifyVisualisation(visualisationNode, subject, payload) {
+    const id = parseInt(visualisationNode.getAttribute("data-id"));
+    const sourceIndex = parseInt(visualisationNode.getAttribute("data-source-index"));
 
     vscode.postMessage({
         type: MessageTypes.NotifyVisualisation,
@@ -50,6 +38,10 @@ function notifyVisualisation(visualisation, subject, payload) {
         subject: subject,
         payload: payload
     });
+}
+
+function revealVisualisationCode(visualisationNode) {
+    notifyVisualisation(visualisationNode, "reveal-code");
 }
 
 // Extension message handlers

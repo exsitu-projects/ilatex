@@ -35,48 +35,15 @@ export class InteractiveLaTeX {
     }
 
     initWebviewMessageHandlers(): void {
-        // Text must be selected
-        this.webviewManager.setHandlerFor(WebviewMessageType.SelectText, (message) => {
-            const selectTextMessage = message as SelectTextMessage;
-            const startPosition = new vscode.Position(selectTextMessage.from.lineIndex, selectTextMessage.from.columnIndex);
-            const endPosition = new vscode.Position(selectTextMessage.to.lineIndex, selectTextMessage.to.columnIndex);
-
-            this.editor.selections = [new vscode.Selection(startPosition, endPosition)];
-
-            if (selectTextMessage.scroll) {
-                this.editor.revealRange(
-                    new vscode.Range(startPosition, endPosition),
-                    vscode.TextEditorRevealType.InCenterIfOutsideViewport
-                );
-            }
-        });
-
-        // Text must be replaced
-        this.webviewManager.setHandlerFor(WebviewMessageType.ReplaceText, async (message) => {
-            const replaceTextMessage = message as ReplaceTextMessage;
-            const rangeToEdit = new vscode.Range(
-                new vscode.Position(replaceTextMessage.from.lineIndex, replaceTextMessage.from.columnIndex),
-                new vscode.Position(replaceTextMessage.to.lineIndex, replaceTextMessage.to.columnIndex)
-            );
-
-            await this.editor.edit((editBuilder) => {
-                editBuilder.replace(rangeToEdit, replaceTextMessage.with);
-            });
-
-            if (replaceTextMessage.saveDocument) {
-                this.document.save();
-            }
-        });
-
-        // The document must be saved
-        this.webviewManager.setHandlerFor(WebviewMessageType.SaveDocument, (message) => {
-            this.document.save();
+        // Save the document
+        this.webviewManager.setHandlerFor(WebviewMessageType.SaveDocument, async (message) => {
+            await this.document.save();
         });
 
         // Dispatch a webview notification to the right visualisation.
         // Since notification handlers can perform asynchronous operations,
-        // notification message are queued so that, as long as the queue is non-empty,
-        // the last arrived message is dispatched as soon as the last called handled is done.
+        // notification message are queued in a stack so that, as long as the queue is non-empty,
+        // the last arrived message is dispatched as soon as the last called handler is done.
         let dispatchIsOngoing = false;
         let notificationQueue: NotifyVisualisationMessage[] = [];
 

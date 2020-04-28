@@ -51,7 +51,23 @@ export abstract class Visualisation<T extends ASTNode = ASTNode> {
     }
 
     protected getWebviewNotificationHandlerSpecifications(): WebviewNotificationHandlerSpecification[] {
-        return [];
+        return [
+            {
+                subject: "reveal-code",
+                handler: async payload => {
+                    // Select the code
+                    const startPosition = new vscode.Position(this.node.start.line - 1, this.node.start.column - 1);
+                    const endPosition = new vscode.Position(this.node.end.line - 1, this.node.end.column - 1);
+                    this.editor.selections = [new vscode.Selection(startPosition, endPosition)];
+
+                    // If the selected range is not visible, scroll to the selection
+                    this.editor.revealRange(
+                        new vscode.Range(startPosition, endPosition),
+                        vscode.TextEditorRevealType.InCenterIfOutsideViewport
+                    );
+                }
+            },
+        ];
     }
 
     private initWebviewNotificationHandlers(): void {

@@ -169,7 +169,7 @@ export class IncludeGraphicsVisualisation extends Visualisation<ASTCommandNode> 
 
             {
                 subject: "set-options",
-                handler: async (payload) => {
+                handler: async payload => {
                     const optionsAsStr = payload.optionsAsStr as string;
                     await this.setGraphicsOptions(optionsAsStr);
                 }

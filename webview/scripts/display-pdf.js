@@ -101,7 +101,7 @@ class VisualisationPopup {
 
         // Select the code of the visualisation on click
         locationNode.addEventListener("click", event => {
-            selectVisualisedCode(this.visualisationNode, true);
+            revealVisualisationCode(this.visualisationNode);
         });
 
         this.titleBarNode.append(locationNode);

@@ -1,26 +1,6 @@
-function selectCellContent(cellLocation) {
-    vscode.postMessage({
-        type: MessageTypes.SelectText,
-        from: cellLocation.start,
-        to: cellLocation.end
-    });
-}
-
-function updateDocumentCellContent(cellLocations, newContent) {
-    vscode.postMessage({
-        type: MessageTypes.ReplaceText,
-        from: cellLocations.start,
-        to: cellLocations.end,
-        with: newContent
-    });
-}
-
 class InteractiveTable {
     constructor(visualisation) {
         this.visualisation = visualisation;
-
-        // Map of row indices to column indices to locations (start and end)
-        this.gridIndicesToCellLocations = new Map();
 
         // Column definitions
         this.columns = [];
@@ -90,22 +70,12 @@ class InteractiveTable {
             // Create and add an empty object for row data
             const rowData = {};
             this.data.push(rowData);
-            
-            // Create an an empty map to save the positions of the current row's cells
-            this.gridIndicesToCellLocations.set(rowIndex, new Map());
 
             // Process each cell of the current row
             const cells = rows[rowIndex].querySelectorAll("td");
             for (let colIndex = 0; colIndex < cells.length; colIndex++) {
                 const cell = cells[colIndex];
                 rowData[colIndex] = cell.textContent;
-
-                // Associate cell positions in the grid to cell locations in the source document
-                this.gridIndicesToCellLocations.get(rowIndex)
-                    .set(colIndex, {
-                        start: parseLocationFromAttribute(cell.getAttribute("data-loc-start")),
-                        end: parseLocationFromAttribute(cell.getAttribute("data-loc-end"))
-                    });
             }
         }
     }
@@ -116,6 +86,21 @@ class InteractiveTable {
             .map(key => {
                 return { headerName: "", field: key };
             });
+    }
+
+    selectCellContent(cellLocation) {
+        notifyVisualisation(this.visualisation, "select-cell-code", {
+            rowIndex: cellLocation.rowIndex,
+            columnIndex: cellLocation.columnIndex
+        });
+    }
+    
+    updateDocumentCellContent(cellLocation, newContent) {
+        notifyVisualisation(this.visualisation, "set-cell-content", {
+            rowIndex: cellLocation.rowIndex,
+            columnIndex: cellLocation.columnIndex,
+            newContent: newContent
+        });
     }
     
     // Create a new instance of ag-Grid to replace the content of the visualisation node
@@ -131,19 +116,17 @@ class InteractiveTable {
             //rowDragManaged: true,
     
             onCellClicked(event) {
-                const rowIndex = event.rowIndex;
-                const colIndex = parseInt(event.colDef.field);
-                const location = self.gridIndicesToCellLocations.get(rowIndex).get(colIndex);
-    
-                selectCellContent(location);
+                self.selectCellContent({
+                    rowIndex: event.rowIndex,
+                    columnIndex: parseInt(event.colDef.field)
+                });
             },
     
             onCellValueChanged(event) {
-                const rowIndex = event.rowIndex;
-                const colIndex = parseInt(event.colDef.field);
-                const location = self.gridIndicesToCellLocations.get(rowIndex).get(colIndex);
-    
-                updateDocumentCellContent(location, event.newValue);
+                self.updateDocumentCellContent({
+                    rowIndex: event.rowIndex,
+                    columnIndex: parseInt(event.colDef.field)
+                }, event.newValue);
             },
     
             onGridReady(event) {

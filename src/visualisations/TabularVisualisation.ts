@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import * as P from "parsimmon";
-import { Visualisation } from "./Visualisation";
+import { Visualisation, WebviewNotificationHandlerSpecification } from "./Visualisation";
 import { ASTEnvironementNode, ASTNode, ASTNodeType, ASTCommandNode, ASTSpecialSymbolNode, ASTParameterNode, ASTLatexNode } from "../ast/LatexASTNode";
 import { LatexASTVisitorAdapter } from "../ast/visitors/LatexASTVisitorAdapter";
 import { WebviewManager } from "../webview/WebviewManager";
@@ -189,6 +189,9 @@ export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
     readonly name = "tabular";
 
     private tabular: Tabular;
+
+    private optionsNode: ASTParameterNode;
+    private contentNode: ASTLatexNode;
     
     constructor(node: ASTEnvironementNode, editor: vscode.TextEditor, webviewManager: WebviewManager) {
         super(node, editor, webviewManager);
@@ -199,6 +202,9 @@ export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
                 columns: []
             }
         };
+
+        this.contentNode = this.node.value.content as ASTLatexNode;
+        this.optionsNode = this.node.value.parameters[0][0] as ASTParameterNode;
 
         this.extractTabular();
         this.initProps();
@@ -215,9 +221,63 @@ export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
         this.props["class"] += " selectable";
     }
 
-    private extractTabularGrid(contentNode: ASTLatexNode): void {
+    private getCellAt(rowIndex: number, columnIndex: number): Cell {
+        return this.tabular.grid[rowIndex][columnIndex];
+    }
+
+    protected getWebviewNotificationHandlerSpecifications(): WebviewNotificationHandlerSpecification[] {
+        return [
+            ...super.getWebviewNotificationHandlerSpecifications(),
+
+            {
+                subject: "select-cell-code",
+                handler: async payload => {
+                    console.log("select-cell-code", payload);
+                    // TODO: implement selection sonewhere else
+                    const { rowIndex, columnIndex } = payload;
+                    const cell = this.getCellAt(rowIndex, columnIndex);
+                    
+                    // Select the code
+                    const startPosition = new vscode.Position(cell.start.line - 1, cell.start.column - 1);
+                    const endPosition = new vscode.Position(cell.end.line - 1, cell.end.column - 1);
+                    this.editor.selections = [new vscode.Selection(startPosition, endPosition)];
+
+                    // If the selected range is not visible, scroll to the selection
+                    this.editor.revealRange(
+                        new vscode.Range(startPosition, endPosition),
+                        vscode.TextEditorRevealType.InCenterIfOutsideViewport
+                    );
+                }
+            },
+            {
+                subject: "set-cell-content",
+                handler: async payload => {
+                    console.log("set-cell-content", payload);
+                    // TODO: implement edition somewhere else
+                    const { rowIndex, columnIndex, newContent } = payload;
+                    const cell = this.getCellAt(rowIndex, columnIndex);
+
+                    // Replace the content of the cell
+                    const rangeToEdit = new vscode.Range(
+                        new vscode.Position(cell.start.line - 1, cell.start.column - 1),
+                        new vscode.Position(cell.end.line - 1, cell.end.column - 1)
+                    );
+
+                    await this.editor.edit(editBuilder => {
+                        editBuilder.replace(rangeToEdit, newContent);
+                    });
+
+                    // TODO: make this much more robust
+                    // This will break futur selections and edits
+                    // if the length of the old and new cell contents are different
+                }
+            }
+        ];
+    }
+
+    private extractTabularGrid(): void {
         const gridCellReader = new GridCellsReader(this.tabular.grid, this.editor.document);
-        for (let node of contentNode.value) {
+        for (let node of this.contentNode.value) {
             node.visitWith(gridCellReader, 0, 0);
         }
 
@@ -228,10 +288,10 @@ export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
         }
     }
 
-    private extractTabularOptions(node: ASTParameterNode): void {
+    private extractTabularOptions(): void {
         try {
-            const columns = tabularColumnOptionLanguage.columns.tryParse(node.value);
-            this.tabular.options.columns = columns;
+            this.tabular.options.columns = tabularColumnOptionLanguage.columns
+                .tryParse(this.optionsNode.value);
         }
         catch (error) {
             console.error("Error during tabular option parsing:", error);
@@ -239,8 +299,8 @@ export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
     }
 
     private extractTabular(): void {
-        this.extractTabularGrid(this.node.value.content as ASTLatexNode);
-        this.extractTabularOptions(this.node.value.parameters[0][0] as ASTParameterNode);
+        this.extractTabularGrid();
+        this.extractTabularOptions();
     }
     
     renderContentAsHTML(): string {
@@ -259,8 +319,8 @@ export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
     private static renderCellAsHTML(cell: Cell): string {
         function getAttributesAsHTML(cell: Cell) {
             const attributes = {
-                "data-loc-start": `${cell.start.line};${cell.start.column}`,
-                "data-loc-end": `${cell.end.line};${cell.end.column}`
+                "data-row": cell.rowIndex,
+                "data-column": cell.columnIndex
             };
             
             return Object.entries(attributes)
