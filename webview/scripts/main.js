@@ -11,8 +11,6 @@ const MessageTypes = {
     UpdateVisualisations: "UpdateVisualisations",
     UpdatePDF: "UpdatePDF",
     
-    SelectText: "SelectText",
-    ReplaceText: "ReplaceText",
     SaveDocument: "SaveDocument",
     NotifyVisualisation: "NotifyVisualisation"
 };
@@ -109,23 +107,3 @@ window.addEventListener("message", message => {
             console.error("iLatex's webview does not know message type:", messageType);
     }
 });
-
-
-
-
-// Handle clicks on selectable elements
-// (the extension will select the associated block of code on click)
-
-// const selectableVisualisations = document.querySelectorAll(".visualisation.selectable");
-// for (let element of selectableVisualisations) {
-//     element.addEventListener("click", () => {
-//         const from = parseLocationFromAttribute(element.getAttribute("data-loc-start"));
-//         const to = parseLocationFromAttribute(element.getAttribute("data-loc-end"));
-
-//         vscode.postMessage({
-//             type: MessageTypes.SelectText,
-//             from: from,
-//             to: to
-//         });
-//     });
-// }
