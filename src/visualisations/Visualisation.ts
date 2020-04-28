@@ -5,7 +5,7 @@ import { WebviewManager } from '../webview/WebviewManager';
 
 export type VisualisationID = number;
 
-export type WebviewNotificationHandler = (payload: any, visualisation: Visualisation) => void;
+export type WebviewNotificationHandler = (payload: any, visualisation: Visualisation) => Promise<void>;
 export interface WebviewNotificationHandlerSpecification {
     subject: string;
     handler: WebviewNotificationHandler;
@@ -70,7 +70,7 @@ export abstract class Visualisation<T extends ASTNode = ASTNode> {
             .join("\n");
     }
 
-    handleWebviewNotification(message: NotifyVisualisationMessage): void {
+    async handleWebviewNotification(message: NotifyVisualisationMessage): Promise<void> {
         const subject = message.subject;
         if (!this.subjectsToWebviewNotificationHandlers.has(subject)) {
             console.error(`iLatex's ${this.name} visualisation has no notification handler for subject: ${subject}`);
@@ -78,7 +78,7 @@ export abstract class Visualisation<T extends ASTNode = ASTNode> {
         }
 
         const handler = this.subjectsToWebviewNotificationHandlers.get(subject);
-        handler!(message.payload, this);
+        return handler!(message.payload, this);
     };
 
     protected abstract renderContentAsHTML(): string;

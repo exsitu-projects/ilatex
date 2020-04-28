@@ -79,14 +79,14 @@ export class VisualisationManager {
         ast.visitWith(this.patternDetector);
     }
 
-    dispatchWebviewNotification(message: NotifyVisualisationMessage) {
+    async dispatchWebviewNotification(message: NotifyVisualisationMessage) {
         const visualisation = this.getVisualisationAtIndex(message.sourceIndex);
         if (visualisation === null) {
             console.error(`iLatex cannot dispatch the notification: there is no visualisation at source index ${message.sourceIndex}.`);
             return;
         }
 
-        visualisation.handleWebviewNotification(message);
+        return visualisation.handleWebviewNotification(message);
     }
 
     renderAllVisualisationsAsHTML(): string {

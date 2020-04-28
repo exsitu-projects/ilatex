@@ -74,9 +74,11 @@ export class InteractiveLaTeX {
         });
 
         // Dispatch a webview notification to the right visualisation
-        this.webviewManager.setHandlerFor(WebviewMessageType.NotifyVisualisation, (message) => {
+        this.webviewManager.setHandlerFor(WebviewMessageType.NotifyVisualisation, async (message) => {
             const notifyVisualisationMessage = message as NotifyVisualisationMessage;
-            this.visualisationManager.dispatchWebviewNotification(notifyVisualisationMessage);
+            await this.visualisationManager.dispatchWebviewNotification(notifyVisualisationMessage);
+
+            this.parseActiveDocument();
         });
     }
 
