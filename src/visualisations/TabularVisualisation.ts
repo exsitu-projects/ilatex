@@ -232,7 +232,6 @@ export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
             {
                 subject: "select-cell-code",
                 handler: async payload => {
-                    console.log("select-cell-code", payload);
                     // TODO: implement selection sonewhere else
                     const { rowIndex, columnIndex } = payload;
                     const cell = this.getCellAt(rowIndex, columnIndex);
@@ -252,7 +251,6 @@ export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
             {
                 subject: "set-cell-content",
                 handler: async payload => {
-                    console.log("set-cell-content", payload);
                     // TODO: implement edition somewhere else
                     const { rowIndex, columnIndex, newContent } = payload;
                     const cell = this.getCellAt(rowIndex, columnIndex);
