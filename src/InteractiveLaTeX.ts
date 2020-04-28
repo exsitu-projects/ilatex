@@ -4,7 +4,7 @@ import { LatexAST } from './ast/LatexAST';
 import { LatexASTFormatter } from './ast/visitors/LatexASTFormatter';
 import { VisualisationManager } from './visualisations/VisualisationManager';
 import { WebviewManager } from './webview/WebviewManager';
-import { WebviewMessageType, SelectTextMessage, FocusVisualisationMessage, ReplaceTextMessage, NotifyVisualisationMessage } from './webview/WebviewMessage';
+import { WebviewMessageType, SelectTextMessage, FocusVisualisationMessage, ReplaceTextMessage, NotifyVisualisationMessage, WebviewMessage } from './webview/WebviewMessage';
 
 export class InteractiveLaTeX {
     private editor: vscode.TextEditor;
@@ -73,12 +73,35 @@ export class InteractiveLaTeX {
             this.document.save();
         });
 
-        // Dispatch a webview notification to the right visualisation
-        this.webviewManager.setHandlerFor(WebviewMessageType.NotifyVisualisation, async (message) => {
+        // Dispatch a webview notification to the right visualisation.
+        // Since notification handlers can perform asynchronous operations,
+        // notification message are queued so that, as long as the queue is non-empty,
+        // the last arrived message is dispatched as soon as the last called handled is done.
+        let dispatchIsOngoing = false;
+        let notificationQueue: NotifyVisualisationMessage[] = [];
+
+        const dispatchNotification = async (message: WebviewMessage) => {
+            dispatchIsOngoing = true;
             const notifyVisualisationMessage = message as NotifyVisualisationMessage;
             await this.visualisationManager.dispatchWebviewNotification(notifyVisualisationMessage);
+            dispatchIsOngoing = false;
+        
+            if (notificationQueue.length > 0) {
+                const message = notificationQueue.pop();
+                // (if a new notif. message arrives at this exact moment it will be lost)
+                notificationQueue = [];
 
-            this.parseActiveDocument();
+                dispatchNotification(message as NotifyVisualisationMessage);
+            }
+        };
+
+        this.webviewManager.setHandlerFor(WebviewMessageType.NotifyVisualisation, async (message) => {
+            if (dispatchIsOngoing) {
+                notificationQueue.push(message as NotifyVisualisationMessage);
+                return;
+            }
+            
+            dispatchNotification(message);
         });
     }
 
