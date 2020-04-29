@@ -35,7 +35,7 @@ function notifyVisualisation(visualisationNode, subject, payload, reparse) {
         sourceIndex: sourceIndex,
         subject: subject,
         payload: payload,
-        reparseDocument: reparse
+        reparseDocumen: reparse
     });
 }
 

@@ -78,44 +78,49 @@ class VisualisationPopup {
     }
 
     createTitleBar() {
+        // Create an empty title bar
         this.titleBarNode = document.createElement("div");
         this.titleBarNode.classList.add("popup-title-bar");
         this.frameNode.append(this.titleBarNode);
 
-        // Add the name of the visualisation
-        const name = this.visualisationNode.getAttribute("data-name");
+        // Add the name and the location of the visualisation as a title
+        const titleNode = document.createElement("span");
+        titleNode.classList.add("title");
+        this.titleBarNode.append(titleNode);
+        
+        // Add the name (of the visualised command/environement) to the title
         const nameNode = document.createElement("span");
         nameNode.classList.add("name");
-        nameNode.textContent = name;
+        titleNode.append(nameNode);
 
-        this.titleBarNode.append(nameNode);
+        nameNode.textContent = this.visualisationNode.getAttribute("data-name");
 
-        // Add the location of the visualisation
-        const startLocation = parseLocationFromAttribute(this.visualisationNode.getAttribute("data-loc-start"));
-        const endLocation = parseLocationFromAttribute(this.visualisationNode.getAttribute("data-loc-end"));
+        // Add the location (in the code) to the title
         const locationNode = document.createElement("span");
         locationNode.classList.add("location");
-        locationNode.innerHTML = startLocation.lineIndex === endLocation.lineIndex
-                               ? `Line ${startLocation.lineIndex + 1}`
-                               : `Lines ${startLocation.lineIndex + 1}&#8198;–&#8198;${endLocation.lineIndex + 1}`;
+        titleNode.append(locationNode);
 
-        // Select the code of the visualisation on click
-        locationNode.addEventListener("click", event => {
+        const startLocation = parseLocationFromAttribute(this.visualisationNode.getAttribute("data-loc-start"));
+        const endLocation = parseLocationFromAttribute(this.visualisationNode.getAttribute("data-loc-end"));
+        locationNode.innerHTML = startLocation.lineIndex === endLocation.lineIndex
+                               ? `(line ${startLocation.lineIndex + 1})`
+                               : `(lines ${startLocation.lineIndex + 1}&#8198;–&#8198;${endLocation.lineIndex + 1})`; 
+
+        // Reveal the code of the visualisation when the title is clicked
+        titleNode.addEventListener("click", event => {
             revealVisualisationCode(this.visualisationNode);
         });
-
-        this.titleBarNode.append(locationNode);
 
         // Add a button to close the popup
         const closeButtonNode = document.createElement("button");
         closeButtonNode.classList.add("close-button");
+        this.titleBarNode.append(closeButtonNode);
 
         // Close the popup on click
         closeButtonNode.addEventListener("click", event => {
             this.close();
         });
 
-        this.titleBarNode.append(closeButtonNode);
     }
 
     createContent() {

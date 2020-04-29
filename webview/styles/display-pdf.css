@@ -41,20 +41,39 @@
     vertical-align: middle;
 }
 
-.visualisation-popup .popup-title-bar .name {
+.visualisation-popup .popup-title-bar .title {
+    position: relative;
     flex-grow: 1;
-    padding: 0 0 0 10px;
+    padding: 0 10px;
+}
+
+.visualisation-popup .popup-title-bar .title:hover,
+.visualisation-popup .popup-title-bar .title:active {
+    background-color: #BBBBBB;
+}
+
+.visualisation-popup .popup-title-bar .title:hover::after {
+    content: "click to show the code";
+    position: absolute;
+    height: 25px;
+    top: 0;
+    right: 0;
+    padding: 0 10px;
+    color: #666666;
+    line-height: 25px;
+    vertical-align: middle;
+}
+
+.visualisation-popup .popup-title-bar .name {
     font-family: monospace;
 }
 
 .visualisation-popup .popup-title-bar .location {
     padding: 0 5px;
+    color: #666666;
+    font-size: 0.85em;
 }
 
-.visualisation-popup .popup-title-bar .location:hover,
-.visualisation-popup .popup-title-bar .location:active {
-    background-color: #BBBBBB;
-}
 
 .visualisation-popup .popup-title-bar .close-button {
     width: 25px;
@@ -71,7 +90,7 @@
 .visualisation-popup .popup-title-bar .close-button:hover,
 .visualisation-popup .popup-title-bar .close-button:active {
     background-color: #FF4136;
-    /* background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23FF4136" width="18px" height="18px"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/><path d="M0 0h24v24H0z" fill="none"/></svg>'); */
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23FFFFFF" width="18px" height="18px"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
 }
 
 .visualisation-popup .popup-title-bar .close-button:focus {
@@ -100,5 +119,8 @@
     margin: 0;
     padding: 15px;
     background-color: #FFF;
+    z-index: 1000;
+}
+.visualisation-popup .popup-content .visualisation * {
     z-index: 1000;
 }
