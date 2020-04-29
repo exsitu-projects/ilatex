@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { InteractiveLaTeX } from './InteractiveLaTeX';
+import { FileReader } from './utils/FileReader';
 
 
 export function activate(context: vscode.ExtensionContext) {
@@ -11,10 +12,10 @@ export function activate(context: vscode.ExtensionContext) {
 
 		if (activeDocument) {
 			// Create and show a new panel
-			const fileName = activeDocument.fileName;
+			const fileName = FileReader.getFilename(activeDocument.fileName);
 			const webviewPanel = vscode.window.createWebviewPanel(
 				"ilatex",
-				`iLatex – ${fileName}`,
+				`iLatex — ${fileName}`,
 				vscode.ViewColumn.Two,
 				{
 					enableScripts: true
