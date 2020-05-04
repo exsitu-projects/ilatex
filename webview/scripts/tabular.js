@@ -8,6 +8,11 @@ class InteractiveTable {
         // Content of the table
         this.data = [];
 
+        // Updated lists of column and row indices
+        // Those are updated when the table is modified,
+        // so that the always remain up-to-date
+        this.columnFieldsToIndices = new Map();
+
         this.init();
     }
 
@@ -19,6 +24,9 @@ class InteractiveTable {
         if (this.columns.length === 0) {
             this.createDefaultColumnDefinitions();
         }
+
+        // Map each column field to its original column index
+        this.mapColumnFieldsToIndices();
 
         // Enable cell editing on all columns
         for (let column of this.columns) {
@@ -88,6 +96,13 @@ class InteractiveTable {
             });
     }
 
+    mapColumnFieldsToIndices() {
+        for (let i = 0; i < this.columns.length; i++) {
+            const column = this.columns[i];
+            this.columnFieldsToIndices.set(column.field, i);
+        }
+    }
+
     selectCellContent(cellLocation) {
         notifyVisualisation(this.visualisation, "select-cell-code", {
             rowIndex: cellLocation.rowIndex,
@@ -102,10 +117,36 @@ class InteractiveTable {
             newContent: newContent
         }, true);
     }
+
+    reorderColumn(field, oldColumnIndex, newColumnIndex) {
+        // Update the actual indices of the column
+        const updateIndex = oldColumnIndex > newColumnIndex
+                          ? (i => i < oldColumnIndex && i >= newColumnIndex ? i + 1 : i)  // <-- right to left
+                          : (i => i <= newColumnIndex && i > oldColumnIndex ? i - 1 : i); // --> left to right
+        for (let [field, index] of this.columnFieldsToIndices.entries()) {
+            this.columnFieldsToIndices.set(field, updateIndex(index));
+        }
+
+        this.columnFieldsToIndices.set(field, newColumnIndex);
+
+        notifyVisualisation(this.visualisation, "reorder-column", {
+            oldColumnIndex: oldColumnIndex,
+            newColumnIndex: newColumnIndex
+        }, true);
+    }
     
     // Create a new instance of ag-Grid to replace the content of the visualisation node
     replaceVisualisationHTML() {
         const self = this;
+
+        // Values set while a column is dragged
+        // (useful since the actual edit is only performed after the drop)
+        const columnDragDetails = {
+            hasChanged: false,
+            columnField: "",
+            oldColumnIndex: 0,
+            newColumnIndex: 0
+        };
 
         this.visualisation.innerHTML = "";
         this.visualisation.classList.add("ag-theme-balham");
@@ -127,6 +168,33 @@ class InteractiveTable {
                     rowIndex: event.rowIndex,
                     columnIndex: parseInt(event.colDef.field)
                 }, event.newValue);
+            },
+
+            // onDragStarted(event) {
+            //     console.log("drag started", event);
+            // },
+
+            onColumnMoved(event) {
+                console.log("column moved", event);
+
+                const columnField = event.column.colId;
+                columnDragDetails.columnField = columnField;
+                columnDragDetails.oldColumnIndex = self.columnFieldsToIndices.get(columnField);
+                columnDragDetails.newColumnIndex = event.toIndex;
+                columnDragDetails.hasChanged = true;
+            },
+
+            onDragStopped() {
+                if (columnDragDetails.hasChanged) {
+                    console.log("move col from ", columnDragDetails.oldColumnIndex, " to ", columnDragDetails.newColumnIndex);
+
+                    self.reorderColumn(
+                        columnDragDetails.columnField,
+                        columnDragDetails.oldColumnIndex,
+                        columnDragDetails.newColumnIndex
+                    );
+                    columnDragDetails.hasChanged = false;
+                }
             },
     
             onGridReady(event) {

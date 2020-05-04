@@ -12,8 +12,9 @@ interface TabularOptions {
 interface Cell {
     rowIndex: number;
     columnIndex: number;
-    start: P.Index;
-    end: P.Index;
+    contentStart: P.Index;
+    contentEnd: P.Index;
+    nodes: ASTNode[],
     textContent: string;
 }
 
@@ -23,6 +24,16 @@ interface Tabular {
 }
 
 class GridCellsReader extends LatexASTVisitorAdapter {
+    // The choice of commands not considered as content is strongly inspired by
+    // https://en.wikibooks.org/wiki/LaTeX/Tables
+    private static readonly NON_CONTENT_COMMAND_NAMES: string[] = [
+        "toprule",
+        "midrule",
+        "bottomrule",
+        "hline",
+        "cline"
+    ];
+
     private grid: Cell[][];
     private document: vscode.TextDocument;
 
@@ -57,46 +68,55 @@ class GridCellsReader extends LatexASTVisitorAdapter {
     };
 
     private getCurrentCellContentLocation(): {start: P.Index, end: P.Index} {
-        // If the cell only contains a single whitespace node,
+        const firstNode = this.currentCellNodes[0];
+        const lastNode =  this.currentCellNodes[this.currentCellNodes.length - 1];
+
+        // All the leading/trailing nodes which are
+        // whitespace or "non-content" commands should be skipped
+        function shouldSkipNode(node: ASTNode): boolean {
+            return node.type === ASTNodeType.Whitespace
+                || (node.type === ASTNodeType.Command
+                    && GridCellsReader.NON_CONTENT_COMMAND_NAMES.includes(node.name));
+        }
+
+        // If the cell only contains skippable nodes,
         // consider its content as an empty string located at the end of the node
-        if (this.currentCellNodes.length === 1
-        &&  this.currentCellNodes[0].type === ASTNodeType.Whitespace) {
-            const node = this.currentCellNodes[0];
+        if (this.currentCellNodes.every(node => shouldSkipNode(node))) {
             return {
-                start: node.end,
-                end: node.end
+                start: lastNode.end,
+                end: lastNode.end
             };
         }
         
         // Otherwise, update the start and end positions
-        // to ignore any leading/trailing whitespace nodes
-        // Note: this works well since there canot be two successive whitespace nodes
-        else {
-            const location = {
-                start: null as any,
-                end: null as any
-            };
+        // to ignore any leading/trailing whitespace and special command nodes
+        // Note: this works well since we know that at least one node won't be skipped!
+        const location = {
+            start: firstNode.start,
+            end: lastNode.end
+        };
 
-            for (let i = 0; i < this.currentCellNodes.length; i++) {
-                const node = this.currentCellNodes[i];
-                if (node.type !== ASTNodeType.Whitespace) {
-                    break;
-                }
-
+        for (let i = 0; i < this.currentCellNodes.length; i++) {
+            const node = this.currentCellNodes[i];
+            if (shouldSkipNode(node)) {
                 location.start = node.end;
             }
+            else {
+                break;
+            };
+        }
 
-            for (let i = this.currentCellNodes.length - 1; i >= 0; i--) {
-                const node = this.currentCellNodes[i];
-                if (node.type !== ASTNodeType.Whitespace) {
-                    break;
-                }
-
+        for (let i = this.currentCellNodes.length - 1; i >= 0; i--) {
+            const node = this.currentCellNodes[i];
+            if (shouldSkipNode(node)) {
                 location.end = node.start;
             }
-
-            return location;
+            else {
+                break;
+            };
         }
+
+        return location;
     }
 
     addCurrentCellToGrid(): void {
@@ -105,14 +125,43 @@ class GridCellsReader extends LatexASTVisitorAdapter {
         this.currentRow.push({
             rowIndex: this.currentRowIndex,
             columnIndex: this.currentColumnIndex,
-            start: start,
-            end: end,
+            contentStart: start,
+            contentEnd: end,
+            nodes: this.currentCellNodes,
             textContent: this.getCellContent(start, end)
         });
 
         // Reset the array of nodes
         this.currentCellNodes = [];
     }
+
+    // removeSpecialCommandRows(): void {
+    //     const specialCommandNames = [
+    //         "toprule",
+    //         "midrule",
+    //         "bottomrule"
+    //     ];
+
+    //     for (let row of this.grid) {
+    //         // Only consider rows with a single cell
+    //         if (row.length !== 1) {
+    //             continue;
+    //         }
+
+    //         // Iterate over the command nodes contained in the cell
+    //         const cell = row[0];
+    //         const commandNodes = cell.nodes.filter(node =>
+    //             node.type === ASTNodeType.Command
+    //         );
+
+    //         for (let commandNode of commandNodes) {
+    //             // If a special command is found, remove this row from the grid
+    //             if (specialCommandNames.includes(commandNode.name)) {
+                    
+    //             }
+    //         }
+    //     }
+    // }
 
     protected visitCommandNode(node: ASTCommandNode) {
         const commandName = node.name;
@@ -129,6 +178,9 @@ class GridCellsReader extends LatexASTVisitorAdapter {
             this.currentRow = [];
             this.grid.push(this.currentRow);
         }
+        else {
+            this.visitNode(node);
+        }
     }
 
     protected visitSpecialSymbolNode(node: ASTSpecialSymbolNode) {
@@ -140,6 +192,9 @@ class GridCellsReader extends LatexASTVisitorAdapter {
 
             // Update the current position in the grid
             this.currentColumnIndex += 1;
+        }
+        else {
+            this.visitNode(node);
         }
     }
 
@@ -222,7 +277,20 @@ export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
     }
 
     private getCellAt(rowIndex: number, columnIndex: number): Cell {
+        console.log(`. Get cell at [${rowIndex}, ${columnIndex}]: `,
+            this.tabular.grid[rowIndex][columnIndex]);
         return this.tabular.grid[rowIndex][columnIndex];
+    }
+
+    private async replaceCellContent(cell: Cell, newContent: string): Promise<void> {
+        const rangeToEdit = new vscode.Range(
+            new vscode.Position(cell.contentStart.line - 1, cell.contentStart.column - 1),
+            new vscode.Position(cell.contentEnd.line - 1, cell.contentEnd.column - 1)
+        );
+
+        await this.editor.edit(editBuilder => {
+            editBuilder.replace(rangeToEdit, newContent);
+        });
     }
 
     protected getWebviewNotificationHandlerSpecifications(): WebviewNotificationHandlerSpecification[] {
@@ -237,8 +305,8 @@ export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
                     const cell = this.getCellAt(rowIndex, columnIndex);
                     
                     // Select the code
-                    const startPosition = new vscode.Position(cell.start.line - 1, cell.start.column - 1);
-                    const endPosition = new vscode.Position(cell.end.line - 1, cell.end.column - 1);
+                    const startPosition = new vscode.Position(cell.contentStart.line - 1, cell.contentStart.column - 1);
+                    const endPosition = new vscode.Position(cell.contentEnd.line - 1, cell.contentEnd.column - 1);
                     this.editor.selections = [new vscode.Selection(startPosition, endPosition)];
 
                     // If the selected range is not visible, scroll to the selection
@@ -256,18 +324,107 @@ export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
                     const cell = this.getCellAt(rowIndex, columnIndex);
 
                     // Replace the content of the cell
-                    const rangeToEdit = new vscode.Range(
-                        new vscode.Position(cell.start.line - 1, cell.start.column - 1),
-                        new vscode.Position(cell.end.line - 1, cell.end.column - 1)
-                    );
+                    await this.replaceCellContent(cell, newContent);
+                }
+            },
+            {
+                subject: "reorder-column",
+                handler: async payload => {
+                    const grid = this.tabular.grid;
 
-                    await this.editor.edit(editBuilder => {
-                        editBuilder.replace(rangeToEdit, newContent);
-                    });
+                    // TODO: possibly implement reordering somewhere else?
+                    const { oldColumnIndex, newColumnIndex } = payload;
+                    console.info(`column ${oldColumnIndex} => column ${newColumnIndex}`);
 
-                    // TODO: make this much more robust
-                    // This will break futur selections and edits
-                    // if the length of the old and new cell contents are different
+                    // Copy the content of the cells of the origin and target columns
+                    console.log("Extract content from grid: ", grid);
+                    const originColumnCellsContent = grid
+                        .map(row => row[oldColumnIndex]?.textContent);
+
+                    let updateCellContentAt;
+                    // Case 1: the column is moved from right to left (<--)
+                    if (oldColumnIndex > newColumnIndex) {
+                        updateCellContentAt = async (rowIndex: number, columnIndex: number) => {
+                            if (columnIndex <= oldColumnIndex && columnIndex > newColumnIndex) {
+                                const cellToEdit = this.getCellAt(rowIndex, columnIndex);
+                                const cellToCopy = this.getCellAt(rowIndex, columnIndex - 1);
+
+                                console.log(`About to replace ${cellToEdit.textContent} by ${cellToCopy.textContent}`);
+                                await this.replaceCellContent(cellToEdit, cellToCopy.textContent);
+
+                            }
+                        };
+                    }
+                    // Case 2: the column is moved from left to right (-->)
+                    // In this case, the content of the target column is also updated by this function
+                    // (for each line, it must be done first since the target cell is the rightmost edited cell)
+                    else if (newColumnIndex > oldColumnIndex) {
+                        updateCellContentAt = async (rowIndex: number, columnIndex: number) => {
+                            let lastEditedCellContent = null;
+                            if (columnIndex <= newColumnIndex && columnIndex >= oldColumnIndex) {
+                                const cellToEdit = this.getCellAt(rowIndex, columnIndex);
+                                const cellToCopy = this.getCellAt(rowIndex, columnIndex + 1);
+
+                                const currentContent = cellToEdit.textContent;
+                                const newContent = columnIndex === newColumnIndex
+                                                 ? originColumnCellsContent[rowIndex]
+                                                 : (lastEditedCellContent ?? cellToCopy.textContent);
+
+                                console.log(`About to replace ${cellToEdit.textContent} by ${newContent}`);
+                                await this.replaceCellContent(cellToEdit, newContent);
+                                
+                                // Update the copy of the last replaced content
+                                // If the last replacement in this row is done,
+                                // reset the content of the last edited cell (for next row, if any)
+                                lastEditedCellContent = currentContent;
+                                if (columnIndex === oldColumnIndex) {
+                                    lastEditedCellContent = null;
+                                }
+                            }
+                        };
+                    }
+                    // Case 3: the column is not moved (no cell content has to be updated)
+                    else {
+                        return;
+                    }
+
+                    // Shift the columns between the two indices
+                    for (let rowIndex = grid.length - 1; rowIndex >= 0; rowIndex--) {
+                        const row = grid[rowIndex];
+
+                        // Skip rows which do not "syntaxically" span to
+                        // the origin/target column (the one with the highest index)
+                        if (row.length - 1 < Math.max(oldColumnIndex, newColumnIndex)) {
+                            continue;
+                        }
+
+                        for (let columnIndex = row.length - 1; columnIndex >= 0; columnIndex--) {
+                            console.log(`===== Update cell at ${rowIndex}, ${columnIndex} =====`);
+                            await updateCellContentAt(rowIndex, columnIndex);
+                        }
+                    }
+
+                    // If the column is moved from right to left (<--),
+                    // the content of the target column must be finally replaced
+                    // (positions will still be correct since all the cells to edit
+                    // are located before all the shifted cells — provided two cells of
+                    // different rows are never located in the same line!)
+                    if (oldColumnIndex > newColumnIndex) {
+                        for (let rowIndex = grid.length - 1; rowIndex >= 0; rowIndex--) {
+                            const row = grid[rowIndex];
+                            
+                            // Skip rows which do not "syntaxically" span to
+                            // the origin/target column (the one with the highest index)
+                            if (row.length - 1 < Math.max(oldColumnIndex, newColumnIndex)) {
+                                continue;
+                            }
+                            
+                            await this.replaceCellContent(
+                                row[newColumnIndex],
+                                originColumnCellsContent[rowIndex]
+                            );
+                        }
+                    }
                 }
             }
         ];
@@ -299,6 +456,9 @@ export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
     private extractTabular(): void {
         this.extractTabularGrid();
         this.extractTabularOptions();
+
+        console.log("tabular has been extracted");
+        console.log(this.tabular);
     }
     
     renderContentAsHTML(): string {
