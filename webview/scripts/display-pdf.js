@@ -423,11 +423,27 @@ class DisplayablePDF {
     }
 
     static async fromURI(uri) {
+        const maxNbAttempts = 8;
+        let currentAttempt = 1;
+        let displayablePdf = null;
+
         console.log("Start loading the PDF at: ", uri);
-        const pdf = await pdfjsLib.getDocument(uri).promise;
+        while (!displayablePdf && currentAttempt <= maxNbAttempts) {
+            console.log("Loading attempt " + currentAttempt);
+            currentAttempt += 1;
+            try {
+                const pdf = await pdfjsLib.getDocument(uri).promise;
+                displayablePdf = new DisplayablePDF(pdf);
+            }
+            catch (error) {
+                // Ignore error and re-try
+            }
+        }
         
-        const displayablePdf = new DisplayablePDF(pdf);
-        await displayablePdf.init();
+        // Only intialise the displayable PDF if it has been loaded
+        if (displayablePdf) {
+            await displayablePdf.init();
+        }
 
         return displayablePdf;
     }
@@ -438,7 +454,9 @@ pdfNode.addEventListener("pdf-changed", async (event) => {
     const newDisplayablePdf = await DisplayablePDF.fromURI(event.detail.pdfUri);
     console.log("New displayable PDF: ", newDisplayablePdf);
 
-    // Once it is fully loaded, replace the old one by the new one
-    pdfNode.innerHTML = "";
-    newDisplayablePdf.displayInside(pdfNode);
+    // If it could be successfuly loaded, replace the old one by the new one
+    if (newDisplayablePdf) {
+        pdfNode.innerHTML = "";
+        newDisplayablePdf.displayInside(pdfNode);
+    }
 });
