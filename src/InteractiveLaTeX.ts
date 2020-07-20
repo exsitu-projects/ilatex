@@ -14,6 +14,8 @@ export class InteractiveLaTeX {
 
     private documentChangeWatcher: fs.FSWatcher | null;
     private documentPDFChangeWatcher: fs.FSWatcher | null;
+
+    private terminal: vscode.Terminal;
     
     constructor(editor: vscode.TextEditor, panel: vscode.WebviewPanel) {
         this.editor = editor;
@@ -23,6 +25,8 @@ export class InteractiveLaTeX {
         
         this.documentChangeWatcher = null;
         this.documentPDFChangeWatcher = null;
+
+        this.terminal = vscode.window.createTerminal(`iLaTeX`);
 
         this.initWebviewMessageHandlers();
         this.startObservingDocumentChanges();
@@ -146,12 +150,21 @@ export class InteractiveLaTeX {
         });
     }
 
+    private buildActiveDocument(): void {
+        // Old approach relying on the latex.build command provided by the Texlab extension
+        // vscode.commands.executeCommand("latex.build");
+
+        // TODO: ensure the path/current directory are the correct ones
+        // TODO: use the interactive mode once?
+        this.terminal.sendText(`latexmk ${this.document.fileName}`);
+    }
+
     private onDocumentChange(): void {
         const date = new Date();
         console.log(`(${date.getMinutes()}:${date.getSeconds()}) The LaTeX document has changed`);
 
         // Re-build and re-parse the document
-        vscode.commands.executeCommand("latex.build");
+        this.buildActiveDocument();
         this.parseActiveDocument();
 
         // Update the visualisations in the webview
