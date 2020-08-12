@@ -81,6 +81,13 @@ function triggerPDFUpdate(uri) {
     pdfNode.dispatchEvent(event);
 }
 
+function triggerPDFResize() {
+    // Emit a synthetic event to signal that the PDF must be redrawn
+    // This should be used to resize the PDF when the webview itself has been resized
+    const event = new CustomEvent("pdf-resized", {});
+    pdfNode.dispatchEvent(event);    
+}
+
 // Handle extension messages
 window.addEventListener("message", message => {
     console.log("Received message:", message);
@@ -107,4 +114,21 @@ window.addEventListener("message", message => {
         default:
             console.error("iLatex's webview does not know message type:", messageType);
     }
+});
+
+// Handle webview resize
+// For performances reasons, we attempt not to resize the PDF
+// as long as the webview seems to be resized
+const MAX_WEBVIEW_RESIZE_STEP_DURATION = 500; // ms
+let timeoutBeforePdfResize = null;
+
+window.addEventListener("resize", event => {
+    if (timeoutBeforePdfResize !== null) {
+        clearTimeout(timeoutBeforePdfResize);
+    }
+
+    timeoutBeforePdfResize = setTimeout(function() {
+        triggerPDFResize();
+        timeoutBeforePdfResize = null;
+    }, MAX_WEBVIEW_RESIZE_STEP_DURATION);
 });

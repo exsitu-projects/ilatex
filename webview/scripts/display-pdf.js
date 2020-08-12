@@ -8,6 +8,9 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = "https://unpkg.com/pdfjs-dist@2.3.200/b
 // Get the pixel ratio of the user's device
 const DEVICE_PIXEL_RATIO = window.devicePixelRatio || 1.0;
 
+// Unique reference to the current displayable PDF object
+let currentDisplayablePdf = null;
+
 function findMaskNodeWithIndex(sourceIndex) {
     return pdfNode.querySelector(
         `.pdf-annotation-mask-container .annotation-mask[data-source-index="${sourceIndex}"]`
@@ -273,6 +276,14 @@ class DisplayablePDFPage {
         }
     }
 
+    removeAnnotationMasks() {
+        for (let maskNode of this.visualisationAnnotationMaskNodes) {
+            maskNode.remove();
+        }
+
+        this.visualisationAnnotationMaskNodes = [];
+    }
+
     resizeCanvas() {
         // Make the dimensions of the canvas match those of the page
         this.canvas.width = this.viewport.width * DEVICE_PIXEL_RATIO;
@@ -404,22 +415,47 @@ class DisplayablePDF {
         }
     }
 
-    displayInside(node) {
-        // Display the pages first
-        node.append(this.pageContainerNode);
-
-        // Create and display the annotation masks second
-        // This can only be perforned once the canvas have been appended to the DOM
-        // since their positions in the page is required to compute the absolute positions
-        // of the masks (see the related methods in DisplayablePDFPage)
+    createAllAnnotationMasks() {
         for (let displayablePage of this.displayablePages.values()) {
             displayablePage.createAnnotationMasks();
             this.annotationMaskContainerNode.append(
                 ...displayablePage.visualisationAnnotationMaskNodes
             );
         }
+    }
 
+    removeAllAnnotationsMasks() {
+        for (let displayablePage of this.displayablePages.values()) {
+            displayablePage.removeAnnotationMasks();
+        }
+
+        this.annotationMaskContainerNode.innerHTML = "";
+    }
+
+    appendTo(node) {
+        node.append(this.pageContainerNode);
         node.append(this.annotationMaskContainerNode);
+    }
+
+    redraw() {
+        this.removeAllAnnotationsMasks();
+
+        for (let displayablePage of this.displayablePages.values()) {
+            displayablePage.computeViewport();
+            displayablePage.resizeCanvas();
+            displayablePage.draw();
+        }
+
+        // Create the (new) annotation masks
+        // This can only be perforned once the canvas have been appended to the DOM
+        // since their positions in the page is required to compute the absolute positions
+        // of the masks (see the related methods in DisplayablePDFPage)
+        this.createAllAnnotationMasks();
+    }
+
+    redrawInto(node) {
+        this.appendTo(node);
+        this.redraw();
     }
 
     static async fromURI(uri) {
@@ -456,7 +492,16 @@ pdfNode.addEventListener("pdf-changed", async (event) => {
 
     // If it could be successfuly loaded, replace the old one by the new one
     if (newDisplayablePdf) {
+        currentDisplayablePdf = newDisplayablePdf;
+
         pdfNode.innerHTML = "";
-        newDisplayablePdf.displayInside(pdfNode);
+        newDisplayablePdf.redrawInto(pdfNode);
+    }
+});
+
+pdfNode.addEventListener("pdf-resized", async (event) => {
+    // If there is a PDF to display, trigger a full redraw
+    if (currentDisplayablePdf) {
+        currentDisplayablePdf.redraw();
     }
 });
