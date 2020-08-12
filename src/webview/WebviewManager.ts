@@ -28,15 +28,13 @@ export class WebviewManager {
         "./webview/scripts/tabular.js"
     ];
 
-    private readonly panel: vscode.WebviewPanel;
     private readonly webview: vscode.Webview;
     private template: string;
     readonly messageHandlers: Map<WebviewMessageType, MessageHandler>;
     private messageHandlerDisposable: vscode.Disposable | null;
 
-    constructor(panel: vscode.WebviewPanel) {
-        this.panel = panel;
-        this.webview = panel.webview;
+    constructor(webview: vscode.Webview) {
+        this.webview = webview;
         this.template = "";
         this.messageHandlers = new Map();
         this.messageHandlerDisposable = null;

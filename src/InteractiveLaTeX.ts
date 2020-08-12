@@ -9,6 +9,7 @@ import { WebviewMessageType, FocusVisualisationMessage, NotifyVisualisationMessa
 export class InteractiveLaTeX {
     private editor: vscode.TextEditor;
     private document: vscode.TextDocument;
+    private webviewPanel: vscode.WebviewPanel;
     private webviewManager: WebviewManager;
     private visualisationManager: VisualisationManager;
 
@@ -17,10 +18,11 @@ export class InteractiveLaTeX {
 
     private terminal: vscode.Terminal;
     
-    constructor(editor: vscode.TextEditor, panel: vscode.WebviewPanel) {
+    constructor(editor: vscode.TextEditor, webviewPanel: vscode.WebviewPanel) {
         this.editor = editor;
         this.document = editor.document;
-        this.webviewManager = new WebviewManager(panel);
+        this.webviewPanel = webviewPanel;
+        this.webviewManager = new WebviewManager(webviewPanel.webview);
         this.visualisationManager = new VisualisationManager(this.editor, this.webviewManager);
         
         this.documentChangeWatcher = null;
@@ -29,6 +31,7 @@ export class InteractiveLaTeX {
         this.terminal = vscode.window.createTerminal(`iLaTeX`);
 
         this.initWebviewMessageHandlers();
+        this.startObservingWebviewPanelStateChanges();
         this.startObservingDocumentChanges();
         this.startObservingDocumentPDFChanges();
         this.startObservingSelectionChanges();
@@ -83,6 +86,24 @@ export class InteractiveLaTeX {
             }
             
             dispatchNotification(message as NotifyVisualisationMessage);
+        });
+    }
+
+    onWebviewPanelClosed(): void {
+        // Anything which must be performed once the webview panel has been closed should go here
+    }
+
+    revealWebviewPanel(): void {
+        // By default, the webview panel is displayed in the second column
+        this.webviewPanel.reveal(vscode.ViewColumn.Two);
+    }
+
+    private startObservingWebviewPanelStateChanges(): void {
+        this.webviewPanel.onDidChangeViewState(event => {
+            // Update the PDF and the visualisations in the webview
+            // (since the webpage may have been reloaded)
+            this.updateWebviewVisualisations();
+            this.updateWebviewPDF();
         });
     }
 
