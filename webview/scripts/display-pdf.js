@@ -119,9 +119,9 @@ class VisualisationPopup {
         closeButtonNode.classList.add("close-button");
         this.titleBarNode.append(closeButtonNode);
 
-        // Close the popup on click
+        // Close the popup and save the document on click
         closeButtonNode.addEventListener("click", event => {
-            this.close();
+            this.closeAndSaveDocument();
         });
 
     }
@@ -160,16 +160,20 @@ class VisualisationPopup {
     close() {
         this.popupNode.remove();
 
-        // Tell the extension to save the document
-        // (which will further trigger an update of the webview)
-        saveDocument();
-
         // Emit an event to signal that a visualisation has just been hidden
         pdfNode.dispatchEvent(new CustomEvent("visualisation-hidden", {
             detail: {
                 visualisationNode: this.visualisationNode
             }
         }));
+    }
+
+    closeAndSaveDocument() {
+        this.close();
+
+        // Tell the extension to save the document
+        // (which will further trigger an update of the webview)
+        saveDocument();
     }
 
     static fromSourceIndex(sourceIndex, maskRect) {
@@ -392,6 +396,9 @@ class DisplayablePDF {
 
         this.nbPages = pdf.numPages;
         this.displayablePages = new Map();
+
+        // Current scale to display the PDF at
+        this.scale = 1.0;
     }
 
     async init() {
