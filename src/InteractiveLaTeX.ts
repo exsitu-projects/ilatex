@@ -156,7 +156,8 @@ export class InteractiveLaTeX {
 
         // TODO: ensure the path/current directory are the correct ones
         // TODO: use the interactive mode once?
-        this.terminal.sendText(`latexmk ${this.document.fileName}`);
+        this.terminal.sendText(`cd ${this.document.fileName.substr(0, this.document.fileName.lastIndexOf("/"))}`);
+        this.terminal.sendText(`latexmk -f ${this.document.fileName}`);
     }
 
     private onDocumentChange(): void {
