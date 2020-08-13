@@ -23,6 +23,15 @@ function findPageNode(pageNumber) {
     );
 }
 
+function cloneVisualisationNodeFromSourceIndex(sourceIndex) {
+    // The visualisation node should be cloned before it is processed/displayed
+    // This enables other scripts to alter the node to be displayed
+    // without taking precautions in case the original node has to be used again
+    return visualisationsNode
+        .querySelector(`.visualisation[data-source-index="${sourceIndex}"]`)
+        .cloneNode(true);
+}
+
 function saveDocument() {
     vscode.postMessage({
         type: MessageTypes.SaveDocument
@@ -30,10 +39,10 @@ function saveDocument() {
 }
 
 
-// TODO: handle the update of visualisations while a popup is open?
 class VisualisationPopup {
-    constructor(visualisationNode, maskRect) {
-        this.visualisationNode = visualisationNode;
+    constructor(sourceIndex, maskRect) {
+        this.visualisationNode = cloneVisualisationNodeFromSourceIndex(sourceIndex);
+        this.sourceIndex = sourceIndex;
         this.maskRect = maskRect;
 
         // Create the different components of the popup
@@ -51,7 +60,14 @@ class VisualisationPopup {
         this.createTitleBar();
         this.createContent();
 
+        // Ref. to the event handler used for visualisations changes
+        // (to be able to remove the handler when the popup is closed)
+        this.visualisationsChangesHandler = async (event) => {
+            this.onVisualisationsChanged(event);
+        };
+
         this.startHandlingBackgroundClicks();
+        this.startHandlingVisualisationsChanges();
         this.open();
     }
 
@@ -80,6 +96,14 @@ class VisualisationPopup {
         }
     }
 
+    getLocationInCodeAsText() {
+        const startLocation = parseLocationFromAttribute(this.visualisationNode.getAttribute("data-loc-start"));
+        const endLocation = parseLocationFromAttribute(this.visualisationNode.getAttribute("data-loc-end"));
+        return startLocation.lineIndex === endLocation.lineIndex
+             ? `(line ${startLocation.lineIndex + 1})`
+             : `(lines ${startLocation.lineIndex + 1}&#8198;–&#8198;${endLocation.lineIndex + 1})`;         
+    }
+
     createTitleBar() {
         // Create an empty title bar
         this.titleBarNode = document.createElement("div");
@@ -103,11 +127,7 @@ class VisualisationPopup {
         locationNode.classList.add("location");
         titleNode.append(locationNode);
 
-        const startLocation = parseLocationFromAttribute(this.visualisationNode.getAttribute("data-loc-start"));
-        const endLocation = parseLocationFromAttribute(this.visualisationNode.getAttribute("data-loc-end"));
-        locationNode.innerHTML = startLocation.lineIndex === endLocation.lineIndex
-                               ? `(line ${startLocation.lineIndex + 1})`
-                               : `(lines ${startLocation.lineIndex + 1}&#8198;–&#8198;${endLocation.lineIndex + 1})`; 
+        locationNode.innerHTML = this.getLocationInCodeAsText();
 
         // Reveal the code of the visualisation when the title is clicked
         titleNode.addEventListener("click", event => {
@@ -123,7 +143,11 @@ class VisualisationPopup {
         closeButtonNode.addEventListener("click", event => {
             this.closeAndSaveDocument();
         });
+    }
 
+    // Must be called in case the visualisation is updated
+    updateTitleBar() {
+        this.titleBarNode.querySelector(".location").innerHTML = this.getLocationInCodeAsText();
     }
 
     createContent() {
@@ -136,6 +160,12 @@ class VisualisationPopup {
         this.contentNode.append(this.visualisationNode);   
     }
 
+    // Must be called in case the visualisation is updated
+    updateContent() {
+        this.contentNode.innerHTML = "";
+        this.contentNode.append(this.visualisationNode);
+    }
+
     startHandlingBackgroundClicks() {
         this.backgroundNode.addEventListener("click", event => {
             if (event.target !== this.backgroundNode) {
@@ -144,6 +174,38 @@ class VisualisationPopup {
     
             this.close();
         });
+    }
+
+    async onVisualisationsChanged(event) {
+        // Ignore the event if it does not originate from a request made by the visualisation
+        if (!event.detail.requestedByVisualisation) {
+            return;
+        }
+
+        // Update the vis. node and the elements of the popup which may depend on it
+        this.visualisationNode = cloneVisualisationNodeFromSourceIndex(this.sourceIndex);
+        this.updateTitleBar();
+        this.updateContent();
+
+        console.log("About to update the visualisation");
+        console.log(this);
+
+        // Emit an event to signal that the visible visualisation has just been updated
+        pdfNode.dispatchEvent(new CustomEvent("visualisation-updated", {
+            detail: {
+                visualisationNode: this.visualisationNode
+            }
+        }));
+    }
+
+    startHandlingVisualisationsChanges() { 
+        visualisationsNode.addEventListener("visualisations-changed", this.visualisationsChangesHandler);
+        console.log("+ added the vis change handler", this.visualisationsChangesHandler);
+    }
+
+    stopHandlingVisualisationsChanges() {
+        visualisationsNode.removeEventListener("visualisations-changed", this.visualisationsChangesHandler);
+        console.log("– removed the vis change handler", this.visualisationsChangesHandler);
     }
 
     open() {
@@ -159,6 +221,7 @@ class VisualisationPopup {
 
     close() {
         this.popupNode.remove();
+        this.stopHandlingVisualisationsChanges();
 
         // Emit an event to signal that a visualisation has just been hidden
         pdfNode.dispatchEvent(new CustomEvent("visualisation-hidden", {
@@ -174,18 +237,6 @@ class VisualisationPopup {
         // Tell the extension to save the document
         // (which will further trigger an update of the webview)
         saveDocument();
-    }
-
-    static fromSourceIndex(sourceIndex, maskRect) {
-        // The visualisation node to be displayed is duplicated beforehand
-        // This allows other scripts to alter the displayed visualisation nodes
-        // without requiring a reset mechanism when the popup is closed
-        console.log("looking for source index " + sourceIndex + " in ", visualisationsNode);
-        const visualisationNode = visualisationsNode
-            .querySelector(`.visualisation[data-source-index="${sourceIndex}"]`)
-            .cloneNode(true);
-        
-        return new VisualisationPopup(visualisationNode, maskRect);
     }
 }
 
@@ -368,7 +419,7 @@ class DisplayablePDFPage {
     }
 
     static handleAnnotationMaskClick(annotation, sourceIndex, maskRect) {
-        VisualisationPopup.fromSourceIndex(sourceIndex, maskRect);
+        new VisualisationPopup(sourceIndex, maskRect);
     }
 
     static async fromPDFDocument(pdf, pageNumber) {

@@ -5,13 +5,11 @@ class InteractiveTable {
         // Details about the columns
         this.columnDetails = [];
 
-        // Content of the table
+        // Content of the table, in the form of an array of rows,
+        // which are themselves arrays
         this.data = [];
 
-        // Updated lists of column and row indices
-        // Those are updated when the table is modified,
-        // so that the always remain up-to-date
-        // this.columnFieldsToIndices = new Map();
+        // TODO: support merged cells with an appropriate data structure
 
         this.init();
     }
@@ -86,6 +84,8 @@ class InteractiveTable {
     }
     
     updateDocumentCellContent(cellLocation, newContent) {
+        console.log("edit cell at", cellLocation);
+
         notifyVisualisation(this.visualisation, "set-cell-content", {
             rowIndex: cellLocation.rowIndex,
             columnIndex: cellLocation.columnIndex,
@@ -94,16 +94,6 @@ class InteractiveTable {
     }
 
     reorderDocumentColumns(field, oldColumnIndex, newColumnIndex) {
-        // Update the actual indices of the column
-        // const updateIndex = oldColumnIndex > newColumnIndex
-        //                   ? (i => i < oldColumnIndex && i >= newColumnIndex ? i + 1 : i)  // <-- right to left
-        //                   : (i=> i <= newColumnIndex && i > oldColumnIndex ? i - 1 : i); // --> left to right
-        // for (let [field, index] of this.columnFieldsToIndices.entries()) {
-        //     this.columnFieldsToIndices.set(field, updateIndex(index));
-        // }
-
-        // this.columnFieldsToIndices.set(field, newColumnIndex);
-
         notifyVisualisation(this.visualisation, "reorder-column", {
             oldColumnIndex: oldColumnIndex,
             newColumnIndex: newColumnIndex
@@ -167,7 +157,7 @@ class InteractiveTable {
                 for (let change of changes) {
                     self.updateDocumentCellContent({
                         rowIndex: change[0],
-                        columnIndex: change[0],
+                        columnIndex: change[1],
                     }, change[3]);
                 }
             },
@@ -190,6 +180,14 @@ class InteractiveTable {
 pdfNode.addEventListener("visualisation-displayed", event => {
     const visualisationNode = event.detail.visualisationNode;
 
+    if (visualisationNode.getAttribute("data-name") === "tabular") {
+        new InteractiveTable(visualisationNode);
+    }
+});
+
+pdfNode.addEventListener("visualisation-updated", event => {
+    const visualisationNode = event.detail.visualisationNode;
+    
     if (visualisationNode.getAttribute("data-name") === "tabular") {
         new InteractiveTable(visualisationNode);
     }

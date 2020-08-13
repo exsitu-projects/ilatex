@@ -60,32 +60,33 @@ function focusVisualisation(id) {
     }
 }
 
-function triggerVisualisationsUpdate(html) {
+function triggerVisualisationsUpdate(html, requestedByVisualisation) {
     // Replace the HTML of the visualisations
     visualisationsNode.innerHTML = html;
 
     // Emit a synthetic event to signal the update
     // This should be used to process the HTML in other scripts
-    const event = new Event("visualisations-changed");
-    visualisationsNode.dispatchEvent(event);
+    visualisationsNode.dispatchEvent(new CustomEvent("visualisations-changed", {
+        detail: {
+            requestedByVisualisation: requestedByVisualisation
+        }
+    }));
 }
 
 function triggerPDFUpdate(uri) {
     // Emit a synthetic event to signal that the PDF must be updated
     // This should be used to re-load and re-draw the PDF and the annotations
-    const event = new CustomEvent("pdf-changed", {
+    pdfNode.dispatchEvent(new CustomEvent("pdf-changed", {
         detail: {
             pdfUri: uri
         }
-    });
-    pdfNode.dispatchEvent(event);
+    }));
 }
 
 function triggerPDFResize() {
     // Emit a synthetic event to signal that the PDF must be redrawn
     // This should be used to resize the PDF when the webview itself has been resized
-    const event = new CustomEvent("pdf-resized", {});
-    pdfNode.dispatchEvent(event);    
+    pdfNode.dispatchEvent(new CustomEvent("pdf-resized", {}));    
 }
 
 // Handle extension messages
@@ -104,7 +105,7 @@ window.addEventListener("message", message => {
             break;
 
         case MessageTypes.UpdateVisualisations:
-            triggerVisualisationsUpdate(message.data.with);
+            triggerVisualisationsUpdate(message.data.with, message.data.requestedByVisualisation);
             break;
 
         case MessageTypes.UpdatePDF:
