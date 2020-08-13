@@ -6,14 +6,17 @@ import { IncludeGraphicsVisualisation } from './IncludeGraphicsVisualisation';
 import { TabularVisualisation } from './TabularVisualisation';
 import { WebviewManager } from '../webview/WebviewManager';
 import { NotifyVisualisationMessage } from '../webview/WebviewMessage';
+import { InteractiveLaTeX } from '../InteractiveLaTeX';
 
 export class VisualisationManager {
+    private ilatex: InteractiveLaTeX;
     private editor: vscode.TextEditor;
     private webviewManager: WebviewManager;
     private visualisations: Visualisation[];
     private patternDetector: CodePatternDetector;
 
-    constructor(editor: vscode.TextEditor, webviewManager: WebviewManager) {
+    constructor(ilatex: InteractiveLaTeX, editor: vscode.TextEditor, webviewManager: WebviewManager) {
+        this.ilatex = ilatex;
         this.editor = editor;
         this.webviewManager = webviewManager;
         this.visualisations = [];
@@ -29,7 +32,7 @@ export class VisualisationManager {
                 match: node => node.name === "includegraphics",
                 onMatch: node => {
                     this.visualisations.push(
-                        new IncludeGraphicsVisualisation(node, this.editor, this.webviewManager)
+                        new IncludeGraphicsVisualisation(node, this.ilatex, this.editor, this.webviewManager)
                     );
                 }
             }
@@ -40,7 +43,7 @@ export class VisualisationManager {
             {
                 match: node => node.name === "tabular",
                 onMatch: node => {
-                    this.visualisations.push(new TabularVisualisation(node, this.editor, this.webviewManager));
+                    this.visualisations.push(new TabularVisualisation(node, this.ilatex, this.editor, this.webviewManager));
                 }
             }
         );

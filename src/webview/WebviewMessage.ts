@@ -23,6 +23,7 @@ export interface FocusVisualisationMessage extends WebviewMessage<WebviewMessage
 
 export interface UpdateVisualisationsMessage extends WebviewMessage<WebviewMessageType.UpdateVisualisations> {
     with: string;
+    requestedByVisualisation: boolean;
 }
 
 export interface UpdatePDFMessage extends WebviewMessage<WebviewMessageType.UpdatePDF> {

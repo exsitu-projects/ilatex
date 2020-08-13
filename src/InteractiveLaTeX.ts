@@ -23,7 +23,7 @@ export class InteractiveLaTeX {
         this.document = editor.document;
         this.webviewPanel = webviewPanel;
         this.webviewManager = new WebviewManager(webviewPanel.webview);
-        this.visualisationManager = new VisualisationManager(this.editor, this.webviewManager);
+        this.visualisationManager = new VisualisationManager(this, this.editor, this.webviewManager);
         
         this.documentChangeWatcher = null;
         this.documentPDFChangeWatcher = null;
@@ -201,6 +201,14 @@ export class InteractiveLaTeX {
         this.updateWebviewPDF();
     }
 
+    onVisualisationParsingRequest() {
+        // Re-parse the document
+        this.parseActiveDocument();
+
+        // Update the visualisations in the webview
+        this.updateWebviewVisualisations(true);
+    }
+
     private startObservingSelectionChanges(): void {
         vscode.window.onDidChangeTextEditorSelection((event) => {
             // If the user moves the cursor WITHOUT selecting text,
@@ -245,9 +253,9 @@ export class InteractiveLaTeX {
         }
     }
 
-    updateWebviewVisualisations() {
+    updateWebviewVisualisations(requestedByVisualisation: boolean = false) {
         const visualisationsHtml = this.visualisationManager.renderAllVisualisationsAsHTML();
-        this.webviewManager.updateWebviewVisualisations(visualisationsHtml);
+        this.webviewManager.updateWebviewVisualisations(visualisationsHtml, requestedByVisualisation);
     }
 
     updateWebviewPDF() {

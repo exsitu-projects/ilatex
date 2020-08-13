@@ -4,6 +4,7 @@ import { Visualisation, WebviewNotificationHandlerSpecification } from "./Visual
 import { ASTEnvironementNode, ASTNode, ASTNodeType, ASTCommandNode, ASTSpecialSymbolNode, ASTParameterNode, ASTLatexNode } from "../ast/LatexASTNode";
 import { LatexASTVisitorAdapter } from "../ast/visitors/LatexASTVisitorAdapter";
 import { WebviewManager } from "../webview/WebviewManager";
+import { InteractiveLaTeX } from "../InteractiveLaTeX";
 
 interface TabularOptions {
     columns: string[];
@@ -248,8 +249,8 @@ export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
     private optionsNode: ASTParameterNode;
     private contentNode: ASTLatexNode;
     
-    constructor(node: ASTEnvironementNode, editor: vscode.TextEditor, webviewManager: WebviewManager) {
-        super(node, editor, webviewManager);
+    constructor(node: ASTEnvironementNode, ilatex: InteractiveLaTeX, editor: vscode.TextEditor, webviewManager: WebviewManager) {
+        super(node, ilatex, editor, webviewManager);
 
         this.tabular = {
             grid: [],
@@ -325,6 +326,9 @@ export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
 
                     // Replace the content of the cell
                     await this.replaceCellContent(cell, newContent);
+
+                    // Request a new parsing to generate new vis. from the modified code
+                    this.requestNewParsing();
                 }
             },
             {
@@ -425,6 +429,9 @@ export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
                             );
                         }
                     }
+
+                    // Request a new parsing to generate new vis. from the modified code
+                    this.requestNewParsing();
                 }
             }
         ];

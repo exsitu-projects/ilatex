@@ -6,6 +6,7 @@ import { ASTCommandNode, ASTParameterNode, ASTParameterListNode, ASTParameterAss
 import { WebviewManager } from "../webview/WebviewManager";
 import { LatexLength, LatexLengthOptions } from "../utils/LatexLength";
 import { LatexASTVisitorAdapter } from "../ast/visitors/LatexASTVisitorAdapter";
+import { InteractiveLaTeX } from "../InteractiveLaTeX";
 
 interface GraphicsOptions {
     width?: LatexLength;
@@ -85,8 +86,8 @@ export class IncludeGraphicsVisualisation extends Visualisation<ASTCommandNode> 
     private optionsStartPosition: vscode.Position;
     private optionsEndPosition: vscode.Position;
 
-    constructor(node: ASTCommandNode, editor: vscode.TextEditor, webviewManager: WebviewManager) {
-        super(node, editor, webviewManager);
+    constructor(node: ASTCommandNode, ilatex: InteractiveLaTeX, editor: vscode.TextEditor, webviewManager: WebviewManager) {
+        super(node, ilatex, editor, webviewManager);
         
         this.webviewImageUri = null;
         this.graphics = {

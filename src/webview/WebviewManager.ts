@@ -134,10 +134,11 @@ export class WebviewManager {
         this.addScriptsToWebviewTemplate();
     }
 
-    updateWebviewVisualisations(visualisationsHtml: string) {
+    updateWebviewVisualisations(visualisationsHtml: string, requestedByVisualisation: boolean = false) {
         this.sendMessage({
             type: WebviewMessageType.UpdateVisualisations,
-            with: visualisationsHtml
+            with: visualisationsHtml,
+            requestedByVisualisation: requestedByVisualisation
         } as UpdateVisualisationsMessage);
     }
 

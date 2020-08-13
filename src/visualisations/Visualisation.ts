@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { ASTNode } from "../ast/LatexASTNode";
 import { NotifyVisualisationMessage } from "../webview/WebviewMessage";
 import { WebviewManager } from '../webview/WebviewManager';
+import { InteractiveLaTeX } from '../InteractiveLaTeX';
 
 export type VisualisationID = number;
 
@@ -22,11 +23,13 @@ export abstract class Visualisation<T extends ASTNode = ASTNode> {
     readonly sourceIndex: number; // Index of the visualisation in the AST
     protected props: Record<string, string>;
 
+    protected readonly ilatex: InteractiveLaTeX;
     protected readonly editor: vscode.TextEditor;
     protected readonly webviewManager: WebviewManager;
     protected subjectsToWebviewNotificationHandlers: Map<string, WebviewNotificationHandler>;
 
-    constructor(node: T, editor: vscode.TextEditor, webviewManager: WebviewManager) {
+    constructor(node: T, ilatex: InteractiveLaTeX, editor: vscode.TextEditor, webviewManager: WebviewManager) {
+        this.ilatex = ilatex;
         this.node = node;
         this.id = Visualisation.generateUniqueId();
         this.sourceIndex = Visualisation.nextSourceIndex();
@@ -79,6 +82,10 @@ export abstract class Visualisation<T extends ASTNode = ASTNode> {
             );
         }
     };
+
+    protected requestNewParsing(): void {
+        this.ilatex.onVisualisationParsingRequest();
+    }
 
     protected renderPropsAsHTML(): string {
         return Object.keys(this.props)
