@@ -2,8 +2,8 @@ class InteractiveTable {
     constructor(visualisation) {
         this.visualisation = visualisation;
 
-        // Column definitions
-        this.columns = [];
+        // Details about the columns
+        this.columnDetails = [];
 
         // Content of the table
         this.data = [];
@@ -11,7 +11,7 @@ class InteractiveTable {
         // Updated lists of column and row indices
         // Those are updated when the table is modified,
         // so that the always remain up-to-date
-        this.columnFieldsToIndices = new Map();
+        // this.columnFieldsToIndices = new Map();
 
         this.init();
     }
@@ -20,26 +20,11 @@ class InteractiveTable {
         this.parseTableHeader();
         this.parseTableContent();
 
-        // If the table has no header, create default column definitions
-        if (this.columns.length === 0) {
-            this.createDefaultColumnDefinitions();
-        }
-
-        // Map each column field to its original column index
-        this.mapColumnFieldsToIndices();
-
-        // Enable cell editing on all columns
-        for (let column of this.columns) {
-            column.editable = true;
-        }
-
-        // Enable row dragging on the first column
-        // this.columns[0].rowDrag = true;
-
         this.replaceVisualisationHTML();
     }
 
     // Extract column definitions from the table header (if any)
+    // This must be performed BEFORE parsing the rest of the data
     parseTableHeader() {
         const header = this.visualisation.querySelector("thead");
     
@@ -47,10 +32,10 @@ class InteractiveTable {
             const headerCells = header.querySelectorAll("th");
             for (let i = 0; i < headerCells.length; i++) {
                 const columnOption = headerCells[i].textContent;
-                const className = columnOption === "l" ? "align-left"
-                                : columnOption === "c" ? "align-center"
-                                : columnOption === "r" ? "align-right"
-                                : "align-left"; // align left by default
+                // const className = columnOption === "l" ? "align-left"
+                //                 : columnOption === "c" ? "align-center"
+                //                 : columnOption === "r" ? "align-right"
+                //                 : "align-left"; // align left by default
     
                 // Only columns where cells are paragraphs with a fixed width can be resized
                 const columnCanBeResized = ["p", "m", "b"]
@@ -59,12 +44,10 @@ class InteractiveTable {
                 // TODO: if the column can be resized, set its initial size
                 // according to the specified length parameter (if any)
     
-                this.columns.push({
-                    headerName: columnOption,
-                    field: i.toString(),
-                    cellClass: className,
-                    resizable: columnCanBeResized,
-                    suppressSizeToFit: columnCanBeResized
+                // Add information about the header cell to the list of column definitions
+                this.columnDetails.push({
+                    type: columnOption,
+                    isResizable: columnCanBeResized
                 });
             }
         }
@@ -76,34 +59,26 @@ class InteractiveTable {
 
         for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
             // Create and add an empty object for row data
-            const rowData = {};
+            const rowData = [];
             this.data.push(rowData);
 
             // Process each cell of the current row
             const cells = rows[rowIndex].querySelectorAll("td");
             for (let colIndex = 0; colIndex < cells.length; colIndex++) {
                 const cell = cells[colIndex];
-                rowData[colIndex] = cell.textContent;
+                rowData.push(cell.textContent);
             }
         }
     }
-    
-    createDefaultColumnDefinitions() {
-        const dataRow = this.data[0];
-        this.columns = Object.keys(dataRow)
-            .map(key => {
-                return { headerName: "", field: key };
-            });
-    }
 
     mapColumnFieldsToIndices() {
-        for (let i = 0; i < this.columns.length; i++) {
-            const column = this.columns[i];
+        for (let i = 0; i < this.columnDetails.length; i++) {
+            const column = this.columnDetails[i];
             this.columnFieldsToIndices.set(column.field, i);
         }
     }
 
-    selectCellContent(cellLocation) {
+    selectDocumentCellContent(cellLocation) {
         notifyVisualisation(this.visualisation, "select-cell-code", {
             rowIndex: cellLocation.rowIndex,
             columnIndex: cellLocation.columnIndex
@@ -118,16 +93,16 @@ class InteractiveTable {
         }, true);
     }
 
-    reorderColumn(field, oldColumnIndex, newColumnIndex) {
+    reorderDocumentColumns(field, oldColumnIndex, newColumnIndex) {
         // Update the actual indices of the column
-        const updateIndex = oldColumnIndex > newColumnIndex
-                          ? (i => i < oldColumnIndex && i >= newColumnIndex ? i + 1 : i)  // <-- right to left
-                          : (i => i <= newColumnIndex && i > oldColumnIndex ? i - 1 : i); // --> left to right
-        for (let [field, index] of this.columnFieldsToIndices.entries()) {
-            this.columnFieldsToIndices.set(field, updateIndex(index));
-        }
+        // const updateIndex = oldColumnIndex > newColumnIndex
+        //                   ? (i => i < oldColumnIndex && i >= newColumnIndex ? i + 1 : i)  // <-- right to left
+        //                   : (i=> i <= newColumnIndex && i > oldColumnIndex ? i - 1 : i); // --> left to right
+        // for (let [field, index] of this.columnFieldsToIndices.entries()) {
+        //     this.columnFieldsToIndices.set(field, updateIndex(index));
+        // }
 
-        this.columnFieldsToIndices.set(field, newColumnIndex);
+        // this.columnFieldsToIndices.set(field, newColumnIndex);
 
         notifyVisualisation(this.visualisation, "reorder-column", {
             oldColumnIndex: oldColumnIndex,
@@ -139,68 +114,76 @@ class InteractiveTable {
     replaceVisualisationHTML() {
         const self = this;
 
-        // Values set while a column is dragged
-        // (useful since the actual edit is only performed after the drop)
-        const columnDragDetails = {
-            hasChanged: false,
-            columnField: "",
-            oldColumnIndex: 0,
-            newColumnIndex: 0
+        const dragDetails = {
+            lastMouseDownCoords: null,
+            lastMouseUpCoords: null
         };
 
+        this.data.splice(5, 1); // TEMPOARY FIX (TODO: fix the issue in the core)
+        console.log("this.data", this.data);
+
         this.visualisation.innerHTML = "";
-        this.visualisation.classList.add("ag-theme-balham");
-    
-        new agGrid.Grid(this.visualisation, {
-            columnDefs: this.columns,
-            rowData: this.data,
-            //rowDragManaged: true,
-    
-            onCellClicked(event) {
-                self.selectCellContent({
-                    rowIndex: event.rowIndex,
-                    columnIndex: parseInt(event.colDef.field)
-                });
-            },
-    
-            onCellValueChanged(event) {
-                self.updateDocumentCellContent({
-                    rowIndex: event.rowIndex,
-                    columnIndex: parseInt(event.colDef.field)
-                }, event.newValue);
-            },
+        this.visualisation.style.height = `${this.data.length * 30}px`;
+        this.visualisation.style.width = "100%";
+        this.visualisation.style.overflow = "hidden";
+        this.visualisation.style.padding = "0";
 
-            // onDragStarted(event) {
-            //     console.log("drag started", event);
-            // },
+        const htTable = new Handsontable(this.visualisation, {
+            data: this.data,
+            colHeaders: (index) => this.columnDetails[index].type,
+            rowHeaders: Array(this.data.length).fill(" "),
+            stretchH: "all",
+            selectionMode: "single",
+            manualColumnMove: true,
+            manualRowMove: true,
+            
+            licenseKey: "non-commercial-and-evaluation"
+        });
 
-            onColumnMoved(event) {
-                console.log("column moved", event);
-
-                const columnField = event.column.colId;
-                columnDragDetails.columnField = columnField;
-                columnDragDetails.oldColumnIndex = self.columnFieldsToIndices.get(columnField);
-                columnDragDetails.newColumnIndex = event.toIndex;
-                columnDragDetails.hasChanged = true;
+        const htTableEventsCallbacks = {
+            beforeOnCellMouseDown(event, coords, td) {
+                // console.log("beforeOnCellMouseDown", event, coords, td);
+                dragDetails.lastMouseDownCoords = coords;
             },
 
-            onDragStopped() {
-                if (columnDragDetails.hasChanged) {
-                    console.log("move col from ", columnDragDetails.oldColumnIndex, " to ", columnDragDetails.newColumnIndex);
-
-                    self.reorderColumn(
-                        columnDragDetails.columnField,
-                        columnDragDetails.oldColumnIndex,
-                        columnDragDetails.newColumnIndex
-                    );
-                    columnDragDetails.hasChanged = false;
+            afterRowMove(movedRows, finalIndex, dropIndex, movePossible, orderChanged) {
+                // console.log("afterRowMove", movedRows, finalIndex, dropIndex, movePossible, orderChanged);
+                if (orderChanged) {
+                    console.log(`Row moved from index ${dragDetails.lastMouseDownCoords.row} to index ${finalIndex}`);
+                    self.reorderDocumentColumns(null, dragDetails.lastMouseDownCoords.row, finalIndex);
                 }
             },
-    
-            onGridReady(event) {
-                event.api.sizeColumnsToFit();
+
+            afterColumnMove(movedColumns, finalIndex, dropIndex, movePossible, orderChanged) {
+                // console.log("afterColumnMove", movedColumns, finalIndex, dropIndex, movePossible, orderChanged);
+                if (orderChanged) {
+                    console.log(`Column moved from index ${dragDetails.lastMouseDownCoords.col} to index ${finalIndex}`);
+                    self.reorderDocumentColumns(null, dragDetails.lastMouseDownCoords.col, finalIndex);
+                }
+            },
+
+            afterChange(changes, source) {
+                // console.log("afterChange", changes, source);
+                for (let change of changes) {
+                    self.updateDocumentCellContent({
+                        rowIndex: change[0],
+                        columnIndex: change[0],
+                    }, change[3]);
+                }
+            },
+
+            afterSelection(row, column, row2, column2) {
+                // console.log("afterSelection", row, column, row2, column2);
+                self.selectDocumentCellContent({
+                    rowIndex: row,
+                    columnIndex: column,
+                });
             }
-        });
+        };
+
+        for (let [eventId, callback] of Object.entries(htTableEventsCallbacks)) {
+            Handsontable.hooks.add(eventId, callback, htTable);
+        }
     }
 }
 

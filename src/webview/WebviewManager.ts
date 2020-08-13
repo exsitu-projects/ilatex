@@ -10,8 +10,7 @@ export class WebviewManager {
     // must be relative to the root directory of the extension
     private static readonly WEBVIEW_TEMPLATE_PATH = "./webview/templates/main-template.html";
     private static readonly WEBVIEW_STYLES_PATHS = [
-        "./webview/styles/lib/ag-grid.css",
-        "./webview/styles/lib/ag-theme-balham.css",
+        "./webview/styles/lib/handsontable.full.min.css",
 
         "./webview/styles/main.css",
         "./webview/styles/display-pdf.css",
@@ -19,8 +18,9 @@ export class WebviewManager {
         "./webview/styles/tabular.css"
     ];
     private static readonly WEBVIEW_SCRIPT_PATHS = [
-        "./webview/scripts/lib/ag-grid-community.min.noStyle.js",
         "./webview/scripts/lib/pdf.js",
+        "./webview/scripts/lib/handsontable.full.min-custom.js",
+        // "./webview/scripts/lib/handsontable.full.min.js",
 
         "./webview/scripts/main.js",
         "./webview/scripts/display-pdf.js",
