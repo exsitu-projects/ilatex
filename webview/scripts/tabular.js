@@ -93,7 +93,14 @@ class InteractiveTable {
         }, true);
     }
 
-    reorderDocumentColumns(field, oldColumnIndex, newColumnIndex) {
+    reorderDocumentRows(oldRowIndex, newRowIndex) {
+        notifyVisualisation(this.visualisation, "reorder-row", {
+            oldRowIndex: oldRowIndex,
+            newRowIndex: newRowIndex
+        }, true);
+    }
+
+    reorderDocumentColumns(oldColumnIndex, newColumnIndex) {
         notifyVisualisation(this.visualisation, "reorder-column", {
             oldColumnIndex: oldColumnIndex,
             newColumnIndex: newColumnIndex
@@ -140,7 +147,7 @@ class InteractiveTable {
                 // console.log("afterRowMove", movedRows, finalIndex, dropIndex, movePossible, orderChanged);
                 if (orderChanged) {
                     console.log(`Row moved from index ${dragDetails.lastMouseDownCoords.row} to index ${finalIndex}`);
-                    self.reorderDocumentColumns(null, dragDetails.lastMouseDownCoords.row, finalIndex);
+                    self.reorderDocumentRows(dragDetails.lastMouseDownCoords.row, finalIndex);
                 }
             },
 
@@ -148,7 +155,7 @@ class InteractiveTable {
                 // console.log("afterColumnMove", movedColumns, finalIndex, dropIndex, movePossible, orderChanged);
                 if (orderChanged) {
                     console.log(`Column moved from index ${dragDetails.lastMouseDownCoords.col} to index ${finalIndex}`);
-                    self.reorderDocumentColumns(null, dragDetails.lastMouseDownCoords.col, finalIndex);
+                    self.reorderDocumentColumns(dragDetails.lastMouseDownCoords.col, finalIndex);
                 }
             },
 

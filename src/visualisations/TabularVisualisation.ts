@@ -433,6 +433,104 @@ export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
                     // Request a new parsing to generate new vis. from the modified code
                     this.requestNewParsing();
                 }
+            },
+            {
+                // Note: reordering only works as long as two rows are never (partially) on the same line
+                // TODO: remove this limitation?
+                subject: "reorder-row",
+                handler: async payload => {
+                    const grid = this.tabular.grid;
+
+                    // TODO: possibly implement reordering somewhere else?
+                    const { oldRowIndex, newRowIndex } = payload;
+                    console.info(`row ${oldRowIndex} => row ${newRowIndex}`);
+
+                    // Copy the content of the cells of the origin row (before any move)
+                    console.log("Extract content from grid: ", grid);
+                    const originRowCellsContent = grid[oldRowIndex].map(cell => cell.textContent);
+
+                    let updateCellContentAt;
+                    // Case 1: the row is moved from bottom to top (^^^)
+                    if (newRowIndex < oldRowIndex) {
+                        updateCellContentAt = async (rowIndex: number, columnIndex: number) => {
+                            if (rowIndex > newRowIndex && rowIndex <= oldRowIndex) {
+                                const cellToEdit = this.getCellAt(rowIndex, columnIndex);
+                                const cellToCopy = this.getCellAt(rowIndex - 1, columnIndex);
+
+                                console.log(`About to replace ${cellToEdit.textContent} by ${cellToCopy.textContent}`);
+                                await this.replaceCellContent(cellToEdit, cellToCopy.textContent);
+
+                            }
+                        };
+                    }
+                    // Case 2: the row is moved from top to bottom (vvv)
+                    // In this case, the content of the target row is also updated by this function
+                    else if (newRowIndex > oldRowIndex) {
+                        let lastEditedRowCellContent: string[] = [];
+                        let currentEditedRowCellContent: string[] = [];
+
+                        updateCellContentAt = async (rowIndex: number, columnIndex: number) => {
+                            if (rowIndex >= oldRowIndex && rowIndex <= newRowIndex) {
+                                // Before starting to edit a new row, make a copy of its content
+                                // and of the content of the previously edited row (if any)
+                                if (columnIndex === grid[rowIndex].length - 1) {
+                                    console.log("!!!! Updating last/current row content !!!!");
+                                    console.log("before", lastEditedRowCellContent, currentEditedRowCellContent);
+                                    lastEditedRowCellContent = currentEditedRowCellContent;
+                                    currentEditedRowCellContent = grid[rowIndex].map(cell => cell.textContent);
+                                    console.log("after", lastEditedRowCellContent, currentEditedRowCellContent);
+                                }
+
+                                // Edit the content of the cell
+                                // If this is the last row to edit (i.e. the target row),
+                                // use the content of the origin row (instead of the content of the row below)
+                                const cellToEdit = this.getCellAt(rowIndex, columnIndex);
+                                const newContent = rowIndex === newRowIndex
+                                                 ? originRowCellsContent[columnIndex]
+                                                 : lastEditedRowCellContent[columnIndex];
+
+                                console.log(`About to replace ${cellToEdit.textContent} by ${newContent}`);
+                                await this.replaceCellContent(cellToEdit, newContent);
+                            }
+                        };
+                    }
+                    // Case 3: the row is not moved (no cell content has to be updated)
+                    else {
+                        return;
+                    }
+
+                    // Shift the rows between the two indices
+                    const highestRowIndex = Math.max(oldRowIndex, newRowIndex);
+                    const minRowIndex = Math.min(oldRowIndex, newRowIndex);
+                    for (let rowIndex = highestRowIndex; rowIndex >= minRowIndex; rowIndex--) {
+                        const row = grid[rowIndex];
+
+                        for (let columnIndex = row.length - 1; columnIndex >= 0; columnIndex--) {
+                            console.log(`===== Update cell at ${rowIndex}, ${columnIndex} =====`);
+                            await updateCellContentAt(rowIndex, columnIndex);
+                        }
+                    }
+
+                    // If the row is moved from bottom to top (^^^),
+                    // the content of the target row must be finally replaced
+                    // (positions will still be correct since all the cells to edit
+                    // are located before all the shifted cells — provided two cells of
+                    // different rows are never located in the same line!)
+                    if (newRowIndex < oldRowIndex) {
+                        // Assume the origin and the target rows have the same number of cells
+                        // (as it is assumed everywhere else)
+                        for (let columnIndex = originRowCellsContent.length - 1; columnIndex >= 0; columnIndex--) {
+                            const row = grid[newRowIndex];
+                            await this.replaceCellContent(
+                                row[columnIndex],
+                                originRowCellsContent[columnIndex]
+                            );
+                        }
+                    }
+
+                    // Request a new parsing to generate new vis. from the modified code
+                    this.requestNewParsing();
+                }
             }
         ];
     }
