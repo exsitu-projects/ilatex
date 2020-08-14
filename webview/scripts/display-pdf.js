@@ -187,9 +187,6 @@ class VisualisationPopup {
         this.updateTitleBar();
         this.updateContent();
 
-        console.log("About to update the visualisation");
-        console.log(this);
-
         // Emit an event to signal that the visible visualisation has just been updated
         pdfNode.dispatchEvent(new CustomEvent("visualisation-updated", {
             detail: {
@@ -200,12 +197,10 @@ class VisualisationPopup {
 
     startHandlingVisualisationsChanges() { 
         visualisationsNode.addEventListener("visualisations-changed", this.visualisationsChangesHandler);
-        console.log("+ added the vis change handler", this.visualisationsChangesHandler);
     }
 
     stopHandlingVisualisationsChanges() {
         visualisationsNode.removeEventListener("visualisations-changed", this.visualisationsChangesHandler);
-        console.log("– removed the vis change handler", this.visualisationsChangesHandler);
     }
 
     open() {

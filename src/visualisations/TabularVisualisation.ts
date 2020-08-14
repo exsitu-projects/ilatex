@@ -474,11 +474,8 @@ export class TabularVisualisation extends Visualisation<ASTEnvironementNode> {
                                 // Before starting to edit a new row, make a copy of its content
                                 // and of the content of the previously edited row (if any)
                                 if (columnIndex === grid[rowIndex].length - 1) {
-                                    console.log("!!!! Updating last/current row content !!!!");
-                                    console.log("before", lastEditedRowCellContent, currentEditedRowCellContent);
                                     lastEditedRowCellContent = currentEditedRowCellContent;
                                     currentEditedRowCellContent = grid[rowIndex].map(cell => cell.textContent);
-                                    console.log("after", lastEditedRowCellContent, currentEditedRowCellContent);
                                 }
 
                                 // Edit the content of the cell

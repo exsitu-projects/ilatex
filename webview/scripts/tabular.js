@@ -84,8 +84,6 @@ class InteractiveTable {
     }
     
     updateDocumentCellContent(cellLocation, newContent) {
-        console.log("edit cell at", cellLocation);
-
         notifyVisualisation(this.visualisation, "set-cell-content", {
             rowIndex: cellLocation.rowIndex,
             columnIndex: cellLocation.columnIndex,
@@ -117,7 +115,6 @@ class InteractiveTable {
         };
 
         this.data.splice(5, 1); // TEMPOARY FIX (TODO: fix the issue in the core)
-        console.log("this.data", this.data);
 
         this.visualisation.innerHTML = "";
         this.visualisation.style.height = `${this.data.length * 30}px`;
@@ -146,7 +143,7 @@ class InteractiveTable {
             afterRowMove(movedRows, finalIndex, dropIndex, movePossible, orderChanged) {
                 // console.log("afterRowMove", movedRows, finalIndex, dropIndex, movePossible, orderChanged);
                 if (orderChanged) {
-                    console.log(`Row moved from index ${dragDetails.lastMouseDownCoords.row} to index ${finalIndex}`);
+                    // console.log(`Row moved from index ${dragDetails.lastMouseDownCoords.row} to index ${finalIndex}`);
                     self.reorderDocumentRows(dragDetails.lastMouseDownCoords.row, finalIndex);
                 }
             },
@@ -154,7 +151,7 @@ class InteractiveTable {
             afterColumnMove(movedColumns, finalIndex, dropIndex, movePossible, orderChanged) {
                 // console.log("afterColumnMove", movedColumns, finalIndex, dropIndex, movePossible, orderChanged);
                 if (orderChanged) {
-                    console.log(`Column moved from index ${dragDetails.lastMouseDownCoords.col} to index ${finalIndex}`);
+                    // console.log(`Column moved from index ${dragDetails.lastMouseDownCoords.col} to index ${finalIndex}`);
                     self.reorderDocumentColumns(dragDetails.lastMouseDownCoords.col, finalIndex);
                 }
             },
