@@ -172,7 +172,7 @@ class VisualisationPopup {
                 return;
             }
     
-            this.close();
+            this.closeAndSaveDocument();
         });
     }
 
