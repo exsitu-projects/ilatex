@@ -8,8 +8,14 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = "https://unpkg.com/pdfjs-dist@2.3.200/b
 // Get the pixel ratio of the user's device
 const DEVICE_PIXEL_RATIO = window.devicePixelRatio || 1.0;
 
-// Unique reference to the current displayable PDF object
+// Unique reference to the current displayable PDF object (or null)
 let currentDisplayablePdf = null;
+
+// Unique reference to the current PDF rendering task (or null)
+// Note that thre should only be one at a time since each rendering promise
+// is immediately awaited by the page object responsible for it,
+// therefore preventing other pages to be rendered at the same time
+let currentPageRenderingTask = null;
 
 function findMaskNodeWithIndex(sourceIndex) {
     return pdfNode.querySelector(
@@ -241,11 +247,12 @@ class DisplayablePDFPage {
         this.page = page;
         this.pageNumber = pageNumber;
 
-        // Create a canvas for the page
-        this.canvas = document.createElement("canvas");
-        this.canvasContext = this.canvas.getContext("2d");
+        // Canvas to draw the page onto and its 2D context
+        this.canvas = null;
+        this.canvasContext = null;
 
         // Structures for the page renderer
+        this.renderingTask = null;
         this.transformMatrix = [DEVICE_PIXEL_RATIO, 0 , 0, DEVICE_PIXEL_RATIO, 0, 0];
         this.viewport = null;
 
@@ -260,21 +267,11 @@ class DisplayablePDFPage {
 
     async init() {
         await this.extractAnnotations();
-        
-        this.computeViewport();
-        this.setCanvasAttributes();
-        this.resizeCanvas();
-        await this.draw();
     }
 
-    setCanvasAttributes() {
-        this.canvas.classList.add("pdf-page");
-        this.canvas.setAttribute("data-page-number", this.pageNumber);
-
-        // Note: the viewport must be computed before setting the following attributes
-        this.canvas.setAttribute("data-viewport-width", this.viewport.width);
-        this.canvas.setAttribute("data-viewport-height", this.viewport.height);
-        this.canvas.setAttribute("data-viewport-scale", this.viewport.scale);
+    createCanvas() {
+        this.canvas = document.createElement("canvas");
+        this.canvasContext = this.canvas.getContext("2d");
     }
 
     computeViewport() {
@@ -286,6 +283,25 @@ class DisplayablePDFPage {
         this.viewport = this.page.getViewport({
             scale: scale
         });
+    }
+    
+    setCanvasAttributes() {
+        this.canvas.classList.add("pdf-page");
+        this.canvas.setAttribute("data-page-number", this.pageNumber);
+
+        // Note: the viewport must be computed before setting the following attributes
+        this.canvas.setAttribute("data-viewport-width", this.viewport.width);
+        this.canvas.setAttribute("data-viewport-height", this.viewport.height);
+        this.canvas.setAttribute("data-viewport-scale", this.viewport.scale);
+    }
+
+    resizeCanvas() {
+        // Make the dimensions of the canvas match those of the page
+        this.canvas.width = this.viewport.width * DEVICE_PIXEL_RATIO;
+        this.canvas.height = this.viewport.height * DEVICE_PIXEL_RATIO;
+
+        this.canvas.style.width = `${this.viewport.width}px`;
+        this.canvas.style.height = `${this.viewport.height}px`;
     }
 
     async extractAnnotations() {
@@ -334,24 +350,29 @@ class DisplayablePDFPage {
         this.visualisationAnnotationMaskNodes = [];
     }
 
-    resizeCanvas() {
-        // Make the dimensions of the canvas match those of the page
-        this.canvas.width = this.viewport.width * DEVICE_PIXEL_RATIO;
-        this.canvas.height = this.viewport.height * DEVICE_PIXEL_RATIO;
-
-        this.canvas.style.width = `${this.viewport.width}px`;
-        this.canvas.style.height = `${this.viewport.height}px`;
-    }
-
     async drawPage() {
         // Use the device pixel ratio and the transform property
         // to make the PDF look crisp on HDPI displays
         // (cf. https://github.com/mozilla/pdf.js/issues/10509#issuecomment-585062007)
-        await this.page.render({
+        this.renderingTask = this.page.render({
             canvasContext: this.canvasContext,
             viewport: this.viewport,
             transform: this.transformMatrix
         });
+
+        try {
+            await this.renderingTask.promise;
+        }
+        catch(error) {
+            // Silently fail in case of an error
+
+            // Note: canceling the rendering on purpose will throw an error
+            // (e.g. in order to re-render a more recent version of the PDF
+            // while the previous version is still being rendered)
+        }
+        finally {
+            this.renderingTask = null;
+        }
     }
 
     // convertPdfRectToCanvasRect(pdfRect) {
@@ -407,7 +428,19 @@ class DisplayablePDFPage {
     //     this.canvasContext.restore();
     // }
 
-    async draw() {
+    async redraw() {
+        // Cancel the current rendering task (if any)
+        if (this.renderingTask) {
+            this.renderingTask.cancel();
+        }
+
+        // PDF.js requires every new rendering task to be performed on a fresh canvas
+        // (see e.g. https://github.com/mozilla/pdf.js/issues/10576)
+        this.createCanvas();
+        this.computeViewport();
+        this.setCanvasAttributes();
+        this.resizeCanvas();
+
         await this.drawPage();
         // this.drawAnnotationFrames(this.annotations);
         // this.drawAnnotationFrames(this.visualisationAnnotations);
@@ -422,6 +455,7 @@ class DisplayablePDFPage {
 
         const displayablePage = new DisplayablePDFPage(page, pageNumber);
         await displayablePage.init();
+        //await displayablePage.redraw();
 
         return displayablePage;
     }
@@ -454,7 +488,6 @@ class DisplayablePDF {
     async loadPage(pageNumber) {
         const displayablePage = await DisplayablePDFPage.fromPDFDocument(this.pdf, pageNumber);
         this.displayablePages.set(pageNumber, displayablePage);
-        this.pageContainerNode.append(displayablePage.canvas);
     }
 
     async loadAllPages() {
@@ -465,6 +498,14 @@ class DisplayablePDF {
 
         for (let pageNumber = 1; pageNumber <= this.nbPages; pageNumber++) {
             await this.loadPage(pageNumber);
+        }
+    }
+
+    updatePageContainerCanvases() {
+        this.pageContainerNode.innerHTML = "";
+
+        for (let displayablePage of this.displayablePages.values()) {
+            this.pageContainerNode.append(displayablePage.canvas);
         }
     }
 
@@ -490,25 +531,25 @@ class DisplayablePDF {
         node.append(this.annotationMaskContainerNode);
     }
 
-    redraw() {
+    async redraw(newContainerNode = null) {
         this.removeAllAnnotationsMasks();
 
-        for (let displayablePage of this.displayablePages.values()) {
-            displayablePage.computeViewport();
-            displayablePage.resizeCanvas();
-            displayablePage.draw();
+        // Draw all the pages
+        await Promise.all([...this.displayablePages.values()]
+            .map(page => page.redraw())
+        );
+
+        if (newContainerNode) {
+            newContainerNode.innerHTML = "";
+            this.appendTo(newContainerNode);
         }
 
         // Create the (new) annotation masks
-        // This can only be perforned once the canvas have been appended to the DOM
-        // since their positions in the page is required to compute the absolute positions
+        // This requires the (new) page canvases to be appended to the DOM
+        // since their positions are required to compute the absolute positions
         // of the masks (see the related methods in DisplayablePDFPage)
+        this.updatePageContainerCanvases();
         this.createAllAnnotationMasks();
-    }
-
-    redrawInto(node) {
-        this.appendTo(node);
-        this.redraw();
     }
 
     static async fromURI(uri) {
@@ -525,6 +566,7 @@ class DisplayablePDF {
                 displayablePdf = new DisplayablePDF(pdf);
             }
             catch (error) {
+                console.log("PDF loading failed: ", error);
                 // Ignore error and re-try
             }
         }
@@ -541,20 +583,19 @@ class DisplayablePDF {
 pdfNode.addEventListener("pdf-changed", async (event) => {
     // Create a new displayable PDF
     const newDisplayablePdf = await DisplayablePDF.fromURI(event.detail.pdfUri);
-    console.log("New displayable PDF: ", newDisplayablePdf);
 
     // If it could be successfuly loaded, replace the old one by the new one
     if (newDisplayablePdf) {
         currentDisplayablePdf = newDisplayablePdf;
-
-        pdfNode.innerHTML = "";
-        newDisplayablePdf.redrawInto(pdfNode);
+        
+        if (currentDisplayablePdf) {
+            await currentDisplayablePdf.redraw(pdfNode);
+        }
     }
 });
 
 pdfNode.addEventListener("pdf-resized", async (event) => {
-    // If there is a PDF to display, trigger a full redraw
     if (currentDisplayablePdf) {
-        currentDisplayablePdf.redraw();
+        await currentDisplayablePdf.redraw();
     }
 });

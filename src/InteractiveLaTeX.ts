@@ -15,8 +15,6 @@ export class InteractiveLaTeX {
 
     private documentChangeWatcher: fs.FSWatcher | null;
     private documentPDFChangeWatcher: fs.FSWatcher | null;
-
-    private terminal: vscode.Terminal;
     
     constructor(editor: vscode.TextEditor, webviewPanel: vscode.WebviewPanel) {
         this.editor = editor;
@@ -28,12 +26,10 @@ export class InteractiveLaTeX {
         this.documentChangeWatcher = null;
         this.documentPDFChangeWatcher = null;
 
-        this.terminal = vscode.window.createTerminal(`iLaTeX`);
-
         this.initWebviewMessageHandlers();
         this.startObservingWebviewPanelStateChanges();
         this.startObservingDocumentChanges();
-        this.startObservingDocumentPDFChanges();
+        // this.startObservingDocumentPDFChanges();
         this.startObservingSelectionChanges();
 
         this.parseActiveDocument();
@@ -172,13 +168,24 @@ export class InteractiveLaTeX {
     }
 
     private buildActiveDocument(): void {
-        // Old approach relying on the latex.build command provided by the Texlab extension
-        // vscode.commands.executeCommand("latex.build");
-
         // TODO: ensure the path/current directory are the correct ones
         // TODO: use the interactive mode once?
-        this.terminal.sendText(`cd ${this.document.fileName.substr(0, this.document.fileName.lastIndexOf("/"))}`);
-        this.terminal.sendText(`latexmk -f ${this.document.fileName}`);
+
+        // Create a new terminal and use it to run latexmk to build a PDF from the sources
+        const terminal = vscode.window.createTerminal("iLaTeX");
+
+        terminal.sendText(`cd ${this.document.fileName.substr(0, this.document.fileName.lastIndexOf("/"))}`);
+        terminal.sendText(`latexmk -f ${this.document.fileName}`);
+
+        // Close the terminal right after running latexmk
+        terminal.sendText(`exit`);
+
+        // Use the terminal closing as a signal to trigger an update of the webview PDF
+        // This is a workaround to the fact that there is no built-in way
+        // to wait for the end of a running process in a VSCode terminal
+        vscode.window.onDidCloseTerminal(terminal => {
+            this.updateWebviewPDF();
+        });
     }
 
     private onDocumentChange(): void {
