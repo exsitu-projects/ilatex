@@ -1,0 +1,59 @@
+\ProvidesPackage{gridlayout}[2020/08/17 iLaTeX]
+\RequirePackage{environ}
+
+\RequirePackage{xcolor}
+
+
+\newlength{\gridlayout@gridwidth}
+%\newlength{\gridlayout@rowsep}
+\newlength{\gridlayout@rowheight}
+%\newlength{\gridlayout@cellsep}
+\newlength{\gridlayout@cellwidth}
+
+\newlength{\gridlayout@savedfboxsep}
+\setlength{\gridlayout@savedfboxsep}{\fboxsep}
+
+
+\NewEnviron{gridlayout}[1][\textwidth]
+{%
+    \setlength{\fboxsep}{0pt}%
+    \setlength{\gridlayout@gridwidth}{#1}%
+    \par
+    \fbox{\begin{minipage}[b]{\gridlayout@gridwidth}%
+        \BODY%
+    \end{minipage}}%
+    \setlength{\fboxsep}{\gridlayout@savedfboxsep}
+    \par
+}
+{}
+
+\NewEnviron{row}[1]
+{%
+    \setlength{\gridlayout@rowheight}{#1}%
+    \fbox{\begin{minipage}[b]{\textwidth}%
+        \BODY%
+    \end{minipage}}%
+    \par
+}
+{}
+
+\NewEnviron{cell}[1]
+{%
+    \setlength{\gridlayout@cellwidth}{#1\textwidth}%
+    \fbox{\begin{minipage}[b][\gridlayout@rowheight][t]{\gridlayout@cellwidth}%
+        \BODY%
+    \end{minipage}}%
+}
+{}
+
+% \newcommand{\cellsep}[1]{%
+%     \hspace{#1}%
+% }
+
+\newcommand{\rowsep}[1]{\\[\dimexpr#1-\baselineskip]}
+% \newcommand{\rowsep}[1]{%
+%     \parbox[t][#1][t]{\gridlayout@gridwidth}{}%
+% }
+
+
+\endinput
