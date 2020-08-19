@@ -1,7 +1,6 @@
 \ProvidesPackage{gridlayout}[2020/08/17 iLaTeX]
 \RequirePackage{environ}
-
-\RequirePackage{xcolor}
+\RequirePackage{ilatex}
 
 
 \newlength{\gridlayout@gridwidth}
@@ -19,7 +18,7 @@
     \setlength{\fboxsep}{0pt}%
     \setlength{\gridlayout@gridwidth}{#1}%
     \par
-    \fbox{\begin{minipage}[b]{\gridlayout@gridwidth}%
+    \ilatex{\begin{minipage}[b]{\gridlayout@gridwidth}%
         \BODY%
     \end{minipage}}%
     \setlength{\fboxsep}{\gridlayout@savedfboxsep}
@@ -30,7 +29,7 @@
 \NewEnviron{row}[1]
 {%
     \setlength{\gridlayout@rowheight}{#1}%
-    \fbox{\begin{minipage}[b]{\textwidth}%
+    \makebox{\begin{minipage}[b]{\textwidth}%
         \BODY%
     \end{minipage}}%
     \par
@@ -40,7 +39,7 @@
 \NewEnviron{cell}[1]
 {%
     \setlength{\gridlayout@cellwidth}{#1\textwidth}%
-    \fbox{\begin{minipage}[b][\gridlayout@rowheight][t]{\gridlayout@cellwidth}%
+    \makebox{\begin{minipage}[b][\gridlayout@rowheight][t]{\gridlayout@cellwidth}%
         \BODY%
     \end{minipage}}%
 }
