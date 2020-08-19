@@ -118,6 +118,11 @@ export class GridLayoutVisualisation extends Visualisation<ASTEnvironementNode> 
     readonly name = "gridlayout";
 
     private gridLayout: GridLayout;
+
+    // String of the last cell size (as it was written in the document)
+    // This is required to avoid re-parsing the document when setting temporary sizes
+    // (so that the value can be updated in real time during a drag-and-drop)
+    private lastModifiedCellSize: string | null;
     
     constructor(node: ASTEnvironementNode, ilatex: InteractiveLaTeX, editor: vscode.TextEditor, webviewManager: WebviewManager) {
         super(node, ilatex, editor, webviewManager);
@@ -126,6 +131,8 @@ export class GridLayoutVisualisation extends Visualisation<ASTEnvironementNode> 
             content: [],
             options: {}
         };
+
+        this.lastModifiedCellSize = null;
 
         this.extractGridLayout();
         this.initProps();
@@ -173,6 +180,52 @@ export class GridLayoutVisualisation extends Visualisation<ASTEnvironementNode> 
                         new vscode.Range(startPosition, endPosition),
                         vscode.TextEditorRevealType.InCenterIfOutsideViewport
                     );
+                }
+            },
+            {
+                subject: "resize-cell",
+                handler: async payload => {
+                    const { rowIndex, cellIndex, newRelativeSize, isFinalSize } = payload;
+                    const cell = this.getCellAt(rowIndex, cellIndex);
+                    const cellSizeParameterNode = cell.node.value.parameters[0][0] as ASTParameterNode;
+
+                    // Bound the number of decimals of the new size
+                    const maxNbDecimals = 3;
+                    const tenPowerNbDecimals = 10 ** maxNbDecimals;
+                    const newSizeAsString = ((Math.round(newRelativeSize * tenPowerNbDecimals)) / tenPowerNbDecimals).toString();
+
+                    // If the value has been changed since the current AST was generated,
+                    // use the last value to compute the end of the range to edit
+                    // Note: in this case, we know that the beginning and the end of the range are on the same line!
+                    const editRangeEndLine = this.lastModifiedCellSize === null
+                                           ? cellSizeParameterNode.end.line - 1
+                                           : cellSizeParameterNode.start.line - 1;
+                    const editRangeEndColumn = this.lastModifiedCellSize === null
+                                             ? cellSizeParameterNode.end.column - 1
+                                             : cellSizeParameterNode.start.column - 1 + this.lastModifiedCellSize.length;
+
+                    const rangeToEdit = new vscode.Range(
+                        cellSizeParameterNode.start.line - 1, cellSizeParameterNode.start.column - 1,
+                        editRangeEndLine, editRangeEndColumn
+                    );
+
+                    // Update the copy of the last modified size
+                    this.lastModifiedCellSize = newSizeAsString;
+                        
+                    // console.log("======== Replacement ========");
+                    // console.log("REPLACE: ", this.editor.document.getText(rangeToEdit));
+                    // console.log("BY", newSizeAsString);
+
+                    // Actually perform the edit
+                    await this.editor.edit(editBuilder => {
+                        editBuilder.replace(rangeToEdit, newSizeAsString);
+                    });
+
+                    // If this was the final size of this cell (i.e. if the resize handle was dropped),
+                    // require a new parsing of the document
+                    if (isFinalSize) {
+                        this.requestNewParsing();
+                    }
                 }
             }
         ];

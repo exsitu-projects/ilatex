@@ -5,29 +5,40 @@ class InteractiveGridLayout {
         this.rowNodes = this.visualisation.querySelectorAll(".row");
         this.cellNodes = this.visualisation.querySelectorAll(".cell");
 
+        // Internal values used during cell and row resizing
+        this.minDurationBetweenResizes = 50; // ms
+        this.lastResizeTimestamp = 0;
+        this.isResized = false;
+        this.currentCellResize = {
+            node: null,
+            initialRelativeSize: 0,
+            initialAbsoluteSize: 0,
+            minRelativeSize: 0.05, // to avoid strange bugs
+            maxRelativeSize: 0,
+            maxAbsoluteSize: 0,
+            initialMouseX: 0,
+            initialMouseY: 0
+        };
+
         this.init();
     }
 
     init() {
         this.wrapAllCellsContent();
         this.addAllResizeHandles();
-        // this.wrapAllCells();
         this.setAllInitialDimensions();
+        this.startHandlingResizingMouseEvents();
     }
 
-    // wrapCell(cellNode) {
-    //     const cellWrapperNode = document.createElement("div");
-    //     cellWrapperNode.classList.add("cell-wrapper");
+    computeCellMaxSize(cellNode) {
+        const rowIndexAsString = cellNode.getAttribute("data-row");
+        const cellIndexAsString = cellNode.getAttribute("data-cell");
 
-    //     cellWrapperNode.append(...cellNode.children);
-    //     cellNode.append(cellWrapperNode);
-    // }
-
-    // wrapAllCells() {
-    //     for (let cellNode of this.cellNodes) {
-    //         this.wrapCell(cellNode);
-    //     }
-    // }
+        return [...this.cellNodes]
+            .filter(node => node.getAttribute("data-row") === rowIndexAsString
+                         && node.getAttribute("data-cell") !== cellIndexAsString)
+            .reduce((relativeFreeSpace, node) => relativeFreeSpace - parseFloat(node.getAttribute("data-relative-size")), 1);
+    }
 
     wrapCellContentOf(cellNode) {
         const contentNode = document.createElement("div");
@@ -60,6 +71,21 @@ class InteractiveGridLayout {
     addCellResizeHandleTo(cellNode) {
         const handleNode = document.createElement("div");
         handleNode.classList.add("cell-resize-handle");
+
+        // Handle cell resizing
+        handleNode.addEventListener("mousedown", event => {
+            this.currentCellResize.node = cellNode;
+            this.currentCellResize.initialRelativeSize = parseFloat(cellNode.getAttribute("data-relative-size"));
+            this.currentCellResize.initialAbsoluteSize = cellNode.getBoundingClientRect().width;
+            this.currentCellResize.maxRelativeSize = this.computeCellMaxSize(cellNode);
+            this.currentCellResize.maxAbsoluteSize = this.currentCellResize.maxRelativeSize
+                                                   / this.currentCellResize.initialRelativeSize
+                                                   * this.currentCellResize.initialAbsoluteSize;
+            this.currentCellResize.initialMouseX = event.clientX;
+            this.currentCellResize.initialMouseY = event.clientY;
+
+            this.isResized = true;
+        });
 
         cellNode.append(handleNode);
     }
@@ -122,6 +148,74 @@ class InteractiveGridLayout {
     selectCellContentOf(cellNode) {
         const {rowIndex, cellIndex} = this.getCellPositionInGrid(cellNode);
         this.selectCellContentAt(rowIndex, cellIndex);
+    }
+
+    resizeCell(cellNode, newRelativeSize, isFinalSize) {
+        // Resize the node in the webview
+        cellNode.style.width = `${Math.round(newRelativeSize * 100)}%`;
+
+        // Edit the size in the document
+        const { rowIndex, cellIndex } = this.getCellPositionInGrid(cellNode);
+        notifyVisualisation(this.visualisation, "resize-cell", {
+            rowIndex: rowIndex,
+            cellIndex: cellIndex,
+            newRelativeSize: newRelativeSize,
+            isFinalSize: isFinalSize
+        });
+
+        // Update the timestamp of the last edit
+        this.lastResizeTimestamp = Date.now();
+    }
+
+    computeNewRelativeCellSizeDuringResize(mouseEvent) {
+        const mouseX = mouseEvent.clientX;
+        const cellBoundingRect = this.currentCellResize.node.getBoundingClientRect();
+
+        const newAbsoluteSize = mouseX - cellBoundingRect.left;
+
+        if (newAbsoluteSize <= 0) {
+            return this.currentCellResize.minRelativeSize;
+        }
+        else if (newAbsoluteSize >= this.currentCellResize.maxAbsoluteSize) {
+            return this.currentCellResize.maxRelativeSize;
+        }
+        else {
+            return (newAbsoluteSize / this.currentCellResize.initialAbsoluteSize) * this.currentCellResize.initialRelativeSize;
+        }
+    }
+
+    startHandlingResizingMouseEvents() {
+        this.visualisation.addEventListener("mousemove", event => {
+            if (!this.isResized) {
+                return;
+            }
+            
+            // Only trigger a resize if the previous one is old enough
+            if (Date.now() > this.lastResizeTimestamp + this.minDurationBetweenResizes) {
+                const newSize = this.computeNewRelativeCellSizeDuringResize(event);
+                this.resizeCell(this.currentCellResize.node, newSize, false);
+            }
+        });
+
+        this.visualisation.addEventListener("mouseup", event => {
+            if (!this.isResized) {
+                return;
+            }
+
+            const newSize = this.computeNewRelativeCellSizeDuringResize(event);
+            this.resizeCell(this.currentCellResize.node, newSize, true);
+            this.isResized = false;
+        });
+
+        this.visualisation.addEventListener("mouseleave", event => {
+            if (!this.isResized) {
+                return;
+            }
+
+            const newSize = this.computeNewRelativeCellSizeDuringDrag(event);
+            this.resizeCell(this.currentCellResize.node, newSize, true);
+            this.isResized = false;
+        });
     }
 }
 
