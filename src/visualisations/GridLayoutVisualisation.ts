@@ -6,7 +6,6 @@ import { LatexLength } from "../utils/LatexLength";
 import { ASTEnvironementNode, ASTCommandNode, ASTNode, ASTParameterNode } from "../ast/LatexASTNode";
 import { InteractiveLaTeX } from "../InteractiveLaTeX";
 import { WebviewManager } from "../webview/WebviewManager";
-import { LatexASTFormatter } from "../ast/visitors/LatexASTFormatter";
 
 
 interface Cell {
@@ -50,12 +49,12 @@ class GridLayoutContentReader extends LatexASTVisitorAdapter {
 
         this.currentRow = null;
         this.currentRowIndex = -1;
-        this.currentCellIndex = 0;
+        this.currentCellIndex = -1;
     }
 
     private createNewRow(rowNode: ASTEnvironementNode): Row {
         this.currentRowIndex += 1;
-        this.currentCellIndex = 0;
+        this.currentCellIndex = -1;
 
         const rowHeightParameter = rowNode.value.parameters[0][0] as ASTParameterNode;
         const rowHeight = LatexLength.from(rowHeightParameter.value);
@@ -77,8 +76,8 @@ class GridLayoutContentReader extends LatexASTVisitorAdapter {
         const relativeSize = parseFloat(cellRelativeSizeParameter.value);
         
         return {
-            rowIndex: this.currentCellIndex,
-            cellIndex: this.currentRowIndex,
+            rowIndex: this.currentRowIndex,
+            cellIndex: this.currentCellIndex,
             node: cellNode,
             textContent: this.getCellContent(
                 cellNode.value.content.start,
@@ -156,17 +155,38 @@ export class GridLayoutVisualisation extends Visualisation<ASTEnvironementNode> 
         return [
             ...super.getWebviewNotificationHandlerSpecifications(),
 
-            // TODO
+            {
+                subject: "select-cell-content",
+                handler: async payload => {
+                    console.log(this.gridLayout.content, payload);
+
+                    
+                    // TODO: implement selection somewhere else
+                    const { rowIndex, cellIndex } = payload;
+                    const cell = this.getCellAt(rowIndex, cellIndex);
+                    const cellContentNode = cell.node.value.content;
+                    
+                    console.log("about to select content node", cellContentNode);
+
+                    // Select the code
+                    const startPosition = new vscode.Position(cellContentNode.start.line - 1, cellContentNode.start.column - 1);
+                    const endPosition = new vscode.Position(cellContentNode.end.line - 1, cellContentNode.end.column - 1);
+                    this.editor.selections = [new vscode.Selection(startPosition, endPosition)];
+
+                    // If the selected range is not visible, scroll to the selection
+                    this.editor.revealRange(
+                        new vscode.Range(startPosition, endPosition),
+                        vscode.TextEditorRevealType.InCenterIfOutsideViewport
+                    );
+                }
+            }
         ];
     }
 
     private extractGridLayoutOptions(): void {
         if (this.node.value.parameters[0].length > 0) {
             const parameterNode = this.node.value.parameters[0][0] as ASTParameterNode;
-            const width = LatexLength.from(parameterNode.value);
-
-            console.log("===> GRID LAYOUT HAS A PARAM: ", width);
-            // TODO
+            this.gridLayout.options.width = LatexLength.from(parameterNode.value);
         }
     }
 
@@ -185,15 +205,16 @@ export class GridLayoutVisualisation extends Visualisation<ASTEnvironementNode> 
     
     renderContentAsHTML(): string {
         return `
-            <table>
+            <div class="layout">
                 ${this.gridLayout.content.map(GridLayoutVisualisation.renderRowAsHTML).join("\n")}
-            </table>
+            </div>
         `;
     }
 
     private static renderCellAsHTML(cell: Cell): string {
         function getAttributesAsHTML(cell: Cell) {
             const attributes = {
+                "class": "cell",
                 "data-row": cell.rowIndex,
                 "data-cell": cell.cellIndex,
                 "data-relative-size": cell.options.relativeSize
@@ -204,17 +225,17 @@ export class GridLayoutVisualisation extends Visualisation<ASTEnvironementNode> 
                 .join(" ");
         }
 
-        return `<td ${getAttributesAsHTML(cell)}>${cell.textContent}</td>`;
+        return `<div ${getAttributesAsHTML(cell)}>${cell.textContent}</div>`;
     }
 
     private static renderRowAsHTML(row: Row): string {
         return `
-            <tr data-height="${row.options.height.px}">
+            <div class="row" data-height="${row.options.height.px}">
                 ${row.cells
                     .map(cell => GridLayoutVisualisation.renderCellAsHTML(cell))
                     .join("\n")
                 }
-            </tr>
+            </div>
         `;
     }
 }

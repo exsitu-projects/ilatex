@@ -15,7 +15,8 @@ export class WebviewManager {
         "./webview/styles/main.css",
         "./webview/styles/display-pdf.css",
         "./webview/styles/includegraphics.css",
-        "./webview/styles/tabular.css"
+        "./webview/styles/tabular.css",
+        "./webview/styles/gridlayout.css"
     ];
     private static readonly WEBVIEW_SCRIPT_PATHS = [
         "./webview/scripts/lib/pdf.js",
@@ -25,7 +26,8 @@ export class WebviewManager {
         "./webview/scripts/main.js",
         "./webview/scripts/display-pdf.js",
         "./webview/scripts/includegraphics.js",
-        "./webview/scripts/tabular.js"
+        "./webview/scripts/tabular.js",
+        "./webview/scripts/gridlayout.js"
     ];
 
     private readonly webview: vscode.Webview;
