@@ -1,5 +1,8 @@
 \documentclass{article}
 \usepackage[utf8]{inputenc}
+\usepackage[
+    margin = 3cm
+]{geometry}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{etoolbox}
@@ -7,6 +10,8 @@
 \usepackage{gridlayout}
 
 \begin{document}
+
+Some text before the grid layout...
 
 \begin{gridlayout}[\textwidth]
     \begin{row}{4cm}
@@ -22,12 +27,13 @@
     \end{row}
     \begin{row}{6cm}
         \begin{cell}{0.1}
-            Lorem ipsum dolor sit amet
+            Lorem ipsum dolor sit amet 
         \end{cell}
         \begin{cell}{0.5}
-            \includegraphics[width = \textwidth]{example-image-a}
+            \includegraphics[height = 6cm]{img/rabbit.jpg}
         \end{cell}
         \begin{cell}{0.4}
+            \centering
             \begin{tabular}{lll}
                 \toprule
                 Foo & Bar & Baz \\
@@ -39,5 +45,7 @@
         \end{cell}
     \end{row}
 \end{gridlayout}
+
+Some text after the grid layout...
 
 \end{document}
