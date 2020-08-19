@@ -175,7 +175,7 @@ export class InteractiveLaTeX {
         const terminal = vscode.window.createTerminal("iLaTeX");
 
         terminal.sendText(`cd ${this.document.fileName.substr(0, this.document.fileName.lastIndexOf("/"))}`);
-        terminal.sendText(`latexmk -f ${this.document.fileName}`);
+        terminal.sendText(`latexmk -c -f ${this.document.fileName}`);
 
         // Close the terminal right after running latexmk
         terminal.sendText(`exit`);
