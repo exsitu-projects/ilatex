@@ -228,7 +228,28 @@ const language = P.createLanguage<{
                 name: "itemize",
                 parameters: [],
                 contentParser: lang.latex
-            }
+            },
+            {
+                name: "gridlayout",
+                parameters: [
+                    { type: "square", parser: lang.parameter, optional: true }
+                ],
+                contentParser: lang.latex,
+            },
+            {
+                name: "row",
+                parameters: [
+                    { type: "curly", parser: lang.parameter }
+                ],
+                contentParser: lang.latex,
+            },
+            {
+                name: "cell",
+                parameters: [
+                    { type: "curly", parser: lang.parameter }
+                ],
+                contentParser: lang.latex,
+            },
         ];
 
         return P.alt(
@@ -285,7 +306,7 @@ const language = P.createLanguage<{
     },
 
     command: lang => {
-        const specificEnvironementNames = ["tabular", "itemize"];
+        const specificEnvironementNames = ["tabular", "itemize", "gridlayout", "row", "cell"];
         function isStartingWithSpecificEnvironementBeginning(input: string): boolean {
             return specificEnvironementNames.some(name => input.startsWith(`begin{${name}}`));
         }

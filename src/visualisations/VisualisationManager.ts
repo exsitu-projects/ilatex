@@ -7,6 +7,7 @@ import { TabularVisualisation } from './TabularVisualisation';
 import { WebviewManager } from '../webview/WebviewManager';
 import { NotifyVisualisationMessage } from '../webview/WebviewMessage';
 import { InteractiveLaTeX } from '../InteractiveLaTeX';
+import { GridLayoutVisualisation } from './GridLayoutVisualisation';
 
 export class VisualisationManager {
     private ilatex: InteractiveLaTeX;
@@ -44,6 +45,15 @@ export class VisualisationManager {
                 match: node => node.name === "tabular",
                 onMatch: node => {
                     this.visualisations.push(new TabularVisualisation(node, this.ilatex, this.editor, this.webviewManager));
+                }
+            }
+        );
+
+        this.patternDetector.environementsPatterns.push(
+            {
+                match: node => node.name === "gridlayout",
+                onMatch: node => {
+                    this.visualisations.push(new GridLayoutVisualisation(node, this.ilatex, this.editor, this.webviewManager));
                 }
             }
         );
