@@ -98,8 +98,6 @@ class GridLayoutContentReader extends LatexASTVisitorAdapter {
     };
 
     protected visitEnvironementNode(node: ASTEnvironementNode) {
-        console.log("visiting env", node.name);
-
         // Every row environment inside a gridlayout environement starts a new row
         if (node.name === "row") {
             const newRow = this.createNewRow(node);
@@ -113,12 +111,6 @@ class GridLayoutContentReader extends LatexASTVisitorAdapter {
             const newCell = this.createNewCell(node);
             this.currentRow?.cells.push(newCell);
         }
-
-        this.visitNode(node);
-    }
-
-    protected visitNode(node: ASTNode) {
-        console.log("node visited: ", node);
     }
 }
 
