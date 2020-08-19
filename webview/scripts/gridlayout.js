@@ -85,13 +85,11 @@ class InteractiveGridLayout {
 
     setInitialCellWidth(cellNode) {
         const initialRelativeSize = parseFloat(cellNode.getAttribute("data-relative-size")); // percentage (0–1)
-        console.log("initialRelativeSize", initialRelativeSize);
         cellNode.style.width = `${Math.round(initialRelativeSize * 100)}%`;
     }
 
     setInitialRowHeight(rowNode) {
         const initialHeight = parseFloat(rowNode.getAttribute("data-height")); // px
-        console.log("initialHeight", initialHeight);
         rowNode.style.height = `${Math.round(initialHeight)}px`;
     }
 

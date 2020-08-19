@@ -158,15 +158,10 @@ export class GridLayoutVisualisation extends Visualisation<ASTEnvironementNode> 
             {
                 subject: "select-cell-content",
                 handler: async payload => {
-                    console.log(this.gridLayout.content, payload);
-
-                    
                     // TODO: implement selection somewhere else
                     const { rowIndex, cellIndex } = payload;
                     const cell = this.getCellAt(rowIndex, cellIndex);
                     const cellContentNode = cell.node.value.content;
-                    
-                    console.log("about to select content node", cellContentNode);
 
                     // Select the code
                     const startPosition = new vscode.Position(cellContentNode.start.line - 1, cellContentNode.start.column - 1);
