@@ -15,6 +15,7 @@
 
 	"include": [
 		"src/core/**/*.ts",
-		"src/visualisations/*/model/**/*.ts"
+		"src/visualisations/*/model/**/*.ts",
+		"src/shared/**/*.ts"
 	]
 }

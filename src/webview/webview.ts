@@ -1,13 +1,4 @@
-import { VisView } from "./VisView";
+import { Messenger } from "./Messenger";
 
-import * as VisA from "../visualisations/vis-a/view/view";
-import * as VisB from "../visualisations/vis-b/view/view";
-
-const views: VisView[] = [
-    new VisA.View(),
-    new VisB.View()
-];
-
-document.addEventListener("DOMContentLoaded", event => {
-    console.log(views);
-});
+const messenger = new Messenger();
+messenger.startHandlingMessages();
