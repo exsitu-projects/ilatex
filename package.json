@@ -4,6 +4,7 @@
 	"description": "Interactive visualisations for LaTeX documents.",
 	"version": "0.0.1",
 	"publisher": "exsitu",
+	"private": true,
 	"engines": {
 		"vscode": "^1.42.0"
 	},
@@ -13,7 +14,7 @@
 	"activationEvents": [
 		"onCommand:ilatex.init"
 	],
-	"main": "./out/extension.js",
+	"main": "./out/extension/core/extension.js",
 	"contributes": {
 		"commands": [
 			{
@@ -24,8 +25,11 @@
 	},
 	"scripts": {
 		"lint": "eslint src --ext ts",
-		"build": "tsc -p ./",
-		"watch": "tsc -watch -p ./"
+		"build-core": "tsc --build ./",
+		"build-webview": "rollup -c",
+		"watch-core": "tsc --build --watch ./",
+		"watch-webview": "rollup -cw",
+		"clean": "rm -rf out"
 	},
 	"devDependencies": {
 		"@types/glob": "^7.1.1",
@@ -36,6 +40,8 @@
 		"@typescript-eslint/parser": "^2.18.0",
 		"eslint": "^6.8.0",
 		"glob": "^7.1.6",
+		"rollup": "^2.26.5",
+		"rollup-plugin-typescript2": "^0.27.2",
 		"typescript": "^3.7.5"
 	},
 	"dependencies": {

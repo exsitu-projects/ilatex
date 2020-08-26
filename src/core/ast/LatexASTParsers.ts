@@ -134,7 +134,7 @@ function createEnvironementParser(environement: EnvironementSpecification): P.Pa
         parameters: [{
             type: "curly",
             parser: nameParser
-                .thru(createParserOutputASTAdapter(ASTNodeType.Parameter))
+                .thru(createParserOutputASTAdapter(ASTNodeType.Parameter)) as P.Parser<ASTParameterNode>
         }]
     });
 
@@ -143,7 +143,7 @@ function createEnvironementParser(environement: EnvironementSpecification): P.Pa
         parameters: [{
             type: "curly",
             parser: nameParser
-                .thru(createParserOutputASTAdapter(ASTNodeType.Parameter))
+                .thru(createParserOutputASTAdapter(ASTNodeType.Parameter)) as P.Parser<ASTParameterNode>
         }]
     });
 

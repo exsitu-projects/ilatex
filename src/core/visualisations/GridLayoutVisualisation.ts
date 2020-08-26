@@ -7,7 +7,6 @@ import { ASTEnvironementNode, ASTCommandNode, ASTNode, ASTParameterNode } from "
 import { InteractiveLaTeX } from "../InteractiveLaTeX";
 import { WebviewManager } from "../webview/WebviewManager";
 
-
 interface Cell {
     rowIndex: number;
     cellIndex: number;
