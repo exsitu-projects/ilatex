@@ -1,4 +1,6 @@
-import { Messenger } from "./Messenger";
+import { WebviewManager } from "./WebviewManager";
 
-const messenger = new Messenger();
-messenger.startHandlingMessages();
+document.addEventListener("DOMContentLoaded", event => {
+    const webviewManager = new WebviewManager();
+    console.log("The webview manager has been successfuly created.");
+});

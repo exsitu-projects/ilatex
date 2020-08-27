@@ -1,0 +1,20 @@
+.pdf-page-container {
+    z-index: 0;
+}
+
+.pdf-annotation-mask-container {
+    position: absolute;
+    top: 0;
+    width: 0;
+    overflow: visible;
+}
+
+.annotation-mask {
+    position: absolute;
+    box-shadow: 0 0 5px #0074D9;
+    z-index: 100;
+}
+
+.annotation-mask:hover {
+    box-shadow: 0 0 10px #FF851B;
+}

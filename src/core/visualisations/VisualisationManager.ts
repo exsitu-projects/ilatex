@@ -9,9 +9,6 @@ import { NotifyVisualisationMessage } from '../webview/WebviewMessage';
 import { InteractiveLaTeX } from '../InteractiveLaTeX';
 import { GridLayoutVisualisation } from './GridLayoutVisualisation';
 
-import * as VisA from "../../visualisations/vis-a/model/model";
-import * as VisB from "../../visualisations/vis-a/model/model";
-
 export class VisualisationManager {
     private ilatex: InteractiveLaTeX;
     private editor: vscode.TextEditor;

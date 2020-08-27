@@ -6,10 +6,12 @@ export const enum CoreToWebviewMessageType {
 
 export const enum WebviewToCoreMessageType {
     SaveDocument = "SaveDocument",
-    NotifyVisualisation = "NotifyVisualisation"
+    NotifyVisualisationModel = "NotifyVisualisationModel",
+    RevealVisualisedSources = "RevealVisualisedSources"
 }
 
-export type MessageType = CoreToWebviewMessageType | WebviewToCoreMessageType;
+export type MessageType =
+    CoreToWebviewMessageType | WebviewToCoreMessageType;
 
 
 // Specification of each type of message which can be sent by the core to the webview
@@ -24,23 +26,33 @@ export interface UpdatePDFMessage {
     pdfUri: string;
 }
 
-export type CoreToWebviewMessage = UpdateVisualisationsMessage | UpdatePDFMessage;
+export type CoreToWebviewMessage =
+    UpdateVisualisationsMessage | UpdatePDFMessage;
 
 
-// From webview to extension
+// Specification of each type of message which can be sent by the webview to the core
 export interface SaveDocumentMessage {
     type: WebviewToCoreMessageType.SaveDocument;
 };
 
-export interface NotifyVisualisationMessage {
-    type: WebviewToCoreMessageType.NotifyVisualisation;
+export interface NotifyVisualisationModelMessage {
+    type: WebviewToCoreMessageType.NotifyVisualisationModel;
+    visualisationId: number;
+    notification: any;
 };
 
-export type WebviewToCoreMessage = SaveDocumentMessage | NotifyVisualisationMessage;
+export interface RevealVisualisedSourcesMessage {
+    type: WebviewToCoreMessageType.RevealVisualisedSources;
+    visualisationId: number;
+};
+
+export type WebviewToCoreMessage =
+    SaveDocumentMessage | NotifyVisualisationModelMessage | RevealVisualisedSourcesMessage;
 
 
 // Generic type of a message exchanged between the core and the webview
-export type Message = CoreToWebviewMessage | WebviewToCoreMessage;
+export type Message =
+    CoreToWebviewMessage | WebviewToCoreMessage;
 
 
 // Generic type of all messages which match the given message type constraint
