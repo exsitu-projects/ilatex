@@ -139,7 +139,7 @@ export class PDFPageRenderer {
 
             // Handle clicks on this mask
             maskNode.addEventListener("click", event => {
-                PDFPageRenderer.handleAnnotationMaskClick(sourceIndex, maskCoordinates);
+                this.handleAnnotationMaskClick(sourceIndex, maskCoordinates);
             });
 
             this.visualisationAnnotationMaskNodes.push(maskNode);
