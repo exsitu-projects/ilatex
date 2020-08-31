@@ -42,8 +42,10 @@ export abstract class AbstractVisualisationView implements VisualisationView {
 
     revealInSourceDocument(): void {
         this.messenger.sendMessage({
-            type: WebviewToCoreMessageType.RevealVisualisedSources,
-            visualisationId: this.visualisationId
+            type: WebviewToCoreMessageType.NotifyVisualisationModel,
+            visualisationId: this.visualisationId,
+            title: "reveal-code",
+            notification: {}
         });
     }
 

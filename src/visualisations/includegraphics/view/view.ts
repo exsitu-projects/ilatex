@@ -438,6 +438,7 @@ class IncludegraphicsView extends AbstractVisualisationView {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
             visualisationId: this.visualisationId,
+            title: "set-options",
             notification: {
                 newOptions: newOptions
             }

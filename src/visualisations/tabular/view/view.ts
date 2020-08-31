@@ -87,8 +87,8 @@ class TabularView extends AbstractVisualisationView {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
             visualisationId: this.visualisationId,
+            title: "select-cell-code",
             notification: {
-                title: "select-cell-code",
                 columnIndex: cellLocation.columnIndex,
                 rowIndex: cellLocation.rowIndex
             }
@@ -99,8 +99,8 @@ class TabularView extends AbstractVisualisationView {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
             visualisationId: this.visualisationId,
+            title: "set-cell-code",
             notification: {
-                title: "set-cell-code",
                 columnIndex: cellLocation.columnIndex,
                 rowIndex: cellLocation.rowIndex,
                 newContent: newContent
@@ -112,8 +112,8 @@ class TabularView extends AbstractVisualisationView {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
             visualisationId: this.visualisationId,
+            title: "move-row",
             notification: {
-                title: "move-row",
                 oldRowIndex: oldRowIndex,
                 newRowIndex: newRowIndex
             }
@@ -124,8 +124,8 @@ class TabularView extends AbstractVisualisationView {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
             visualisationId: this.visualisationId,
+            title: "move-column",
             notification: {
-                title: "move-column",
                 oldColumnIndex: oldColumnIndex,
                 newColumnIndex: newColumnIndex
             }

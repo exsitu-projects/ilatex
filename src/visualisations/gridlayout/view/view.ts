@@ -178,6 +178,7 @@ class GridLayoutView extends AbstractVisualisationView {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
             visualisationId: this.visualisationId,
+            title: "select-cell-content",
             notification: this.getCellPositionInGrid(cellNode)
         });
     }
@@ -191,6 +192,7 @@ class GridLayoutView extends AbstractVisualisationView {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
             visualisationId: this.visualisationId,
+            title: "resize-cell",
             notification: {
                 rowIndex: rowIndex,
                 cellIndex: cellIndex,

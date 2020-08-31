@@ -1,33 +1,20 @@
 import { LatexASTVisitorAdapter } from "../ast/visitors/LatexASTVisitorAdapter";
 import { ASTNode, ASTEnvironementNode, ASTCommandNode } from "../ast/LatexASTNode";
 import { CodePattern } from "./CodePattern";
+import { LatexASTVisitor } from "../ast/visitors/LatexASTVisitor";
 
-export class CodePatternDetector extends LatexASTVisitorAdapter {
-    readonly commandPatterns: CodePattern<ASTCommandNode>[];
-    readonly environementsPatterns: CodePattern<ASTEnvironementNode>[];
+export class CodePatternDetector implements LatexASTVisitor {
+    readonly patterns: CodePattern[];
 
     constructor() {
-        super();
-
-        this.commandPatterns = [];
-        this.environementsPatterns = [];
+        this.patterns = [];
     }
 
-    protected visitCommandNode(node: ASTCommandNode): void {
-        for (let pattern of this.commandPatterns) {
-            CodePatternDetector.attemptMatch(pattern, node);
-        }
-    }
-
-    protected visitEnvironementNode(node: ASTEnvironementNode): void {
-        for (let pattern of this.environementsPatterns) {
-            CodePatternDetector.attemptMatch(pattern, node);
-        }
-    }
-
-    private static attemptMatch<T extends ASTNode>(pattern: CodePattern<T>, node: ASTNode) {
-        if (pattern.match(node)) {
-            pattern.onMatch(node as T);
+    visit(node: ASTNode): void {
+        for (let pattern of this.patterns) {
+            if (pattern.matches(node)) {
+                pattern.onMatch(node);
+            }
         }
     }
 }

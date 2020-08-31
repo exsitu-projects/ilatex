@@ -38,16 +38,12 @@ export interface SaveDocumentMessage {
 export interface NotifyVisualisationModelMessage {
     type: WebviewToCoreMessageType.NotifyVisualisationModel;
     visualisationId: number;
-    notification: any;
-};
-
-export interface RevealVisualisedSourcesMessage {
-    type: WebviewToCoreMessageType.RevealVisualisedSources;
-    visualisationId: number;
+    title: string;
+    notification: object;
 };
 
 export type WebviewToCoreMessage =
-    SaveDocumentMessage | NotifyVisualisationModelMessage | RevealVisualisedSourcesMessage;
+    SaveDocumentMessage | NotifyVisualisationModelMessage;
 
 
 // Generic type of a message exchanged between the core and the webview
