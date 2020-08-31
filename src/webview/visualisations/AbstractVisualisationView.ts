@@ -1,6 +1,7 @@
-import { VisualisationView, SourceDocumentLocation } from "./VisualisationView";
+import { VisualisationView, SourceDocumentLocation, VisualisationViewInstantiationContext } from "./VisualisationView";
 import { Messenger } from "../Messenger";
 import { WebviewToCoreMessageType } from "../../shared/messenger/messages";
+import { AnnotationMaskCoordinates } from "../pdf/PDFPageRenderer";
 
 // Helper function to extract a location (in the LaTeX document) from a HTML attribute
 function parseLocationFromAttribute(attributeValue: string) {
@@ -12,6 +13,7 @@ function parseLocationFromAttribute(attributeValue: string) {
 }
 
 export abstract class AbstractVisualisationView implements VisualisationView {
+    protected instanciationContext: VisualisationViewInstantiationContext;
     protected messenger: Messenger;
 
     abstract readonly visualisationName: string;
@@ -22,8 +24,9 @@ export abstract class AbstractVisualisationView implements VisualisationView {
     readonly contentTitle: string;
     readonly contentLocationInSourceDocument: SourceDocumentLocation;
 
-    constructor(contentNode: HTMLElement, messenger: Messenger) {
-        this.messenger = messenger;
+    constructor(contentNode: HTMLElement, context: VisualisationViewInstantiationContext) {
+        this.instanciationContext = context;
+        this.messenger = context.messenger;
 
         this.visualisationId = parseInt(contentNode.getAttribute("data-id")!);
         this.sourceIndex = parseInt(contentNode.getAttribute("data-source-index")!);

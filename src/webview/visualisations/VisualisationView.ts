@@ -1,8 +1,20 @@
 import { Messenger } from "../Messenger";
+import { AnnotationMaskCoordinates } from "../pdf/PDFPageRenderer";
 
 export interface SourceDocumentLocation {
     start: {line: number, column: number};
     end: {line: number, column: number};
+}
+
+export interface VisualisationViewInstantiationContext {
+    messenger: Messenger;
+    annotationMaskCoordinates: AnnotationMaskCoordinates;
+    pdfPageDetail: {
+        pageNumber: number;
+        width: number;
+        height: number;
+        scale: number;
+    }
 }
 
 export interface VisualisationView {
@@ -26,5 +38,5 @@ export interface VisualisationView {
 
 export interface VisualisationViewFactory {
     readonly visualisationName: string;
-    createView(contentNode: HTMLElement, messenger: Messenger): VisualisationView;
+    createView(contentNode: HTMLElement, context: VisualisationViewInstantiationContext): VisualisationView;
 }

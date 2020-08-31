@@ -7,6 +7,12 @@ import { WebviewToCoreMessageType, CoreToWebviewMessageType, UpdateVisualisation
 export interface VisualisationDisplayRequest {
     sourceIndex: number;
     annotationMaskCoordinates: AnnotationMaskCoordinates;
+    pdfPageDetail: {
+        pageNumber: number;
+        width: number;
+        height: number;
+        scale: number;
+    }
 }
 
 export class VisualisationViewManager {
@@ -46,11 +52,11 @@ export class VisualisationViewManager {
                 .querySelector(`.visualisation["data-source-index"="${sourceIndex}"]`);
     }
 
-    private displayVisualisation(sourceIndex: number, maskCoordinates: AnnotationMaskCoordinates): void {
+    private displayVisualisation(request: VisualisationDisplayRequest): void {
         // Get the name and the content of the visualisation with the given source index
-        const contentNode = this.getVisualisationContentNode(sourceIndex);
+        const contentNode = this.getVisualisationContentNode(request.sourceIndex);
         if (!contentNode) {
-            console.error(`There is no visualisation content for the given source index (${sourceIndex}).`);
+            console.error(`There is no visualisation content for the given source index (${request.sourceIndex}).`);
             return;
         }
 
@@ -66,8 +72,13 @@ export class VisualisationViewManager {
         }
 
         const factory = this.visualisationNamesToViewFactories.get(name)!;
-        const view = factory?.createView(contentNodeCopy, this.messenger);
-        const popup = new VisualisationPopup(view, maskCoordinates, () => {
+        const view = factory?.createView(contentNodeCopy, {
+            messenger: this.messenger,
+            annotationMaskCoordinates: request.annotationMaskCoordinates,
+            pdfPageDetail: request.pdfPageDetail
+        });
+
+        const popup = new VisualisationPopup(view, request.annotationMaskCoordinates, () => {
             // Reset all the references to the hidden visualisation 
             this.currentlyDisplayedVisualisationView = null;
             this.currentlyDisplayedVisualisationPopup = null;
@@ -98,7 +109,7 @@ export class VisualisationViewManager {
         this.hideCurrentlyDisplayedVisualisation();
 
         // Display the view of the visualisation targeted by the request
-        this.displayVisualisation(request.sourceIndex, request.annotationMaskCoordinates);
+        this.displayVisualisation(request);
     }  
 
     private startHandlingVisualisationDisplayRequests(): void {

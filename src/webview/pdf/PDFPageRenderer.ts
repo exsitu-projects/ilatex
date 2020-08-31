@@ -256,13 +256,19 @@ export class PDFPageRenderer {
         // this.drawAnnotationFrames(this.visualisationAnnotations);
     }
 
-    private static handleAnnotationMaskClick(sourceIndex: number, maskCoordinates: AnnotationMaskCoordinates): void {
+    private handleAnnotationMaskClick(sourceIndex: number, maskCoordinates: AnnotationMaskCoordinates): void {
         const event = new CustomEvent<VisualisationDisplayRequest>(
             VisualisationViewManager.REQUEST_VISUALISATION_DISPLAY_EVENT,
             {
                 detail: {
                     sourceIndex: sourceIndex,
-                    annotationMaskCoordinates: maskCoordinates
+                    annotationMaskCoordinates: maskCoordinates,
+                    pdfPageDetail: {
+                        pageNumber: this.pageNumber,
+                        width: this.viewport.width,
+                        height: this.viewport.height,
+                        scale: this.viewport.scale,
+                    }
                 }
             }
         );
