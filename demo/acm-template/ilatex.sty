@@ -1,0 +1,18 @@
+\ProvidesPackage{ilatex}[2020/04/16 iLaTeX]
+\RequirePackage{pdfcomment}
+
+
+% Counter of interactive annotations (starting at 1)
+% It is incremented by 1 every time the 'ilatex' command is used
+\newcounter{Annotation@ilatex}
+\setcounter{Annotation@ilatex}{1}
+
+% Command to declare an interactive annotation
+% It expects one argument: the code of the object to annotate
+\newcommand{\ilatex}[1]{%
+    \pdftooltip{#1}{ilatex-visualisation-\theAnnotation@ilatex}%
+    \stepcounter{Annotation@ilatex}%
+}
+
+
+\endinput
