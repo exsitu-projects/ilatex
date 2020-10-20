@@ -458,7 +458,7 @@ class IncludegraphicsView extends AbstractVisualisationView {
     }
 }
 
-export default class TabularViewFactory implements VisualisationViewFactory {
+export default class IncludegraphicsViewFactory implements VisualisationViewFactory {
     readonly visualisationName = IncludegraphicsView.visualisationName;
     
     createView(contentNode: HTMLElement, context: VisualisationViewInstantiationContext): VisualisationView {
