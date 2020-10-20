@@ -167,9 +167,10 @@ export class InteractiveLaTeX {
         // Create a new terminal and use it to run latexmk to build a PDF from the sources
         const terminal = vscode.window.createTerminal("iLaTeX");
 
-        terminal.sendText(`cd ${this.document.fileName.substr(0, this.document.fileName.lastIndexOf("/"))}`);
-        terminal.sendText(`latexmk ${this.document.fileName}`);
-        terminal.sendText(`latexmk -c ${this.document.fileName}`);
+        const terminalSafeFilename = this.document.fileName.replace(/ /g, "\\ ");
+        terminal.sendText(`cd ${terminalSafeFilename.substr(0, terminalSafeFilename.lastIndexOf("/"))}`);
+        terminal.sendText(`latexmk ${terminalSafeFilename}`);
+        terminal.sendText(`latexmk -c ${terminalSafeFilename}`);
 
         // Close the terminal right after running latexmk
         terminal.sendText(`exit`);
