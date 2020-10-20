@@ -9,12 +9,18 @@ export class PDFManager {
     private readonly messenger: Messenger;
     private renderer: PDFRenderer | null;
 
+    private pdfContainerNode: HTMLElement;
+
     private currentPdfUri: string | null;
     private currentPdf: pdfjs.PDFDocument | null;
 
     constructor(messenger: Messenger) {
         this.messenger = messenger;
         this.renderer = null;
+
+        this.pdfContainerNode = document.createElement("section");
+        this.pdfContainerNode.setAttribute("id", "pdf-container");
+        document.body.append(this.pdfContainerNode);
 
         this.currentPdfUri = null;
         this.currentPdf = null;
@@ -48,7 +54,7 @@ export class PDFManager {
             this.renderer = newRenderer;
 
             await newRenderer.init();
-            await newRenderer.redraw();
+            await newRenderer.redraw(this.pdfContainerNode);
         }
     }
 
