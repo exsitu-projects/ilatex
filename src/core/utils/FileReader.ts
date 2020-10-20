@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
 
-export interface FileRecord {
+export interface ExtensionFile {
     absolutePath: string;
     filename: string;
     content: string;
@@ -10,7 +10,7 @@ export interface FileRecord {
 
 export class FileReader {
     // Absolute path to the root directory of this extension
-    static readonly EXTENSION_ROOT_PATH = vscode.extensions
+    private static readonly EXTENSION_ROOT_PATH = vscode.extensions
         .getExtension("exsitu.interactive-latex")!
         .extensionPath;
 
@@ -23,9 +23,9 @@ export class FileReader {
         return path.resolve(FileReader.EXTENSION_ROOT_PATH, relativePath);
     }
 
-    // Create a file record for a file of this extension
+    // Create an extension file object for a file of this VSC extension
     // The path to the file must be relative to the root directory of the extension
-    static readExtensionFile(relativePath: string): FileRecord {
+    static readExtensionFile(relativePath: string): ExtensionFile {
         // Absolute path of the file
         const absolutePath = FileReader.resolvePathFromExtensionRoot(relativePath);
 
@@ -43,7 +43,7 @@ export class FileReader {
         };
     }
 
-    static readExtensionFiles(relativePaths: string[]): FileRecord[] {
+    static readExtensionFiles(relativePaths: string[]): ExtensionFile[] {
         return relativePaths.map(path => FileReader.readExtensionFile(path));
     }
 }
