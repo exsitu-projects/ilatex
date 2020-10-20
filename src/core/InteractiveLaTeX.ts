@@ -185,7 +185,7 @@ export class InteractiveLaTeX {
 
     private onDocumentChange(): void {
         const date = new Date();
-        console.log(`(${date.getMinutes()}:${date.getSeconds()}) The LaTeX document has changed`);
+        console.log(`(${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}) The LaTeX document has changed`);
 
         // Re-build and re-parse the document
         this.buildActiveDocument();
@@ -197,7 +197,7 @@ export class InteractiveLaTeX {
 
     private onDocumentPDFChange(): void {
         const date = new Date();
-        console.log(`(${date.getMinutes()}:${date.getSeconds()}) The PDF document has changed`);
+        console.log(`(${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}) The PDF document has changed`);
 
         // Update the PDF in the webview
         this.updateWebviewPDF();
@@ -236,11 +236,15 @@ export class InteractiveLaTeX {
     }
 
     updateWebviewVisualisations(requestedByVisualisation: boolean = false) {
+        console.info("About to update the webview visualisations...");
+
         const visualisationViewsContent = this.visualisationModelManager.createAllViewContent();
         this.webviewManager.updateVisualisationViewContent(visualisationViewsContent, requestedByVisualisation);
     }
 
     updateWebviewPDF() {
+        console.info("About to update the webview PDF...");
+        
         const pdfUri = this.getDocumentPDFUri();
         this.webviewManager.updatePDF(pdfUri);
     }
