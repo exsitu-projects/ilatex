@@ -3,6 +3,9 @@ import { Messenger } from "../Messenger";
 import { VisualisationView, VisualisationViewFactory } from "./VisualisationView";
 import { VisualisationPopup } from "./VisualisationPopup";
 import { WebviewToCoreMessageType, CoreToWebviewMessageType, UpdateVisualisationsMessage } from "../../shared/messenger/messages";
+import IncludegraphicsViewFactory from "../../visualisations/includegraphics/view/view";
+import TabularViewFactory from "../../visualisations/tabular/view/view";
+import GridLayoutViewFactory from "../../visualisations/gridlayout/view/view";
 
 export interface VisualisationDisplayRequest {
     sourceIndex: number;
@@ -18,7 +21,9 @@ export interface VisualisationDisplayRequest {
 export class VisualisationViewManager {
     static readonly REQUEST_VISUALISATION_DISPLAY_EVENT = "request-visualisation-display";
     private static readonly AVAILABLE_VISUALISATION_FACTORIES: VisualisationViewFactory[] = [
-
+        new IncludegraphicsViewFactory(),
+        new TabularViewFactory(),
+        new GridLayoutViewFactory()
     ];
 
     private messenger: Messenger;
@@ -48,8 +53,10 @@ export class VisualisationViewManager {
     }
 
     private getVisualisationContentNode(sourceIndex: number): HTMLElement | null {
+        console.log("Request the content of a visualisation...");
+        console.log(this.visualisationContentContainerNode);
         return this.visualisationContentContainerNode
-                .querySelector(`.visualisation["data-source-index"="${sourceIndex}"]`);
+                .querySelector(`.visualisation[data-source-index="${sourceIndex}"]`);
     }
 
     private displayVisualisation(request: VisualisationDisplayRequest): void {
@@ -133,7 +140,7 @@ export class VisualisationViewManager {
         && message.requestedByVisualisation) {
             const sourceIndex = this.currentlyDisplayedVisualisationView.sourceIndex;
             const newContentNode = this.visualisationContentContainerNode
-                .querySelector(`.visualisation["data-source-index"="${sourceIndex}"]`) as HTMLElement;
+                .querySelector(`.visualisation[data-source-index="${sourceIndex}"]`) as HTMLElement;
 
             if (newContentNode) {
                 this.currentlyDisplayedVisualisationView.updateWith(newContentNode);

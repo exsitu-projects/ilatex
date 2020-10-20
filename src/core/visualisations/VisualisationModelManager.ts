@@ -6,10 +6,15 @@ import { InteractiveLaTeX } from '../InteractiveLaTeX';
 import { VisualisationModelFactory, VisualisationModel, SourceIndex, ModelID, SourceIndexCounter } from './VisualisationModel';
 import { ASTNode } from '../ast/LatexASTNode';
 import { NotifyVisualisationModelMessage } from '../../shared/messenger/messages';
+import IncludegraphicsModelFactory from '../../visualisations/includegraphics/model/model';
+import TabularModelFactory from '../../visualisations/tabular/model/model';
+import GridLayoutModelFactory from '../../visualisations/gridlayout/model/model';
 
 export class VisualisationModelManager {
     private static readonly AVAILABLE_VISUALISATION_FACTORIES: VisualisationModelFactory[] = [
-
+        new IncludegraphicsModelFactory(),
+        new TabularModelFactory(),
+        new GridLayoutModelFactory()
     ];
 
     private ilatex: InteractiveLaTeX;
