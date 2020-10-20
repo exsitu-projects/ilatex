@@ -6,8 +6,13 @@ export class Messenger extends AbstractMessenger<
     WebviewToCoreMessageType,
     CoreToWebviewMessageType
 >{
-    private readonly messageEventHandler = (message: any) => {
-        this.handleMessage(message);
+    // The event is a DOM event object created by the webview
+    // when it receives a message from the core of the extension
+    // (through the webview VSCode API).
+    // The actual content of the message sent by the core of the extension
+    // is therefore located in the "data" property of this object.
+    private readonly messageEventHandler = (event: any) => {
+        this.handleMessage(event.data);
     }; 
     
     constructor() {
