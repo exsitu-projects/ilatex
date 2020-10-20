@@ -11,5 +11,7 @@ export class WebviewManager {
         this.messenger = new Messenger();
         this.pdfManager = new PDFManager(this.messenger);
         this.visualisationViewManager = new VisualisationViewManager(this.messenger);
+
+        this.messenger.startHandlingMessages();
     }
 }
