@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import { LatexAST } from "../ast/LatexAST";
 import { CodePatternDetector } from "../patterns/CodePatternDetector";
-import { Visualisation } from './Visualisation';
 import { WebviewManager } from '../webview/WebviewManager';
 import { InteractiveLaTeX } from '../InteractiveLaTeX';
 import { VisualisationModelFactory, VisualisationModel, SourceIndex, ModelID, SourceIndexCounter } from './VisualisationModel';
@@ -43,7 +42,7 @@ export class VisualisationModelManager {
                     return {
                         matches: factory.codePatternMatcher,
                         onMatch: (node: ASTNode) => this.visualisationModels.push(
-                            factory.createModel(node, this.ilatex, this.editor)
+                            factory.createModel(node, this.ilatex, this.editor, this.webviewManager)
                         )
                     };
                 })

@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { NotifyVisualisationModelMessage } from "../../shared/messenger/messages";
 import { ASTNode } from "../ast/LatexASTNode";
 import { InteractiveLaTeX } from "../InteractiveLaTeX";
+import { WebviewManager } from "../webview/WebviewManager";
 
 // Type and generator for model identifiers
 // Each model instance must have a *unique* identifier,
@@ -50,6 +51,7 @@ export interface VisualisationModelFactory {
     createModel(
         node: ASTNode,
         ilatex: InteractiveLaTeX,
-        editor: vscode.TextEditor
+        editor: vscode.TextEditor,
+        webviewManager: WebviewManager
     ): VisualisationModel;
 }

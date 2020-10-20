@@ -2,16 +2,16 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { LatexAST } from './ast/LatexAST';
 import { LatexASTFormatter } from './ast/visitors/LatexASTFormatter';
-import { VisualisationManager } from './visualisations/VisualisationManager';
 import { WebviewManager } from './webview/WebviewManager';
-import { WebviewMessageType, FocusVisualisationMessage, NotifyVisualisationMessage } from './webview/WebviewMessage';
+import { VisualisationModelManager } from './visualisations/VisualisationModelManager';
+import { NotifyVisualisationModelMessage, WebviewToCoreMessageType } from '../shared/messenger/messages';
 
 export class InteractiveLaTeX {
     private editor: vscode.TextEditor;
     private document: vscode.TextDocument;
     private webviewPanel: vscode.WebviewPanel;
     private webviewManager: WebviewManager;
-    private visualisationManager: VisualisationManager;
+    private visualisationModelManager: VisualisationModelManager;
 
     private documentChangeWatcher: fs.FSWatcher | null;
     private documentPDFChangeWatcher: fs.FSWatcher | null;
@@ -21,7 +21,7 @@ export class InteractiveLaTeX {
         this.document = editor.document;
         this.webviewPanel = webviewPanel;
         this.webviewManager = new WebviewManager(webviewPanel.webview);
-        this.visualisationManager = new VisualisationManager(this, this.editor, this.webviewManager);
+        this.visualisationModelManager = new VisualisationModelManager(this, this.editor, this.webviewManager);
         
         this.documentChangeWatcher = null;
         this.documentPDFChangeWatcher = null;
@@ -30,7 +30,6 @@ export class InteractiveLaTeX {
         this.startObservingWebviewPanelStateChanges();
         this.startObservingDocumentChanges();
         // this.startObservingDocumentPDFChanges();
-        this.startObservingSelectionChanges();
 
         this.parseActiveDocument();
         this.updateWebviewVisualisations();
@@ -39,7 +38,7 @@ export class InteractiveLaTeX {
 
     initWebviewMessageHandlers(): void {
         // Save the document
-        this.webviewManager.setHandlerFor(WebviewMessageType.SaveDocument, async (message) => {
+        this.webviewManager.setHandlerFor(WebviewToCoreMessageType.SaveDocument, async (message) => {
             await this.document.save();
         });
 
@@ -48,20 +47,14 @@ export class InteractiveLaTeX {
         // notification message are queued in a stack so that, as long as the queue is non-empty,
         // the last arrived message is dispatched as soon as the last called handler is done.
         let dispatchIsOngoing = false;
-        let notificationQueue: NotifyVisualisationMessage[] = [];
+        let notificationQueue: NotifyVisualisationModelMessage[] = [];
 
-        const dispatchNotification = async (message: NotifyVisualisationMessage) => {
+        const dispatchNotification = async (message: NotifyVisualisationModelMessage) => {
             // Lock the dispatch mechanism
             dispatchIsOngoing = true;
 
-            // Dispatch the event and re-parse the document if required
-            // (e.g. to generate a new AST with correct start/end positions)
-            await this.visualisationManager.dispatchWebviewNotification(message);
-            if (message.reparseDocument) {
-                // Note: this creates a new AST and new visualisations,
-                // but it does not update the webview
-                this.parseActiveDocument();
-            }
+            // Dispatch the event
+            await this.visualisationModelManager.dispatchNotification(message);
 
             // Unlock the dispatch mechanism
             dispatchIsOngoing = false;
@@ -71,17 +64,17 @@ export class InteractiveLaTeX {
                 // (if a new notif. message arrives at this exact moment it will be lost)
                 notificationQueue = [];
 
-                dispatchNotification(message as NotifyVisualisationMessage);
+                dispatchNotification(message as NotifyVisualisationModelMessage);
             }
         };
 
-        this.webviewManager.setHandlerFor(WebviewMessageType.NotifyVisualisation, async (message) => {
+        this.webviewManager.setHandlerFor(WebviewToCoreMessageType.NotifyVisualisationModel, async (message) => {
             if (dispatchIsOngoing) {
-                notificationQueue.push(message as NotifyVisualisationMessage);
+                notificationQueue.push(message as NotifyVisualisationModelMessage);
                 return;
             }
             
-            dispatchNotification(message as NotifyVisualisationMessage);
+            dispatchNotification(message as NotifyVisualisationModelMessage);
         });
     }
 
@@ -217,26 +210,6 @@ export class InteractiveLaTeX {
         this.updateWebviewVisualisations(true);
     }
 
-    private startObservingSelectionChanges(): void {
-        vscode.window.onDidChangeTextEditorSelection((event) => {
-            // If the user moves the cursor WITHOUT selecting text,
-            // check if it is inside the code associated to a visualisation.
-            const selectionStartPos = event.selections[0].start;
-            const selectionEndPos = event.selections[0].end;
-
-            if (selectionStartPos.isEqual(selectionEndPos)) {
-                // If it is, tell the webview to highlight the related visualisation.
-                const visualisation = this.visualisationManager.getVisualisationAtPosition(selectionStartPos);
-                if (visualisation) {
-                    this.webviewManager.sendMessage({
-                        type: WebviewMessageType.FocusVisualisation,
-                        id: visualisation.id
-                    } as FocusVisualisationMessage);
-                }
-            }
-        });
-    }
-
     private async parseActiveDocument() {
         const firstLine = this.document.lineAt(0);
         const lastLine = this.document.lineAt(this.document.lineCount - 1);
@@ -253,8 +226,8 @@ export class InteractiveLaTeX {
             // ast.visitWith(formatter);
             // console.log(formatter.formattedAST);
 
-            // Update the visualisations
-            this.visualisationManager.updateVisualisations(ast);
+            // Update the visualisation models
+            this.visualisationModelManager.updateModels(ast);
         }
         catch (error) {
             console.error(error);
@@ -262,12 +235,12 @@ export class InteractiveLaTeX {
     }
 
     updateWebviewVisualisations(requestedByVisualisation: boolean = false) {
-        const visualisationsHtml = this.visualisationManager.renderAllVisualisationsAsHTML();
-        this.webviewManager.updateWebviewVisualisations(visualisationsHtml, requestedByVisualisation);
+        const visualisationViewsContent = this.visualisationModelManager.createAllViewContent();
+        this.webviewManager.updateVisualisationViewContent(visualisationViewsContent, requestedByVisualisation);
     }
 
     updateWebviewPDF() {
         const pdfUri = this.getDocumentPDFUri();
-        this.webviewManager.updateWebviewPDF(pdfUri);
+        this.webviewManager.updatePDF(pdfUri);
     }
 }

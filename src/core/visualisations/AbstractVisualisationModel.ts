@@ -3,8 +3,9 @@ import { VisualisationModel, ModelID, SourceIndex, ModelIDGenerator, SourceIndex
 import { NotifyVisualisationModelMessage } from "../../shared/messenger/messages";
 import { ASTNode } from "../ast/LatexASTNode";
 import { InteractiveLaTeX } from '../InteractiveLaTeX';
+import { WebviewManager } from '../webview/WebviewManager';
 
-export type NotificationHandler = (notification: object) => Promise<void>;
+export type NotificationHandler = (notification: any) => Promise<void>;
 export interface NotificationHandlerSpecification {
     title: string;
     handler: NotificationHandler
@@ -17,16 +18,18 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
 
     protected readonly ilatex: InteractiveLaTeX;
     protected readonly editor: vscode.TextEditor;
+    protected readonly webviewManager: WebviewManager;
 
     protected readonly astNode: T;
     private notificationTitlesToHandlers: Map<string, NotificationHandler>;
 
-    constructor(node: T, ilatex: InteractiveLaTeX, editor: vscode.TextEditor) {
+    constructor(node: T, ilatex: InteractiveLaTeX, editor: vscode.TextEditor, webviewManager: WebviewManager) {
         this.id = ModelIDGenerator.getUniqueId();
         this.sourceIndex = SourceIndexCounter.getNextSourceIndex();
 
         this.ilatex = ilatex;
         this.editor = editor;
+        this.webviewManager = webviewManager;
 
         this.astNode = node;
         this.notificationTitlesToHandlers = new Map(
