@@ -195,7 +195,7 @@ class IncludegraphicsModel extends AbstractVisualisationModel<ASTCommandNode> {
     }
 }
 
-export default class IncludegraphicsModelFactory implements VisualisationModelFactory {
+export class IncludegraphicsModelFactory implements VisualisationModelFactory {
     readonly visualisationName = IncludegraphicsModel.visualisationName;
     readonly codePatternMatcher = (node: ASTNode) => {
         return node.type === ASTNodeType.Command

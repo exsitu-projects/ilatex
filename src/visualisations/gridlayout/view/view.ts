@@ -274,7 +274,7 @@ class GridLayoutView extends AbstractVisualisationView {
     
 }
 
-export default class GridLayoutViewFactory implements VisualisationViewFactory {
+export class GridLayoutViewFactory implements VisualisationViewFactory {
     readonly visualisationName = GridLayoutView.visualisationName;
     
     createView(contentNode: HTMLElement, context: VisualisationViewInstantiationContext): VisualisationView {

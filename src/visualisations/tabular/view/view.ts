@@ -260,7 +260,7 @@ class TabularView extends AbstractVisualisationView {
     
 }
 
-export default class TabularViewFactory implements VisualisationViewFactory {
+export class TabularViewFactory implements VisualisationViewFactory {
     readonly visualisationName = TabularView.visualisationName;
     
     createView(contentNode: HTMLElement, context: VisualisationViewInstantiationContext): VisualisationView {

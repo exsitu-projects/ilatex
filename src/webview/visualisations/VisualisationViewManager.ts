@@ -3,9 +3,9 @@ import { Messenger } from "../Messenger";
 import { VisualisationView, VisualisationViewFactory } from "./VisualisationView";
 import { VisualisationPopup } from "./VisualisationPopup";
 import { WebviewToCoreMessageType, CoreToWebviewMessageType, UpdateVisualisationsMessage } from "../../shared/messenger/messages";
-import IncludegraphicsViewFactory from "../../visualisations/includegraphics/view/view";
-import TabularViewFactory from "../../visualisations/tabular/view/view";
-import GridLayoutViewFactory from "../../visualisations/gridlayout/view/view";
+import { IncludegraphicsViewFactory } from "../../visualisations/includegraphics/view/view";
+import { TabularViewFactory } from "../../visualisations/tabular/view/view";
+import { GridLayoutViewFactory } from "../../visualisations/gridlayout/view/view";
 
 export interface VisualisationDisplayRequest {
     sourceIndex: number;
