@@ -148,8 +148,6 @@ export class VisualisationPopup {
 
     onAfterDisplayedVisualationContentUpdate() {
         // Update the content and other parts of the popup which may depend on the view
-        this.contentNode = this.visualisationView.render();
-
         this.updateTitleBar();
         this.updateContent();
     }
