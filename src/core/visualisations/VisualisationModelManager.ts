@@ -74,7 +74,7 @@ export class VisualisationModelManager {
     }
 
     async dispatchNotification(message: NotifyVisualisationModelMessage): Promise<void> {
-        const model = this.getModelWithSourceIndex(message.visualisationId);
+        const model = this.getModelWithId(message.visualisationId);
         if (!model) {
             console.error(`The notification cannot be dispatched: there is no model with ID "${message.visualisationId}".`);
             return;
