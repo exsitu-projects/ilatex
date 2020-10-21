@@ -99,7 +99,7 @@ class TabularView extends AbstractVisualisationView {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
             visualisationId: this.visualisationId,
-            title: "set-cell-code",
+            title: "set-cell-content",
             notification: {
                 columnIndex: cellLocation.columnIndex,
                 rowIndex: cellLocation.rowIndex,

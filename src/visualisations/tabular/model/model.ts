@@ -289,7 +289,7 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
                 }
             },
             {
-                title: "reorder-column",
+                title: "move-column",
                 handler: async payload => {
                     const { oldColumnIndex, newColumnIndex } = payload;
                     console.info(`column ${oldColumnIndex} => column ${newColumnIndex}`);
@@ -302,7 +302,7 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
                 }
             },
             {
-                title: "reorder-row",
+                title: "move-row",
                 handler: async payload => {
                     const { oldRowIndex, newRowIndex } = payload;
                     console.info(`row ${oldRowIndex} => row ${newRowIndex}`);
