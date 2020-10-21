@@ -154,7 +154,9 @@ export class VisualisationPopup {
     }
 
     open() {
+        this.visualisationView.onBeforeVisualisationDisplay();
         document.body.prepend(this.popupNode);
+        this.visualisationView.onAfterVisualisationDisplay();
     }
 
     close() {
@@ -162,6 +164,8 @@ export class VisualisationPopup {
             this.onClose();
         }
 
+        this.visualisationView.onBeforeVisualisationDisappearance();
         this.popupNode.remove();
+        this.visualisationView.onAfterVisualisationDisappearance();
     }
 }
