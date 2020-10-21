@@ -85,8 +85,9 @@
 
 .visualisation-popup .popup-content {
     margin: 0;
-    padding: 15px;
+    /* padding: 15px; */
     background-color: #FFF;
     color: #000;
+    overflow-x: hidden;
     z-index: 1000;
 }
