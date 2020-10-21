@@ -83,21 +83,10 @@
     z-index: 500;
 }
 
-/* Hide visualisations when they are not displayed inside a popup. */
-.visualisation,
-.visualisation:hover
-.visualisation.focused {
-    display: none;
-    border: none;
-}
-
-.visualisation-popup .popup-content .visualisation {
-    display: block;
+.visualisation-popup .popup-content {
     margin: 0;
     padding: 15px;
     background-color: #FFF;
-    z-index: 1000;
-}
-.visualisation-popup .popup-content .visualisation * {
+    color: #000;
     z-index: 1000;
 }
