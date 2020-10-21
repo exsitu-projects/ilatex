@@ -450,6 +450,8 @@ class IncludegraphicsView extends AbstractVisualisationView {
     }
 
     updateWith(newContentNode: HTMLElement): void {
+        super.updateWith(newContentNode);
+
         // TODO
     }
 

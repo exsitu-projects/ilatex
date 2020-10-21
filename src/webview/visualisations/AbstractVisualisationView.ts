@@ -17,7 +17,7 @@ export abstract class AbstractVisualisationView implements VisualisationView {
     protected messenger: Messenger;
 
     abstract readonly visualisationName: string;
-    protected readonly visualisationId: number;
+    protected visualisationId: number;
     readonly sourceIndex: number;
 
     protected contentNode: HTMLElement;
@@ -28,8 +28,8 @@ export abstract class AbstractVisualisationView implements VisualisationView {
         this.instanciationContext = context;
         this.messenger = context.messenger;
 
-        this.visualisationId = parseInt(contentNode.getAttribute("data-id")!);
-        this.sourceIndex = parseInt(contentNode.getAttribute("data-source-index")!);
+        this.visualisationId = AbstractVisualisationView.extractVisualisationIdFrom(contentNode);
+        this.sourceIndex = AbstractVisualisationView.extractSourceIndexFrom(contentNode);
 
         this.contentNode = contentNode;
         this.contentTitle = contentNode.getAttribute("data-name")!;
@@ -38,7 +38,12 @@ export abstract class AbstractVisualisationView implements VisualisationView {
     }
 
     abstract render(): HTMLElement;
-    abstract updateWith(newContentNode: HTMLElement): void;
+    
+    updateWith(newContentNode: HTMLElement): void {
+        // Update the ID of the visualisation
+        // (which changes which each update from the model)
+        this.visualisationId = AbstractVisualisationView.extractVisualisationIdFrom(newContentNode);
+    };
 
     revealInSourceDocument(): void {
         this.messenger.sendMessage({
@@ -71,6 +76,14 @@ export abstract class AbstractVisualisationView implements VisualisationView {
 
     onAfterVisualisationDisappearance(): void {
         // Do nothing by default
+    }
+
+    static extractVisualisationIdFrom(contentNode: HTMLElement): number {
+        return parseInt(contentNode.getAttribute("data-id")!);
+    }
+
+    static extractSourceIndexFrom(contentNode: HTMLElement): number {
+        return parseInt(contentNode.getAttribute("data-source-index")!);
     }
 
     static extractContentLocationFromContentNode(contentNode: HTMLElement): SourceDocumentLocation {

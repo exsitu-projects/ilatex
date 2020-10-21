@@ -230,6 +230,8 @@ class TabularView extends AbstractVisualisationView {
     }
 
     updateWith(newContentNode: HTMLElement): void {
+        super.updateWith(newContentNode);
+        
         this.contentNode = newContentNode;
 
         // Create and populate fresh data structures from the new content node
