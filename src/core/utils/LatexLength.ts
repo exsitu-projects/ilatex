@@ -1,3 +1,5 @@
+type ConvertibleUnit = (typeof LatexLength.CONVERTIBLE_UNITS)[number];
+
 type LengthParsingResult = {
     success: false;
 } | {
@@ -9,7 +11,7 @@ type LengthParsingResult = {
 
 export interface LatexLengthOptions {
     defaultUnit?: string;
-    maxNbDecimals?: number;
+    maxNbDecimalsPerUnit?: Partial<Record<ConvertibleUnit, number>>;
 }
 
 export class LengthParsingError {}
@@ -17,9 +19,16 @@ export class LengthConversionError {}
 
 export class LatexLength {
     // PPI = Pixels Per Inch (see https://en.wikipedia.org/wiki/Pixel_density)
-    private static readonly PPI: number = 72;
-    private static readonly CONVERTIBLE_UNITS: string[] = ["pt", "bp", "in", "cm", "mm", "px"];
-    private static readonly DEFAULT_MAX_NB_DECIMALS: number = 0;
+    static readonly PPI: number = 72;
+    static readonly CONVERTIBLE_UNITS = ["pt", "bp", "in", "cm", "mm", "px"] as const;
+    private static readonly DEFAULT_MAX_NB_DECIMALS_PER_UNIT: Record<ConvertibleUnit, number> = {
+        "pt": 1,
+        "bp": 1,
+        "in": 2,
+        "cm": 2,
+        "mm": 1,
+        "px": 0
+    };
 
     // Components of the length
     readonly value: number;
@@ -28,7 +37,7 @@ export class LatexLength {
 
     // Conversion options
     readonly canBeConverted: boolean;
-    maxNbDecimals: number;
+    maxNbDecimalsPerUnit: Record<ConvertibleUnit, number>;
 
     // Internal values
     private valueInPoints: number;
@@ -39,7 +48,7 @@ export class LatexLength {
         this.suffix = suffix.trim();
 
         this.canBeConverted = LatexLength.isConvertibleUnit(this.unit);
-        this.maxNbDecimals = options.maxNbDecimals ?? LatexLength.DEFAULT_MAX_NB_DECIMALS;
+        this.maxNbDecimalsPerUnit = LatexLength.computeMaxNbDecimalsPerUnit(options);
 
         this.valueInPoints = this.canBeConverted
                            ? LatexLength.convertToPoints(this.value, this.unit)
@@ -48,36 +57,32 @@ export class LatexLength {
 
     get pt(): number {
         this.assertConversionIsPossible();
-        return this.round(this.valueInPoints);
+        return this.round(this.valueInPoints, "pt");
     }
 
     get bp(): number {
         this.assertConversionIsPossible();
-        return this.round((this.valueInPoints / 72.27) * 72); // pt -> in -> bp
+        return this.round((this.valueInPoints / 72.27) * 72, "bp"); // pt -> in -> bp
     }
 
     get in(): number {
         this.assertConversionIsPossible();
-        return this.round(this.valueInPoints / 72.27); // pt -> in
+        return this.round(this.valueInPoints / 72.27, "in"); // pt -> in
     }
 
     get cm(): number {
         this.assertConversionIsPossible();
-        return this.round((this.valueInPoints / 72.27) * 2.54); // pt -> in -> cm
+        return this.round((this.valueInPoints / 72.27) * 2.54, "cm"); // pt -> in -> cm
     }
 
     get mm(): number {
         this.assertConversionIsPossible();
-        return this.round((this.valueInPoints / 72.27) * 25.4); // pt -> in -> mm
+        return this.round((this.valueInPoints / 72.27) * 25.4, "mm"); // pt -> in -> mm
     }
 
     get px(): number {
         this.assertConversionIsPossible();
-        return this.round((this.valueInPoints / 72.27) * LatexLength.PPI); // pt -> in -> px
-    }
-
-    private round(value: number): number {
-        return LatexLength.round(value, this.maxNbDecimals);
+        return this.round((this.valueInPoints / 72.27) * LatexLength.PPI, "px"); // pt -> in -> px
     }
 
     withValue(value: number): LatexLength {
@@ -88,6 +93,21 @@ export class LatexLength {
         if (!this.canBeConverted) {
             throw new LengthConversionError();
         }
+    }
+
+    private round(value: number, unit: ConvertibleUnit): number {
+        return LatexLength.round(value, this.maxNbDecimalsPerUnit[unit]);
+    }
+
+    private static computeMaxNbDecimalsPerUnit(options: LatexLengthOptions): Record<ConvertibleUnit, number> {
+        return LatexLength.CONVERTIBLE_UNITS.reduce(
+            (accumulatedMaxNbDecimalsPerUnit, unit) => {
+                return {
+                    ...accumulatedMaxNbDecimalsPerUnit,
+                    [unit]: (options.maxNbDecimalsPerUnit && options.maxNbDecimalsPerUnit[unit])
+                        ?? LatexLength.DEFAULT_MAX_NB_DECIMALS_PER_UNIT[unit]
+                };
+            }, {} as Record<ConvertibleUnit, number>);
     }
 
     private static parseLength(text: string, defaultUnit?: string): LengthParsingResult {
@@ -115,13 +135,15 @@ export class LatexLength {
     }
 
     private static isConvertibleUnit(unit: string) {
-        return LatexLength.CONVERTIBLE_UNITS.includes(unit);
+        return (LatexLength.CONVERTIBLE_UNITS as readonly string[])
+            .includes(unit);
     }
 
     // Based on cronvel's solution on StackOverflow (https://stackoverflow.com/a/41716722)
     private static round(value: number, maxNbDecimals: number): number {
         const scalingFactor = 10 ** maxNbDecimals;
-        return Math.round((value + Number.EPSILON) * scalingFactor) / scalingFactor;
+        return Math.round((value + Number.EPSILON) * scalingFactor)
+             / scalingFactor;
     }
 
     // Based on units and rates listed on webpages such as
