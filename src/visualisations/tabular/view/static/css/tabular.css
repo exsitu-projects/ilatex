@@ -1,3 +1,10 @@
-[data-visualisation-name="tabular"] {
-    height: 150px;
+[data-visualisation-name="tabular"] .handsontable-container {
+    /* Total height of the table (required to update the height of the container).
+       This value will be updated by the tabular visualisation view. */
+    --table-height: 60px;
+
+    width: 100%;
+    padding: 0;
+    height: var(--table-height);
+    overflow: auto;
 }
