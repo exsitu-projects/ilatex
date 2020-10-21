@@ -65,15 +65,15 @@ class IncludegraphicsView extends AbstractVisualisationView {
     };
 
     private resizeHandleDragStartCallback =
-        (event: MouseEvent) => { this.onDragStart(event, this.onResizeHandleDrag); };
+        (event: MouseEvent) => { this.onDragStart(event, this.onResizeHandleDrag.bind(this)); };
     private imageDragStartCallback =
-        (event: MouseEvent) => { this.onDragStart(event, this.onImageDrag); };
+        (event: MouseEvent) => { this.onDragStart(event, this.onImageDrag.bind(this)); };
     private dragCallback =
         (event: MouseEvent) => { this.onDrag(event); };
     private dragEndCallback =
         (event: MouseEvent) => { this.onDragEnd(event); };
     private wheelCallback =
-        (event: MouseWheelEvent) => { this.onScroll(event); };
+        (event: WheelEvent) => { this.onScroll(event); };
 
     constructor(contentNode: HTMLElement, context: VisualisationViewInstantiationContext) {
         super(contentNode, context);
