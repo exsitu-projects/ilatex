@@ -1,6 +1,3 @@
-export class LengthParsingError {}
-export class LengthConversionError {}
-
 type LengthParsingResult = {
     success: false;
 } | {
@@ -12,18 +9,28 @@ type LengthParsingResult = {
 
 export interface LatexLengthOptions {
     defaultUnit?: string;
+    maxNbDecimals?: number;
 }
 
+export class LengthParsingError {}
+export class LengthConversionError {}
 
 export class LatexLength {
     // PPI = Pixels Per Inch (see https://en.wikipedia.org/wiki/Pixel_density)
-    private static readonly PPI = 72;
-    private static readonly CONVERTIBLE_UNITS = ["pt", "bp", "in", "cm", "mm", "px"];
+    private static readonly PPI: number = 72;
+    private static readonly CONVERTIBLE_UNITS: string[] = ["pt", "bp", "in", "cm", "mm", "px"];
+    private static readonly DEFAULT_MAX_NB_DECIMALS: number = 0;
 
+    // Components of the length
     readonly value: number;
     readonly unit: string;
     readonly suffix: string;
+
+    // Conversion options
     readonly canBeConverted: boolean;
+    maxNbDecimals: number;
+
+    // Internal values
     private valueInPoints: number;
 
     constructor(value: number, unit: string, suffix: string = "", options: LatexLengthOptions = {}) {
@@ -32,6 +39,8 @@ export class LatexLength {
         this.suffix = suffix.trim();
 
         this.canBeConverted = LatexLength.isConvertibleUnit(this.unit);
+        this.maxNbDecimals = options.maxNbDecimals ?? LatexLength.DEFAULT_MAX_NB_DECIMALS;
+
         this.valueInPoints = this.canBeConverted
                            ? LatexLength.convertToPoints(this.value, this.unit)
                            : NaN;
@@ -39,42 +48,46 @@ export class LatexLength {
 
     get pt(): number {
         this.assertConversionIsPossible();
-        return this.valueInPoints;
+        return this.round(this.valueInPoints);
     }
 
     get bp(): number {
         this.assertConversionIsPossible();
-        return (this.valueInPoints / 72.27) * 72; // pt -> in -> bp
+        return this.round((this.valueInPoints / 72.27) * 72); // pt -> in -> bp
     }
 
     get in(): number {
         this.assertConversionIsPossible();
-        return this.valueInPoints / 72.27; // pt -> in
+        return this.round(this.valueInPoints / 72.27); // pt -> in
     }
 
     get cm(): number {
         this.assertConversionIsPossible();
-        return (this.valueInPoints / 72.27) * 2.54; // pt -> in -> cm
+        return this.round((this.valueInPoints / 72.27) * 2.54); // pt -> in -> cm
     }
 
     get mm(): number {
         this.assertConversionIsPossible();
-        return (this.valueInPoints / 72.27) * 25.4; // pt -> in -> mm
+        return this.round((this.valueInPoints / 72.27) * 25.4); // pt -> in -> mm
     }
 
     get px(): number {
         this.assertConversionIsPossible();
-        return (this.valueInPoints / 72.27) * LatexLength.PPI; // pt -> in -> px
+        return this.round((this.valueInPoints / 72.27) * LatexLength.PPI); // pt -> in -> px
+    }
+
+    private round(value: number): number {
+        return LatexLength.round(value, this.maxNbDecimals);
+    }
+
+    withValue(value: number): LatexLength {
+        return new LatexLength(value, this.unit, this.suffix);
     }
     
     assertConversionIsPossible(): void {
         if (!this.canBeConverted) {
             throw new LengthConversionError();
         }
-    }
-
-    withValue(value: number): LatexLength {
-        return new LatexLength(value, this.unit, this.suffix);
     }
 
     private static parseLength(text: string, defaultUnit?: string): LengthParsingResult {
@@ -103,6 +116,12 @@ export class LatexLength {
 
     private static isConvertibleUnit(unit: string) {
         return LatexLength.CONVERTIBLE_UNITS.includes(unit);
+    }
+
+    // Based on cronvel's solution on StackOverflow (https://stackoverflow.com/a/41716722)
+    private static round(value: number, maxNbDecimals: number): number {
+        const scalingFactor = 10 ** maxNbDecimals;
+        return Math.round((value + Number.EPSILON) * scalingFactor) / scalingFactor;
     }
 
     // Based on units and rates listed on webpages such as
