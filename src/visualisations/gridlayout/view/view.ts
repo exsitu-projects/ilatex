@@ -267,6 +267,8 @@ class GridLayoutView extends AbstractVisualisationView {
 
     updateWith(newContentNode: HTMLElement): void {
         this.contentNode = newContentNode;
+        this.contentRowNodes = Array.from(this.contentNode.querySelectorAll(".row"));
+        this.contentCellNodes = Array.from(this.contentNode.querySelectorAll(".cell"));
 
         this.viewNode.innerHTML = "";
         this.populateAndPrepareViewNode();
