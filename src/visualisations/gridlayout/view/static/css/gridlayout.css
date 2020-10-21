@@ -1,12 +1,12 @@
-.visualisation[data-name="gridlayout"] .layout {
+[data-visualisation-name="gridlayout"] .layout {
     width: 100%;
 }
 
-.visualisation[data-name="gridlayout"] .row {
+[data-visualisation-name="gridlayout"] .row {
     display: flex;
 }
 
-.visualisation[data-name="gridlayout"] .cell {
+[data-visualisation-name="gridlayout"] .cell {
     display: flex;
     /* height: 100%; */
     height: inherit;
@@ -16,37 +16,37 @@
     border-right: none;
 }
 
-.visualisation[data-name="gridlayout"] .cell-content {
+[data-visualisation-name="gridlayout"] .cell-content {
     flex-grow: 1;
     padding: 5px;
     font-family: monospace;
     overflow: hidden;
 }
 
-.visualisation[data-name="gridlayout"] .cell-content:hover {
+[data-visualisation-name="gridlayout"] .cell-content:hover {
     background-color: #EEE;
 }
 
-.visualisation[data-name="gridlayout"] .row-resize-handle {
+[data-visualisation-name="gridlayout"] .row-resize-handle {
     height: 5px;
     width: 100%;
     border: 1px solid #777;
     border-top: none;
 }
 
-.visualisation[data-name="gridlayout"] .cell-resize-handle {
+[data-visualisation-name="gridlayout"] .cell-resize-handle {
     flex-shrink: 0;
     height: 100%;
     width: 5px;
     border-right: 1px solid #777;
 }
 
-.visualisation[data-name="gridlayout"] .row-resize-handle,
-.visualisation[data-name="gridlayout"] .cell-resize-handle {
+[data-visualisation-name="gridlayout"] .row-resize-handle,
+[data-visualisation-name="gridlayout"] .cell-resize-handle {
     background-color: #AAA;
 }
 
-.visualisation[data-name="gridlayout"] .row-resize-handle:hover,
-.visualisation[data-name="gridlayout"] .cell-resize-handle:hover {
+[data-visualisation-name="gridlayout"] .row-resize-handle:hover,
+[data-visualisation-name="gridlayout"] .cell-resize-handle:hover {
     background-color: orange;
 }

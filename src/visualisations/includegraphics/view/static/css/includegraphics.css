@@ -1,27 +1,33 @@
 /* Container of includegraphics visualisations */
-.visualisation[data-name="includegraphics"] {
+[data-visualisation-name="includegraphics"] {
     min-height: 100px;
     overflow: hidden;
 }
 
+/* Required to cancel a CSS rule enforced by VSCode. */
+[data-visualisation-name="includegraphics"] img {
+    max-width: none;
+    max-height: none;
+}
+
 /* Interactive image frame (adapted from Michel Beadouin-Lafon's) */
-.frame {
+[data-visualisation-name="includegraphics"] .frame {
     position: absolute;
     left: 50%;
     border: solid 1px grey;
 }
 
-.frame > .ghost {
+[data-visualisation-name="includegraphics"] .frame > .ghost {
     position: absolute;
     overflow: visible;
     opacity: 0.3;
 }
 
-.frame > .ghost.hidden {
+[data-visualisation-name="includegraphics"] .frame > .ghost.hidden {
     visibility: hidden;
 }
 
-.frame > .inner {
+[data-visualisation-name="includegraphics"] .frame > .inner {
     position: absolute;
     left: 0;
     top: 0;
@@ -30,11 +36,11 @@
     overflow: hidden;
 }
 
-.frame > .inner > .image {
+[data-visualisation-name="includegraphics"] .frame > .inner > .image {
     position: absolute;
 }
 
-.frame > .resize {
+[data-visualisation-name="includegraphics"] .frame > .resize {
     position: absolute;
     right: -4px;
     bottom: -4px;
@@ -42,10 +48,4 @@
     height: 9px;
     border: solid 1px grey;
     background-color: white;
-}
-
-/* Required to cancel a CSS rule enforced by VSCode. */
-.visualisation[data-name="includegraphics"] img {
-    max-width: none;
-    max-height: none;
 }

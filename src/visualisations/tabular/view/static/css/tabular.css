@@ -1,20 +1,3 @@
-/*
- * Container of includegraphics visualisations
- * and top-level wrapper used by ag-Grid library
-*/
-.visualisation[data-name="tabular"] {
+[data-visualisation-name="tabular"] {
     height: 150px;
-    color: #000000;
-}
-
-.align-left {
-    text-align: left;
-}
-
-.align-center {
-    text-align: center;
-}
-
-.align-right {
-    text-align: right;
 }

@@ -116,6 +116,7 @@ export class VisualisationPopup {
     createContent() {
         this.contentNode = document.createElement("div");
         this.contentNode.classList.add("popup-content");
+        this.contentNode.setAttribute("data-visualisation-name", this.visualisationView.visualisationName);
 
         this.frameNode!.append(this.contentNode);
 
