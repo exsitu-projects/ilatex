@@ -4,16 +4,13 @@ import { AbstractVisualisationModel, NotificationHandlerSpecification } from "..
 import { ASTNode, ASTEnvironementNode, ASTNodeType, ASTParameterNode, ASTLatexNode } from "../../../core/ast/LatexASTNode";
 import { InteractiveLaTeX } from "../../../core/InteractiveLaTeX";
 import { WebviewManager } from "../../../core/webview/WebviewManager";
-import { Cell, Grid, GridExtractor } from "./GridExtractor";
-import { Options, OptionsExtractor } from "./OptionsExtractor";
+import { Cell, Grid, Row } from "./Grid";
+import { Options } from "./Options";
 
 
 class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
     static readonly visualisationName = "tabular";
     readonly visualisationName = TabularModel.visualisationName;
-
-    private optionsNode: ASTParameterNode;
-    private contentNode: ASTLatexNode;
 
     private grid: Grid;
     private options: Options;
@@ -21,31 +18,15 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
     constructor(node: ASTEnvironementNode, ilatex: InteractiveLaTeX, editor: vscode.TextEditor, webviewManager: WebviewManager) {
         super(node, ilatex, editor, webviewManager);
 
-        this.optionsNode = this.astNode.value.parameters[0][0] as ASTParameterNode;
-        this.contentNode = this.astNode.value.content as ASTLatexNode;
+        this.grid = Grid.extractFrom(this.astNode, editor.document);
+        this.options = Options.extractFrom(this.astNode);
 
-        this.grid = this.extractGridFromASTNode();
-        this.options = this.extractOptionsFromASTNode();
-    }
-
-    private extractGridFromASTNode(): Grid {
-        const gridExtractor = new GridExtractor(this.editor.document);
-        this.contentNode.visitWith(gridExtractor);
-
-        return gridExtractor.grid;
-    }
-
-    private extractOptionsFromASTNode(): Options {
-        const optionExtractor = new OptionsExtractor();
-        this.optionsNode.visitWith(optionExtractor);
-
-        return optionExtractor.options;
+        console.log("==== GRID EXTRACTED ====");
+        console.log(this.grid.rows);
     }
 
     private getCellAt(rowIndex: number, columnIndex: number): Cell {
-        console.log(`. Get cell at [${rowIndex}, ${columnIndex}]: `,
-            this.grid.rows[rowIndex][columnIndex]);
-        return this.grid.rows[rowIndex][columnIndex];
+        return this.grid.rows[rowIndex].cells[columnIndex];
     }
 
     private async selectCellContent(cell: Cell): Promise<void> {
@@ -53,6 +34,9 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
         const startPosition = new vscode.Position(cell.contentStart.line - 1, cell.contentStart.column - 1);
         const endPosition = new vscode.Position(cell.contentEnd.line - 1, cell.contentEnd.column - 1);
         this.editor.selections = [new vscode.Selection(startPosition, endPosition)];
+
+        console.log("Select content of cell", cell);
+        console.log("Start", startPosition, "end", endPosition);
 
         // If the selected range is not visible, scroll to the selection
         this.editor.revealRange(
@@ -78,7 +62,7 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
         // Copy the content of the cells of the origin and target columns
         console.log("Extract content from grid: ", rows);
         const originColumnCellsContent = rows
-            .map(row => row[oldColumnIndex]?.textContent);
+            .map(row => row.cells[oldColumnIndex]?.textContent);
 
         let updateCellContentAt;
         if (oldColumnIndex > newColumnIndex) {
@@ -133,11 +117,11 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
 
             // Skip rows which do not "syntaxically" span to
             // the origin/target column (the one with the highest index)
-            if (row.length - 1 < Math.max(oldColumnIndex, newColumnIndex)) {
+            if (row.nbCells - 1 < Math.max(oldColumnIndex, newColumnIndex)) {
                 continue;
             }
 
-            for (let columnIndex = row.length - 1; columnIndex >= 0; columnIndex--) {
+            for (let columnIndex = row.nbCells - 1; columnIndex >= 0; columnIndex--) {
                 console.log(`===== Update cell at ${rowIndex}, ${columnIndex} =====`);
                 await updateCellContentAt(rowIndex, columnIndex);
             }
@@ -154,12 +138,12 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
                 
                 // Skip rows which do not "syntactically" span to
                 // the origin/target column (the one with the highest index)
-                if (row.length - 1 < Math.max(oldColumnIndex, newColumnIndex)) {
+                if (row.nbCells - 1 < Math.max(oldColumnIndex, newColumnIndex)) {
                     continue;
                 }
                 
                 await this.replaceCellContent(
-                    row[newColumnIndex],
+                    row.cells[newColumnIndex],
                     originColumnCellsContent[rowIndex]
                 );
             }
@@ -173,7 +157,8 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
 
         // Copy the content of the cells of the origin row (before any move)
         console.log("Extract content from grid: ", rows);
-        const originRowCellsContent = rows[oldRowIndex].map(cell => cell.textContent);
+        const originRowCellsContent = rows[oldRowIndex].cells
+            .map(cell => cell.textContent);
 
         let updateCellContentAt;
         // Case 1: the row is moved from bottom to top (^^^)
@@ -199,9 +184,10 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
                 if (rowIndex >= oldRowIndex && rowIndex <= newRowIndex) {
                     // Before starting to edit a new row, make a copy of its content
                     // and of the content of the previously edited row (if any)
-                    if (columnIndex === rows[rowIndex].length - 1) {
+                    if (columnIndex === rows[rowIndex].nbCells - 1) {
                         lastEditedRowCellContent = currentEditedRowCellContent;
-                        currentEditedRowCellContent = rows[rowIndex].map(cell => cell.textContent);
+                        currentEditedRowCellContent = rows[rowIndex].cells
+                            .map(cell => cell.textContent);
                     }
 
                     // Edit the content of the cell
@@ -228,7 +214,7 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
         for (let rowIndex = highestRowIndex; rowIndex >= minRowIndex; rowIndex--) {
             const row = rows[rowIndex];
 
-            for (let columnIndex = row.length - 1; columnIndex >= 0; columnIndex--) {
+            for (let columnIndex = row.nbCells - 1; columnIndex >= 0; columnIndex--) {
                 console.log(`===== Update cell at ${rowIndex}, ${columnIndex} =====`);
                 await updateCellContentAt(rowIndex, columnIndex);
             }
@@ -245,7 +231,7 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
             for (let columnIndex = originRowCellsContent.length - 1; columnIndex >= 0; columnIndex--) {
                 const row = rows[newRowIndex];
                 await this.replaceCellContent(
-                    row[columnIndex],
+                    row.cells[columnIndex],
                     originRowCellsContent[columnIndex]
                 );
             }
@@ -349,10 +335,10 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
         return `<td ${getAttributesAsHTML(cell)}>${cell.textContent}</td>`;
     }
 
-    private static renderRowAsHTML(row: Cell[]): string {
+    private static renderRowAsHTML(row: Row): string {
         return `
             <tr>
-                ${row.map(cell => TabularModel.renderCellAsHTML(cell)).join("\n")}
+                ${row.cells.map(cell => TabularModel.renderCellAsHTML(cell)).join("\n")}
             </tr>
         `;
     }
