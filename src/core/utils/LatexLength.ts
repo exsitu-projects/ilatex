@@ -1,4 +1,4 @@
-type ConvertibleUnit = (typeof LatexLength.CONVERTIBLE_UNITS)[number];
+export type ConvertibleUnit = (typeof LatexLength.CONVERTIBLE_UNITS)[number];
 
 type LengthParsingResult = {
     success: false;
@@ -9,9 +9,11 @@ type LengthParsingResult = {
     suffix: string;
 };
 
+export type NbDecimalsPerUnit = Record<ConvertibleUnit, number>;
+
 export interface LatexLengthOptions {
     defaultUnit?: string;
-    maxNbDecimalsPerUnit?: Partial<Record<ConvertibleUnit, number>>;
+    maxNbDecimalsPerUnit?: Partial<NbDecimalsPerUnit>;
 }
 
 export class LengthParsingError {}
@@ -21,7 +23,7 @@ export class LatexLength {
     // PPI = Pixels Per Inch (see https://en.wikipedia.org/wiki/Pixel_density)
     static readonly PPI: number = 72;
     static readonly CONVERTIBLE_UNITS = ["pt", "bp", "in", "cm", "mm", "px"] as const;
-    private static readonly DEFAULT_MAX_NB_DECIMALS_PER_UNIT: Record<ConvertibleUnit, number> = {
+    private static readonly DEFAULT_MAX_NB_DECIMALS_PER_UNIT: NbDecimalsPerUnit = {
         "pt": 1,
         "bp": 1,
         "in": 2,
@@ -37,14 +39,14 @@ export class LatexLength {
 
     // Conversion options
     readonly canBeConverted: boolean;
-    maxNbDecimalsPerUnit: Record<ConvertibleUnit, number>;
+    readonly maxNbDecimalsPerUnit: NbDecimalsPerUnit;
 
     // Internal values
     private valueInPoints: number;
 
     constructor(value: number, unit: string, suffix: string = "", options: LatexLengthOptions = {}) {
         this.value = value;
-        this.unit = unit!.trim();
+        this.unit = unit.trim();
         this.suffix = suffix.trim();
 
         this.canBeConverted = LatexLength.isConvertibleUnit(this.unit);
@@ -99,7 +101,7 @@ export class LatexLength {
         return LatexLength.round(value, this.maxNbDecimalsPerUnit[unit]);
     }
 
-    private static computeMaxNbDecimalsPerUnit(options: LatexLengthOptions): Record<ConvertibleUnit, number> {
+    private static computeMaxNbDecimalsPerUnit(options: LatexLengthOptions): NbDecimalsPerUnit {
         return LatexLength.CONVERTIBLE_UNITS.reduce(
             (accumulatedMaxNbDecimalsPerUnit, unit) => {
                 return {
@@ -107,7 +109,7 @@ export class LatexLength {
                     [unit]: (options.maxNbDecimalsPerUnit && options.maxNbDecimalsPerUnit[unit])
                         ?? LatexLength.DEFAULT_MAX_NB_DECIMALS_PER_UNIT[unit]
                 };
-            }, {} as Record<ConvertibleUnit, number>);
+            }, {} as NbDecimalsPerUnit);
     }
 
     private static parseLength(text: string, defaultUnit?: string): LengthParsingResult {
@@ -134,7 +136,7 @@ export class LatexLength {
         };
     }
 
-    private static isConvertibleUnit(unit: string) {
+    static isConvertibleUnit(unit: string) {
         return (LatexLength.CONVERTIBLE_UNITS as readonly string[])
             .includes(unit);
     }
