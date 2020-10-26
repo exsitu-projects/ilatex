@@ -4,14 +4,14 @@ import { AbstractVisualisationModel, NotificationHandlerSpecification } from "..
 import { ASTNode, ASTEnvironementNode, ASTNodeType, ASTParameterNode } from "../../../core/ast/LatexASTNode";
 import { InteractiveLaTeX } from "../../../core/InteractiveLaTeX";
 import { WebviewManager } from "../../../core/webview/WebviewManager";
-import { Grid, Row, Cell, GridExtractor } from "./GridExtractor";
+import { Cell, Layout, Row } from "./Layout";
 
 
 class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
     static readonly visualisationName = "gridlayout";
     readonly visualisationName = GridLayoutModel.visualisationName;
 
-    private grid: Grid;
+    private layout: Layout;
 
     // String of the last cell size (as it was written in the document)
     // This is required to avoid re-parsing the document when setting temporary sizes
@@ -21,19 +21,12 @@ class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
     constructor(node: ASTEnvironementNode, ilatex: InteractiveLaTeX, editor: vscode.TextEditor, webviewManager: WebviewManager) {
         super(node, ilatex, editor, webviewManager);
 
-        this.grid = this.extractGridFromASTNode();
+        this.layout = Layout.extractFrom(node, editor.document);
         this.lastModifiedCellSize = null;
     }
 
-    private extractGridFromASTNode(): Grid {
-        const gridExtractor = new GridExtractor(this.editor.document);
-        this.astNode.visitWith(gridExtractor);
-
-        return gridExtractor.grid;        
-    }
-
     private getRowAt(rowIndex: number): Row {
-        return this.grid.rows[rowIndex];
+        return this.layout.rows[rowIndex];
     }
 
     private getCellAt(rowIndex: number, cellIndex: number): Cell {
@@ -42,11 +35,9 @@ class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
     }
 
     private async selectCell(cell: Cell): Promise<void> {
-        const cellContentNode = cell.node.value.content;
-
         // Select the code
-        const startPosition = new vscode.Position(cellContentNode.start.line - 1, cellContentNode.start.column - 1);
-        const endPosition = new vscode.Position(cellContentNode.end.line - 1, cellContentNode.end.column - 1);
+        const startPosition = new vscode.Position(cell.start.line - 1, cell.start.column - 1);
+        const endPosition = new vscode.Position(cell.end.line - 1, cell.end.column - 1);
         this.editor.selections = [new vscode.Selection(startPosition, endPosition)];
 
         // If the selected range is not visible, scroll to the selection
@@ -57,12 +48,14 @@ class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
     }
 
     private async resizeCell(cell: Cell, newRelativeSize: number): Promise<void> {
-        const cellSizeParameterNode = cell.node.value.parameters[0][0] as ASTParameterNode;
+        const cellSizeParameterNode = cell.astNode.value.parameters[0][0] as ASTParameterNode;
 
         // Bound the number of decimals of the new size
         const maxNbDecimals = 3;
         const tenPowerNbDecimals = 10 ** maxNbDecimals;
-        const newSizeAsString = ((Math.round(newRelativeSize * tenPowerNbDecimals)) / tenPowerNbDecimals).toString();
+        const newSizeAsString =
+            ((Math.round(newRelativeSize * tenPowerNbDecimals)) / tenPowerNbDecimals)
+                .toString();
 
         // If the value has been changed since the current AST was generated,
         // use the last value to compute the end of the range to edit
@@ -81,10 +74,6 @@ class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
 
         // Update the copy of the last modified size
         this.lastModifiedCellSize = newSizeAsString;
-            
-        // console.log("======== Replacement ========");
-        // console.log("REPLACE: ", this.editor.document.getText(rangeToEdit));
-        // console.log("BY", newSizeAsString);
 
         // Actually perform the edit
         await this.editor.edit(editBuilder => {
@@ -137,7 +126,7 @@ class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
     protected renderContentAsHTML(): string {
         return `
             <div class="layout">
-                ${this.grid.rows.map(GridLayoutModel.renderRowAsHTML).join("\n")}
+                ${this.layout.rows.map(GridLayoutModel.renderRowAsHTML).join("\n")}
             </div>
         `;
     }
