@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { MessageHandler } from '../../shared/messenger/AbstractMessenger';
 import { CoreToWebviewMessageType, WebviewToCoreMessage, WebviewToCoreMessageType } from '../../shared/messenger/messages';
-import { FileReader } from '../utils/FileReader';
+import { ExtensionFileReader } from '../utils/FileReader';
 import { WebviewMessenger } from './WebviewMessenger';
 
 
@@ -19,7 +19,7 @@ export class WebviewManager {
     }
 
     private setInitialWebviewHtml(): void {
-        const inlinedWebviewHtmlFile = FileReader.readExtensionFile("./out/webview/webview.inlined.html");
+        const inlinedWebviewHtmlFile = ExtensionFileReader.readExtensionFile("./out/webview/webview.inlined.html");
         this.webview.html = inlinedWebviewHtmlFile.content;
     }
 

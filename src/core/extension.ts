@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
+import * as path from "path";
 import { InteractiveLaTeX } from './InteractiveLaTeX';
-import { FileReader } from './utils/FileReader';
 
 // TODO: there seems to be no way to watch when an editor is closed at the moment,
 // but any iLaTeX instance attached to an editor which has just been closed
@@ -32,7 +32,7 @@ function createILatexInstanceFor(editor: vscode.TextEditor): InteractiveLaTeX | 
 	}
 
 	// Create and show a new webview panel
-	const fileName = FileReader.getFilename(document.fileName);
+	const fileName = path.basename(document.fileName);
 	const webviewPanel = createWebview(`iLatex — ${fileName}`);
 
 	// Create and return a new instance of iLaTeX
