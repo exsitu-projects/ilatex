@@ -5,7 +5,7 @@ import { AbstractVisualisationModel, NotificationHandlerSpecification } from "..
 import { ASTNode, ASTCommandNode, ASTNodeType, ASTParameterListNode, ASTParameterNode } from "../../../core/ast/LatexASTNode";
 import { InteractiveLaTeX } from "../../../core/InteractiveLaTeX";
 import { Options, OptionsExtractor } from "./OptionsExtractor";
-import { LatexLength } from "../../../core/utils/LatexLength";
+import { LatexLength } from "../../../shared/utils/LatexLength";
 import { WebviewManager } from "../../../core/webview/WebviewManager";
 
 

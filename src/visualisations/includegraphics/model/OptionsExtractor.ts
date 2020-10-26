@@ -1,4 +1,4 @@
-import { LatexLength, LatexLengthOptions } from "../../../core/utils/LatexLength";
+import { LatexLength, LatexLengthOptions } from "../../../shared/utils/LatexLength";
 import { LatexASTVisitorAdapter } from "../../../core/ast/visitors/LatexASTVisitorAdapter";
 import { ASTParameterNode, ASTParameterAssignmentNode } from "../../../core/ast/LatexASTNode";
 

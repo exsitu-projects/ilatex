@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as P from "parsimmon";
 import { ASTEnvironementNode, ASTParameterNode } from "../../../core/ast/LatexASTNode";
-import { LatexLength } from "../../../core/utils/LatexLength";
+import { LatexLength } from "../../../shared/utils/LatexLength";
 import { LayoutExtractor } from "./LayoutExtractor";
 
 
