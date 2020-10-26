@@ -169,16 +169,24 @@ export class InteractiveLaTeX {
 
         const terminalSafeFilename = this.document.fileName.replace(/ /g, "\\ ");
         terminal.sendText(`cd ${terminalSafeFilename.substr(0, terminalSafeFilename.lastIndexOf("/"))}`);
-        terminal.sendText(`latexmk ${terminalSafeFilename}`);
-        terminal.sendText(`latexmk -c ${terminalSafeFilename}`);
+        terminal.sendText(`latexmk -interaction=nonstopmode ${terminalSafeFilename}`);
+        // terminal.sendText(`latexmk -c`);
 
         // Close the terminal right after running latexmk
+        // Note: if no exit code is specified, the exit command
+        // reuses the same exit code than the last command
         terminal.sendText(`exit`);
 
         // Use the terminal closing as a signal to trigger an update of the webview PDF
         // This is a workaround to the fact that there is no built-in way
         // to wait for the end of a running process in a VSCode terminal
         vscode.window.onDidCloseTerminal(terminal => {
+            vscode.window.showInformationMessage(`Exit code: ${terminal.exitStatus!.code}`);
+            if (terminal.exitStatus && terminal.exitStatus.code !== 0) {
+                vscode.window.showErrorMessage("An error occured during the compilation of the document.");
+                return;
+            }
+
             this.updateWebviewPDF();
         });
     }
