@@ -13,16 +13,18 @@ class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
 
     private layout: Layout;
 
-    // String of the last cell size (as it was written in the document)
-    // This is required to avoid re-parsing the document when setting temporary sizes
+    // String of the last cell size/row height (as it was written in the document)
+    // This is required to avoid re-parsing the document when setting temporary dimensions
     // (so that the value can be updated in real time during a drag-and-drop)
     private lastModifiedCellSize: string | null;
+    private lastModifiedRowHeight: string | null;
 
     constructor(node: ASTEnvironementNode, ilatex: InteractiveLaTeX, editor: vscode.TextEditor, webviewManager: WebviewManager) {
         super(node, ilatex, editor, webviewManager);
 
         this.layout = Layout.extractFrom(node, editor.document);
         this.lastModifiedCellSize = null;
+        this.lastModifiedRowHeight = null;
     }
 
     private getRowAt(rowIndex: number): Row {
@@ -50,7 +52,7 @@ class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
     private async resizeCell(cell: Cell, newRelativeSize: number): Promise<void> {
         const cellSizeParameterNode = cell.astNode.value.parameters[0][0] as ASTParameterNode;
 
-        // Bound the number of decimals of the new size
+        // Round the number of decimals of the new size
         const maxNbDecimals = 3;
         const tenPowerNbDecimals = 10 ** maxNbDecimals;
         const newSizeAsString =
@@ -59,7 +61,7 @@ class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
 
         // If the value has been changed since the current AST was generated,
         // use the last value to compute the end of the range to edit
-        // Note: in this case, we know that the beginning and the end of the range are on the same line!
+        // Note: we assume the beginning and the end of the range are located on the same line!
         const editRangeEndLine = this.lastModifiedCellSize === null
                                ? cellSizeParameterNode.end.line - 1
                                : cellSizeParameterNode.start.line - 1;
@@ -81,6 +83,36 @@ class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
         });
     }
 
+    private async resizeRow(row: Row, newHeight: number): Promise<void> {
+        const rowHeightParameterNode = row.astNode.value.parameters[0][0] as ASTParameterNode;
+
+        // Round the new height and append the right suffix
+        const newHeightAsString = `${Math.round(newHeight)}px`;
+
+        // If the value has been changed since the current AST was generated,
+        // use the last value to compute the end of the range to edit
+        // Note: in this case, we know that the beginning and the end of the range are on the same line!
+        const editRangeEndLine = this.lastModifiedRowHeight === null
+                               ? rowHeightParameterNode.end.line - 1
+                               : rowHeightParameterNode.start.line - 1;
+        const editRangeEndColumn = this.lastModifiedRowHeight === null
+                                 ? rowHeightParameterNode.end.column - 1
+                                 : rowHeightParameterNode.start.column - 1 + this.lastModifiedRowHeight.length;
+
+        const rangeToEdit = new vscode.Range(
+            rowHeightParameterNode.start.line - 1, rowHeightParameterNode.start.column - 1,
+            editRangeEndLine, editRangeEndColumn
+        );
+
+        // Update the copy of the last modified size
+        this.lastModifiedRowHeight = newHeightAsString;
+
+        // Actually perform the edit
+        await this.editor.edit(editBuilder => {
+            editBuilder.replace(rangeToEdit, newHeightAsString);
+        });
+    }
+
     protected createContentAttributes(): Record<string, string> {
         return {
             ...super.createContentAttributes(),
@@ -97,7 +129,6 @@ class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
             {
                 title: "select-cell-content",
                 handler: async payload => {
-                    // TODO: implement selection somewhere else
                     const { rowIndex, cellIndex } = payload;
                     const cell = this.getCellAt(rowIndex, cellIndex);
                     
@@ -113,6 +144,22 @@ class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
                     await this.resizeCell(cell, newRelativeSize);
 
                     // If this was the final size of this cell (i.e. if the resize handle was dropped),
+                    // A new parsing of the document must be requested
+                    // to generate new visualisations from the modified code
+                    if (isFinalSize) {
+                        this.requestNewParsing();
+                    }
+                }
+            },
+            {
+                title: "resize-row",
+                handler: async payload => {
+                    const { rowIndex, newHeight, isFinalSize } = payload;
+                    const row = this.getRowAt(rowIndex);
+
+                    await this.resizeRow(row, newHeight);
+
+                    // If this was the final size of this row (i.e. if the resize handle was dropped),
                     // A new parsing of the document must be requested
                     // to generate new visualisations from the modified code
                     if (isFinalSize) {
@@ -149,8 +196,20 @@ class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
     }
 
     private static renderRowAsHTML(row: Row): string {
+        function getAttributesAsHTML(row: Row) {
+            const attributes = {
+                "class": "row",
+                "data-row": row.rowIndex,
+                "data-height": row.options.height.px,
+            };
+            
+            return Object.entries(attributes)
+                .map(([key, value]) => `${key}="${value}"`)
+                .join(" ");
+        }
+
         return `
-            <div class="row" data-height="${row.options.height.px}">
+            <div ${getAttributesAsHTML(row)}>
                 ${row.cells
                     .map(cell => GridLayoutModel.renderCellAsHTML(cell))
                     .join("\n")

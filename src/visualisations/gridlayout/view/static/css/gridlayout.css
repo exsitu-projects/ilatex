@@ -4,23 +4,30 @@
 
 [data-visualisation-name="gridlayout"] .row {
     display: flex;
+    flex-direction: column;
+}
+
+[data-visualisation-name="gridlayout"] .cell-container {
+    display: flex;
+    height: 100%;
+    overflow-y: hidden;
 }
 
 [data-visualisation-name="gridlayout"] .cell {
     display: flex;
-    /* height: 100%; */
     height: inherit;
     padding: 0;
-    border: 1px solid #777;
-    border-bottom: none;
-    border-right: none;
 }
 
 [data-visualisation-name="gridlayout"] .cell-content {
     flex-grow: 1;
     padding: 5px;
+    font-size: 0.8rem;
     font-family: monospace;
     overflow: hidden;
+    user-select: none;
+    cursor: pointer;
+    z-index: 1500;
 }
 
 [data-visualisation-name="gridlayout"] .cell-content:hover {
@@ -30,20 +37,24 @@
 [data-visualisation-name="gridlayout"] .row-resize-handle {
     height: 5px;
     width: 100%;
-    border: 1px solid #777;
-    border-top: none;
+    border-top: 1px solid #777;
+    border-bottom: 1px solid #777;
+    cursor: ns-resize;
 }
 
 [data-visualisation-name="gridlayout"] .cell-resize-handle {
-    flex-shrink: 0;
     height: 100%;
     width: 5px;
+    border-left: 1px solid #777;
     border-right: 1px solid #777;
+    cursor: ew-resize;
 }
 
 [data-visualisation-name="gridlayout"] .row-resize-handle,
 [data-visualisation-name="gridlayout"] .cell-resize-handle {
+    flex-shrink: 0;
     background-color: #AAA;
+    z-index: 2000;
 }
 
 [data-visualisation-name="gridlayout"] .row-resize-handle:hover,
