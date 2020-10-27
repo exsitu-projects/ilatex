@@ -1,4 +1,4 @@
-import { VisualisationView, SourceDocumentLocation, VisualisationViewInstantiationContext } from "./VisualisationView";
+import { VisualisationView, CodeRange, VisualisationViewInstantiationContext } from "./VisualisationView";
 import { Messenger } from "../Messenger";
 import { WebviewToCoreMessageType } from "../../shared/messenger/messages";
 import { AnnotationMaskCoordinates } from "../pdf/PDFPageRenderer";
@@ -22,7 +22,7 @@ export abstract class AbstractVisualisationView implements VisualisationView {
 
     protected contentNode: HTMLElement;
     readonly contentTitle: string;
-    readonly contentLocationInSourceDocument: SourceDocumentLocation;
+    readonly sourceCodeRange: CodeRange;
 
     constructor(contentNode: HTMLElement, context: VisualisationViewInstantiationContext) {
         this.instanciationContext = context;
@@ -33,8 +33,8 @@ export abstract class AbstractVisualisationView implements VisualisationView {
 
         this.contentNode = contentNode;
         this.contentTitle = contentNode.getAttribute("data-name")!;
-        this.contentLocationInSourceDocument =
-            AbstractVisualisationView.extractContentLocationFromContentNode(contentNode);
+        this.sourceCodeRange =
+            AbstractVisualisationView.extractSourceCodeRangeFromContentNode(contentNode);
     }
 
     abstract render(): HTMLElement;
@@ -86,10 +86,10 @@ export abstract class AbstractVisualisationView implements VisualisationView {
         return parseInt(contentNode.getAttribute("data-source-index")!);
     }
 
-    static extractContentLocationFromContentNode(contentNode: HTMLElement): SourceDocumentLocation {
+    static extractSourceCodeRangeFromContentNode(contentNode: HTMLElement): CodeRange {
         return {
-            start: parseLocationFromAttribute(contentNode.getAttribute("data-loc-start")!),
-            end: parseLocationFromAttribute(contentNode.getAttribute("data-loc-end")!)
+            start: parseLocationFromAttribute(contentNode.getAttribute("data-code-start-position")!),
+            end: parseLocationFromAttribute(contentNode.getAttribute("data-code-end-position")!)
         };
     }
 }

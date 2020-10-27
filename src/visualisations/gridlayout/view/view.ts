@@ -2,6 +2,7 @@ import { AbstractVisualisationView } from "../../../webview/visualisations/Abstr
 import { VisualisationViewFactory, VisualisationView, VisualisationViewInstantiationContext } from "../../../webview/visualisations/VisualisationView";
 import { Messenger } from "../../../webview/Messenger";
 import { WebviewToCoreMessageType } from "../../../shared/messenger/messages";
+import { TaskDebouncer } from "../../../shared/tasks/TaskDebouncer";
 
 const enum ResizeType {
     None = "None",
@@ -32,7 +33,7 @@ type ResizeContext = {
 
 class GridLayoutView extends AbstractVisualisationView {
     static readonly visualisationName = "gridlayout";
-    private static readonly MIN_DURATION_BETWEEN_RESIZES = 50; // ms
+    private static readonly DELAY_BETWEEN_RESIZES = 50; // ms
 
     readonly visualisationName = GridLayoutView.visualisationName;
 
@@ -41,8 +42,7 @@ class GridLayoutView extends AbstractVisualisationView {
 
     private viewNode: HTMLElement;
 
-    // Internal values used during cell and row resizing
-    private lastResizeTimestamp: number;
+    private resizeDebouncer: TaskDebouncer;
     private currentResizeContext: ResizeContext;
 
     private mouseMoveDuringResizeCallback =
@@ -59,7 +59,7 @@ class GridLayoutView extends AbstractVisualisationView {
         this.viewNode = document.createElement("div");
 
         // Internal values used during cell and row resizing
-        this.lastResizeTimestamp = 0;
+        this.resizeDebouncer = new TaskDebouncer(GridLayoutView.DELAY_BETWEEN_RESIZES);
         this.currentResizeContext = {
             type: ResizeType.None
         };
@@ -81,11 +81,6 @@ class GridLayoutView extends AbstractVisualisationView {
         contentNode.addEventListener("click", event => {
             this.selectCellContentOf(contentCellNode);
         });
-
-        // Display a basic text editor to edit the content on doubleclick?
-        // contentNode.addEventListener("doubleclick", event => {
-        //     // TODO
-        // });
 
         cellNode.append(contentNode);
     }
@@ -137,8 +132,8 @@ class GridLayoutView extends AbstractVisualisationView {
         rowNode.append(handleNode);
     }
 
-    private setInitialCellWidth(cellNode: HTMLElement) {
-        const initialRelativeSize = parseFloat(cellNode.getAttribute("data-relative-size")!); // percentage (0–1)
+    private setInitialCellWidth(cellNode: HTMLElement, contentCellNode: HTMLElement) {
+        const initialRelativeSize = parseFloat(contentCellNode.getAttribute("data-relative-size")!); // percentage (0–1)
         cellNode.style.width = `${Math.round(initialRelativeSize * 100)}%`;
     }
 
@@ -154,16 +149,14 @@ class GridLayoutView extends AbstractVisualisationView {
         cellNode.classList.add("cell");
         cellNode.setAttribute("data-row", contentCellNode.getAttribute("data-row")!);
         cellNode.setAttribute("data-cell", contentCellNode.getAttribute("data-cell")!);
-
-        // TODO: this could probably be removed
-        cellNode.setAttribute("data-relative-size", contentCellNode.getAttribute("data-relative-size")!);
+        cellNode.setAttribute("data-init-relative-size", contentCellNode.getAttribute("data-relative-size")!);
 
         // Populate the cell
         this.addCellContentTo(cellNode, contentCellNode);
         this.addCellResizeHandleTo(cellNode, contentCellNode);
 
         // Set the initial size of the cell
-        this.setInitialCellWidth(cellNode);
+        this.setInitialCellWidth(cellNode, contentCellNode);
 
         return cellNode;
     }
@@ -207,7 +200,7 @@ class GridLayoutView extends AbstractVisualisationView {
             .filter(node => node.getAttribute("data-row") === rowIndexAsString
                          && node.getAttribute("data-cell") !== cellIndexAsString)
             .reduce((relativeFreeSpace, node) =>
-                relativeFreeSpace - parseFloat(node.getAttribute("data-relative-size")!),
+                relativeFreeSpace - parseFloat(node.getAttribute("data-init-relative-size")!),
             1);
     }
 
@@ -250,8 +243,6 @@ class GridLayoutView extends AbstractVisualisationView {
                 isFinalSize: isFinalSize
             }
         });
-
-        this.lastResizeTimestamp = Date.now();
     }
 
     private resizeRow(rowNode: HTMLElement, newHeight: number, isFinalSize: boolean) {
@@ -270,8 +261,6 @@ class GridLayoutView extends AbstractVisualisationView {
                 isFinalSize: isFinalSize
             }
         });
-
-        this.lastResizeTimestamp = Date.now();
     }
 
     private computeNewRelativeCellSizeDuringResize(mouseEvent: MouseEvent): number {
@@ -338,10 +327,10 @@ class GridLayoutView extends AbstractVisualisationView {
 
     private onMouseMoveDuringResize(event: MouseEvent): void {
         // Only trigger a resize if the previous one is old enough
-        if (this.isResized
-        &&  Date.now() >   GridLayoutView.MIN_DURATION_BETWEEN_RESIZES
-                         + this.lastResizeTimestamp) {
-            this.updateDimensionsDuringResize(event);
+        if (this.isResized) {
+            this.resizeDebouncer.add(async () => {
+                this.updateDimensionsDuringResize(event);
+            });
         }
     }
 

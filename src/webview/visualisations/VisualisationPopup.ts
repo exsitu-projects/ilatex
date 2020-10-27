@@ -90,7 +90,7 @@ export class VisualisationPopup {
         locationNode.classList.add("location");
         titleNode.append(locationNode);
 
-        locationNode.innerHTML = this.getLocationInSourceDocumentAsText();
+        locationNode.innerHTML = this.getVisualisationSourceCodeRangeAsText();
 
         // Reveal the code of the visualisation when the title is clicked
         titleNode.addEventListener("click", event => {
@@ -110,7 +110,7 @@ export class VisualisationPopup {
 
     // Must be called in case the visualisation is updated
     updateTitleBar() {
-        this.titleBarNode!.querySelector(".location")!.innerHTML = this.getLocationInSourceDocumentAsText();
+        this.titleBarNode!.querySelector(".location")!.innerHTML = this.getVisualisationSourceCodeRangeAsText();
     }
 
     createContent() {
@@ -130,8 +130,8 @@ export class VisualisationPopup {
         this.contentNode!.append(this.visualisationView.render());
     }
 
-    getLocationInSourceDocumentAsText() {
-        const location = this.visualisationView.contentLocationInSourceDocument;
+    getVisualisationSourceCodeRangeAsText() {
+        const location = this.visualisationView.sourceCodeRange;
         return location.start.line === location.end.line
              ? `(line ${location.start.line + 1})`
              : `(lines ${location.start.line + 1}&#8198;–&#8198;${location.end.line + 1})`;         

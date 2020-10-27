@@ -327,8 +327,6 @@ const language = P.createLanguage<{
                 }
 
                 const remainingInput = input.substring(index + 1);
-                // console.log("remaining input",
-                //     remainingInput.length > 15 ? remainingInput.substr(0, 12) + "..." : remainingInput);
 
                 // Case 1 — it is the beginning of an environement
                 if (remainingInput.startsWith("begin{")) {

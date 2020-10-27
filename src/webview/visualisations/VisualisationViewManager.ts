@@ -53,8 +53,6 @@ export class VisualisationViewManager {
     }
 
     private getVisualisationContentNode(sourceIndex: number): HTMLElement | null {
-        console.log("Request the content of a visualisation...");
-        console.log(this.visualisationContentContainerNode);
         return this.visualisationContentContainerNode
                 .querySelector(`.visualisation[data-source-index="${sourceIndex}"]`);
     }

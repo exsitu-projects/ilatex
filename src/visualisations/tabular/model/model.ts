@@ -6,6 +6,7 @@ import { InteractiveLaTeX } from "../../../core/InteractiveLaTeX";
 import { WebviewManager } from "../../../core/webview/WebviewManager";
 import { Cell, Grid, Row } from "./Grid";
 import { Options } from "./Options";
+import { HtmlUtils } from "../../../shared/utils/HtmlUtils";
 
 
 class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
@@ -21,8 +22,8 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
         this.grid = Grid.extractFrom(this.astNode, editor.document);
         this.options = Options.extractFrom(this.astNode);
 
-        console.log("==== GRID EXTRACTED ====");
-        console.log(this.grid.rows);
+        // console.log("==== GRID EXTRACTED ====");
+        // console.log(this.grid.rows);
     }
 
     private getCellAt(rowIndex: number, columnIndex: number): Cell {
@@ -34,9 +35,6 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
         const startPosition = new vscode.Position(cell.contentStart.line - 1, cell.contentStart.column - 1);
         const endPosition = new vscode.Position(cell.contentEnd.line - 1, cell.contentEnd.column - 1);
         this.editor.selections = [new vscode.Selection(startPosition, endPosition)];
-
-        console.log("Select content of cell", cell);
-        console.log("Start", startPosition, "end", endPosition);
 
         // If the selected range is not visible, scroll to the selection
         this.editor.revealRange(
@@ -60,7 +58,6 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
         const rows = this.grid.rows;
 
         // Copy the content of the cells of the origin and target columns
-        console.log("Extract content from grid: ", rows);
         const originColumnCellsContent = rows
             .map(row => row.cells[oldColumnIndex]?.textContent);
 
@@ -72,7 +69,7 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
                     const cellToEdit = this.getCellAt(rowIndex, columnIndex);
                     const cellToCopy = this.getCellAt(rowIndex, columnIndex - 1);
 
-                    console.log(`About to replace ${cellToEdit.textContent} by ${cellToCopy.textContent}`);
+                    // console.log(`About to replace ${cellToEdit.textContent} by ${cellToCopy.textContent}`);
                     await this.replaceCellContent(cellToEdit, cellToCopy.textContent);
 
                 }
@@ -93,7 +90,7 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
                                     ? originColumnCellsContent[rowIndex]
                                     : (lastEditedCellContent ?? cellToCopy.textContent);
 
-                    console.log(`About to replace ${cellToEdit.textContent} by ${newContent}`);
+                    // console.log(`About to replace ${cellToEdit.textContent} by ${newContent}`);
                     await this.replaceCellContent(cellToEdit, newContent);
                     
                     // Update the copy of the last replaced content
@@ -122,7 +119,7 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
             }
 
             for (let columnIndex = row.nbCells - 1; columnIndex >= 0; columnIndex--) {
-                console.log(`===== Update cell at ${rowIndex}, ${columnIndex} =====`);
+                // console.log(`Update cell at [row ${rowIndex}, column ${columnIndex}]`);
                 await updateCellContentAt(rowIndex, columnIndex);
             }
         }
@@ -156,7 +153,6 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
         const rows = this.grid.rows;
 
         // Copy the content of the cells of the origin row (before any move)
-        console.log("Extract content from grid: ", rows);
         const originRowCellsContent = rows[oldRowIndex].cells
             .map(cell => cell.textContent);
 
@@ -168,7 +164,7 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
                     const cellToEdit = this.getCellAt(rowIndex, columnIndex);
                     const cellToCopy = this.getCellAt(rowIndex - 1, columnIndex);
 
-                    console.log(`About to replace ${cellToEdit.textContent} by ${cellToCopy.textContent}`);
+                    // console.log(`About to replace ${cellToEdit.textContent} by ${cellToCopy.textContent}`);
                     await this.replaceCellContent(cellToEdit, cellToCopy.textContent);
 
                 }
@@ -198,7 +194,7 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
                                         ? originRowCellsContent[columnIndex]
                                         : lastEditedRowCellContent[columnIndex];
 
-                    console.log(`About to replace ${cellToEdit.textContent} by ${newContent}`);
+                    // console.log(`About to replace ${cellToEdit.textContent} by ${newContent}`);
                     await this.replaceCellContent(cellToEdit, newContent);
                 }
             };
@@ -215,7 +211,7 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
             const row = rows[rowIndex];
 
             for (let columnIndex = row.nbCells - 1; columnIndex >= 0; columnIndex--) {
-                console.log(`===== Update cell at ${rowIndex}, ${columnIndex} =====`);
+                // console.log(`Update cell at [row ${rowIndex}, column ${columnIndex}]`);
                 await updateCellContentAt(rowIndex, columnIndex);
             }
         }
@@ -236,16 +232,6 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
                 );
             }
         }
-    }
-
-    protected createContentAttributes(): Record<string, string> {
-        return {
-            ...super.createContentAttributes(),
-
-            // Add node location information
-            "data-loc-start": `${this.astNode.start.line};${this.astNode.start.column}`,
-            "data-loc-end": `${this.astNode.end.line};${this.astNode.end.column}`
-        };
     }
 
     protected createNotificationHandlerSpecifications(): NotificationHandlerSpecification[] {
@@ -278,7 +264,7 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
                 title: "move-column",
                 handler: async payload => {
                     const { oldColumnIndex, newColumnIndex } = payload;
-                    console.info(`column ${oldColumnIndex} => column ${newColumnIndex}`);
+                    // console.info(`column ${oldColumnIndex} => column ${newColumnIndex}`);
 
                     await this.moveColumn(oldColumnIndex, newColumnIndex);
                     
@@ -291,7 +277,7 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
                 title: "move-row",
                 handler: async payload => {
                     const { oldRowIndex, newRowIndex } = payload;
-                    console.info(`row ${oldRowIndex} => row ${newRowIndex}`);
+                    // console.info(`row ${oldRowIndex} => row ${newRowIndex}`);
 
                     await this.moveRow(oldRowIndex, newRowIndex);
                     
@@ -321,18 +307,12 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
     }
 
     private static renderCellAsHTML(cell: Cell): string {
-        function getAttributesAsHTML(cell: Cell) {
-            const attributes = {
-                "data-row": cell.rowIndex,
-                "data-column": cell.columnIndex
-            };
-            
-            return Object.entries(attributes)
-                .map(([key, value]) => `${key}="${value}"`)
-                .join(" ");
-        }
+        const attributes = HtmlUtils.makeAttributesFromKeysOf({
+            "data-row": cell.rowIndex.toString(),
+            "data-column": cell.columnIndex.toString()
+        });
 
-        return `<td ${getAttributesAsHTML(cell)}>${cell.textContent}</td>`;
+        return `<td ${attributes}>${cell.textContent}</td>`;
     }
 
     private static renderRowAsHTML(row: Row): string {

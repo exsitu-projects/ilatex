@@ -5,6 +5,7 @@ import { ASTNode, ASTEnvironementNode, ASTNodeType, ASTParameterNode } from "../
 import { InteractiveLaTeX } from "../../../core/InteractiveLaTeX";
 import { WebviewManager } from "../../../core/webview/WebviewManager";
 import { Cell, Layout, Row } from "./Layout";
+import { HtmlUtils } from "../../../shared/utils/HtmlUtils";
 
 
 class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
@@ -113,15 +114,6 @@ class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
         });
     }
 
-    protected createContentAttributes(): Record<string, string> {
-        return {
-            ...super.createContentAttributes(),
-
-            "data-loc-start": `${this.astNode.start.line};${this.astNode.start.column}`,
-            "data-loc-end": `${this.astNode.end.line};${this.astNode.end.column}`
-        };
-    }
-
     protected createNotificationHandlerSpecifications(): NotificationHandlerSpecification[] {
         return [
             ...super.createNotificationHandlerSpecifications(),
@@ -179,37 +171,25 @@ class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
     }
 
     private static renderCellAsHTML(cell: Cell): string {
-        function getAttributesAsHTML(cell: Cell) {
-            const attributes = {
-                "class": "cell",
-                "data-row": cell.rowIndex,
-                "data-cell": cell.cellIndex,
-                "data-relative-size": cell.options.relativeSize
-            };
-            
-            return Object.entries(attributes)
-                .map(([key, value]) => `${key}="${value}"`)
-                .join(" ");
-        }
+        const attributes = HtmlUtils.makeAttributesFromKeysOf({
+            "class": "cell",
+            "data-row": cell.rowIndex.toString(),
+            "data-cell": cell.cellIndex.toString(),
+            "data-relative-size": cell.options.relativeSize.toString()
+        });
 
-        return `<div ${getAttributesAsHTML(cell)}>${cell.textContent}</div>`;
+        return `<div ${attributes}>${cell.textContent}</div>`;
     }
 
     private static renderRowAsHTML(row: Row): string {
-        function getAttributesAsHTML(row: Row) {
-            const attributes = {
-                "class": "row",
-                "data-row": row.rowIndex,
-                "data-height": row.options.height.px,
-            };
-            
-            return Object.entries(attributes)
-                .map(([key, value]) => `${key}="${value}"`)
-                .join(" ");
-        }
+        const attributes = HtmlUtils.makeAttributesFromKeysOf({
+            "class": "row",
+            "data-row": row.rowIndex.toString(),
+            "data-height": row.options.height.px.toString(),
+        });
 
         return `
-            <div ${getAttributesAsHTML(row)}>
+            <div ${attributes}>
                 ${row.cells
                     .map(cell => GridLayoutModel.renderCellAsHTML(cell))
                     .join("\n")

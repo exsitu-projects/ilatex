@@ -4,6 +4,7 @@ import { NotifyVisualisationModelMessage } from "../../shared/messenger/messages
 import { ASTNode } from "../ast/LatexASTNode";
 import { InteractiveLaTeX } from '../InteractiveLaTeX';
 import { WebviewManager } from '../webview/WebviewManager';
+import { HtmlUtils } from '../../shared/utils/HtmlUtils';
 
 export type NotificationHandler = (notification: any) => Promise<void>;
 export interface NotificationHandlerSpecification {
@@ -63,12 +64,14 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
             "class": "visualisation",
             "data-name": this.visualisationName,
             "data-id": this.id.toString(),
-            "data-source-index": this.sourceIndex.toString()
+            "data-source-index": this.sourceIndex.toString(),
+            "data-code-start-position": `${this.astNode.start.line};${this.astNode.start.column}`,
+            "data-code-end-position": `${this.astNode.end.line};${this.astNode.end.column}`
         };
     }
 
     protected requestNewParsing(): void {
-        this.ilatex.onVisualisationParsingRequest();
+        this.ilatex.handleVisualisationParsingRequest();
     }
 
     async handleViewNotification(message: NotifyVisualisationModelMessage): Promise<void> {
@@ -82,18 +85,15 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
         await handler(message.notification);
     }
 
-    protected renderContentAttributesAsHTML(): string {
-        const contentAttributes = this.createContentAttributes();
-        return Object.entries(contentAttributes)
-            .map(([key, value]) => `${key}="${value}"`)
-            .join(" ");
-    }
-
     protected abstract renderContentAsHTML(): string;
 
     createViewContent(): string {
+        const attributes = HtmlUtils.makeAttributesFromKeysOf(
+            this.createContentAttributes()
+        );
+
         return `
-            <div ${this.renderContentAttributesAsHTML()}>
+            <div ${attributes}>
                 ${this.renderContentAsHTML()}
             </div>
         `;

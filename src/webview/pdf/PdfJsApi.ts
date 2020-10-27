@@ -12,5 +12,5 @@ export type PDFRect = [number, number, number, number];
 export const lib: any = (window as any)["pdfjsLib"];
 
 // Set up the worker URI (required by the lib)
-// TODO: switch to a local URI (it seemed to fail when I tried at first)
+// TODO: switch to a local URI (it requires to use a special URI computed by VSCode)
 lib.GlobalWorkerOptions.workerSrc = "https://unpkg.com/pdfjs-dist@2.3.200/build/pdf.worker.min.js";

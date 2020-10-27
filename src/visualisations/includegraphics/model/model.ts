@@ -67,11 +67,7 @@ class IncludegraphicsModel extends AbstractVisualisationModel<ASTCommandNode> {
             ...super.createContentAttributes(),
 
             // Add the path of the image
-            "data-img-path": this.imagePath,
-
-            // Add node location information
-            "data-loc-start": `${this.astNode.start.line};${this.astNode.start.column}`,
-            "data-loc-end": `${this.astNode.end.line};${this.astNode.end.column}`,
+            "data-img-path": this.imagePath
         };
 
         // For each existing option, add an attribute

@@ -136,28 +136,22 @@ class TabularView extends AbstractVisualisationView {
         const self = this;
         const handsontableHookCallbacks: Record<string, (...parameters: any) => void> = {
             beforeOnCellMouseDown(event, coords, td) {
-                // console.log("beforeOnCellMouseDown", event, coords, td);
                 currentDragDetail.lastMouseDownCoords = coords;
             },
 
             afterRowMove(movedRows, finalIndex, dropIndex, movePossible, orderChanged) {
-                // console.log("afterRowMove", movedRows, finalIndex, dropIndex, movePossible, orderChanged);
                 if (orderChanged) {
-                    // console.log(`Row moved from index ${currentDragDetail.lastMouseDownCoords.row} to index ${finalIndex}`);
                     self.moveDocumentRow(currentDragDetail.lastMouseDownCoords!.row, finalIndex);
                 }
             },
 
             afterColumnMove(movedColumns, finalIndex, dropIndex, movePossible, orderChanged) {
-                // console.log("afterColumnMove", movedColumns, finalIndex, dropIndex, movePossible, orderChanged);
                 if (orderChanged) {
-                    // console.log(`Column moved from index ${currentDragDetail.lastMouseDownCoords.col} to index ${finalIndex}`);
                     self.moveDocumentColumn(currentDragDetail.lastMouseDownCoords!.col, finalIndex);
                 }
             },
 
             afterChange(changes, source) {
-                // console.log("afterChange", changes, source);
                 for (let change of changes) {
                     self.setDocumentCellContent({
                         rowIndex: change[0],
@@ -167,7 +161,6 @@ class TabularView extends AbstractVisualisationView {
             },
 
             afterSelection(row, column, row2, column2) {
-                // console.log("afterSelection", row, column, row2, column2);
                 self.selectDocumentCellContent({
                     rowIndex: row,
                     columnIndex: column,

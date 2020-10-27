@@ -5,8 +5,12 @@ import { LatexASTFormatter } from './ast/visitors/LatexASTFormatter';
 import { WebviewManager } from './webview/WebviewManager';
 import { VisualisationModelManager } from './visualisations/VisualisationModelManager';
 import { NotifyVisualisationModelMessage, WebviewToCoreMessageType } from '../shared/messenger/messages';
+import { TaskQueuer } from '../shared/tasks/TaskQueuer';
+import { TaskDebouncer } from '../shared/tasks/TaskDebouncer';
 
 export class InteractiveLaTeX {
+    private static readonly DELAY_BETWEEN_DOCUMENT_CHANGE_POLLING = 500; // ms
+
     private editor: vscode.TextEditor;
     private document: vscode.TextDocument;
     private webviewPanel: vscode.WebviewPanel;
@@ -14,7 +18,7 @@ export class InteractiveLaTeX {
     private visualisationModelManager: VisualisationModelManager;
 
     private documentChangeWatcher: fs.FSWatcher | null;
-    private documentPDFChangeWatcher: fs.FSWatcher | null;
+    private pdfChangeWatcher: fs.FSWatcher | null;
     
     constructor(editor: vscode.TextEditor, webviewPanel: vscode.WebviewPanel) {
         this.editor = editor;
@@ -24,16 +28,33 @@ export class InteractiveLaTeX {
         this.visualisationModelManager = new VisualisationModelManager(this, this.editor, this.webviewManager);
         
         this.documentChangeWatcher = null;
-        this.documentPDFChangeWatcher = null;
+        this.pdfChangeWatcher = null;
 
         this.initWebviewMessageHandlers();
         this.startObservingWebviewPanelStateChanges();
         this.startObservingDocumentChanges();
-        // this.startObservingDocumentPDFChanges();
 
-        this.parseActiveDocument();
+        this.extractNewVisualisationModels();
         this.updateWebviewVisualisations();
         this.updateWebviewPDF();
+    }
+
+    private get pdfPath(): string {
+        // This assumes that the PDF of the document has the same path
+        // than the LaTeX document but with a .pdf extension instead
+
+        // TODO: use a more robust technique,
+        // e.g. by allowing the user to specify this value
+
+        return this.document.uri.path.replace(".tex", ".pdf");
+    }
+
+    private get pdfUri(): vscode.Uri {
+        return vscode.Uri.file(this.pdfPath);
+    }
+
+    private get pdfExists(): boolean {
+        return fs.existsSync(this.pdfPath);
     }
 
     initWebviewMessageHandlers(): void {
@@ -44,38 +65,19 @@ export class InteractiveLaTeX {
 
         // Dispatch a webview notification to the right visualisation.
         // Since notification handlers can perform asynchronous operations,
-        // notification message are queued in a stack so that, as long as the queue is non-empty,
-        // the last arrived message is dispatched as soon as the last called handler is done.
-        let dispatchIsOngoing = false;
-        let notificationQueue: NotifyVisualisationModelMessage[] = [];
+        // notification message are queued and dispatched one after the other.
+        const notificationDispatchQueuer = new TaskQueuer();
 
-        const dispatchNotification = async (message: NotifyVisualisationModelMessage) => {
-            // Lock the dispatch mechanism
-            dispatchIsOngoing = true;
-
-            // Dispatch the event
-            await this.visualisationModelManager.dispatchNotification(message);
-
-            // Unlock the dispatch mechanism
-            dispatchIsOngoing = false;
-        
-            if (notificationQueue.length > 0) {
-                const message = notificationQueue.pop();
-                // (if a new notif. message arrives at this exact moment it will be lost)
-                notificationQueue = [];
-
-                dispatchNotification(message as NotifyVisualisationModelMessage);
+        this.webviewManager.setHandlerFor(
+            WebviewToCoreMessageType.NotifyVisualisationModel,
+            async (message) => {
+                notificationDispatchQueuer.add(async () => {
+                    this.visualisationModelManager.dispatchNotification(
+                        message as NotifyVisualisationModelMessage
+                    );
+                });
             }
-        };
-
-        this.webviewManager.setHandlerFor(WebviewToCoreMessageType.NotifyVisualisationModel, async (message) => {
-            if (dispatchIsOngoing) {
-                notificationQueue.push(message as NotifyVisualisationModelMessage);
-                return;
-            }
-            
-            dispatchNotification(message as NotifyVisualisationModelMessage);
-        });
+        );
     }
 
     onWebviewPanelClosed(): void {
@@ -89,80 +91,30 @@ export class InteractiveLaTeX {
 
     private startObservingWebviewPanelStateChanges(): void {
         this.webviewPanel.onDidChangeViewState(event => {
-            // Update the PDF and the visualisations in the webview
-            // (since the webpage may have been reloaded)
-            this.updateWebviewVisualisations();
-            this.updateWebviewPDF();
+            // If the webview panel is visible (possibly having been hidden by the user),
+            // force the webview to reload the PDF with the last visualisations
+            if (event.webviewPanel.visible) {
+                this.updateWebviewVisualisations();
+                this.updateWebviewPDF();
+            }
         });
-    }
-
-    private getDocumentPDFPath(): string {
-        // TODO: use a more robust technique,
-        // e.g. by allowing the user to specify this value
-
-        // Assume that the PDF of the document has the same path
-        // than the LaTeX document with a .pdf extension instead
-        return this.document.uri.path.replace(".tex", ".pdf");
-    }
-
-    private getDocumentPDFUri(): vscode.Uri {
-        const path = this.getDocumentPDFPath();
-        return vscode.Uri.file(path);
-    }
-
-    private documentPDFExists(): boolean {
-        const path = this.getDocumentPDFPath();
-        return fs.existsSync(path);
     }
 
     private startObservingDocumentChanges(): void {
         const documentPath = this.document.uri.fsPath;
-        let waitBeforeNextObservation = false;
+        const documentChangeDebouncer = new TaskDebouncer(
+            InteractiveLaTeX.DELAY_BETWEEN_DOCUMENT_CHANGE_POLLING
+        );
 
         this.documentChangeWatcher = fs.watch(documentPath, (event, filename) => {
-            if (filename) {
-                if (waitBeforeNextObservation) {
-                    return;
-                }
-
-                waitBeforeNextObservation = true;
-                setTimeout(() => {
-                    waitBeforeNextObservation = false;
-                }, 500);
-
-                this.onDocumentChange();
-            }
+            documentChangeDebouncer.add(async () => {
+                this.handleDocumentChange();
+            });
         });
     }
 
-    private startObservingDocumentPDFChanges(): void {
-        // TODO: check if the watcher can be set up even if the PDF does not exist yet
-        //if (!this.documentPDFExists()) {
-        //    return;
-        //}
-
-        const pdfPath = this.getDocumentPDFPath();
-        let waitBeforeNextObservation = false;
-
-        this.documentPDFChangeWatcher = fs.watch(pdfPath, (event, filename) => {
-            if (filename) {
-                if (waitBeforeNextObservation) {
-                    return;
-                }
-
-                waitBeforeNextObservation = true;
-                setTimeout(() => {
-                    waitBeforeNextObservation = false;
-                }, 500);
-
-                this.onDocumentPDFChange();
-            }
-        });
-    }
-
-    private buildActiveDocument(): void {
-        // TODO: ensure the path/current directory are the correct ones
-        // TODO: use the interactive mode once?
+    private buildPDFAndUpdateWebview(): void {
+        // TODO: start latexmk in watch mode once?
 
         // Create a new terminal and use it to run latexmk to build a PDF from the sources
         const terminal = vscode.window.createTerminal("iLaTeX");
@@ -181,7 +133,6 @@ export class InteractiveLaTeX {
         // This is a workaround to the fact that there is no built-in way
         // to wait for the end of a running process in a VSCode terminal
         vscode.window.onDidCloseTerminal(terminal => {
-            vscode.window.showInformationMessage(`Exit code: ${terminal.exitStatus!.code}`);
             if (terminal.exitStatus && terminal.exitStatus.code !== 0) {
                 vscode.window.showErrorMessage("An error occured during the compilation of the document.");
                 return;
@@ -191,35 +142,21 @@ export class InteractiveLaTeX {
         });
     }
 
-    private onDocumentChange(): void {
-        const date = new Date();
-        console.log(`(${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}) The LaTeX document has changed`);
-
-        // Re-build and re-parse the document
-        this.buildActiveDocument();
-        this.parseActiveDocument();
-
-        // Update the visualisations in the webview
-        this.updateWebviewVisualisations();
+    private extractVisualisationsAndUpdateWebview(requestedByVisualisation: boolean = false): void {
+        this.extractNewVisualisationModels();
+        this.updateWebviewVisualisations(requestedByVisualisation);
     }
 
-    private onDocumentPDFChange(): void {
-        const date = new Date();
-        console.log(`(${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}) The PDF document has changed`);
-
-        // Update the PDF in the webview
-        this.updateWebviewPDF();
+    private handleDocumentChange(): void {
+        this.buildPDFAndUpdateWebview();
+        this.extractVisualisationsAndUpdateWebview();
     }
 
-    onVisualisationParsingRequest() {
-        // Re-parse the document
-        this.parseActiveDocument();
-
-        // Update the visualisations in the webview
-        this.updateWebviewVisualisations(true);
+    handleVisualisationParsingRequest() {
+        this.extractVisualisationsAndUpdateWebview(true);
     }
 
-    private async parseActiveDocument() {
+    private async extractNewVisualisationModels() {
         const firstLine = this.document.lineAt(0);
         const lastLine = this.document.lineAt(this.document.lineCount - 1);
         const documentContent = this.document.getText(new vscode.Range(
@@ -253,7 +190,6 @@ export class InteractiveLaTeX {
     updateWebviewPDF() {
         console.info("About to update the webview PDF...");
         
-        const pdfUri = this.getDocumentPDFUri();
-        this.webviewManager.updatePDF(pdfUri);
+        this.webviewManager.updatePDF(this.pdfUri);
     }
 }
