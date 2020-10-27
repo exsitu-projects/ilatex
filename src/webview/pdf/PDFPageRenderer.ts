@@ -276,12 +276,11 @@ export class PDFPageRenderer {
         window.dispatchEvent(event);
     }
 
-    static async fromPDFDocument(pdf: pdfjs.PDFDocument, pageNumber: number): Promise<PDFPageRenderer> {
+    static async loadFrom(pdf: pdfjs.PDFDocument, pageNumber: number): Promise<PDFPageRenderer> {
         const page = await pdf.getPage(pageNumber);
 
         const displayablePage = new PDFPageRenderer(page, pageNumber);
         await displayablePage.init();
-        //await displayablePage.redraw();
 
         return displayablePage;
     }

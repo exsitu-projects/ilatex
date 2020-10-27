@@ -26,26 +26,26 @@ export class PDFRenderer {
     }
 
     async init() {
-        await this.loadAndRenderAllPages();
+        await this.loadAllPages();
     }
 
-    async loadAndRenderPage(pageNumber: number) {
-        const renderer = await PDFPageRenderer.fromPDFDocument(this.pdf, pageNumber);
+    private async loadPage(pageNumber: number) {
+        const renderer = await PDFPageRenderer.loadFrom(this.pdf, pageNumber);
         this.pageRenderers.set(pageNumber, renderer);
     }
 
-    async loadAndRenderAllPages() {
+    private async loadAllPages() {
         if (this.nbPages === 0) {
-            console.log("The PDF contains no pages: there is nothing to load.");
+            console.log("The PDF contains no page: there is nothing to load.");
             return;
         }
 
         for (let pageNumber = 1; pageNumber <= this.nbPages; pageNumber++) {
-            await this.loadAndRenderPage(pageNumber);
+            await this.loadPage(pageNumber);
         }
     }
 
-    updatePageContainerCanvases() {
+    private updatePageContainerCanvases() {
         this.pageContainerNode.innerHTML = "";
 
         for (let pageRenderer of this.pageRenderers.values()) {
@@ -53,7 +53,7 @@ export class PDFRenderer {
         }
     }
 
-    createAllAnnotationMasks() {
+    private createAllAnnotationMasks() {
         for (let pageRenderer of this.pageRenderers.values()) {
             pageRenderer.createAnnotationMasks();
             this.annotationMaskContainerNode.append(
@@ -62,7 +62,7 @@ export class PDFRenderer {
         }
     }
 
-    removeAllAnnotationsMasks() {
+    private removeAllAnnotationsMasks() {
         for (let pageRenderer of this.pageRenderers.values()) {
             pageRenderer.removeAnnotationMasks();
         }
@@ -70,7 +70,7 @@ export class PDFRenderer {
         this.annotationMaskContainerNode.innerHTML = "";
     }
 
-    appendTo(node: HTMLElement) {
+    private appendContainersTo(node: HTMLElement) {
         node.append(this.pageContainerNode);
         node.append(this.annotationMaskContainerNode);
     }
@@ -85,7 +85,7 @@ export class PDFRenderer {
 
         if (newContainerNode) {
             newContainerNode.innerHTML = "";
-            this.appendTo(newContainerNode);
+            this.appendContainersTo(newContainerNode);
         }
 
         // Create the (new) annotation masks
