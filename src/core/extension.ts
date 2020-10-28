@@ -16,7 +16,8 @@ function createWebview(title: string): vscode.WebviewPanel {
 		title,
 		vscode.ViewColumn.Two,
 		{
-			enableScripts: true
+			enableScripts: true,
+			retainContextWhenHidden: true
 		}
 	);
 }

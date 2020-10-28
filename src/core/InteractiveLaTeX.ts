@@ -34,9 +34,10 @@ export class InteractiveLaTeX {
         this.startObservingWebviewPanelStateChanges();
         this.startObservingDocumentChanges();
 
+        // this.extractVisualisationsAndUpdateWebview();
+        // this.buildPDFAndUpdateWebview();
         this.extractNewVisualisationModels();
-        this.updateWebviewVisualisations();
-        this.updateWebviewPDF();
+        // this.buildPDFAndUpdateWebview();
     }
 
     private get pdfPath(): string {
@@ -90,13 +91,21 @@ export class InteractiveLaTeX {
     }
 
     private startObservingWebviewPanelStateChanges(): void {
+        let webviewWasVisible = false;
         this.webviewPanel.onDidChangeViewState(event => {
-            // If the webview panel is visible (possibly having been hidden by the user),
-            // force the webview to reload the PDF with the last visualisations
-            if (event.webviewPanel.visible) {
+            // If the webview panel becomes visible again,
+            // force update the PDF and the visualisations
+            // This is required to ensure the webview content is up-to-date
+            // because VSCode does not enable hidden webviews to handle messages
+            // (see retainContextWhenHidden in
+            // https://code.visualstudio.com/api/references/vscode-api#WebviewPanelOptions)
+            if (!webviewWasVisible
+            &&  event.webviewPanel.visible) {
                 this.updateWebviewVisualisations();
                 this.updateWebviewPDF();
             }
+            
+            webviewWasVisible = event.webviewPanel.visible;
         });
     }
 
@@ -108,6 +117,7 @@ export class InteractiveLaTeX {
 
         this.documentChangeWatcher = fs.watch(documentPath, (event, filename) => {
             documentChangeDebouncer.add(async () => {
+                console.log("document changed")
                 this.handleDocumentChange();
             });
         });
@@ -138,6 +148,7 @@ export class InteractiveLaTeX {
                 return;
             }
 
+            console.log("terminal closed")
             this.updateWebviewPDF();
         });
     }
