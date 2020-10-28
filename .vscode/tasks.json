@@ -3,8 +3,6 @@
 {
 	"version": "2.0.0",
 	"tasks": [
-		// ===== BUILD TASKS =====
-
 		{
 			"label": "Build the core",
 			"type": "npm",
@@ -15,7 +13,6 @@
 			},
 			"group": "build"
 		},
-
 		{
 			"label": "Build the webview",
 			"type": "npm",
@@ -25,7 +22,6 @@
 			},
 			"group": "build"
 		},
-
 		{
 			"label": "Build the core and the webview",
 			"group": {
@@ -37,9 +33,6 @@
 				"Build the webview"
 			]
 		},
-
-		// ===== WATCH TASKS =====
-
 		{
 			"label": "Watch the core",
 			"type": "npm",
@@ -50,7 +43,6 @@
 				"reveal": "silent"
 			}
 		},
-
 		{
 			"label": "Watch the webview",
 			"type": "npm",
@@ -60,7 +52,6 @@
 				"reveal": "silent"
 			}
 		},
-
 		{
 			"label": "Watch the core and the webview",
 			"dependsOn": [
@@ -68,5 +59,13 @@
 				"Watch the webview"
 			]
 		},
+		{
+			"label": "Lint the source code",
+			"type": "npm",
+			"script": "lint",
+			"problemMatcher": [
+				"$eslint-stylish"
+			]
+		}
 	]
 }
