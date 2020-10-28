@@ -23,7 +23,6 @@ export class VisualisationModelManager {
 
     private patternDetector: CodePatternDetector;
     private visualisationModels: VisualisationModel[];
-    private visualisationNamesToModelFactories: Map<string, VisualisationModelFactory>;
 
     constructor(ilatex: InteractiveLaTeX, editor: vscode.TextEditor, webviewManager: WebviewManager) {
         this.ilatex = ilatex;
@@ -32,10 +31,6 @@ export class VisualisationModelManager {
         
         this.patternDetector = new CodePatternDetector();
         this.visualisationModels = [];
-        this.visualisationNamesToModelFactories = new Map(
-            VisualisationModelManager.AVAILABLE_VISUALISATION_FACTORIES
-                .map(factory => [factory.visualisationName, factory])
-        );
 
         this.initPatternDetector();
     }
