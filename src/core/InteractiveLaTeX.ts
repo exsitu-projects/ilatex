@@ -117,7 +117,6 @@ export class InteractiveLaTeX {
 
         this.documentChangeWatcher = fs.watch(documentPath, (event, filename) => {
             documentChangeDebouncer.add(async () => {
-                console.log("document changed")
                 this.handleDocumentChange();
             });
         });
@@ -148,7 +147,6 @@ export class InteractiveLaTeX {
                 return;
             }
 
-            console.log("terminal closed")
             this.updateWebviewPDF();
         });
     }
