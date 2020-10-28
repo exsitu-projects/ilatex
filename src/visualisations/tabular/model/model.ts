@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { VisualisationModelFactory, VisualisationModel } from "../../../core/visualisations/VisualisationModel";
 import { AbstractVisualisationModel, NotificationHandlerSpecification } from "../../../core/visualisations/AbstractVisualisationModel";
 import { ASTNode, ASTEnvironementNode, ASTNodeType, ASTParameterNode, ASTLatexNode } from "../../../core/ast/LatexASTNode";
-import { InteractiveLaTeX } from "../../../core/InteractiveLaTeX";
+import { InteractiveLatex } from "../../../core/InteractiveLaTeX";
 import { WebviewManager } from "../../../core/webview/WebviewManager";
 import { Cell, Grid, Row } from "./Grid";
 import { Options } from "./Options";
@@ -16,7 +16,7 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
     private grid: Grid;
     private options: Options;
 
-    constructor(node: ASTEnvironementNode, ilatex: InteractiveLaTeX, editor: vscode.TextEditor, webviewManager: WebviewManager) {
+    constructor(node: ASTEnvironementNode, ilatex: InteractiveLatex, editor: vscode.TextEditor, webviewManager: WebviewManager) {
         super(node, ilatex, editor, webviewManager);
 
         this.grid = Grid.extractFrom(this.astNode, editor.document);
@@ -331,7 +331,7 @@ export class TabularModelFactory implements VisualisationModelFactory {
             && node.name === "tabular";
     };
 
-    createModel(node: ASTNode, ilatex: InteractiveLaTeX, editor: vscode.TextEditor, webviewManager: WebviewManager): VisualisationModel {
+    createModel(node: ASTNode, ilatex: InteractiveLatex, editor: vscode.TextEditor, webviewManager: WebviewManager): VisualisationModel {
         return new TabularModel(node as ASTEnvironementNode, ilatex, editor, webviewManager);
     }
 }

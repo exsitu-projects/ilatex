@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { VisualisationModel, ModelID, SourceIndex, ModelIDGenerator, SourceIndexCounter } from "./VisualisationModel";
 import { NotifyVisualisationModelMessage } from "../../shared/messenger/messages";
 import { ASTNode } from "../ast/LatexASTNode";
-import { InteractiveLaTeX } from '../InteractiveLaTeX';
+import { InteractiveLatex } from '../InteractiveLaTeX';
 import { WebviewManager } from '../webview/WebviewManager';
 import { HtmlUtils } from '../../shared/utils/HtmlUtils';
 
@@ -17,14 +17,14 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
     readonly id: ModelID;
     readonly sourceIndex: SourceIndex;
 
-    protected readonly ilatex: InteractiveLaTeX;
+    protected readonly ilatex: InteractiveLatex;
     protected readonly editor: vscode.TextEditor;
     protected readonly webviewManager: WebviewManager;
 
     protected readonly astNode: T;
     private notificationTitlesToHandlers: Map<string, NotificationHandler>;
 
-    constructor(node: T, ilatex: InteractiveLaTeX, editor: vscode.TextEditor, webviewManager: WebviewManager) {
+    constructor(node: T, ilatex: InteractiveLatex, editor: vscode.TextEditor, webviewManager: WebviewManager) {
         this.id = ModelIDGenerator.getUniqueId();
         this.sourceIndex = SourceIndexCounter.getNextSourceIndex();
 

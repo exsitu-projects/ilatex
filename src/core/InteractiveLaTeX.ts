@@ -8,7 +8,7 @@ import { NotifyVisualisationModelMessage, WebviewToCoreMessageType } from '../sh
 import { TaskQueuer } from '../shared/tasks/TaskQueuer';
 import { TaskDebouncer } from '../shared/tasks/TaskDebouncer';
 
-export class InteractiveLaTeX {
+export class InteractiveLatex {
     private static readonly DELAY_BETWEEN_DOCUMENT_CHANGE_POLLING = 500; // ms
 
     private editor: vscode.TextEditor;
@@ -112,7 +112,7 @@ export class InteractiveLaTeX {
     private startObservingDocumentChanges(): void {
         const documentPath = this.document.uri.fsPath;
         const documentChangeDebouncer = new TaskDebouncer(
-            InteractiveLaTeX.DELAY_BETWEEN_DOCUMENT_CHANGE_POLLING
+            InteractiveLatex.DELAY_BETWEEN_DOCUMENT_CHANGE_POLLING
         );
 
         this.documentChangeWatcher = fs.watch(documentPath, (event, filename) => {

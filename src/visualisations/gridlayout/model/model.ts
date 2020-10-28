@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { VisualisationModelFactory, VisualisationModel } from "../../../core/visualisations/VisualisationModel";
 import { AbstractVisualisationModel, NotificationHandlerSpecification } from "../../../core/visualisations/AbstractVisualisationModel";
 import { ASTNode, ASTEnvironementNode, ASTNodeType, ASTParameterNode } from "../../../core/ast/LatexASTNode";
-import { InteractiveLaTeX } from "../../../core/InteractiveLaTeX";
+import { InteractiveLatex } from "../../../core/InteractiveLaTeX";
 import { WebviewManager } from "../../../core/webview/WebviewManager";
 import { Cell, Layout, Row } from "./Layout";
 import { HtmlUtils } from "../../../shared/utils/HtmlUtils";
@@ -20,7 +20,7 @@ class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
     private lastModifiedCellSize: string | null;
     private lastModifiedRowHeight: string | null;
 
-    constructor(node: ASTEnvironementNode, ilatex: InteractiveLaTeX, editor: vscode.TextEditor, webviewManager: WebviewManager) {
+    constructor(node: ASTEnvironementNode, ilatex: InteractiveLatex, editor: vscode.TextEditor, webviewManager: WebviewManager) {
         super(node, ilatex, editor, webviewManager);
 
         this.layout = Layout.extractFrom(node, editor.document);
@@ -206,7 +206,7 @@ export class GridLayoutModelFactory implements VisualisationModelFactory {
             && node.name === "gridlayout";
     };
 
-    createModel(node: ASTNode, ilatex: InteractiveLaTeX, editor: vscode.TextEditor, webviewManager: WebviewManager): VisualisationModel {
+    createModel(node: ASTNode, ilatex: InteractiveLatex, editor: vscode.TextEditor, webviewManager: WebviewManager): VisualisationModel {
         return new GridLayoutModel(node as ASTEnvironementNode, ilatex, editor, webviewManager);
     }
 }

@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { LatexAST } from "../ast/LatexAST";
 import { CodePatternDetector } from "../patterns/CodePatternDetector";
 import { WebviewManager } from '../webview/WebviewManager';
-import { InteractiveLaTeX } from '../InteractiveLaTeX';
+import { InteractiveLatex } from '../InteractiveLaTeX';
 import { VisualisationModelFactory, VisualisationModel, SourceIndex, ModelID, SourceIndexCounter } from './VisualisationModel';
 import { ASTNode } from '../ast/LatexASTNode';
 import { NotifyVisualisationModelMessage } from '../../shared/messenger/messages';
@@ -17,14 +17,14 @@ export class VisualisationModelManager {
         new GridLayoutModelFactory()
     ];
 
-    private ilatex: InteractiveLaTeX;
+    private ilatex: InteractiveLatex;
     private editor: vscode.TextEditor;
     private webviewManager: WebviewManager;
 
     private patternDetector: CodePatternDetector;
     private visualisationModels: VisualisationModel[];
 
-    constructor(ilatex: InteractiveLaTeX, editor: vscode.TextEditor, webviewManager: WebviewManager) {
+    constructor(ilatex: InteractiveLatex, editor: vscode.TextEditor, webviewManager: WebviewManager) {
         this.ilatex = ilatex;
         this.editor = editor;
         this.webviewManager = webviewManager;

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from "path";
-import { InteractiveLaTeX } from './InteractiveLaTeX';
+import { InteractiveLatex } from './InteractiveLaTeX';
 
 // TODO: there seems to be no way to watch when an editor is closed at the moment,
 // but any iLaTeX instance attached to an editor which has just been closed
@@ -8,7 +8,7 @@ import { InteractiveLaTeX } from './InteractiveLaTeX';
 
 // Map from VSCode text editors to iLaTeX instances
 // Note that there should be at most one instance per editor
-const editorsToILatexInstances = new Map<vscode.TextEditor, InteractiveLaTeX>();
+const editorsToILatexInstances = new Map<vscode.TextEditor, InteractiveLatex>();
 
 function createWebview(title: string): vscode.WebviewPanel {
 	return vscode.window.createWebviewPanel(
@@ -22,7 +22,7 @@ function createWebview(title: string): vscode.WebviewPanel {
 	);
 }
 
-function createILatexInstanceFor(editor: vscode.TextEditor): InteractiveLaTeX | null {
+function createILatexInstanceFor(editor: vscode.TextEditor): InteractiveLatex | null {
 	const document = editor.document;
 
 	// iLaTeX requires an open LaTeX document to work with
@@ -38,7 +38,7 @@ function createILatexInstanceFor(editor: vscode.TextEditor): InteractiveLaTeX | 
 
 	// Create and return a new instance of iLaTeX
 	// The editor is mapped to the instance of iLateX until it is destroyed
-	const iLatex = new InteractiveLaTeX(editor, webviewPanel);
+	const iLatex = new InteractiveLatex(editor, webviewPanel);
 	webviewPanel.onDidDispose(() => {
 		iLatex.onWebviewPanelClosed();
 		editorsToILatexInstances.delete(editor);

@@ -3,7 +3,7 @@ import * as path from "path";
 import { VisualisationModelFactory, VisualisationModel } from "../../../core/visualisations/VisualisationModel";
 import { AbstractVisualisationModel, NotificationHandlerSpecification } from "../../../core/visualisations/AbstractVisualisationModel";
 import { ASTNode, ASTCommandNode, ASTNodeType, ASTParameterListNode, ASTParameterNode } from "../../../core/ast/LatexASTNode";
-import { InteractiveLaTeX } from "../../../core/InteractiveLaTeX";
+import { InteractiveLatex } from "../../../core/InteractiveLaTeX";
 import { Options, OptionsExtractor } from "./OptionsExtractor";
 import { LatexLength } from "../../../shared/utils/LatexLength";
 import { WebviewManager } from "../../../core/webview/WebviewManager";
@@ -23,7 +23,7 @@ class IncludegraphicsModel extends AbstractVisualisationModel<ASTCommandNode> {
     private imagePath: string;
     private options: Options;
 
-    constructor(node: ASTCommandNode, ilatex: InteractiveLaTeX, editor: vscode.TextEditor, webviewManager: WebviewManager) {
+    constructor(node: ASTCommandNode, ilatex: InteractiveLatex, editor: vscode.TextEditor, webviewManager: WebviewManager) {
         super(node, ilatex, editor, webviewManager);
 
         this.hasOptionsNode = this.astNode.value.parameters[0].length === 1;
@@ -205,7 +205,7 @@ export class IncludegraphicsModelFactory implements VisualisationModelFactory {
             && node.name === "includegraphics";
     };
 
-    createModel(node: ASTNode, ilatex: InteractiveLaTeX, editor: vscode.TextEditor, webviewManager: WebviewManager): VisualisationModel {
+    createModel(node: ASTNode, ilatex: InteractiveLatex, editor: vscode.TextEditor, webviewManager: WebviewManager): VisualisationModel {
         return new IncludegraphicsModel(node as ASTCommandNode, ilatex, editor, webviewManager);
     }
 }
