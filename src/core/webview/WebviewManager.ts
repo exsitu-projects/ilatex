@@ -1,8 +1,8 @@
-import * as vscode from 'vscode';
-import { MessageHandler } from '../../shared/messenger/AbstractMessenger';
-import { CoreToWebviewMessageType, WebviewToCoreMessage, WebviewToCoreMessageType } from '../../shared/messenger/messages';
-import { ExtensionFileReader } from '../utils/FileReader';
-import { WebviewMessenger } from './WebviewMessenger';
+import * as vscode from "vscode";
+import { MessageHandler } from "../../shared/messenger/AbstractMessenger";
+import { CoreToWebviewMessageType, WebviewToCoreMessage, WebviewToCoreMessageType } from "../../shared/messenger/messages";
+import { ExtensionFileReader } from "../utils/FileReader";
+import { WebviewMessenger } from "./WebviewMessenger";
 
 
 export class WebviewManager {

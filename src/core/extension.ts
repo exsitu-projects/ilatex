@@ -1,6 +1,6 @@
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 import * as path from "path";
-import { InteractiveLatex } from './InteractiveLaTeX';
+import { InteractiveLatex } from "./InteractiveLaTeX";
 
 // TODO: there seems to be no way to watch when an editor is closed at the moment,
 // but any iLaTeX instance attached to an editor which has just been closed
@@ -48,7 +48,7 @@ function createILatexInstanceFor(editor: vscode.TextEditor): InteractiveLatex | 
 }
 
 export function activate(context: vscode.ExtensionContext): void {
-	let disposable = vscode.commands.registerCommand('ilatex.init', () => {
+	let disposable = vscode.commands.registerCommand("ilatex.init", () => {
 		const editor = vscode.window.activeTextEditor;
 
 		// iLaTeX cannot be initialised without a host editor (which should contain a LaTeX file)

@@ -1,10 +1,10 @@
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 import { VisualisationModel, ModelID, SourceIndex, ModelIDGenerator, SourceIndexCounter } from "./VisualisationModel";
 import { NotifyVisualisationModelMessage } from "../../shared/messenger/messages";
 import { ASTNode } from "../ast/LatexASTNode";
-import { InteractiveLatex } from '../InteractiveLaTeX';
-import { WebviewManager } from '../webview/WebviewManager';
-import { HtmlUtils } from '../../shared/utils/HtmlUtils';
+import { InteractiveLatex } from "../InteractiveLaTeX";
+import { WebviewManager } from "../webview/WebviewManager";
+import { HtmlUtils } from "../../shared/utils/HtmlUtils";
 
 export type NotificationHandler = (notification: any) => Promise<void>;
 export interface NotificationHandlerSpecification {

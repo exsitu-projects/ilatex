@@ -1,12 +1,12 @@
-import * as vscode from 'vscode';
-import * as fs from 'fs';
-import { LatexAST } from './ast/LatexAST';
-import { LatexASTFormatter } from './ast/visitors/LatexASTFormatter';
-import { WebviewManager } from './webview/WebviewManager';
-import { VisualisationModelManager } from './visualisations/VisualisationModelManager';
-import { NotifyVisualisationModelMessage, WebviewToCoreMessageType } from '../shared/messenger/messages';
-import { TaskQueuer } from '../shared/tasks/TaskQueuer';
-import { TaskDebouncer } from '../shared/tasks/TaskDebouncer';
+import * as vscode from "vscode";
+import * as fs from "fs";
+import { LatexAST } from "./ast/LatexAST";
+import { LatexASTFormatter } from "./ast/visitors/LatexASTFormatter";
+import { WebviewManager } from "./webview/WebviewManager";
+import { VisualisationModelManager } from "./visualisations/VisualisationModelManager";
+import { NotifyVisualisationModelMessage, WebviewToCoreMessageType } from "../shared/messenger/messages";
+import { TaskQueuer } from "../shared/tasks/TaskQueuer";
+import { TaskDebouncer } from "../shared/tasks/TaskDebouncer";
 
 export class InteractiveLatex {
     private static readonly DELAY_BETWEEN_DOCUMENT_CHANGE_POLLING = 500; // ms

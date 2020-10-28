@@ -82,10 +82,10 @@ class IncludegraphicsView extends AbstractVisualisationView {
         this.viewNode.innerHTML = contentNode.innerHTML;
 
         this.frameNode = this.viewNode.querySelector(".frame")! as HTMLElement;
-        this.ghostImageNode = this.frameNode.querySelector('.ghost')! as HTMLImageElement;
-        this.innerNode = this.frameNode.querySelector('.inner')! as HTMLElement;
-        this.imageNode = this.innerNode.querySelector('.image')! as HTMLImageElement;
-        this.resizeHandleNode = this.frameNode.querySelector('.resize')! as HTMLElement;
+        this.ghostImageNode = this.frameNode.querySelector(".ghost")! as HTMLImageElement;
+        this.innerNode = this.frameNode.querySelector(".inner")! as HTMLElement;
+        this.imageNode = this.innerNode.querySelector(".image")! as HTMLImageElement;
+        this.resizeHandleNode = this.frameNode.querySelector(".resize")! as HTMLElement;
 
         // Extract the options of the command
         this.initialIncludegraphicsOptions = {};

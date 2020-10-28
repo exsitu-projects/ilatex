@@ -1,4 +1,4 @@
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 
 import { AbstractMessenger } from "../../shared/messenger/AbstractMessenger";
 import { CoreToWebviewMessageType, WebviewToCoreMessageType, CoreToWebviewMessage } from "../../shared/messenger/messages";
