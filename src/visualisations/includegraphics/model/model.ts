@@ -106,18 +106,23 @@ class IncludegraphicsModel extends AbstractVisualisationModel<ASTCommandNode> {
                 handler: async payload => {
                     const newOptionsInPx = payload.newOptions;
                     const newOptions: Options = {};
-                    if (newOptionsInPx.width) { newOptions.width = new LatexLength(newOptionsInPx.width, "px"); }
-                    if (newOptionsInPx.height) { newOptions.height = new LatexLength(newOptionsInPx.height, "px"); }
-                    if (newOptionsInPx.scale) { newOptions.scale = newOptionsInPx.scale; }
-                    if (newOptionsInPx.clip) { newOptions.clip = newOptionsInPx.clip; }
-                    if (newOptionsInPx.trim) {
-                        newOptions.trim = [
-                            new LatexLength(newOptionsInPx.trim.left, "px"),
-                            new LatexLength(newOptionsInPx.trim.bottom, "px"),
-                            new LatexLength(newOptionsInPx.trim.right, "px"),
-                            new LatexLength(newOptionsInPx.trim.top, "px"),
-                        ];
-                    ;}
+
+                    function setOptionIfDefined<K extends keyof Options>(key: K, value: Options[K]): void {
+                        if (newOptionsInPx[key] !== undefined) {
+                            newOptions[key] = value;
+                        }
+                    }
+
+                    setOptionIfDefined("width", new LatexLength(newOptionsInPx.width, "px"));
+                    setOptionIfDefined("height", new LatexLength(newOptionsInPx.height, "px"));
+                    setOptionIfDefined("scale", newOptionsInPx.scale);
+                    setOptionIfDefined("clip", newOptionsInPx.clip);
+                    setOptionIfDefined("trim", newOptionsInPx.trim && [
+                        new LatexLength(newOptionsInPx.trim.left, "px"),
+                        new LatexLength(newOptionsInPx.trim.bottom, "px"),
+                        new LatexLength(newOptionsInPx.trim.right, "px"),
+                        new LatexLength(newOptionsInPx.trim.top, "px"),
+                    ]);
 
                     await this.updateOptions(newOptions);
                 }

@@ -408,10 +408,12 @@ class IncludegraphicsView extends AbstractVisualisationView {
         }
 
         // Set the options which must be set and return the new options object
-        newOptions.width = width;
-        newOptions.height = height;
+        newOptions.width = Math.max(0, width);
+        newOptions.height = Math.max(0, height);
+        const imageAreaIsNotZero = (newOptions.width > 0) && (newOptions.height > 0);
 
-        if (trim.left !== 0 || trim.bottom !== 0 || trim.right !== 0 || trim.top !== 0) {
+        if (imageAreaIsNotZero
+        &&  (trim.left !== 0 || trim.bottom !== 0 || trim.right !== 0 || trim.top !== 0)) {
             newOptions.trim = trim;
 
             // Scale the trim values to make them independant from the scale of the visualised image
