@@ -135,10 +135,12 @@ class IncludegraphicsModel extends AbstractVisualisationModel<ASTCommandNode> {
         const allOptionsAsStrings = [];
         if (newOptions.width) { allOptionsAsStrings.push(`width=${newOptions.width.px}px`); }
         if (newOptions.height) { allOptionsAsStrings.push(`height=${newOptions.height.px}px`); }
-        if (newOptions.trim) { 
-            allOptionsAsStrings.push(`trim=${newOptions.trim.reduce(
-                (value, length) => `${value} ${length.px}`, "")
-            }`);
+        if (newOptions.trim) {
+            const trimValuesInPxAsStrings = newOptions.trim
+                .map(value => `${value.px}px`)
+                .join(" ");
+
+            allOptionsAsStrings.push(`trim=${trimValuesInPxAsStrings}`);
         }
         if (newOptions.clip) { allOptionsAsStrings.push(`clip`); }
 
