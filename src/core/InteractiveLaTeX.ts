@@ -73,7 +73,7 @@ export class InteractiveLaTeX {
             WebviewToCoreMessageType.NotifyVisualisationModel,
             async (message) => {
                 notificationDispatchQueuer.add(async () => {
-                    this.visualisationModelManager.dispatchNotification(
+                    await this.visualisationModelManager.dispatchNotification(
                         message as NotifyVisualisationModelMessage
                     );
                 });
