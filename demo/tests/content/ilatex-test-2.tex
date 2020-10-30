@@ -1,0 +1,34 @@
+This text should appear on the second page.
+
+    % A larger picture on the second page
+    \begin{figure}
+        \centering
+        \begin{subfigure}[b]{.5\textwidth}
+            \centering
+            \iincludegraphics[width=90bp]{img/cat.jpg}
+            \caption{Picture of a cat.}
+        \end{subfigure}%
+        \begin{subfigure}[b]{.5\textwidth}
+            \centering
+            \iincludegraphics[width=4cm]{img/cat-drawing.png}
+            \caption{Drawing of a cat.}
+        \end{subfigure}
+        \caption{Two kinds of images in a single picture.}
+        \label{fig:cats}
+    \end{figure}
+
+    \begin{figure}
+        \centering
+        \begin{subfigure}[b]{.5\textwidth}
+            \centering
+            \iincludegraphics[width=6cm]{img/cat.jpg}
+            \caption{Normal picture.}
+        \end{subfigure}%
+        \begin{subfigure}[b]{.5\textwidth}
+            \centering
+            \iincludegraphics[width=142px, height=142px, trim=64px 103px 88px 49px, clip]{img/cat.jpg}
+            \caption{Zoomed \& trimmed picture.}
+        \end{subfigure}
+        \caption{Some more cats.}
+        \label{fig:more-cats}
+    \end{figure}
