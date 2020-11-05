@@ -112,7 +112,7 @@ export class PDFPageRenderer {
         this.annotations = await this.page.getAnnotations();
         this.visualisationAnnotations = this.annotations.filter(annotation => {
             return annotation.annotationType === 20 // tooltip
-                && annotation.alternativeText.startsWith("ilatex-visualisation");
+                && annotation.alternativeText.startsWith("ilatex-code-mapping-id");
         });
     }
 
@@ -120,14 +120,14 @@ export class PDFPageRenderer {
     // to retrieve the correct absolute coordinates
     createAnnotationMasks(): void {
         for (let annotation of this.visualisationAnnotations) {
-            // Extract the source index of the visualisation
-            const [_, sourceIndexStr] = annotation.alternativeText.match(/[^\d]+(\d+)/);
-            const sourceIndex = parseInt(sourceIndexStr);
+            // Extract the code mapping ID from the visualisation
+            const [_, codeMappingIdString] = annotation.alternativeText.match(/[^\d]+(\d+)/);
+            const codeMappingId = parseInt(codeMappingIdString);
 
             const maskNode = document.createElement("div");
             maskNode.classList.add("annotation-mask");
             maskNode.setAttribute("data-page-number", this.pageNumber.toString());
-            maskNode.setAttribute("data-source-index", sourceIndexStr);
+            maskNode.setAttribute("data-code-mapping-id", codeMappingIdString);
 
             // Set the position and the size of the mask
             const maskCoordinates = this.convertPdfRectToAbsoluteWebpageRect(annotation.rect);
@@ -139,7 +139,7 @@ export class PDFPageRenderer {
 
             // Handle clicks on this mask
             maskNode.addEventListener("click", event => {
-                this.handleAnnotationMaskClick(sourceIndex, maskCoordinates);
+                this.handleAnnotationMaskClick(codeMappingId, maskCoordinates);
             });
 
             this.visualisationAnnotationMaskNodes.push(maskNode);
@@ -256,12 +256,12 @@ export class PDFPageRenderer {
         // this.drawAnnotationFrames(this.visualisationAnnotations);
     }
 
-    private handleAnnotationMaskClick(sourceIndex: number, maskCoordinates: AnnotationMaskCoordinates): void {
+    private handleAnnotationMaskClick(codeMappingId: number, maskCoordinates: AnnotationMaskCoordinates): void {
         const event = new CustomEvent<VisualisationDisplayRequest>(
             VisualisationViewManager.REQUEST_VISUALISATION_DISPLAY_EVENT,
             {
                 detail: {
-                    sourceIndex: sourceIndex,
+                    codeMappingId: codeMappingId,
                     annotationMaskCoordinates: maskCoordinates,
                     pdfPageDetail: {
                         pageNumber: this.pageNumber,

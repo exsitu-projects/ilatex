@@ -1,10 +1,9 @@
 import * as vscode from "vscode";
-import { VisualisationModel, ModelID, SourceIndex, ModelIDGenerator, SourceIndexCounter } from "./VisualisationModel";
+import { VisualisationModel, ModelUID, ModelIDGenerator, VisualisationModelUtilities } from "./VisualisationModel";
 import { NotifyVisualisationModelMessage } from "../../shared/messenger/messages";
 import { ASTNode } from "../ast/LatexASTNode";
-import { InteractiveLatex } from "../InteractiveLaTeX";
-import { WebviewManager } from "../webview/WebviewManager";
 import { HtmlUtils } from "../../shared/utils/HtmlUtils";
+import { CodeMapping, CodeMappingID } from "../mappings/CodeMapping";
 
 export type NotificationHandler = (notification: any) => Promise<void>;
 export interface NotificationHandlerSpecification {
@@ -14,28 +13,48 @@ export interface NotificationHandlerSpecification {
 
 export abstract class AbstractVisualisationModel<T extends ASTNode> implements VisualisationModel {
     abstract readonly visualisationName: string;
-    readonly id: ModelID;
-    readonly sourceIndex: SourceIndex;
-
-    protected readonly ilatex: InteractiveLatex;
-    protected readonly editor: vscode.TextEditor;
-    protected readonly webviewManager: WebviewManager;
+    readonly uid: ModelUID;
 
     protected readonly astNode: T;
+    protected readonly codeMapping: CodeMapping;
+    protected readonly utilities: VisualisationModelUtilities;
+
     private notificationTitlesToHandlers: Map<string, NotificationHandler>;
 
-    constructor(node: T, ilatex: InteractiveLatex, editor: vscode.TextEditor, webviewManager: WebviewManager) {
-        this.id = ModelIDGenerator.getUniqueId();
-        this.sourceIndex = SourceIndexCounter.getNextSourceIndex();
-
-        this.ilatex = ilatex;
-        this.editor = editor;
-        this.webviewManager = webviewManager;
+    constructor(node: T, codeMapping: CodeMapping, utilities: VisualisationModelUtilities) {
+        this.uid = ModelIDGenerator.getUniqueId();
 
         this.astNode = node;
+        this.codeMapping = codeMapping;
+        this.utilities = utilities;
+
         this.notificationTitlesToHandlers = new Map(
             this.createNotificationHandlerSpecifications()
                 .map(specification  => [specification.title, specification.handler])
+        );
+    }
+
+    get codeMappingId(): CodeMappingID {
+        return this.codeMapping.id;
+    }
+
+    private async saveMappedSourceFile(): Promise<void> {
+        const sourceFile = await this.codeMapping.sourceFile;
+        await sourceFile.saveDocument();
+    }
+
+    private async revealCodeInEditor(): Promise<void> {
+        const editor = await this.codeMapping.sourceFile.getOrDisplayInEditor();
+
+        // Select the code
+        const startPosition = new vscode.Position(this.astNode.start.line - 1, this.astNode.start.column - 1);
+        const endPosition = new vscode.Position(this.astNode.end.line - 1, this.astNode.end.column - 1);
+        editor.selections = [new vscode.Selection(startPosition, endPosition)];
+
+        // If the selected range is not visible, scroll to the selection
+        editor.revealRange(
+            new vscode.Range(startPosition, endPosition),
+            vscode.TextEditorRevealType.InCenterIfOutsideViewport
         );
     }
 
@@ -44,16 +63,13 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
             {
                 title: "reveal-code",
                 handler: async notifiction => {
-                    // Select the code
-                    const startPosition = new vscode.Position(this.astNode.start.line - 1, this.astNode.start.column - 1);
-                    const endPosition = new vscode.Position(this.astNode.end.line - 1, this.astNode.end.column - 1);
-                    this.editor.selections = [new vscode.Selection(startPosition, endPosition)];
-
-                    // If the selected range is not visible, scroll to the selection
-                    this.editor.revealRange(
-                        new vscode.Range(startPosition, endPosition),
-                        vscode.TextEditorRevealType.InCenterIfOutsideViewport
-                    );
+                    this.revealCodeInEditor();
+                }
+            },
+            {
+                title: "save-source-document",
+                handler: async notifiction => {
+                    this.saveMappedSourceFile();
                 }
             }
         ];
@@ -63,15 +79,15 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
         return {
             "class": "visualisation",
             "data-name": this.visualisationName,
-            "data-id": this.id.toString(),
-            "data-source-index": this.sourceIndex.toString(),
+            "data-uid": this.uid.toString(),
+            "data-code-mapping-id": this.codeMapping.id.toString(),
             "data-code-start-position": `${this.astNode.start.line};${this.astNode.start.column}`,
             "data-code-end-position": `${this.astNode.end.line};${this.astNode.end.column}`
         };
     }
 
     protected requestNewParsing(): void {
-        this.ilatex.handleVisualisationParsingRequest();
+        this.utilities.requestNewParsingOf(this.codeMapping.sourceFile);
     }
 
     async handleViewNotification(message: NotifyVisualisationModelMessage): Promise<void> {

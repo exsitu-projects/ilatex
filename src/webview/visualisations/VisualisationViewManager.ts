@@ -8,7 +8,7 @@ import { TabularViewFactory } from "../../visualisations/tabular/view/view";
 import { GridLayoutViewFactory } from "../../visualisations/gridlayout/view/view";
 
 export interface VisualisationDisplayRequest {
-    sourceIndex: number;
+    codeMappingId: number;
     annotationMaskCoordinates: AnnotationMaskCoordinates;
     pdfPageDetail: {
         pageNumber: number;
@@ -52,16 +52,16 @@ export class VisualisationViewManager {
         this.startHandlingVisualisationContentUpdates();
     }
 
-    private getVisualisationContentNode(sourceIndex: number): HTMLElement | null {
+    private getVisualisationContentNodeWith(codeMappingId: number): HTMLElement | null {
         return this.visualisationContentContainerNode
-                .querySelector(`.visualisation[data-source-index="${sourceIndex}"]`);
+                .querySelector(`.visualisation[data-code-mapping-id="${codeMappingId}"]`);
     }
 
     private displayVisualisation(request: VisualisationDisplayRequest): void {
-        // Get the name and the content of the visualisation with the given source index
-        const contentNode = this.getVisualisationContentNode(request.sourceIndex);
+        // Get the name and the content of the visualisation with the given code mapping ID
+        const contentNode = this.getVisualisationContentNodeWith(request.codeMappingId);
         if (!contentNode) {
-            console.error(`There is no visualisation content for the given source index (${request.sourceIndex}).`);
+            console.error(`There is no visualisation content for the given code mapping ID (${request.codeMappingId}).`);
             return;
         }
 
@@ -84,14 +84,12 @@ export class VisualisationViewManager {
         });
 
         const popup = new VisualisationPopup(view, request.annotationMaskCoordinates, () => {
-            // Reset all the references to the hidden visualisation 
+            // When the popup is closed, save the source document and
+            // reset all the references to the now hidden visualisation
+            this.currentlyDisplayedVisualisationView!.saveSourceDocument();
+
             this.currentlyDisplayedVisualisationView = null;
             this.currentlyDisplayedVisualisationPopup = null;
-
-            // By default, the document is saved when the popup is closed
-            this.messenger.sendMessage({
-                type: WebviewToCoreMessageType.SaveDocument
-            });
         });
 
         this.currentlyDisplayedVisualisationView = view;
@@ -136,9 +134,9 @@ export class VisualisationViewManager {
         // ensure it is still displayed and forward it the message (so it can update itself)
         if (this.currentlyDisplayedVisualisationView
         && message.requestedByVisualisation) {
-            const sourceIndex = this.currentlyDisplayedVisualisationView.sourceIndex;
+            const codeMappingId = this.currentlyDisplayedVisualisationView.codeMappingId;
             const newContentNode = this.visualisationContentContainerNode
-                .querySelector(`.visualisation[data-source-index="${sourceIndex}"]`) as HTMLElement;
+                .querySelector(`.visualisation[data-code-mapping-id="${codeMappingId}"]`) as HTMLElement;
 
             if (newContentNode) {
                 this.currentlyDisplayedVisualisationView.updateWith(newContentNode);

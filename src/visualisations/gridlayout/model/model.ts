@@ -1,11 +1,11 @@
 import * as vscode from "vscode";
-import { VisualisationModelFactory, VisualisationModel } from "../../../core/visualisations/VisualisationModel";
+import { VisualisationModelFactory, VisualisationModel, VisualisationModelUtilities } from "../../../core/visualisations/VisualisationModel";
 import { AbstractVisualisationModel, NotificationHandlerSpecification } from "../../../core/visualisations/AbstractVisualisationModel";
 import { ASTNode, ASTEnvironementNode, ASTNodeType, ASTParameterNode } from "../../../core/ast/LatexASTNode";
-import { InteractiveLatex } from "../../../core/InteractiveLaTeX";
-import { WebviewManager } from "../../../core/webview/WebviewManager";
 import { Cell, Layout, Row } from "./Layout";
 import { HtmlUtils } from "../../../shared/utils/HtmlUtils";
+import { SourceFile } from "../../../core/mappings/SourceFile";
+import { CodeMapping } from "../../../core/mappings/CodeMapping";
 
 
 class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
@@ -20,10 +20,10 @@ class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
     private lastModifiedCellSize: string | null;
     private lastModifiedRowHeight: string | null;
 
-    constructor(node: ASTEnvironementNode, ilatex: InteractiveLatex, editor: vscode.TextEditor, webviewManager: WebviewManager) {
-        super(node, ilatex, editor, webviewManager);
+    constructor(node: ASTEnvironementNode, mapping: CodeMapping, utilities: VisualisationModelUtilities) {
+        super(node, mapping, utilities);
 
-        this.layout = Layout.extractFrom(node, editor.document);
+        this.layout = Layout.extractFrom(node, mapping.sourceFile.document);
         this.lastModifiedCellSize = null;
         this.lastModifiedRowHeight = null;
     }
@@ -38,19 +38,22 @@ class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
     }
 
     private async selectCell(cell: Cell): Promise<void> {
+        const editor = await this.codeMapping.sourceFile.getOrDisplayInEditor();
+
         // Select the code
         const startPosition = new vscode.Position(cell.start.line - 1, cell.start.column - 1);
         const endPosition = new vscode.Position(cell.end.line - 1, cell.end.column - 1);
-        this.editor.selections = [new vscode.Selection(startPosition, endPosition)];
+        editor.selections = [new vscode.Selection(startPosition, endPosition)];
 
         // If the selected range is not visible, scroll to the selection
-        this.editor.revealRange(
+        editor.revealRange(
             new vscode.Range(startPosition, endPosition),
             vscode.TextEditorRevealType.InCenterIfOutsideViewport
         );
     }
 
     private async resizeCell(cell: Cell, newRelativeSize: number): Promise<void> {
+        const editor = await this.codeMapping.sourceFile.getOrDisplayInEditor();
         const cellSizeParameterNode = cell.astNode.value.parameters[0][0] as ASTParameterNode;
 
         // Round the number of decimals of the new size
@@ -79,12 +82,13 @@ class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
         this.lastModifiedCellSize = newSizeAsString;
 
         // Actually perform the edit
-        await this.editor.edit(editBuilder => {
+        await editor.edit(editBuilder => {
             editBuilder.replace(rangeToEdit, newSizeAsString);
         });
     }
 
     private async resizeRow(row: Row, newHeight: number): Promise<void> {
+        const editor = await this.codeMapping.sourceFile.getOrDisplayInEditor();
         const rowHeightParameterNode = row.astNode.value.parameters[0][0] as ASTParameterNode;
 
         // Round the new height and append the right suffix
@@ -109,7 +113,7 @@ class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
         this.lastModifiedRowHeight = newHeightAsString;
 
         // Actually perform the edit
-        await this.editor.edit(editBuilder => {
+        await editor.edit(editBuilder => {
             editBuilder.replace(rangeToEdit, newHeightAsString);
         });
     }
@@ -206,7 +210,7 @@ export class GridLayoutModelFactory implements VisualisationModelFactory {
             && node.name === "gridlayout";
     };
 
-    createModel(node: ASTNode, ilatex: InteractiveLatex, editor: vscode.TextEditor, webviewManager: WebviewManager): VisualisationModel {
-        return new GridLayoutModel(node as ASTEnvironementNode, ilatex, editor, webviewManager);
+    createModel(node: ASTNode, mapping: CodeMapping, utilities: VisualisationModelUtilities): VisualisationModel {
+        return new GridLayoutModel(node as ASTEnvironementNode, mapping, utilities);
     }
 }

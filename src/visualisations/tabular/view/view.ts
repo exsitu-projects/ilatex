@@ -1,6 +1,5 @@
 import { AbstractVisualisationView } from "../../../webview/visualisations/AbstractVisualisationView";
 import { VisualisationViewFactory, VisualisationView, VisualisationViewInstantiationContext } from "../../../webview/visualisations/VisualisationView";
-import { Messenger } from "../../../webview/Messenger";
 import { WebviewToCoreMessageType } from "../../../shared/messenger/messages";
 
 // Since Rollup + the TypeScript plugin seem to require ES6/ESNext to load modules
@@ -188,7 +187,7 @@ class TabularView extends AbstractVisualisationView {
     private selectDocumentCellContent(cellLocation: CellLocation): void {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
-            visualisationId: this.visualisationId,
+            visualisationUid: this.visualisationUid,
             title: "select-cell-code",
             notification: {
                 columnIndex: cellLocation.columnIndex,
@@ -200,7 +199,7 @@ class TabularView extends AbstractVisualisationView {
     private setDocumentCellContent(cellLocation: CellLocation, newContent: string): void {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
-            visualisationId: this.visualisationId,
+            visualisationUid: this.visualisationUid,
             title: "set-cell-content",
             notification: {
                 columnIndex: cellLocation.columnIndex,
@@ -213,7 +212,7 @@ class TabularView extends AbstractVisualisationView {
     private moveDocumentRow(oldRowIndex: number, newRowIndex: number): void {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
-            visualisationId: this.visualisationId,
+            visualisationUid: this.visualisationUid,
             title: "move-row",
             notification: {
                 oldRowIndex: oldRowIndex,
@@ -225,7 +224,7 @@ class TabularView extends AbstractVisualisationView {
     private moveDocumentColumn(oldColumnIndex: number, newColumnIndex: number): void {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
-            visualisationId: this.visualisationId,
+            visualisationUid: this.visualisationUid,
             title: "move-column",
             notification: {
                 oldColumnIndex: oldColumnIndex,

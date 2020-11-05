@@ -1,14 +1,13 @@
-import * as vscode from "vscode";
-import { LatexAST } from "../ast/LatexAST";
 import { CodePatternDetector } from "../patterns/CodePatternDetector";
-import { WebviewManager } from "../webview/WebviewManager";
 import { InteractiveLatex } from "../InteractiveLaTeX";
-import { VisualisationModelFactory, VisualisationModel, SourceIndex, ModelID, SourceIndexCounter } from "./VisualisationModel";
+import { VisualisationModelFactory, VisualisationModel, ModelUID } from "./VisualisationModel";
 import { ASTNode } from "../ast/LatexASTNode";
 import { NotifyVisualisationModelMessage } from "../../shared/messenger/messages";
 import { IncludegraphicsModelFactory } from "../../visualisations/includegraphics/model/model";
 import { TabularModelFactory } from "../../visualisations/tabular/model/model";
 import { GridLayoutModelFactory } from "../../visualisations/gridlayout/model/model";
+import { SourceFile } from "../mappings/SourceFile";
+import { CodeMappingID } from "../mappings/CodeMapping";
 
 export class VisualisationModelManager {
     private static readonly AVAILABLE_VISUALISATION_FACTORIES: VisualisationModelFactory[] = [
@@ -18,77 +17,147 @@ export class VisualisationModelManager {
     ];
 
     private ilatex: InteractiveLatex;
-    private editor: vscode.TextEditor;
-    private webviewManager: WebviewManager;
 
     private patternDetector: CodePatternDetector;
+    private currentVisitedSourceFile: SourceFile | null;
     private visualisationModels: VisualisationModel[];
 
-    constructor(ilatex: InteractiveLatex, editor: vscode.TextEditor, webviewManager: WebviewManager) {
+
+    constructor(ilatex: InteractiveLatex) {
         this.ilatex = ilatex;
-        this.editor = editor;
-        this.webviewManager = webviewManager;
         
         this.patternDetector = new CodePatternDetector();
+        this.currentVisitedSourceFile = null;
         this.visualisationModels = [];
 
         this.initPatternDetector();
     }
 
+    get visualisationViewsContent(): string {
+        return this.visualisationModels
+            .map(visualisation => visualisation.createViewContent())
+            .join("\n");
+    }
+
+    dispose(): void {
+
+    }
+
     private initPatternDetector(): void {
+        const utilities = {
+            mainSourceFileUri: this.ilatex.mainSourceFileUri,
+
+            createWebviewSafeUri: this.ilatex.webviewManager.adaptURI
+                .bind(this.ilatex.webviewManager),
+
+            requestNewParsingOf: async (sourceFile: SourceFile) => {
+                // TODO: only parse and extract new vis. models from the given source file?
+                await this.ilatex.codeMappingManager.updateMappingsFromLatexGeneratedFile();
+                this.extractNewModelsAndUpdateWebview(true);
+            }
+        };
+
+        // const absolutePathAndLineNumberToCount: Map<string,number> = new Map();
+        function combinePathAndLineNumber(path: string, lineNumber: number): string {
+            return `${path}:${lineNumber}`;
+        }
+        
         this.patternDetector.patterns.push(
             ...VisualisationModelManager.AVAILABLE_VISUALISATION_FACTORIES
                 .map(factory => {
                     return {
                         matches: factory.codePatternMatcher,
-                        onMatch: (node: ASTNode) => this.visualisationModels.push(
-                            factory.createModel(node, this.ilatex, this.editor, this.webviewManager)
-                        )
+                        onMatch: (node: ASTNode) => {
+                            const mappings = this.ilatex.codeMappingManager
+                                .getMappingsWith(
+                                    factory.visualisationName,
+                                    this.currentVisitedSourceFile!.absolutePath,
+                                    node.start.line
+                                );
+
+                            const combinedPathAndLineNumber = combinePathAndLineNumber(
+                                this.currentVisitedSourceFile!.absolutePath,
+                                node.start.line
+                            );
+
+                            // TODO: handle the case in which multiple matches are linked
+                            // to mappings pointing to the same file and the same line
+
+                            // if (!absolutePathAndLineNumberToCount.has(combinePathAndLineNumber)) {
+                            //     absolutePathAndLineNumberToCount.set(combinePathAndLineNumber, 0);
+                            // }
+
+                            // let nbModelsWithMappingAtSameLocation = 0;
+                            // if (mappings.length > 1) {
+                            //     nbModelsWithMappingAtSameLocation =
+                            //         absolutePathAndLineNumberToCount.get(
+                                        
+                            //         ) ?? 0;
+                            // }
+
+                            // .
+
+                            if (mappings.length === 0) {
+                                console.error(`There is no mapping for the code pattern at ${combinePathAndLineNumber}`);
+                                return;
+                            }
+
+                            this.visualisationModels.push(
+                                factory.createModel(
+                                    node,
+                                    // mappings.slice(nbModelsWithMappingAtSameLocation),
+                                    mappings[0],
+                                    utilities)
+                            );
+                        }
                     };
                 })
         );
     }
 
-    private extractNewVisualisationModelsFrom(ast: LatexAST): void {
-        this.visualisationModels = [];
-        ast.visitWith(this.patternDetector);
-    }
-
-    private getModelWithId(id: ModelID): VisualisationModel | null {
+    private getModelWithUid(uid: ModelUID): VisualisationModel | null {
         const result = this.visualisationModels
-            .find(model => model.id === id);
+            .find(model => model.uid === uid);
 
         return result ?? null;
     }
 
-    private getModelWithSourceIndex(sourceIndex: SourceIndex): VisualisationModel | null {
+    private getModelWithCodeMappingId(id: CodeMappingID): VisualisationModel | null {
         const result = this.visualisationModels
-            .find(model => model.sourceIndex === sourceIndex);
+            .find(model => model.codeMappingId === id);
 
         return result ?? null;
     }
 
     async dispatchNotification(message: NotifyVisualisationModelMessage): Promise<void> {
-        const model = this.getModelWithId(message.visualisationId);
+        const model = this.getModelWithUid(message.visualisationUid);
         if (!model) {
-            console.error(`The notification cannot be dispatched: there is no model with ID "${message.visualisationId}".`);
+            console.error(`The notification cannot be dispatched: there is no model with UID "${message.visualisationUid}".`);
             return;
         }
 
         return model.handleViewNotification(message);
     }
 
-    createAllViewContent(): string {
-        return this.visualisationModels
-            .map(visualisation => visualisation.createViewContent())
-            .join("\n");
+    extractNewModels(): void {
+        this.visualisationModels = [];
+        
+        const sourceFiles = this.ilatex.codeMappingManager.allSourceFiles;
+        for (let sourceFile of sourceFiles) {
+            this.currentVisitedSourceFile = sourceFile;
+            sourceFile.ast.visitWith(this.patternDetector);
+        }
     }
 
-    updateModels(ast: LatexAST): void {
-        // Reset the source index counter before generating new visualisations
-        // to make them use fresh values for the relative order encoded by source indices
-        SourceIndexCounter.reset();
+    updateWebviewVisualisations(requestedByVisualisation: boolean = false): void {
+        this.ilatex.webviewManager.sendNewVisualisationViewContent(
+            this.visualisationViewsContent,
+            requestedByVisualisation
+        );
+    }
 
-        this.extractNewVisualisationModelsFrom(ast);
+    extractNewModelsAndUpdateWebview(requestedByVisualisation: boolean = false): void {
+        this.extractNewModels();
+        this.updateWebviewVisualisations(requestedByVisualisation);
     }
 }

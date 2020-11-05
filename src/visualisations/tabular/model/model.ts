@@ -1,12 +1,11 @@
 import * as vscode from "vscode";
-import { VisualisationModelFactory, VisualisationModel } from "../../../core/visualisations/VisualisationModel";
+import { VisualisationModelFactory, VisualisationModel, VisualisationModelUtilities } from "../../../core/visualisations/VisualisationModel";
 import { AbstractVisualisationModel, NotificationHandlerSpecification } from "../../../core/visualisations/AbstractVisualisationModel";
 import { ASTNode, ASTEnvironementNode, ASTNodeType, ASTParameterNode, ASTLatexNode } from "../../../core/ast/LatexASTNode";
-import { InteractiveLatex } from "../../../core/InteractiveLaTeX";
-import { WebviewManager } from "../../../core/webview/WebviewManager";
 import { Cell, Grid, Row } from "./Grid";
 import { Options } from "./Options";
 import { HtmlUtils } from "../../../shared/utils/HtmlUtils";
+import { CodeMapping } from "../../../core/mappings/CodeMapping";
 
 
 class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
@@ -16,10 +15,10 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
     private grid: Grid;
     private options: Options;
 
-    constructor(node: ASTEnvironementNode, ilatex: InteractiveLatex, editor: vscode.TextEditor, webviewManager: WebviewManager) {
-        super(node, ilatex, editor, webviewManager);
+    constructor(node: ASTEnvironementNode, mapping: CodeMapping, utilities: VisualisationModelUtilities) {
+        super(node, mapping, utilities);
 
-        this.grid = Grid.extractFrom(this.astNode, editor.document);
+        this.grid = Grid.extractFrom(this.astNode, mapping.sourceFile.document);
         this.options = Options.extractFrom(this.astNode);
 
         // console.log("==== GRID EXTRACTED ====");
@@ -31,25 +30,29 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
     }
 
     private async selectCellContent(cell: Cell): Promise<void> {
+        const editor = await this.codeMapping.sourceFile.getOrDisplayInEditor();
+
         // Select the code
         const startPosition = new vscode.Position(cell.contentStart.line - 1, cell.contentStart.column - 1);
         const endPosition = new vscode.Position(cell.contentEnd.line - 1, cell.contentEnd.column - 1);
-        this.editor.selections = [new vscode.Selection(startPosition, endPosition)];
+        editor.selections = [new vscode.Selection(startPosition, endPosition)];
 
         // If the selected range is not visible, scroll to the selection
-        this.editor.revealRange(
+        editor.revealRange(
             new vscode.Range(startPosition, endPosition),
             vscode.TextEditorRevealType.InCenterIfOutsideViewport
         );
     }
 
     private async replaceCellContent(cell: Cell, newContent: string): Promise<void> {
+        const editor = await this.codeMapping.sourceFile.getOrDisplayInEditor();
+        
         const rangeToEdit = new vscode.Range(
             new vscode.Position(cell.contentStart.line - 1, cell.contentStart.column - 1),
             new vscode.Position(cell.contentEnd.line - 1, cell.contentEnd.column - 1)
         );
 
-        await this.editor.edit(editBuilder => {
+        await editor.edit(editBuilder => {
             editBuilder.replace(rangeToEdit, newContent);
         });
     }
@@ -328,10 +331,10 @@ export class TabularModelFactory implements VisualisationModelFactory {
     readonly visualisationName = TabularModel.visualisationName;
     readonly codePatternMatcher = (node: ASTNode) => {
         return node.type === ASTNodeType.Environement
-            && node.name === "tabular";
+            && node.name === "itabular";
     };
 
-    createModel(node: ASTNode, ilatex: InteractiveLatex, editor: vscode.TextEditor, webviewManager: WebviewManager): VisualisationModel {
-        return new TabularModel(node as ASTEnvironementNode, ilatex, editor, webviewManager);
+    createModel(node: ASTNode, mapping: CodeMapping, utilities: VisualisationModelUtilities): VisualisationModel {
+        return new TabularModel(node as ASTEnvironementNode, mapping, utilities);
     }
 }

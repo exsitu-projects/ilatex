@@ -220,7 +220,7 @@ class GridLayoutView extends AbstractVisualisationView {
     private selectCellContentOf(cellNode: HTMLElement) {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
-            visualisationId: this.visualisationId,
+            visualisationUid: this.visualisationUid,
             title: "select-cell-content",
             notification: this.getCellPositionInGridFromNode(cellNode)
         });
@@ -234,7 +234,7 @@ class GridLayoutView extends AbstractVisualisationView {
         const { rowIndex, cellIndex } = this.getCellPositionInGridFromNode(cellNode);
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
-            visualisationId: this.visualisationId,
+            visualisationUid: this.visualisationUid,
             title: "resize-cell",
             notification: {
                 rowIndex: rowIndex,
@@ -253,7 +253,7 @@ class GridLayoutView extends AbstractVisualisationView {
         const { rowIndex } = this.getRowPositionInGridFromNode(rowNode);
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
-            visualisationId: this.visualisationId,
+            visualisationUid: this.visualisationUid,
             title: "resize-row",
             notification: {
                 rowIndex: rowIndex,

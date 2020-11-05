@@ -1,12 +1,11 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { VisualisationModelFactory, VisualisationModel } from "../../../core/visualisations/VisualisationModel";
+import { VisualisationModelFactory, VisualisationModel, VisualisationModelUtilities } from "../../../core/visualisations/VisualisationModel";
 import { AbstractVisualisationModel, NotificationHandlerSpecification } from "../../../core/visualisations/AbstractVisualisationModel";
 import { ASTNode, ASTCommandNode, ASTNodeType, ASTParameterListNode, ASTParameterNode } from "../../../core/ast/LatexASTNode";
-import { InteractiveLatex } from "../../../core/InteractiveLaTeX";
 import { Options, OptionsExtractor } from "./OptionsExtractor";
 import { LatexLength } from "../../../shared/utils/LatexLength";
-import { WebviewManager } from "../../../core/webview/WebviewManager";
+import { CodeMapping } from "../../../core/mappings/CodeMapping";
 
 
 class IncludegraphicsModel extends AbstractVisualisationModel<ASTCommandNode> {
@@ -23,8 +22,8 @@ class IncludegraphicsModel extends AbstractVisualisationModel<ASTCommandNode> {
     private imagePath: string;
     private options: Options;
 
-    constructor(node: ASTCommandNode, ilatex: InteractiveLatex, editor: vscode.TextEditor, webviewManager: WebviewManager) {
-        super(node, ilatex, editor, webviewManager);
+    constructor(node: ASTCommandNode, mapping: CodeMapping, utilities: VisualisationModelUtilities) {
+        super(node, mapping, utilities);
 
         this.hasOptionsNode = this.astNode.value.parameters[0].length === 1;
         this.optionsNode = this.hasOptionsNode
@@ -131,6 +130,8 @@ class IncludegraphicsModel extends AbstractVisualisationModel<ASTCommandNode> {
     }
 
     private async updateOptions(newOptions: Options): Promise<void> {
+        const editor = await this.codeMapping.sourceFile.getOrDisplayInEditor();
+
         // Transform options as optional key-value  parameters for the includegraphics command
         const allOptionsAsStrings = [];
         if (newOptions.width) { allOptionsAsStrings.push(`width=${newOptions.width.px}px`); }
@@ -160,7 +161,7 @@ class IncludegraphicsModel extends AbstractVisualisationModel<ASTCommandNode> {
 
         // TODO: create a generic editor/document editing tool?
         const rangeToEdit = new vscode.Range(this.optionsStartPosition, this.optionsEndPosition);
-        await this.editor.edit(editBuilder => {
+        await editor.edit(editBuilder => {
             editBuilder.replace(rangeToEdit, replacementText);
         });
     
@@ -169,13 +170,15 @@ class IncludegraphicsModel extends AbstractVisualisationModel<ASTCommandNode> {
         this.optionsEndPosition = this.optionsStartPosition.translate(0, replacementText.length);
     }
 
+    // Note: includegraphics paths are considered relative to the main LaTeX file
+    // TODO: resolve the absolute path in LaTeX and write it in the mapping file?
     private createWebviewImageUri(): vscode.Uri {
-        const documentPath = this.editor.document.uri.path;
-        const lastSlashIndex = documentPath.lastIndexOf("/");
-        const documentDirectoryPath = documentPath.slice(0, lastSlashIndex);
+        const relativeImagePath = path.resolve(
+            path.dirname(this.utilities.mainSourceFileUri.path),
+            this.imagePath
+        );
 
-        const imagePath = path.resolve(documentDirectoryPath, this.imagePath);
-        return this.webviewManager.adaptURI(vscode.Uri.file(imagePath));
+        return this.utilities.createWebviewSafeUri(vscode.Uri.file(relativeImagePath));
     }
 
     protected renderContentAsHTML(): string {
@@ -202,10 +205,10 @@ export class IncludegraphicsModelFactory implements VisualisationModelFactory {
     readonly visualisationName = IncludegraphicsModel.visualisationName;
     readonly codePatternMatcher = (node: ASTNode) => {
         return node.type === ASTNodeType.Command
-            && node.name === "includegraphics";
+            && node.name === "iincludegraphics";
     };
 
-    createModel(node: ASTNode, ilatex: InteractiveLatex, editor: vscode.TextEditor, webviewManager: WebviewManager): VisualisationModel {
-        return new IncludegraphicsModel(node as ASTCommandNode, ilatex, editor, webviewManager);
+    createModel(node: ASTNode, mapping: CodeMapping, utilities: VisualisationModelUtilities): VisualisationModel {
+        return new IncludegraphicsModel(node as ASTCommandNode, mapping, utilities);
     }
 }

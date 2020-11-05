@@ -258,7 +258,7 @@ class IncludegraphicsView extends AbstractVisualisationView {
 
         // If at least one trim value has been set, the three other trim values should be set as well
         // In this case, the object can be safely assigned to the trim option key
-        if (trimValues.left) {
+        if (trimValues.left !== undefined) {
             options.trim = trimValues;
         }
 
@@ -439,7 +439,7 @@ class IncludegraphicsView extends AbstractVisualisationView {
     updateCommandOptions(newOptions: IncludegraphicsOptions): void {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
-            visualisationId: this.visualisationId,
+            visualisationUid: this.visualisationUid,
             title: "set-options",
             notification: {
                 newOptions: newOptions

@@ -5,7 +5,6 @@ export const enum CoreToWebviewMessageType {
 }
 
 export const enum WebviewToCoreMessageType {
-    SaveDocument = "SaveDocument",
     NotifyVisualisationModel = "NotifyVisualisationModel",
     RevealVisualisedSources = "RevealVisualisedSources"
 }
@@ -31,19 +30,15 @@ export type CoreToWebviewMessage =
 
 
 // Specification of each type of message which can be sent by the webview to the core
-export interface SaveDocumentMessage {
-    type: WebviewToCoreMessageType.SaveDocument;
-};
-
 export interface NotifyVisualisationModelMessage {
     type: WebviewToCoreMessageType.NotifyVisualisationModel;
-    visualisationId: number;
+    visualisationUid: number;
     title: string;
     notification: object;
 };
 
 export type WebviewToCoreMessage =
-    SaveDocumentMessage | NotifyVisualisationModelMessage;
+    NotifyVisualisationModelMessage;
 
 
 // Generic type of a message exchanged between the core and the webview

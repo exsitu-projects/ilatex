@@ -19,13 +19,16 @@ export interface VisualisationViewInstantiationContext {
 
 export interface VisualisationView {
     readonly visualisationName: string;
-    
-    readonly sourceIndex: number;
+    readonly visualisationUid: number;
+    readonly codeMappingId: number;
     readonly contentTitle: string;
     readonly sourceCodeRange: CodeRange;
 
     render(): HTMLElement;
     updateWith(newContentNode: HTMLElement): void;
+
+    saveSourceDocument(): void;
+    revealInSourceDocument(): void;
 
     onBeforeVisualisationDisplay(): void;
     onAfterVisualisationDisplay(): void;

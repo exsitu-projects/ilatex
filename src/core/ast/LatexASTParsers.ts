@@ -218,7 +218,7 @@ const language = P.createLanguage<{
         // Specifications of the environements of interest
         const specifiedEnvironements: EnvironementSpecification[] = [
             {
-                name: "tabular",
+                name: "itabular",
                 parameters: [
                     { type: "curly", parser: lang.parameter }
                 ],
@@ -270,7 +270,7 @@ const language = P.createLanguage<{
         // Specifications of the commands of interest
         const specifiedCommands: CommandSpecification[] = [
             {
-                name: "includegraphics",
+                name: "iincludegraphics",
                 parameters: [
                     {type: "square", parser: lang.parameterList, optional: true},
                     {type: "curly", parser: lang.parameter}
@@ -306,12 +306,12 @@ const language = P.createLanguage<{
     },
 
     command: lang => {
-        const specificEnvironementNames = ["tabular", "itemize", "gridlayout", "row", "cell"];
+        const specificEnvironementNames = ["itabular", "itemize", "gridlayout", "row", "cell"];
         function isStartingWithSpecificEnvironementBeginning(input: string): boolean {
             return specificEnvironementNames.some(name => input.startsWith(`begin{${name}}`));
         }
 
-        const specificCommandNames = ["includegraphics", "\\"];
+        const specificCommandNames = ["iincludegraphics", "\\"];
         function isStartingWithSpecificCommandName(input: string): boolean {
             return specificCommandNames.some(name => input.startsWith(name));
         }

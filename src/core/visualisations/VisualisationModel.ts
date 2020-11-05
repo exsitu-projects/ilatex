@@ -1,47 +1,35 @@
 import * as vscode from "vscode";
 import { NotifyVisualisationModelMessage } from "../../shared/messenger/messages";
 import { ASTNode } from "../ast/LatexASTNode";
-import { InteractiveLatex } from "../InteractiveLaTeX";
-import { WebviewManager } from "../webview/WebviewManager";
+import { CodeMapping, CodeMappingID } from "../mappings/CodeMapping";
+import { SourceFile } from "../mappings/SourceFile";
 
-// Type and generator for model identifiers
+// Type and generator of unique model identifiers
 // Each model instance must have a *unique* identifier,
 // which uniquely identifies this very version of the model
-export type ModelID = number;
+export type ModelUID = number;
 export abstract class ModelIDGenerator {
     private static maxUsedValue: number = 0;
     
-    static getUniqueId(): ModelID {
+    static getUniqueId(): ModelUID {
         ModelIDGenerator.maxUsedValue += 1;
         return this.maxUsedValue;
     }
 }
 
-// Type and counter for source indices
-// Each model instance must have a source index,
-// which identifies the relative position of the piece of code
-// attached to the visualisation
-export type SourceIndex = number;
-export abstract class SourceIndexCounter {
-    private static currentSourceIndex: number = 0;
-    
-    static getNextSourceIndex(): SourceIndex {
-        SourceIndexCounter.currentSourceIndex += 1;
-        return this.currentSourceIndex;
-    }
-
-    static reset(): void {
-        this.currentSourceIndex = 0;
-    }
-}
-
 export interface VisualisationModel {
     readonly visualisationName: string;
-    readonly id: ModelID
-    readonly sourceIndex: SourceIndex;
+    readonly codeMappingId: CodeMappingID;
+    readonly uid: ModelUID
 
     handleViewNotification(message: NotifyVisualisationModelMessage): Promise<void>;
     createViewContent(): string;
+}
+
+export interface VisualisationModelUtilities {
+    readonly mainSourceFileUri: vscode.Uri;
+    createWebviewSafeUri(uri: vscode.Uri): vscode.Uri;
+    requestNewParsingOf(sourceFile: SourceFile): Promise<void>;
 }
 
 export interface VisualisationModelFactory {
@@ -50,8 +38,7 @@ export interface VisualisationModelFactory {
 
     createModel(
         node: ASTNode,
-        ilatex: InteractiveLatex,
-        editor: vscode.TextEditor,
-        webviewManager: WebviewManager
+        mapping: CodeMapping,
+        utilities: VisualisationModelUtilities
     ): VisualisationModel;
 }

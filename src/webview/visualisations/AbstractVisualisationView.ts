@@ -17,8 +17,8 @@ export abstract class AbstractVisualisationView implements VisualisationView {
     protected messenger: Messenger;
 
     abstract readonly visualisationName: string;
-    protected visualisationId: number;
-    readonly sourceIndex: number;
+    private lastKnownUid: number;
+    readonly codeMappingId: number;
 
     protected contentNode: HTMLElement;
     readonly contentTitle: string;
@@ -28,8 +28,8 @@ export abstract class AbstractVisualisationView implements VisualisationView {
         this.instanciationContext = context;
         this.messenger = context.messenger;
 
-        this.visualisationId = AbstractVisualisationView.extractVisualisationIdFrom(contentNode);
-        this.sourceIndex = AbstractVisualisationView.extractSourceIndexFrom(contentNode);
+        this.lastKnownUid = AbstractVisualisationView.extractVisualisationUidFrom(contentNode);
+        this.codeMappingId = AbstractVisualisationView.extractCodeMappingIdFrom(contentNode);
 
         this.contentNode = contentNode;
         this.contentTitle = contentNode.getAttribute("data-name")!;
@@ -37,18 +37,23 @@ export abstract class AbstractVisualisationView implements VisualisationView {
             AbstractVisualisationView.extractSourceCodeRangeFromContentNode(contentNode);
     }
 
-    abstract render(): HTMLElement;
-    
-    updateWith(newContentNode: HTMLElement): void {
-        // Update the ID of the visualisation
-        // (which changes which each update from the model)
-        this.visualisationId = AbstractVisualisationView.extractVisualisationIdFrom(newContentNode);
-    };
+    get visualisationUid(): number {
+        return this.lastKnownUid;
+    }
+
+    saveSourceDocument(): void {
+        this.messenger.sendMessage({
+            type: WebviewToCoreMessageType.NotifyVisualisationModel,
+            visualisationUid: this.visualisationUid,
+            title: "save-source-document",
+            notification: {}
+        });
+    }
 
     revealInSourceDocument(): void {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
-            visualisationId: this.visualisationId,
+            visualisationUid: this.visualisationUid,
             title: "reveal-code",
             notification: {}
         });
@@ -78,12 +83,20 @@ export abstract class AbstractVisualisationView implements VisualisationView {
         // Do nothing by default
     }
 
-    static extractVisualisationIdFrom(contentNode: HTMLElement): number {
-        return parseInt(contentNode.getAttribute("data-id")!);
+    abstract render(): HTMLElement;
+    
+    updateWith(newContentNode: HTMLElement): void {
+        // Update the UID of the visualisation (which changes which each update from the model)
+        this.lastKnownUid = AbstractVisualisationView.extractVisualisationUidFrom(newContentNode);
+    };
+
+
+    static extractVisualisationUidFrom(contentNode: HTMLElement): number {
+        return parseInt(contentNode.getAttribute("data-uid")!);
     }
 
-    static extractSourceIndexFrom(contentNode: HTMLElement): number {
-        return parseInt(contentNode.getAttribute("data-source-index")!);
+    static extractCodeMappingIdFrom(contentNode: HTMLElement): number {
+        return parseInt(contentNode.getAttribute("data-code-mapping-id")!);
     }
 
     static extractSourceCodeRangeFromContentNode(contentNode: HTMLElement): CodeRange {

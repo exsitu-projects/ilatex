@@ -1,14 +1,18 @@
+import { SourceFile } from "./SourceFile";
+
+export type CodeMappingID = number;
+
 export class MissingMappingFieldError {}
 
-export class CodeToPDFAnnotationMapping {
+export class CodeMapping {
     readonly type: string;
-    readonly sourceFile: string;
+    readonly sourceFile: SourceFile;
     readonly lineNumber: number;
-    readonly id: number;
+    readonly id: CodeMappingID;
 
     private constructor(
         type: string,
-        sourceFile: string,
+        sourceFile: SourceFile,
         lineNumber: number,
         id: number
     ) {
@@ -18,8 +22,8 @@ export class CodeToPDFAnnotationMapping {
         this.id = id;
     }
 
-    static fromLatexGeneratedMapping(mapping: string): CodeToPDFAnnotationMapping {
-        const mappingEntries = mapping
+    static fromLatexGeneratedMapping(mappingAsString: string, sourceFiles: SourceFile[]): CodeMapping {
+        const mappingEntries = mappingAsString
             .split("\n")
             .map(singleLine => {
                 const firstSpaceIndex = singleLine.indexOf(" ");
@@ -39,9 +43,14 @@ export class CodeToPDFAnnotationMapping {
             return entry.value;
         }
 
-        return new CodeToPDFAnnotationMapping(
+        const absolutePath = getEntryValueOrFail("abspath");
+        let sourceFile = sourceFiles.find(sourceFile =>
+            sourceFile.absolutePath === absolutePath
+        ) ?? new SourceFile(absolutePath);
+
+        return new CodeMapping(
             getEntryValueOrFail("type"),
-            getEntryValueOrFail("abspath"),
+            sourceFile,
             parseInt(getEntryValueOrFail("line")),
             parseInt(getEntryValueOrFail("id"))
         );
