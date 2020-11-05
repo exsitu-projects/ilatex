@@ -9,4 +9,4 @@
 *.blg
 *.upa
 *.upb
-beamer/*
+.ilatex-mappings
