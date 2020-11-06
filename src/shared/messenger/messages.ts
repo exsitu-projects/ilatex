@@ -5,8 +5,7 @@ export const enum CoreToWebviewMessageType {
 }
 
 export const enum WebviewToCoreMessageType {
-    NotifyVisualisationModel = "NotifyVisualisationModel",
-    RevealVisualisedSources = "RevealVisualisedSources"
+    NotifyVisualisationModel = "NotifyVisualisationModel"
 }
 
 export type MessageType =
