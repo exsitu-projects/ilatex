@@ -2,6 +2,7 @@
 export const enum CoreToWebviewMessageType {
     UpdateVisualisations = "UpdateVisualisations",
     UpdatePDF = "UpdatePDF",
+    UpdateCompilationStatus = "UpdateCompilationStatus"
 }
 
 export const enum WebviewToCoreMessageType {
@@ -24,8 +25,13 @@ export interface UpdatePDFMessage {
     pdfUri: string;
 }
 
+export interface UpdateCompilationStatusMessage {
+    type: CoreToWebviewMessageType.UpdateCompilationStatus;
+    pdfIsCurrentlyCompiled: boolean;
+}
+
 export type CoreToWebviewMessage =
-    UpdateVisualisationsMessage | UpdatePDFMessage;
+    UpdateVisualisationsMessage | UpdatePDFMessage | UpdateCompilationStatusMessage;
 
 
 // Specification of each type of message which can be sent by the webview to the core

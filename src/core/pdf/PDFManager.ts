@@ -25,13 +25,21 @@ export class PDFManager {
 
     // Return a promise which is resolved when the compilation of the LaTeX document succeeds
     // and rejected when the compilation fails
-    buildPDF(): Promise<void> {
+    buildPDF(notifyWebview: boolean = true): Promise<void> {
         return new Promise<void>((resolveCompilation, rejectCompilation) => {
+            if (notifyWebview) {
+                this.ilatex.webviewManager.sendNewPDFCompilationStatus(true);
+            }
+
             // Create a new terminal and use it to run latexmk to build a PDF from the sources
             const terminal = vscode.window.createTerminal("iLaTeX");
             const observer = vscode.window.onDidCloseTerminal(terminal => {
                 // The callback will be used only once; therefore it can be removed safely
                 observer.dispose();
+
+                if (notifyWebview) {
+                    this.ilatex.webviewManager.sendNewPDFCompilationStatus(false);
+                }
 
                 if (terminal.exitStatus && terminal.exitStatus.code !== 0) {
                     rejectCompilation("LaTeX compilation error");

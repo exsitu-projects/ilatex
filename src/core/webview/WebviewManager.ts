@@ -116,4 +116,13 @@ export class WebviewManager {
             pdfUri: this.adaptURI(pdfUri).toString()
         });
     }
+
+    sendNewPDFCompilationStatus(pdfIsCurrentylCompiled: boolean): void {
+        console.info("About to send a new PDF compilation status to the webview...");
+
+        this.messenger.sendMessage({
+            type: CoreToWebviewMessageType.UpdateCompilationStatus,
+            pdfIsCurrentlyCompiled: pdfIsCurrentylCompiled
+        });        
+    }
 }

@@ -1,9 +1,16 @@
 import * as pdfjs from "./PdfJsApi";
 import { Messenger } from "../Messenger";
 import { PDFRenderer } from "./PDFRenderer";
-import { CoreToWebviewMessageType, UpdatePDFMessage } from "../../shared/messenger/messages";
+import { CoreToWebviewMessageType, UpdateCompilationStatusMessage, UpdatePDFMessage } from "../../shared/messenger/messages";
 import { TaskQueuer } from "../../shared/tasks/TaskQueuer";
 import { TaskDebouncer } from "../../shared/tasks/TaskDebouncer";
+import { PDFOverlayManager } from "./overlay/PDFOverlayManager";
+import { PDFOverlayNotification, PDFOverlayNotificationType } from "./overlay/PDFOverlayNotification";
+
+const pdfIsCurrentlyCompiledNotification = new PDFOverlayNotification(
+    PDFOverlayNotificationType.Loading,
+    "Compiling..."
+);
 
 export class PDFManager {
     private static readonly DELAY_BETWEEN_PDF_RESIZES: number = 50; // ms
@@ -11,11 +18,13 @@ export class PDFManager {
 
     private readonly messenger: Messenger;
     private renderer: PDFRenderer | null;
+    private overlayManager: PDFOverlayManager;
     
     private pdfContainerNode: HTMLElement;
     
     private currentPdfUri: string | null;
     private currentPdf: pdfjs.PDFDocument | null;
+    private pdfIsCurrentlyCompiled: boolean;
 
     private pdfSyncTaskRunner: TaskQueuer;
     private pdfResizingRequestDebouncer: TaskDebouncer;
@@ -23,6 +32,7 @@ export class PDFManager {
     constructor(messenger: Messenger) {
         this.messenger = messenger;
         this.renderer = null;
+        this.overlayManager = new PDFOverlayManager();
 
         this.pdfContainerNode = document.createElement("section");
         this.pdfContainerNode.setAttribute("id", "pdf-container");
@@ -30,12 +40,14 @@ export class PDFManager {
 
         this.currentPdfUri = null;
         this.currentPdf = null;
+        this.pdfIsCurrentlyCompiled = false;
 
         this.pdfSyncTaskRunner = new TaskQueuer();
         this.pdfResizingRequestDebouncer = new TaskDebouncer(PDFManager.DELAY_BETWEEN_PDF_RESIZES);
 
         this.startHandlingPdfUpdates();
         this.startHandlingWindowResizes();
+        this.startHandlingCompilationStatusChanges();
     }
 
     async loadPDF(pdfUri: string): Promise<boolean> {
@@ -67,6 +79,27 @@ export class PDFManager {
         }
     }
 
+    updatePDFCompilationStatus(pdfIsCurrentlyCompiled: boolean): void {
+        // If the status does not change, there is nothing to do
+        if (this.pdfIsCurrentlyCompiled === pdfIsCurrentlyCompiled) {
+            console.warn("The new PDF compilation status is the same than the current status.");
+            return;
+        }
+
+        // Otherwise, update the current status and the classes of the PDF container node,
+        // and display/hide the related notifcation
+        this.pdfIsCurrentlyCompiled = pdfIsCurrentlyCompiled;
+
+        if (pdfIsCurrentlyCompiled) {
+            document.body.classList.add("pdf-currently-compiled");
+            this.overlayManager.displayNotification(pdfIsCurrentlyCompiledNotification);
+        }
+        else {
+            document.body.classList.remove("pdf-currently-compiled");
+            pdfIsCurrentlyCompiledNotification.hide();
+        }
+    }
+
     startHandlingPdfUpdates() {
         this.messenger.setHandlerFor(
             CoreToWebviewMessageType.UpdatePDF,
@@ -86,5 +119,14 @@ export class PDFManager {
                 });
             });
         });
+    }
+
+    startHandlingCompilationStatusChanges(): void {
+        this.messenger.setHandlerFor(
+            CoreToWebviewMessageType.UpdateCompilationStatus,
+            (message: UpdateCompilationStatusMessage)=> {
+                this.updatePDFCompilationStatus(message.pdfIsCurrentlyCompiled);
+            }
+        );
     }
 }

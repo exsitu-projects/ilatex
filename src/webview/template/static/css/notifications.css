@@ -1,0 +1,22 @@
+#notification-container {
+    position: fixed;
+    top: 0px;
+    left: 0;
+    width: 100%;
+}
+
+#notification-container .notification {
+    padding: 5px;
+    background-color: #111;
+    color: #FFF;
+    transition: 100ms ease-in-out;
+}
+
+#notification-container .notification .message {
+
+}
+
+#notification-container[data-notification-type="loading"] .notification .message::before {
+    content: "[ICON]";
+    display: inline-block;
+}
