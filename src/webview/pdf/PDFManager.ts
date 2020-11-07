@@ -15,6 +15,7 @@ const pdfIsCurrentlyCompiledNotification = new PDFOverlayNotification(
 export class PDFManager {
     private static readonly DELAY_BETWEEN_PDF_RESIZES: number = 50; // ms
     static readonly UPDATE_PDF_EVENT = "update-pdf";
+    static readonly PDF_CURRENTLY_RECOMPILED_BODY_CLASS = "pdf-currently-compiled";
 
     private readonly messenger: Messenger;
     private renderer: PDFRenderer | null;
@@ -91,11 +92,11 @@ export class PDFManager {
         this.pdfIsCurrentlyCompiled = pdfIsCurrentlyCompiled;
 
         if (pdfIsCurrentlyCompiled) {
-            document.body.classList.add("pdf-currently-compiled");
+            document.body.classList.add(PDFManager.PDF_CURRENTLY_RECOMPILED_BODY_CLASS);
             this.overlayManager.displayNotification(pdfIsCurrentlyCompiledNotification);
         }
         else {
-            document.body.classList.remove("pdf-currently-compiled");
+            document.body.classList.remove(PDFManager.PDF_CURRENTLY_RECOMPILED_BODY_CLASS);
             pdfIsCurrentlyCompiledNotification.hide();
         }
     }

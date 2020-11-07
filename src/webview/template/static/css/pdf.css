@@ -1,3 +1,7 @@
+.pdf-currently-compiled {
+    cursor: wait;
+}
+
 .pdf-page-container {
     z-index: 0;
 }
@@ -10,11 +14,24 @@
 }
 
 .annotation-mask {
+    --box-shadow-color: #0074D9;
+    --box-shadow-spread: 5px;
+
     position: absolute;
-    box-shadow: 0 0 5px #0074D9;
+    box-shadow: 0 0 var(--box-shadow-spread) var(--box-shadow-color);
     z-index: 100;
+    cursor: pointer;
 }
 
 .annotation-mask:hover {
-    box-shadow: 0 0 10px #FF851B;
+    --box-shadow-color: #FF851B;
+    --box-shadow-spread: 10px;
+}
+
+.pdf-currently-compiled .annotation-mask,
+.pdf-currently-compiled .annotation-mask:hover {
+    --box-shadow-color: #777777;
+    --box-shadow-spread: 5px;
+
+    cursor: not-allowed;
 }

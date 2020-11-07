@@ -1,6 +1,6 @@
 import * as pdfjs from "./PdfJsApi";
-import { VisualisationPopup } from "../visualisations/VisualisationPopup";
 import { VisualisationViewManager, VisualisationDisplayRequest } from "../visualisations/VisualisationViewManager";
+import { PDFManager } from "./PDFManager";
 
 export type AnnotationMaskCoordinates = [
     number, // x1
@@ -138,7 +138,13 @@ export class PDFPageRenderer {
             maskNode.style.height = `${y2 - y1}px`;
 
             // Handle clicks on this mask
+            // Note: those click events must be discarded when the PDF is being recompiled
+            // (to avoid opening a visualisation while its model is about to change)
             maskNode.addEventListener("click", event => {
+                if (document.body.classList.contains(PDFManager.PDF_CURRENTLY_RECOMPILED_BODY_CLASS)) {
+                    return;
+                }
+
                 this.handleAnnotationMaskClick(codeMappingId, maskCoordinates);
             });
 
