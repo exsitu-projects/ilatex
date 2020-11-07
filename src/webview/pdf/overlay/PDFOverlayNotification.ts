@@ -86,8 +86,6 @@ export class PDFOverlayNotification {
             return;
         }
 
-        console.log("DISPLAY NOTIF");
-
         this.onBeforeDisplay();
         container.append(this.node);
         this.onAfterDisplay();
@@ -97,8 +95,6 @@ export class PDFOverlayNotification {
         if (!this.isDisplayed) {
             return;
         }
-
-        console.log("HIDE NOTIF");
 
         this.onBeforeHide();
         this.node.remove();
