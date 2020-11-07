@@ -57,10 +57,15 @@ export class PDFOverlayNotification {
         return messageNode; 
     }
 
-    protected onBeforeDisplay(): void {}
+    protected onBeforeDisplay(): void {
+        // The notification node must have zero opacity when it is displayed
+        // to enable the CSS fade-in animation to work properly
+        this.node.style.opacity = "0";
+    }
 
     protected onAfterDisplay(): void {
         this.isDisplayed = true;
+        this.node.style.opacity = "1";
 
         if (this.hasDisplayDuration) {
             this.hideNotificationTimeoutHandle = window.setTimeout(
