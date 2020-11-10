@@ -57,10 +57,8 @@ export class VisualisationModelManager {
             }
         };
 
-        // const absolutePathAndLineNumberToCount: Map<string,number> = new Map();
-        function combinePathAndLineNumber(path: string, lineNumber: number): string {
-            return `${path}:${lineNumber}`;
-        }
+
+        const alreadyVisualisedMappings = new Set();
         
         this.patternDetector.patterns.push(
             ...VisualisationModelManager.AVAILABLE_VISUALISATION_FACTORIES
@@ -68,45 +66,44 @@ export class VisualisationModelManager {
                     return {
                         matches: factory.codePatternMatcher,
                         onMatch: (node: ASTNode) => {
+                            const absolutePath = this.currentVisitedSourceFile!.absolutePath;
+                            const lineNumber = node.start.line;
+
+                            // Get all the mappings of the same type than the type,
+                            // in the same file and at the same line than the current match
                             const mappings = this.ilatex.codeMappingManager
                                 .getMappingsWith(
                                     factory.visualisationName,
-                                    this.currentVisitedSourceFile!.absolutePath,
-                                    node.start.line
+                                    absolutePath,
+                                    lineNumber
                                 );
-
-                            const combinedPathAndLineNumber = combinePathAndLineNumber(
-                                this.currentVisitedSourceFile!.absolutePath,
-                                node.start.line
-                            );
-
-                            // TODO: handle the case in which multiple matches are linked
-                            // to mappings pointing to the same file and the same line
-
-                            // if (!absolutePathAndLineNumberToCount.has(combinePathAndLineNumber)) {
-                            //     absolutePathAndLineNumberToCount.set(combinePathAndLineNumber, 0);
-                            // }
-
-                            // let nbModelsWithMappingAtSameLocation = 0;
-                            // if (mappings.length > 1) {
-                            //     nbModelsWithMappingAtSameLocation =
-                            //         absolutePathAndLineNumberToCount.get(
-                                        
-                            //         ) ?? 0;
-                            // }
-
-                            // .
-
                             if (mappings.length === 0) {
-                                console.error(`There is no mapping for the code pattern at ${combinePathAndLineNumber}`);
+                                console.error(`There is no mapping for the code pattern at ${absolutePath}:${lineNumber}`);
                                 return;
                             }
 
+                            // Since there may be several matches of the same type at the same location (file + line),
+                            // the mapping to use is the first one that has not been turned into a code visualisation yet
+                            // To that end, a set of all "used" mappings is kept up-to-date
+                            let mappingToVisualise = mappings.find(mapping => !alreadyVisualisedMappings.has(mapping));
+
+                            // Ensure a mapping was found—though this should NOT happen!
+                            // If it does, it means the pattern detector found more pieces of code to visualise
+                            // than the LaTex engine at a given line, in a given file
+                            // Note: it may happen if ilatex.sty fails at identifying the correct start position
+                            // of certain commands/environements/etc
+                            if (!mappingToVisualise) {
+                                console.warn(`All the mappings at ${absolutePath}:${lineNumber} have already been visualised; the AST subtree identified by the code matcher will therefore be ignored!`);
+                                return;
+                            }
+                            
+                            // If a mapping was found, save it in the set of already used mappings
+                            // and use it to create a new visualisation model
+                            alreadyVisualisedMappings.add(mappingToVisualise);
                             this.visualisationModels.push(
                                 factory.createModel(
                                     node,
-                                    // mappings.slice(nbModelsWithMappingAtSameLocation),
-                                    mappings[0],
+                                    mappingToVisualise,
                                     utilities)
                             );
                         }
