@@ -34,7 +34,7 @@ export interface VisualisationModelUtilities {
 
 export interface VisualisationModelFactory {
     readonly visualisationName: string;
-    readonly codePatternMatcher: (node: ASTNode) => boolean;
+    readonly astMatchingRule: (node: ASTNode) => boolean;
 
     createModel(
         node: ASTNode,

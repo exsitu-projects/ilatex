@@ -329,7 +329,7 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
 
 export class TabularModelFactory implements VisualisationModelFactory {
     readonly visualisationName = TabularModel.visualisationName;
-    readonly codePatternMatcher = (node: ASTNode) => {
+    readonly astMatchingRule = (node: ASTNode) => {
         return node.type === ASTNodeType.Environement
             && node.name === "itabular";
     };

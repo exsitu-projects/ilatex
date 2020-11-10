@@ -205,7 +205,7 @@ class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
 
 export class GridLayoutModelFactory implements VisualisationModelFactory {
     readonly visualisationName = GridLayoutModel.visualisationName;
-    readonly codePatternMatcher = (node: ASTNode) => {
+    readonly astMatchingRule = (node: ASTNode) => {
         return node.type === ASTNodeType.Environement
             && node.name === "gridlayout";
     };

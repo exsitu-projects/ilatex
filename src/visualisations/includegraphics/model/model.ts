@@ -203,7 +203,7 @@ class IncludegraphicsModel extends AbstractVisualisationModel<ASTCommandNode> {
 
 export class IncludegraphicsModelFactory implements VisualisationModelFactory {
     readonly visualisationName = IncludegraphicsModel.visualisationName;
-    readonly codePatternMatcher = (node: ASTNode) => {
+    readonly astMatchingRule = (node: ASTNode) => {
         return node.type === ASTNodeType.Command
             && node.name === "iincludegraphics";
     };
