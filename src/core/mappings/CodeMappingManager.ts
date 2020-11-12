@@ -7,7 +7,6 @@ import { SourceFile } from "./SourceFile";
 import { CodeMapping } from "./CodeMapping";
 import { TaskDebouncer } from "../../shared/tasks/TaskDebouncer";
 
-export class NoWorkspaceError {}
 export class NoLatexGeneratedMappingFileError {}
 
 export class CodeMappingManager {
@@ -21,6 +20,17 @@ export class CodeMappingManager {
         this.ilatex = ilatex;
         this.mappings = [];
         this.sourceFileChangeWatchers = [];
+    }
+
+    private get latexGeneratedMappingFilePath(): string {
+        return path.join(
+            path.dirname(this.ilatex.mainSourceFileUri.path),
+            path.basename(this.ilatex.mainSourceFileUri.path, ".tex").concat(".ilatex-mappings")
+        );
+    }
+
+    private get latexGeneratedMappingFileExists(): boolean {
+        return fs.existsSync(this.latexGeneratedMappingFilePath);
     }
 
     get allSourceFiles(): SourceFile[] {
@@ -44,18 +54,46 @@ export class CodeMappingManager {
         this.startObservingDocumentChanges();
     }
 
-    getMappingsWith(type: string, absolutePath: string, lineNumber: number): CodeMapping[] {
+    private readLatexGeneratedMappingFile(): string {
+        if (!this.latexGeneratedMappingFileExists) {
+            console.error("The code-to-PDF annotations mapping file could not be found.");
+            throw new NoLatexGeneratedMappingFileError();
+        }
+
+        return ExtensionFileReader
+            .readExtensionFile(this.latexGeneratedMappingFilePath)
+            .content;
+    }
+
+    private createMappingsFromLatexGeneratedFile(): CodeMapping[] {
+        // If no mapping file can be found, assume there is none (and therefore no mapping)
+        if (!this.latexGeneratedMappingFileExists) {
+            console.info("The code-to-PDF annotations mapping file could not be found: no mapping will be created.");
+            return [];
+        }
+
+        const mappingsAsText = this.readLatexGeneratedMappingFile();
+        
+        // The filter operation is used to remove the last string returned by split
+        // since it is always empty (it originates from the separator following the last mapping)
+        const sourceFiles: SourceFile[] = [];
+        return mappingsAsText
+            .split("---\n")
+            .filter(mappingAsText => mappingAsText.length > 0)
+            .map(mappingAsText => CodeMapping.fromLatexGeneratedMapping(mappingAsText, sourceFiles));
+    }
+
+    getMappingsWith(absolutePath: string, type?: string, lineNumber?: number): CodeMapping[] {
         return this.mappings.filter(mapping =>
-               mapping.type === type
-            && mapping.sourceFile.absolutePath === absolutePath
-            && mapping.lineNumber === lineNumber    
+                mapping.sourceFile.absolutePath === absolutePath
+            && (type === undefined || (mapping.type === type))
+            && (lineNumber === undefined || (mapping.lineNumber === lineNumber))
         );
     }
 
-    hasMappingWith(type: string, absolutePath: string, lineNumber: number): boolean {
-        return this.getMappingsWith(type, absolutePath, lineNumber).length > 0;
+    hasMappingWith(absolutePath: string, type?: string, lineNumber?: number): boolean {
+        return this.getMappingsWith(absolutePath, type, lineNumber).length > 0;
     }
-
 
     async readAndParseAllSourceFiles(): Promise<void> {
         await Promise.all(this.mappings.map(mapping => mapping.sourceFile.openAndParseDocument()));
@@ -64,7 +102,7 @@ export class CodeMappingManager {
     async updateMappingsFromLatexGeneratedFile(): Promise<void> {
         this.stopObservingSourceFileChanges();
 
-        this.mappings = CodeMappingManager.createMappingsFromLatexGeneratedFile();
+        this.mappings = this.createMappingsFromLatexGeneratedFile();
         await this.readAndParseAllSourceFiles();
 
         this.startObservingDocumentChanges();
@@ -100,42 +138,5 @@ export class CodeMappingManager {
     private async onSourceFileChange(): Promise<void> {
         console.log("source file changed ; about to update everything...");
         await this.ilatex.updatePDFAndVisualisations();
-    }
-
-    private static get latexGeneratedMappingFilePath(): string {
-        if (!vscode.workspace.workspaceFolders
-        ||  vscode.workspace.workspaceFolders.length < 1) {
-            console.error("A workspace is required to resolve the path to the code-to-PDF annotations mapping file.");
-            throw new NoWorkspaceError();
-        }
-
-        return path.join(vscode.workspace.workspaceFolders![0].uri.path, "/.ilatex-mappings");
-    }
-
-    private static get latexGeneratedMappingFileExists(): boolean {
-        return fs.existsSync(CodeMappingManager.latexGeneratedMappingFilePath);
-    }
-    
-    private static readLatexGeneratedMappingFile(): string {
-        if (!CodeMappingManager.latexGeneratedMappingFileExists) {
-            console.error("The code-to-PDF annotations mapping file could not be found.");
-            throw new NoLatexGeneratedMappingFileError();
-        }
-
-        return ExtensionFileReader
-            .readExtensionFile(CodeMappingManager.latexGeneratedMappingFilePath)
-            .content;
-    }
-
-    private static createMappingsFromLatexGeneratedFile(): CodeMapping[] {
-        const mappingsAsText = CodeMappingManager.readLatexGeneratedMappingFile();
-        
-        // The filter operation is used to remove the last string returned by split
-        // since it is always empty (it originates from the separator following the last mapping)
-        const sourceFiles: SourceFile[] = [];
-        return mappingsAsText
-            .split("---\n")
-            .filter(mappingAsText => mappingAsText.length > 0)
-            .map(mappingAsText => CodeMapping.fromLatexGeneratedMapping(mappingAsText, sourceFiles));
     }
 }
