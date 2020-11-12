@@ -12,19 +12,29 @@
 \newlength{\gridlayout@savedfboxsep}
 \setlength{\gridlayout@savedfboxsep}{\fboxsep}
 
-
+% The gridlayout environements sees to suffer from the same limitations
+% than the itabular environement regarding the usage of the \ilatex command.
+% For this reason, the writing of a new mapping, the PDF annotation
+% and the counter increment are directly performed inside gridlayout's definition.
+% Read the comments about the definition of itabular (in ilatex.sty) for more details.
 \NewEnviron{gridlayout}[1][\textwidth]
 {%
     \setlength{\fboxsep}{0pt}%
     \setlength{\gridlayout@gridwidth}{#1}%
     \par
-    \ilatex{gridlayout}{\begin{minipage}[b]{\gridlayout@gridwidth}%
+    \pdftooltip{{\begin{minipage}[b]{\gridlayout@gridwidth}%
         \BODY%
-    \end{minipage}}%
+    \end{minipage}}}{ilatex-code-mapping-id-\CurrentAnnotationValue@ilatex}%
+    \stepcounter{Annotation@ilatex}%
     \setlength{\fboxsep}{\gridlayout@savedfboxsep}
     \par
 }
 {}
+
+\AtBeginEnvironment{gridlayout}{%
+    \WriteMapToCurrentLine@ilatex{gridlayout}%
+    \let\CurrentAnnotationValue@ilatex\theAnnotation@ilatex%
+}
 
 \NewEnviron{row}[1]
 {%
