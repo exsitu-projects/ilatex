@@ -212,7 +212,7 @@
 %% information and the body of the document, and typically spans the
 %% page.
 \begin{teaserfigure}
-  \ilatex{\includegraphics[width=18cm]{sampleteaser.jpg}}
+  \iincludegraphics[width=18cm]{sampleteaser.jpg}
   \caption{Seattle Mariners at Spring Training, 2010.}
   \Description{Enjoying the baseball game from the third-base
   seats. Ichiro Suzuki preparing to bat.}
@@ -321,7 +321,7 @@ vertical spacing between elements of your work --- is not allowed.
 The ``\verb|acmart|'' document class requires the use of the
 ``Libertine'' typeface family. Your \TeX\ installation should include
 this set of packages. Please do not substitute other typefaces. The
-``\verb|lmodern|'' and ``\verb|ltimes|'' packages should not be used,
+``\verb|lmodern|'' and ``\verb|ltimes|'' packagess should not be used,
 as they will override the built-in typeface families.
 
 \section{Title Information}
@@ -459,7 +459,7 @@ this document.
 \begin{table}
   \caption{Frequency of Special Characters}
   \label{tab:freq}
-  \ilatex{\begin{tabular}{ccl}
+  \begin{itabular}{ccl}
     \toprule
     Non-English or Math&Frequency&Comments\\
     \midrule
@@ -468,7 +468,7 @@ this document.
     \$ & 4 in 5 & Used in business\\
     $\Psi^2_1$ & 1 in 40,000& Unexplained usage\\
   \bottomrule
-\end{tabular}}
+\end{itabular}
 \end{table}
 
 To set a wider table, which takes up the whole width of the page's
@@ -483,7 +483,7 @@ in the printed output of this document.
 \begin{table*}
   \caption{Some Typical Commands}
   \label{tab:commands}
-  \ilatex{\begin{tabular}{ccl}
+  \begin{itabular}{ccl}
     \toprule
     Command &A Number & Comments\\
     \midrule
@@ -491,7 +491,7 @@ in the printed output of this document.
     \texttt{{\char'134}table}& 300 & For tables\\
     \texttt{{\char'134}table*}& 400& For wider tables\\
     \bottomrule
-  \end{tabular}}
+  \end{itabular}
 \end{table*}
 
 Always use midrule to separate table header rows from data rows, and
@@ -553,7 +553,7 @@ in the example below.
 
 \begin{figure}[h]
   \centering
-  \ilatex{\includegraphics[width=8cm]{instruction.png}}
+  \iincludegraphics[width=8cm]{instruction.png}
   \caption{The four parts of a MIPS instruction.}
   \Description{A MIPS instruction can be split into four sucessive parts: OP code, Address 1, Address 2, and Immediate value.}
 \end{figure}
