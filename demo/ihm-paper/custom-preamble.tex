@@ -1,0 +1,59 @@
+% Additional package imports
+\usepackage{xspace}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{adjustbox}
+\usepackage{float}
+\usepackage{wrapfig}
+\usepackage{circledsteps}
+
+\usepackage{ilatex}
+\usepackage{gridlayout}
+
+% Package configuration
+\pgfkeys{/csteps/inner color=white}
+\pgfkeys{/csteps/outer color=white}
+\pgfkeys{/csteps/fill color=black}
+
+% Custom general commands
+\newcommand{\numitem}[1]{\item{\bfseries#1\hspace{1em}}}
+\newcommand{\psubref}[1]{\textbf{(\subref{#1})}}
+
+% Command to cite a participant
+% The ID of the participant can be given as an optional argument.
+% Either use
+% \citeparticipant[P42]{Body of the citation}
+% Or
+% \citeparticipant{Body of the citation}
+\newcommand{\citeparticipant}[2][]{%
+\if\relax\detokenize{#1}\relax%
+<<~\emph{#2}~>>%
+\else%
+<<~\emph{#2}~>>~(#1)%
+\fi%
+}
+
+% Command to display a theme number
+\DeclareRobustCommand{\reftheme}[1]{%
+    T{#1}%
+}
+
+% Counter of themes and command to print the current theme
+% before incrementing the counter by one
+\newcounter{themenumber}
+\setcounter{themenumber}{1}
+\DeclareRobustCommand{\printthemenumber}{%
+    \reftheme{\arabic{themenumber}}~---%
+    \stepcounter{themenumber}%
+}
+
+% Convenient shortcuts
+\newcommand{\eg}{\textit{e.g.}\xspace}
+\newcommand{\ie}{\textit{i.e.}\xspace}
+\newcommand{\etal}{\textit{et~al.}\xspace}
+
+% \newcommand{\todo}[1]{{\centering\textbf{\textcolor{red}{[TODO : #1]}}\xspace}}
+
+% iLaTeX logo (correctly typeset)
+\DeclareRobustCommand{\iLaTeX}{\mbox{\raisebox{-0.5ex}{\scalebox{1}{i}}\hspace{-0.25mm}\LaTeX{}}}

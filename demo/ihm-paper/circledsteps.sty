@@ -1,0 +1,152 @@
+%    \begin{macrocode}
+\NeedsTeXFormat{LaTeX2e}[1996/06/01]
+\ProvidesPackage{circledsteps}[2020/01/12 v1.3.1 Circled steps that you can reference]
+\def\cstepsversion{v1.3.1}
+%    \end{macrocode}
+%
+% Copyright (c) 2019 Romano Giannetti
+% Heavily helped by @marmot and other on
+% https://tex.stackexchange.com/questions/7032/good-way-to-make-textcircled-numbers
+% License: LPPL 1.3c
+%
+%    \begin{macrocode}
+\RequirePackage{xcolor}
+\RequirePackage{pict2e}
+\RequirePackage{picture}
+\RequirePackage{pgfkeys} % for the pgfkeys
+\pgfkeys{/csteps/.is family}
+\pgfkeys{/csteps/inner ysep/.initial=4pt,
+    /csteps/inner xsep/.initial=4pt,
+    /csteps/inner color/.initial=none,
+    /csteps/outer color/.initial=none,
+    /csteps/fill color/.initial=none,
+}
+\DeclareOption{redblue}{
+    \pgfkeys{/csteps/inner color=red, /csteps/outer color=blue}%
+}
+\DeclareOption{legacy}{
+    \pgfkeys{/csteps/inner color=red, /csteps/outer color=blue}%
+}
+
+% end of options definitions
+\ProcessOptions\relax
+% thanks @egreg https://tex.stackexchange.com/a/523450/38080
+\RequirePackage{etoolbox}
+% patch either picture.sty or pict2e.sty to add the possibility
+% to fill oval shapes. Will break as soon as that option is added
+% to either package...
+\newif\ifcstepsfilledovals\cstepsfilledovalsfalse
+\@ifpackageloaded{picture}{\patchcmd\PcOrg@@oval}{\patchcmd\@oval}
+  {\pIIe@strokeGraph}
+  {\ifcstepsfilledovals\pIIe@fillGraph\else\pIIe@strokeGraph\fi}
+  {}{%
+  \PackageWarningNoLine{circledsteps}{%
+      Failed to patch either picture.sty or pict2e.sty:\MessageBreak
+      \space\space oval shapes will not be filled.
+  }%
+}
+
+
+\newsavebox\csteps@CBox
+\newlength\csteps@XLength \newlength\csteps@YLength \newlength\csteps@YDepth \newlength\csteps@tmplen
+\def\csteps@CircledParam#1#2{\sbox\csteps@CBox{#2}%
+    \edef\csteps@none{none}%
+    \edef\csteps@outercolor{\pgfkeysvalueof{/csteps/outer color}}%
+    \edef\csteps@innercolor{\pgfkeysvalueof{/csteps/inner color}}%
+    \edef\csteps@fillcolor{\pgfkeysvalueof{/csteps/fill color}}%
+    \csteps@XLength=\wd\csteps@CBox\advance\csteps@XLength by\pgfkeysvalueof{/csteps/inner xsep}\relax
+    \csteps@tmplen=\pgfkeysvalueof{/csteps/inner ysep}\relax
+    \csteps@YDepth=\dp\csteps@CBox\advance\csteps@YDepth by 0.5\csteps@tmplen\relax
+    \csteps@YLength=\ht\csteps@CBox\advance\csteps@YLength by\dp\csteps@CBox\advance\csteps@YLength by\pgfkeysvalueof{/csteps/inner ysep}\relax
+    % \typeout{DBG:#2\space X:\the\csteps@XLength\space Y:\the\csteps@YLength\space D:\the\csteps@YDepth}%
+    % \typeout{DBG\space inner:\csteps@innercolor\space outer:\csteps@outercolor\space ARG2:#2}%
+    \raisebox{-#1\csteps@YDepth}{%
+    \ifdim\csteps@XLength>\csteps@YLength
+    \makebox[\csteps@XLength]{% X bigger than Y
+        \makebox(0,\csteps@YLength){%
+            \ifx\csteps@fillcolor\csteps@none\else
+                {\color{\csteps@fillcolor}%
+                \cstepsfilledovalstrue\put(0,0){\oval(\csteps@XLength,\csteps@YLength)}}%
+            \fi
+            \ifx\csteps@outercolor\csteps@none\else
+                \color{\csteps@outercolor}%
+            \fi
+            \put(0,0){\oval(\csteps@XLength,\csteps@YLength)}%
+        }%
+    \makebox(0,\csteps@YLength){%
+        \put(-.5\wd\csteps@CBox,0){%
+            \ifx\csteps@innercolor\csteps@none
+                #2\relax%
+            \else
+                \textcolor{\csteps@innercolor}{#2}%
+            \fi
+        }%
+    }}%
+    \else
+    \makebox[\csteps@YLength]{%
+        \makebox(0,\csteps@YLength){%
+            \ifx\csteps@fillcolor\csteps@none\else
+                {\color{\csteps@fillcolor}%
+                \put(0,0){\circle*{\csteps@YLength}}}%
+            \fi
+            \ifx\csteps@outercolor\csteps@none\else
+                \color{\csteps@outercolor}%
+            \fi
+            \put(0,0){\circle{\csteps@YLength}}%
+        }%
+    \makebox(0,\csteps@YLength){%
+        \put(-.5\wd\csteps@CBox,0){%
+            \ifx\csteps@innercolor\csteps@none
+                #2\relax%
+            \else
+                \textcolor{\csteps@innercolor}{#2}%
+            \fi
+        }%
+     }}%
+    \fi
+    }%
+}
+%    \end{macrocode}
+% Main commands:
+%    \begin{macrocode}
+\newcommand{\CircledParamOpts}[3]{%
+    \begingroup
+        \pgfkeys{/csteps/.cd, #1}%
+        \ifmmode
+            \mathchoice{%
+            \csteps@CircledParam{#2}{$\displaystyle #3$}%
+            }%
+            {%
+            \csteps@CircledParam{#2}{$\textstyle #3$}%
+            }%
+            {%
+            \csteps@CircledParam{#2}{$\scriptstyle #3$}%
+            }%
+            {%
+            \csteps@CircledParam{#2}{$\scriptscriptstyle #3$}%
+            }%
+        \else
+            \csteps@CircledParam{#2}{#3}%
+        \fi
+    \endgroup
+}
+
+\newcommand{\Circled}[2][]{\CircledParamOpts{#1}{1}{#2}}
+\newcommand{\CircledTop}[2][]{\CircledParamOpts{#1}{0}{#2}}
+\newcommand{\CircledText}[2][]{%
+    \CircledParamOpts{inner color=none, outer color=none, #1}{1}{#2}%
+}
+%    \end{macrocode}
+% Automatic counters code
+%    \begin{macrocode}
+\newcounter{cstepcnt}
+\newcommand{\startcstep}{\setcounter{cstepcnt}{0}}
+\newcommand{\resetcstep}{\setcounter{cstepcnt}{0}}
+\newcommand{\cstep}{%
+    \refstepcounter{cstepcnt}%
+    \Circled{\scriptsize\arabic{cstepcnt}}%
+}
+\renewcommand{\thecstepcnt}{\arabic{cstepcnt}}
+%    \end{macrocode}
+%
+%

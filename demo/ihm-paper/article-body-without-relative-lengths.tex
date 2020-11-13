@@ -1,0 +1,537 @@
+\section{Introduction}
+\label{sec:introduction}
+
+Les systèmes de préparation de documents sont des outils numériques qui peuvent être utilisés pour créer et modifier des documents textuels.
+Ils sont généralement divisés en deux catégories~\cite{johnson1988styles} : les langages de description de document (\eg Markdown, Asciidoc, \LaTeX{}, HTML), et les systèmes WYSIWYG (\eg Microsoft Word, Apple Pages, LibreOffice Writer).
+Les langages de description requièrent de coder le document d'une certaine manière, en utilisant un langage particulier (typiquement à base de commandes ou de balises), afin de décrire comment le système doit interpréter le document source afin de générer le document final.
+À l'inverse, les systèmes WYSIWYG permettent aux utilisateurs de voir à tout moment à quoi ressemble le document final et de modifier directement son contenu ou son apparence, sans passer par un langage intermédiaire.
+
+Le paysage actuel des éditeurs de langages de description de document semble donc faire face au paradoxe suivant :
+aucune interface graphique ne semble pouvoir capturer l'expressivité d'un langage de description aussi riche que \LaTeX{}, mais les éditeurs de code ne semblent pas adaptés pour visualiser et manipuler le contenu structuré et les abstractions qu'il est souvent nécessaire d'utiliser.
+Nous proposons d'y répondre en introduisant le concept de \emph{représentations intermédiaires interactives} (RII) de certains morceaux de code, qui permettent de les visualiser et de les manipuler à travers des représentations plus adaptées.
+Ce nouveau genre d'interface utilisateur pour éditeur de langages de description de document se distingue des interfaces WYSIWYG, car nous défendons que manipuler directement le document final n'est pas systématiquement mieux que manipuler son code source.
+Plutôt que de restreindre les utilisateurs à utiliser l'un ou l'autre de ces substrats de document~\cite{beaudouin2017towards}, nous proposons plutôt d'en introduire de nouveaux et de laisser le choix aux utilisateurs en fonction de leurs besoins.
+
+Afin de mieux comprendre ces besoins, nous avons interviewé 11 utilisateurs de \LaTeX{} et réalisé une analyse thématique des problèmes que ceux-ci rencontrent.
+Nous avons ensuite développé \iLaTeX{}, un prototype d'éditeur \LaTeX{} doté de RII.
+Celui-ci permet d'interagir avec certains éléments du PDF produit par \LaTeX{} afin d'afficher des représentations intermédiaires interactives du code qui les a générées.
+Notre contribution est donc à la fois empirique, théorique et technique.
+Nous commençons par présenter d'autres travaux en lien avec le concept de RII ;
+nous poursuivons en détaillant la méthodologie et les résultats de notre analyse thématique ; nous introduisons \iLaTeX{} et discutons son design, son implémentation, son évaluation préliminaire et ses limites ;
+et nous concluons sur la pertinence des RII pour les éditeurs de langages de description de document.
+
+
+%% ========================================================
+
+\section{Travaux connexes}
+\label{sec:travaux-connexes}
+
+Nous présentons les divers travaux ayant inspiré le concept de RII et le prototype \iLaTeX{} : les documents composés d'éléments interactifs ou programmables ; les langages, paradigmes et environnements de programmation non-textuels ; et les représentations intermédiaires utilisées dans d'autres domaines.
+
+
+\subsection{Éditeurs \LaTeX{}}
+
+\LaTeX{} est un langage de description de document créé par Leslie Lamport en 1984~\cite{lamport1994latex} qui repose sur \TeX{}, un système de composition de document développé par Donald Knuth à la fin des années 1970~\cite{knuth1984texbook}.
+Aujourd'hui, il demeure un choix courant pour la rédaction de publications académiques et techniques, et ce en dépit de la difficulté à l'utiliser --- y compris pour des utilisateurs experts, qui peuvent << subir une perte de productivité lorsque \LaTeX{} est utilisé, par rapport à d'autres systèmes de préparation de documents >>~\cite{knauff2014efficiency}.
+Étant donné que \LaTeX{} est un langage de commandes, la plupart des éditeurs de documents \LaTeX{} ressemblent plus à des éditeurs de code qu'à des éditeurs WYSIWYG --- incluant des fonctionnalités telles que la coloration syntaxique et l'auto-complétion.
+Certains éditeurs \LaTeX{} essaient d'offrir une expérience se rapprochant de celle des éditeurs WYSIWYG ; mais à notre connaissance, soit ils ne fournissent qu'un formatage de base du code source (\eg AUC\TeX{}\footnote{\url{https://www.gnu. org/software/auctex/}}, le mode \emph{rich text} d'Overleaf\footnote{\url{https://www.overleaf.com}}), soit ils fournissent une interface entièrement WYSIWYG qui masque le code et ne prend en charge qu'un ensemble limité de fonctionnalités (\eg Compositor\footnote{\url{https://compositorapp.com/}}).
+LyX\footnote{\url{https://www.lyx.org/}} et TeXmacs\footnote{\url{https://www.texmacs.org}} proposent de représenter le document entier sous une forme graphique intermédiaire mettant en avant sa structure et son contenu plutôt que son rendu final --- un paradigme souvent appelé \emph{What You See Is What You Mean}.
+Néanmoins, à notre connaissance, aucun éditeur de ce type ne supporte nativement \LaTeX{}, dont le code peut uniquement être importé, converti et exporté avec plus ou moins de succès.
+En outre, plusieurs solutions permettent de pré-visualiser des éléments particuliers, tels que les formules mathématiques, et d'animer la génération d'un document (\eg Gliimpse~\cite{dragicevic2011gliimpse}) ; mais celles-ci n'offrent aucun moyen d'éditer le code sous-jacent plus facilement.
+
+\subsection{Documents interactifs}
+
+\begin{wrapfigure}{r}{4cm}
+    \center
+    \iincludegraphics[width = 3.9cm]{tangle-example.png}
+    \caption{Changer le nombre de cookies modifie dynamiquement les calories et le pourcentage.}
+    \label{fig:tangle-example}
+    \bigskip\bigskip
+    \iincludegraphics[width = 3.9cm]{interactive-dataframe.png}
+    \caption{Déplacer une colonne génère le code correspondant~\cite{kery2020future}.}
+    \label{fig:interactive-dataframe-exemple}
+\end{wrapfigure}
+
+Dans son essai de 2011, \emph{Explorable Explanations}\footnote{\url{http://worrydream.com/ExplorableExplanations/}}, Bret Victor plaide en faveur de documents plus interactifs, dans lesquels les utilisateurs pourraient dynamiquement modifier des valeurs et observer comment d'autres informations évoluent (Figure~\ref{fig:tangle-example}).
+Ce principe est repris par les multivers de Dragicevic~\etal~\cite{dragicevic2019increasing}, qui démontrent l'intérêt de permettre aux lecteurs d'explorer différentes façons d'analyser et de visualiser des données expérimentales.
+Afin de rendre la conception de documents interactifs plus accessible aux non-programmeurs, Conlen~\etal présentent Idyll~\cite{conlen2018idyll}, un langage de balises conçu pour les journalistes.
+Afin d'outrepasser le manque d'interactivité lié aux limites de certaines formats de fichiers, Chameleon~\cite{masson2020chameleon} propose d'identifier certains contenus sur l'écran à l'aide de techniques de vision par ordinateur afin d'y surimprimer des versions animées ou interactives du même contenu.
+
+En permettant de modifier le code source des documents en interagissant avec le PDF, \iLaTeX{} exploite la notion de document interactif.
+Cependant, contrairement aux travaux présentés ci-dessus, il ne s'agit pas de produire un document PDF interactif pour les \emph{lecteurs}, mais de rendre son édition plus interactive pour les \emph{auteurs}.
+
+
+
+\subsection{Programmation de documents}
+
+L'idée de mélanger rédaction de documents et programmation est apparue avec le développement de nouveaux langages de description de document dans les années 1970.
+Elle s'est poursuivie par la promotion de concepts tels que le \emph{literate programming}~\cite{knuth1984literate} de Knuth et la conception de langages et de paradigmes de programmation centrés sur l'humain (tels que Smalltalk~\cite{goldberg1983smalltalk}) dans les années 1980.
+Cette idée a depuis été remise au goût du jour par la popularité croissante des \emph{computational notebooks} comme Jupyter\footnote{\url{https://jupyter.org/}}, largement adoptés par des communautés de sciences des données.
+Les \emph{notebooks} permettent de faire cohabiter des cellules de contenu rédigé par les auteurs (texte, code) avec des cellules de contenu généré par l'exécution d'un programme.
+Bien que ces dernières soient traditionnellement statiques, Kery~\etal~\cite{kery2020future} présentent plusieurs pistes pour rendre celles-ci plus interactives --- par exemple des tableaux de données (Figure~\ref{fig:interactive-dataframe-exemple}).
+Wrex~\cite{drosos2020wrex} permet par exemple de synthétiser le code permettant d'insérer et de remplir une nouvelle colonne à partir d'un ou plusieurs exemples fournis interactivement par les utilisateurs via la représentation d'un tableau de données.
+
+\iLaTeX{} inclut un éditeur de code et permet donc naturellement d'utiliser toutes les fonctionnalités de programmation de document offertes par \LaTeX{}.
+Les représentations intermédiaires qu'il inclut constituent un moyen supplémentaire de
+visualiser et de manipuler le code, au même titre que celles développées pour les \emph{notebooks} sus-mentionnés.
+
+
+
+\subsection{Programmation non-textuelle}
+
+Depuis les années 1980, des langages de programmation visuels particulièrement adaptés au traitement de signaux multimédia tels que Max\footnote{\url{https://cycling74.com/products/max}} et Pure Data\footnote{\url{https://puredata.info/}} ont été développés.
+La syntaxe graphique simple et la manipulation directe des blocs qui composent les programmes rendent ces langages particulièrement accessibles à des utilisateurs sans formation en programmation.
+Cela pourrait expliquer pourquoi ce type de langage continue d'être utilisé aujourd'hui.
+Il a par exemple été choisi pour concevoir Dynamic Brushes~\cite{jacobs2018extending}, un système de programmation du comportement d'un pinceau numérique destiné à des illustrateurs.
+D'autres langages visuels ont également été largement adoptés à des fins éducatives (\eg Scratch~\cite{resnick2009scratch}).
+Néanmoins, certains chercheurs affirment qu'ils pourraient également être utiles pour des professionnels~\cite{bau2017learnable}.
+Dans cette optique, Droplet\footnote{\url{http://droplet-editor.github.io/}} et les \emph{frame-based editors}~\cite{kolling2017frame} illustrent deux façons de 
+faire fusionner la richesse des langages textuels avec la manipulation directe des langages à bloc.
+
+La programmation non-textuelle peut également prendre la forme de nouveaux genres d'éditeurs de code.
+Plusieurs travaux proposent d'aider les programmeurs à visualiser l'état courant du programme en augmentant des éditeurs de code traditionnels avec des données brutes~\cite{lerner2020projection} ou visualisées~\cite{hoffswell2018augmenting}.
+Python Tutor~\cite{guo2013online} affiche par exemple les structures de données utilisées sous une forme schématique à des fins éducatives.
+D'autres travaux portent plutôt sur de nouvelles façons d'interagir avec le code.
+Sketch-n-Sketch~\cite{hempel2019sketch} est un éditeur expérimental permettant de programmer une image vectorielle en utilisant un langage fonctionnel et de modifier son code en interagissant directement avec le SVG généré.
+Il illustre l'idée du \emph{output-directed programming} de Chugh, qui consiste à éditer le code source d'un programme en manipulant directement sa sortie graphique~\cite{chugh2016programmatic}.
+
+Les représentations intermédiaires de \iLaTeX{} sont inspirées de ces différentes façons de penser le code autrement que comme du texte brut --- et plus particulièrement de l'approche de Sketch-n-Sketch.
+Ces représentations permettent de s'affranchir de la compilation du document pour visualiser le moindre changement tout en permettant de donner forme à des abstractions invisibles dans le code et effacées dans le document généré.
+
+
+
+\subsection{Représentations intermédiaires}
+
+La représentation la plus appropriée du code d'un programme ou d'une description de document peut se situer entre le code brut et la sortie du programme : on parle alors de représentation \emph{intermédiaire}.
+Si celle-ci permet de modifier le code qu'elle représente, elle est de surcroît \emph{interactive} (Figure \ref{fig:intermediate-representations-examples}).
+Barista~\cite{ko2006barista}, Envision~\cite{asenov2014envision} et JetBrains MPS\footnote{\url{https://www.jetbrains.com/mps/}} sont différents éditeurs de code capables d'afficher certains éléments de langages textuels sous une forme structurée (\eg organiser le code sous forme d'un tableau) ou graphique (\eg dessiner les symboles d'une expression mathématique).
+Graphite~\cite{omar2012active} permet de générer le code d'une couleur à partir d'une palette interactive, tandis que Clint~\cite{zinenko2014clint} permet de modifier le code de boucles imbriquées afin d'améliorer les performances d'un programme à travers la manipulation de diagramme interactifs.
+
+\iLaTeX{} a pour but de fournir des représentations intermédiaires de morceaux de code \LaTeX{} qui gagnent à pouvoir être visualisés et manipulés autrement que sous forme textuelle, de la même manière que des systèmes tels que Barista et Clint le font pour des langages de programmation et des paradigmes plus traditionnels.
+En outre, \iLaTeX{} permet d'afficher ces visualisations à proximité des éléments correspondants du PDF généré, renforçant ainsi les liens entre les deux ; tandis que les exemples donnés ci-dessus les affichent généralement uniquement à proximité du code concerné.
+
+\begin{figure}[ht]
+    \center
+    \begin{subfigure}[t]{8cm}
+        \centering\iincludegraphics[width=10cm]{firefox-anim-editor.png}
+        \caption{Éditeur d'animation de Mozilla Firefox}
+        \label{subfig:firefox-anim-editor}
+    \end{subfigure}
+    \begin{subfigure}[t]{8cm}
+        \centering\iincludegraphics[width=10cm]{clint.png}
+        \caption{Éditeur de boucles imbriquées de Clint~\cite{zinenko2015manipulating}}
+        \label{subfig:clint}
+    \end{subfigure}
+    
+    \caption{Exemples de représentations intermédiaires interactives. \psubref{subfig:firefox-anim-editor} La manipulation des poignées pour modifier la courbe met à jour les paramètres numériques de la propriété CSS (affichée en dessous). \psubref{subfig:clint} L'inclinaison du polygone transforme le code C++ (affiché au dessus) pour refléter la façon dont les opérations doivent être parallélisées selon le nouveau diagramme.}
+    \Description{Deux interfaces contenant des représentations intermédiaires. L'interface (a) contient une dizaine de miniatures de courbes représentant des possibilités de progression d'animation, ainsi que la courbe représentant la progression courante avec deux poignées permettant de la déformer. L'interface (b) contient deux graphiques 2D (avant et après transformation). Chaque graphique contient un ensemble de points (itérations) relié par des flèches représentant leurs dépendances (contraintes sur l'ordre des calculs). Le passage d'un graphique à l'autre déforme le polygone qui contient tous les points.}
+    \label{fig:intermediate-representations-examples}
+\end{figure}
+
+
+
+
+
+%% ========================================================
+
+\section{Interviews d'utilisateurs de \LaTeX{}}
+\label{sec:interviews}
+
+Afin de mieux comprendre de quelles façons les RII pourraient améliorer l'édition de langages de description de document, nous avons interviewé 11 utilisateurs de \LaTeX{} et réalisé une analyse thématique des difficultés que ceux-ci rencontrent.
+Dans cette section, nous présentons la méthodologie utilisée et les résultats obtenus.
+À notre connaissance, aucune étude similaire n'a déjà été publiée.
+
+
+\subsection{Méthodologie}
+
+\subsubsection{Participants}
+Nous avons interviewé 11 participants (5 femmes et 6 hommes, âgés de 21 à 40 ans).
+La plupart sont des étudiants de Master (8/11) ou des personnes issues du milieu universitaire, spécialisés dans des domaines très divers.
+Ils n'ont reçu aucune compensation pour leur participation.
+Chacun d'entre eux avait utilisé \LaTeX{} au cours des semaines ou des mois précédant leur interview.
+Les participants ont l'habitude d'utiliser Overleaf (5/11) ou Texmaker (5/11) pour rédiger des documents \LaTeX{}, mais plusieurs d'entre ont également utilisé ou essayé au moins un éditeur alternatif parmi TeXstudio, TeXworks, Kyle et Gedit --- sur Windows, MacOS ou Linux.
+Leur expertise est très variable\footnote{Les niveaux d'expertise sont définis de la façon suivante : les \emph{débutants} ne se sentent pas à l'aise avec \LaTeX{} et ont besoin d'aide pour utiliser la plupart des fonctionnalités ; les utilisateurs \emph{intermédiaires} se sentent à l'aise pour écrire des documents simples avec quelques structures et mettre le texte en forme ; et les utilisateurs \emph{avancés} se sentent à l'aise pour inclure du contenu varié et créer leurs propres commandes. Chaque participant a été invité à auto-évaluer son niveau d'expertise, que nous avons ensuite adapté en fonction des fonctionnalités avec lesquelles il se sentait à l'aise ou non.}, mais la plupart des participants (8/11) sont des utilisateurs intermédiaires.
+Des informations supplémentaires sur chaque participant peuvent être trouvés dans la Table~\ref{tab:participants}.
+
+\begin{table}[h]
+    \centering
+    \makebox[\textwidth]{\begin{itabular}{lllll}
+        \toprule
+        Participant & Profession & Domaine & Expertise & Principal document présenté \\
+        \midrule
+        P1 & Étudiante en Master & Biologie & Intermédiaire & Rapport de stage \\
+        P2 & Doctorante & Visualisation de données & Intermédiaire & Thèse de doctorat \\
+        P3 & Étudiant en Master & Écologie & Intermédiaire & Devoir à rendre \\
+        P4 & Étudiante en Master & Géologie & Intermédiaire & Projet de hackathon \\
+        P5 & Enseignant-chercheur & Informatique & Avancé & Article de mathématiques \\
+        P6 & Étudiant en Master & Systèmes complexes & Intermédiaire & Sujet de thèse \\
+        P7 & Étudiante en Master & Géochimie & Intermédiaire & Rapport de stage \\
+        P8 & Étudiante en Master & Archéologie & Débutant & Rapport de stage \\
+        P9 & Étudiant en Master & Informatique & Intermédiaire & Article d'informatique \\
+        P10 & Professeur de lycée & Philosophie & Intermédiaire & Liste d'examens de philo. \\
+        P11 & Étudiant en Master & Informatique & Avancé & Notes de cours de math. \\
+        \bottomrule
+    \end{itabular}}
+    \caption{Détails sur les participants interviewés.}
+    \label{tab:participants}
+\end{table}
+
+
+\subsubsection{Procédure}
+Toutes les interviews étaient semi-structurées, menées en français, et d'une durée moyenne d'une heure environ (entre 29 et 99 minutes).
+La durée des interviews et le choix des questions ont été ajustés à l'aide de trois interviews pilotes de collègues doctorants et post-doctorants.
+
+Nous avons commencé chaque interview en demandant à chaque participant de nous montrer le derniers documents \LaTeX{} sur lequel ils avaient travaillé via un partage d'écran (comprenant à la fois le code \LaTeX{} et le PDF généré).
+Nous leur avons ensuite demandé de nous décrire les différents problèmes auxquels ils avaient fait face (qu'ils les aient résolus ou non), tout en se référant le plus possible aux sources du document (dans le double but de les aider à s'en souvenir et de rendre leurs explications plus claires pour nous).
+Les interviews étant semi-structurées, nous avons utilisé une liste de questions prédéfinies pour guider les participants --- mais ceux-ci étaient invités à parler librement de chaque problème rencontré.
+Les participants étaient également invité à nous parler de problèmes rencontrés sur d'autres documents si cela leur semblait pertinent.
+
+\subsubsection{Données récoltées}
+Toutes les interviews ont été enregistrées (audio et écran partagé) et retranscrites manuellement, incluant de courtes descriptions du contenu affiché à l'écran ou des interactions des participants lorsque cela était pertinent.
+Nous avons également pris des notes manuscrites synthétisant les problèmes principaux et les solutions utilisées.
+
+\subsubsection{Analyse des données}
+\label{sssec:collecte-analyse-donnees}
+Nous avons réalisé une analyse thématique~\cite{braun2019reflecting} à partir des données récoltées.
+Nous avons tout d'abord généré plus de 650 codes à partir des huit premières transcriptions, que nous avons ensuite classés dans près de 80 sous-thèmes.
+Nous nous sommes alors servis de ces sous-thèmes afin de générer trois jeux de thèmes :
+un premier jeu regroupant les sous-thèmes similaires (\ie des \emph{domain summaries}, dans le vocabulaire de Braun et Clarke) ;
+un second jeu regroupant les problèmes similaires (indépendamment du contexte dans lequel ils sont apparus) ;
+et un troisième jeu issu d'un mélange des deux premiers.
+
+Ce dernier jeu a été élaborée à l'aide de discussions avec plusieurs chercheurs dans le but d'identifier les groupes de sous-thèmes les plus pertinents dans les deux premiers thèmes.
+Nous avons également réécouté les trois interviews non-transcrites afin de nous assurer de leur inscription dans les cinq thèmes finaux, en nous en avons extrait plusieurs citations afin de renforcer et de contraster ce qui avait déjà été mis en évidence par les huit premières interviews.
+Nous présentons le contenu des cinq thèmes finaux ci-dessous.
+
+
+
+
+\subsection{Résultats}
+\setcounter{themenumber}{1}
+
+\subsubsection{\printthemenumber{} Le code source doit être accessible et modifiable}
+
+\paragraph{Les interfaces WYSIWYG sont limitées}
+En dépit des difficultés que cela induit, la plupart des participants semblent à l'aise avec le paradigme de décrire leur document dans un langage particulier ; et peu ont évoqué le désir d'un éditeur WYSIWYG pour \LaTeX{}.
+P2 craint par exemple que déplacer des morceaux de texte dans Microsoft Word \citeparticipant{[fasse] du code dégueulasse derrière}, tandis que P4 a expliqué se sentir \citeparticipant{impuissante} lorsqu'elle ne peut pas obtenir ce qu'elle veut dans un éditeur WYSIWYG.
+À l'exception de P7, aucun de ceux qui connaissaient le mode \emph{rich text} d'Overleaf ne l'utilisent.
+Plusieurs participants lui reprochent de manquer de fonctionnalités en cachant le code, impliquant ainsi \citeparticipant[P8]{plus de manipulation, plus de mouvement sur l'écran} afin de régulièrement passer d'un mode à l'autre.
+P7 a d'ailleurs reconnu qu'elle l'avait uniquement utilisé pour prendre des notes pendant un cours d'histoire : \citeparticipant[P7]{il fallait juste taper ; j’avais pas de maths à faire ; j’avais pas de photo à rajouter}.
+
+\paragraph{Le document doit pouvoir être programmé}
+Plusieurs participants parmi les plus experts ont expliqué qu'ils aimaient pouvoir créer des commandes personnalisées pour générer ou réutiliser du contenu (\eg développer des abréviations, réutiliser un dessin paramétré).
+Au fil des années, P11 s'est par exemple constitué un long préambule contenant plusieurs dizaines de commandes personnalisées pour générer des expressions mathématiques (telles que les noms de théorèmes et des constructions courantes), qu'il continue d'utiliser.
+P10 explique avoir choisi \LaTeX{} pour créer une archive unique de centaines d'examens de philosophie de lycée, car il souhaitait pouvoir générer plusieurs index (par auteur, par thème, par type de question philosophique, etc) qui seraient automatiquement mis à jour s'il ajoutait de nouveaux examens par la suite.
+Selon lui, un tel niveau d'automation est impossible à atteindre avec un système de préparation de document de type WYSIWYG : \citeparticipant[P10]{sous LibreOffice, on ne peut avoir un index alphabétique que pour une seule catégorie}.
+La nature textuelle de \LaTeX{} permet également de générer des documents de toute pièce facilement.
+P5 a ainsi écrit un programme Python pour générer un code \LaTeX{} représentant plusieurs centaines de badges similaires pour un concours de Go : \citeparticipant[P5]{Si vous me demandez de vous faire deux cent badges en Word, vous vous démerdez ; je le fais pas}.
+
+\paragraph{Les commentaires ont de multiples utilités}
+Seule une fraction des participants a déclaré utiliser des commentaires dans le code ; mais ceux qui s'en servent expliquent que leur utilité est multiple.
+Les raisons de s'en servir incluent
+(1) se rappeler de l'utilité d'un paquet ou d'une commande ;
+(2) discuter avec d'autres co-auteurs ;
+(3) conserver des morceaux de code inutilisés qui pourraient servir plus tard ;
+(4) commenter le code afin de trouver la source d'une erreur ;
+(5) réutiliser des extraits d'un ancien morceau de code pour en écrire une nouvelle version ;
+ou encore (6) planifier le contenu à écrire dans chaque partie du document.
+
+\paragraph{L'accès au code facilite la réutilisation}
+P5 a expliqué que le fait d'avoir accès au code permettait de copier-coller immédiatement des solutions trouvées sur internet, sans avoir à reproduire les étapes énumérées dans un tutoriel destiné aux éditeurs WYSIWYG.
+Cet accès lui permet également de réutiliser le code \LaTeX{} de ses articles scientifiques afin de créer des présentations pour des colloques.
+
+
+
+\subsubsection{\printthemenumber{} Apprendre \LaTeX{} est une activité compliquée et chronophage}
+
+\paragraph{\LaTeX{} est difficile à apprendre}
+La plupart des participants ont expliqué qu'ils attendaient généralement de rencontrer des problèmes pour se renseigner sur \LaTeX{} et ses fonctionnalités.
+Plusieurs ont souligné que cela arrivait souvent dans des moments de hâte, peu avant un rendu --- ne leur laissant donc pas la possibilité de prendre le temps de comprendre le code qu'ils devaient utiliser (après l'avoir copié-collé) : \citeparticipant[P2]{Pour l’instant je suis plus dans l’optique que ça doit marcher}.
+Le nom des commandes, l'ordre de leurs paramètres, et les valeurs autorisées pour ces derniers semblent souvent être oubliés ou ignorés par les participants --- y compris lorsqu'ils ont déjà l'habitude de s'en servir : \citeparticipant[P3]{Je saurais qu’il faut une minipage, mais je serais quand même obligé d’aller chercher quelque-part comment l’écrire}.
+
+\paragraph{Ne pas comprendre \LaTeX{} est coûteux}
+Certains participants ont reconnu que leur incompréhension de \LaTeX{} était parfois coûteuse : \citeparticipant[P7]{[Personnaliser] la biblio, c’est le truc qui était le plus long, parce que j’ai pas trouvé de solution toute faite quoi. Il a fallu que j’invente un petit peu [\ldots]}.
+P2 et P4 ont exprimé des regrets de n'avoir jamais eu de cours sur \LaTeX{} avant de devoir l'utiliser : \citeparticipant[P2]{J'aurais voulu prendre une journée [pour apprendre \LaTeX{}] ; il y a des formations qui présentent les bases}.
+P6 a au contraire expliqué qu'il ne voudrait pas faire un tel effort : \citeparticipant[P6]{Tu trouves un document qui marche, tu copies-colle, et tu changes par itération [\ldots] je vais pas apprendre la structure du code.}
+
+\paragraph{Les recherches portent sur des problèmes spécifiques}
+Les participants ont indiqué qu'ils cherchaient souvent des solutions à des problèmes spécifiques : produire un symbole particulier, comprendre une erreur, trouver la documentation d'un paquet, etc.
+Lorsqu'il a eu besoin de poursuivre la numérotation d'une liste, P3 a par exemple rapidement trouvé la solution sur internet : \citeparticipant[P3]{j'ai trouvé que c'était après le \texttt{\symbol{92}begin\string{enumerate\string}} qu'il fallait mettre le start, égal, ce qu'on veut}.
+Néanmoins, trouver une réponse ne semble pas toujours être évident pour tous les participants.
+Afin de trouver une solution pour insérer du grec ancien dans son document \LaTeX{}, P8 a par exemple expliqué avoir \citeparticipant[P8]{plutôt cherché sur des trucs de linguistique et d'historien} --- où elle n'a pas pu trouver de réponse.
+
+
+
+\subsubsection{\printthemenumber{} Les éditeurs textuels sont inadaptés au contenu structuré}
+
+\paragraph{Les éditeurs de code ignorent les structures}
+De nombreux participants se sont plaints de la difficulté de décrire des éléments structurés tels que des tableaux, des sous-figures, ou même des formules chimiques.
+La création de tableaux a souvent été décrite comme \citeparticipant[P1]{vachement chiante}, et la difficulté de leur édition leur a été reprochée : \citeparticipant[P3]{ça m’est arrivé de devoir déplacer des colonnes [\ldots] ça se fait, mais c’est juste que ça prend du temps}.
+Selon P7, à cause de la syntaxe des tableaux, \citeparticipant{oublier une colonne c'est un enfer} car \citeparticipant[P7]{il faut que je rajoute des trucs et qu’à chaque ligne je compte, je me mette au bon endroit}.
+Ces observations s'appliquent également à d'autre types de contenu structuré, en particulier lorsque les participants ne sont pas familiers avec un paquet offrant une solution clé en main : \citeparticipant[P4]{L’autre truc qui est vraiment difficile aussi, c’est de mettre les images côte à côte}.
+
+\paragraph{Le recours aux outils externes}
+En raison des difficultés à créer et modifier du contenu structuré depuis leurs éditeurs \LaTeX{}, plusieurs participants se tournent vers des outils externes.
+P2 et P4 ont par exemple toutes deux commencé par utiliser des sous-figures constituées d'images séparées dans \LaTeX{} avant de finalement les fusionner en utilisant Inkscape ou Adobe Illustrator car \citeparticipant[P2]{comme ça je maîtrisais la mise en page}.
+Afin de créer des tableaux à partir de classeurs Excel, P7 les a exportés au format CSV afin de générer le code \LaTeX{} correspondant en utilisant le convertisseur en ligne \url{tablesgenerator.com}.
+Elle a cependant expliqué avoir dû répéter le processus à chaque fois qu'elle souhaitait modifier les tableaux, dont le code généré était trop difficile à interpréter sous forme de texte brut.
+D'autres participants ont par ailleurs indiqué qu'ils utilisaient ce même site web pour créer des tableaux \LaTeX{} à partir de zéro.
+P7 s'est également plainte de ne pas pouvoir exporter les structures créées dans des logiciels spécialisés tels que Microsoft Excel (pour les tableaux) ou ChemDraw (pour les molécules) sous forme de code \LaTeX{} --- soulignant là encore à quel point les éditeurs de code sont inadaptés pour décrire et manipuler certaines structures :
+\citeparticipant{un truc qui serait utile c'est de dessiner ma molécule de A à Z et que le code s'affiche à côté quoi}, car \citeparticipant[P7]{le truc le plus difficile que j'ai jamais utilisé sous \LaTeX{} c'est le package pour faire les molécules chimiques}.
+
+
+
+\subsubsection{\printthemenumber{} Les abstractions sont difficiles à visualiser et à formaliser}
+
+\paragraph{Les dimensions}
+De nombreuses commandes \LaTeX{} requièrent de spécifier des dimensions, comme par exemple la taille d'une image ou les marges de certains éléments.
+Or, selon plusieurs participants, les dimensions de \LaTeX{} souffrent de deux problèmes :
+il est difficile de quantifier une longueur que l'on imagine, et il est difficile d'imaginer une longueur quantifiée.
+\citeparticipant[P8]{Je ne sais pas forcément quelle taille précise je veux que l’image ait, mais [je sais] que je veux qu’elle ait cette taille-là dans ma tête}.
+Comme de nombreux autres participants, P8 s'est aussi plainte de devoir essayer plusieurs dimensions jusqu'à trouver celle qui convient --- une stratégie parfois coûteuse : \citeparticipant[P1]{quand tu veux que [tes figures] soient un peu plus grosses, un peu plus petites, tu compiles quinze mille fois et c'est chiant [\ldots] surtout quand tu as beaucoup de figures, et que du coup il met beaucoup de temps à compiler}.
+La plupart des participants semblent donc favorables à une forme d'interaction plus directe avec les dimensions.
+Afin d'outrepasser ces difficultés, certains participants ont fait le choix de détourner des commandes avec lesquelles ils se sentent plus familiers.
+P3 a ainsi inséré du texte de couleur blanche dans son document afin de sauter \citeparticipant{artificiellement} plusieurs lignes successives : \citeparticipant[P3]{je pense qu'il y avait une façon plus simple de le faire, mais comme j'étais assez pressé c'est comme ça}.
+
+\paragraph{Les positions}
+Au contraire des dimensions, \LaTeX{} se charge traditionnellement de calculer les positions des éléments à la place de l'utilisateur.
+Cependant, selon certains participants, ce manque de contrôle n'est pas toujours souhaitable.
+P1 a par exemple expliqué que sa façon de positionner les figures n'était \citeparticipant[P1]{pas très rationnelle}, et P2 s'est plainte de la difficulté de placer une image suffisamment près d'un paragraphe y faisant référence lorsque \LaTeX{} en décidait autrement.
+Ces difficultés sont probablement renforcées par le fait que plusieurs participants ne sont pas conscients du sens des paramètres de positionnement qu'ils utilisent (\eg avec l'environnement \texttt{figure}) --- souvent copiés avec le reste d'un morceau de code.
+Par conséquent, P4 --- qui a pourtant lu \citeparticipant{comment le compilateur faisait pour placer les images} afin de gagner en contrôle sur leur positionnement --- a ainsi admis avoir dû revoir ses attentes concernant les positions des figures à la baisse.
+Ces difficultés concernent également les positions plus locales.
+Bien qu'il se sente à l'aise avec les commandes de dessin du paquet TikZ, P5 a expliqué qu'il aimerait bien pouvoir déplacer certains éléments de ses dessins au lieu \citeparticipant{d'essayer de deviner} les bonnes coordonnées ou de faire \citeparticipant{vaguement de la trigo} pour les calculer.
+
+
+
+\subsubsection{\printthemenumber{} La dualité entre le code et le PDF est coûteuse}
+
+\paragraph{Identifier le code d'un élément du PDF est difficile}
+Certains participants se sont plaint de la difficulté de faire le lien entre un élément du PDF et le code l'ayant généré.
+P5 et P9 ont tous deux du mal à (1) localiser le code d'une formule mathématique affichée dans le PDF et (2) trouver le symbole qu'ils veulent corriger à l'intérieur du code de celle-ci.
+Afin de résoudre le premier problème, ils recherchent souvent un extrait du texte voisin de la formule dans son éditeur de code, bien que P5 ait admis que cette technique échoue régulièrement.
+Cette approche n'est pas sans lien avec l'absence de support de SyncTeX\footnote{SyncTeX est un outil permettant d'associer une position dans le code plus ou moins exacte à chaque élément du PDF --- et inversement~\cite{laurens2008direct}.} dans l'éditeur \LaTeX{} que P5 utilise.
+Il a d'ailleurs expliqué qu'il aimerait en changer pour cette raison --- soulignant l'importance de ce genre d'outil.
+En revanche, ni P5 ni P9 n'ont trouvé de solution au second problème : pour eux, modifier une formule mathématique implique systématiquement \citeparticipant[P9]{de relire le code \LaTeX{} sans relire le PDF}.
+
+\paragraph{Compiler est un processus lent}
+De nombreux participants se sont plaint du temps requis pour compiler leurs documents \LaTeX{}.
+Essayer plusieurs alternatives (\eg différentes tailles pour une image) est ainsi coûteux, et les erreurs font perdre du temps : \citeparticipant[P5]{si on se trompe ça nous coûte quand même une minute}.
+Certains participants ont élaboré des stratégies en conséquence.
+Afin de compiler moins souvent, P1 a expliqué qu'elle distinguait rédaction et mise en forme : \citeparticipant[P1]{quand je suis dans une phase de rédaction [\ldots] je tape juste et j'écris [\ldots] mais quand je fais la forme j'ouvre toujours [l'éditeur de code et le PDF] à côté, pour compiler régulièrement}.
+P5 a également donné l'exemple de la mise en cache d'images crées avec TikZ : \citeparticipant[P5]{tant qu'il n'y a pas de modification faite sur l'image, [l'outil] réinjecte l'image à la place du code TikZ}.
+
+\subsection{Implications}
+Cette analyse thématique révèle la variété des problèmes auxquels les utilisateurs de \LaTeX{} font face et suggère de nombreuses opportunités pour améliorer le design de leurs éditeurs.
+Elle encourage avant tout à éviter de dissimuler entièrement le code source, qui demeure utile aux utilisateurs pour plusieurs raisons (\reftheme{1}).
+La spécificité et la redondance de certains problèmes semble indiquer que le développement et la mise en avant de fonctionnalités ciblées pourrait permettre aux utilisateurs de mieux y faire face sans devoir quitter leurs éditeurs (\reftheme{2}).
+En particulier, le contenu structuré et les abstractions pourraient bénéficier de représentations plus adaptés à l'intérieur même des éditeurs --- qui pourraient s'inspirer de générateurs de code ad-hoc et de logiciels spécialisés (\reftheme{3}, \reftheme{4}).
+Enfin, les liens entre le code et le document généré mériteraient d'être rendus plus visibles afin de faciliter leur identification par les utilisateurs (\reftheme{5}).
+
+Les caractéristiques des représentations intermédiaires interactives nous semblent pouvoir répondre à certains problèmes soulevés par cette analyse.
+En effet : les RII sont conçues pour être complémentaire aux éditeurs de code (\reftheme{1}) tout en permettant de visualiser et de manipuler certains morceaux de code sous une forme plus adaptée aux besoins des utilisateurs (\reftheme{3}, \reftheme{4}).
+Leurs fonctionnalités peuvent être choisies de façon à faciliter les opérations les plus courantes qui sont difficiles à réaliser dans l'éditeur de code (\reftheme{2}), et leur caractère intermédiaire leur permet de rendre visible certains liens entre code source et document généré (\reftheme{5}).
+Cette analyse nous a ainsi motivé à développer \iLaTeX{}, un prototype d'éditeur \LaTeX{} doté de RII que nous présentons dans la section suivante.
+
+
+
+
+%% ========================================================
+
+\section{Prototype}
+\label{sec:prototype}
+
+\subsection{Description}
+\iLaTeX{} est un prototype d'éditeur de documents \LaTeX{} doté de représentations intermédiaires interactives.
+Son interface ressemble à celle de la plupart des éditeurs \LaTeX{} traditionnels (code source à gauche, PDF généré à droite), mais elle dispose de visualisations interactives : certains éléments du PDF sont interactifs, de telle sorte qu'en cliquer un affiche la représentation intermédiaire associée au morceau de code qui l'a généré (Figure~\ref{fig:ilatex-interface}).
+Cette visualisation peut alors être utilisée par les auteurs du document pour (1) visualiser des structures et des abstractions invisibles (\eg la grille d'un tableau sans bordure visible) et (2) modifier le code source du document (\eg réordonner les colonnes d'un tableau en manipulant sa grille).
+Selon la position de l'élément cliqué sur l'écran, sa représentation intermédiaire est affichée au-dessus ou en-dessous de celui-ci, de façon à le laisser le plus visible possible.
+Le reste du document est assombri jusqu'à ce que la représentation soit fermée en cliquant sur la croix ou sur le document assombri --- déclenchant alors une recompilation du document \LaTeX{} afin de mettre le PDF à jour.
+En outre, chaque visualisation affiche le nom et la position du morceau de code représenté par la représentation dans son en-tête. Ceux-ci peuvent être cliqués afin d'afficher le code correspondant dans l'éditeur de code.
+Nous avons implémenté trois types de représentations interactives : deux pour des éléments \LaTeX{} courants (images et tableaux), et une pour un élément personnalisé (une grille de mise en page).
+Elles sont décrites plus en détail ci-après et illustrées par la Figure~\ref{fig:ilatex-visualisations}.
+
+\begin{figure}[h]
+  \centering
+  \iincludegraphics[width = 16cm]{ilatex-interface.pdf}
+  \caption{Interface du prototype. \Circled{\textbf{1}}~Éditeur de code; \Circled{\textbf{2}}~Pré-visualisation du PDF généré; \Circled{\textbf{3}}~Tableau disposant d'une RII (cliquable); \Circled{\textbf{4}}~Visualisation du code du tableau (affichée par dessus le PDF). Les différentes visualisations sont illustrées par la Figure~\ref{fig:ilatex-visualisations}.}
+  \label{fig:ilatex-interface}
+\end{figure}
+
+\subsubsection{Détail des visualisations}
+
+\paragraph{Images}
+Les images sont détectées par l'utilisation de la commande \texttt{iincludegraphics} (telle que fournie par le paquet \texttt{graphicx}\footnote{\url{https://ctan.org/pkg/graphicx?lang=en}}).
+La représentation intermédiaire d'une image (Figure~\ref{subfig:ilatex-visualisation-image}) affiche l'image à la même taille que l'image affichée dans le PDF.
+Elle peut être redimensionnée (à l'aide de la molette de la souris) et rognée (en redimensionnant le masque représenté par le rectangle avec une bordure sombre et une poignée).
+Ces manipulations mettent automatiquement à jour les paramètres de la commande en modifiant les valeurs des clés \texttt{width}, \texttt{height}, \texttt{trim} et \texttt{clip} (ou en les supprimant si elles ne sont plus nécessaires).
+Cette visualisation répond principalement à la difficulté de visualiser et de formaliser des dimensions (\reftheme{4}), mais elle facilite également la découverte de certains paramètres utiles (\reftheme{2}).
+
+\paragraph{Tableaux}
+Les tableaux sont détectés par l'utilisation de l'environnement \texttt{itabular}.
+Leur représentation intermédiaire (Figure~\ref{subfig:ilatex-visualisation-tableau}) affiche le contenu brut \LaTeX{} de chaque << cellule >> de l'environnement, qui peut être édité en double-cliquant dessus.
+Le type de chaque colonne est affiché dans une ligne d'en-tête, et les colonnes et les lignes peuvent être réordonnées en cliquant longuement sur leurs en-têtes respectives et en les déplaçant.
+Cette visualisation permet de mettre en exergue une structure abstraite pouvant être invisible dans le PDF (\reftheme{4}).
+Elle rend également des transformations telles que la réorganisation de colonnes beaucoup plus faciles qu'elles ne le seraient dans un éditeur de code (\reftheme{3}).
+
+\paragraph{Grilles de mise en page}
+Les grilles de mise en page sont détectées par l'utilisation de l'environnement \texttt{gridlayout}, un environnement personnalisé que nous avons développé afin d'illustrer l'utilité de \iLaTeX{} pour ce type de structure.
+Il permet d'utiliser une grille de mise en page (constituée de lignes et de cellules), qui permet de disposer localement du contenu de type varié (\eg texte, images, tableaux) suivant une grille invisible.
+La représentation intermédiaire (Figure~\ref{subfig:ilatex-visualisation-grille}) rend la grille visible.
+Les cellules peuvent être redimensionnées horizontalement en faisant glisser leur bordure droite, et les lignes peuvent être redimensionnées verticalement en faisant glisser leur bordure inférieure.
+En outre, cliquer une cellule affiche et sélectionne son contenu dans l'éditeur de code.
+Cette visualisation supporte l'édition de contenu structuré (\reftheme{3}) et la représentation concrète d'abstractions telles que des dimensions relatives (\reftheme{4}).
+Elle illustre également le potentiel de développement de nouvelles fonctionnalités pour \LaTeX{} dont l'utilisation serait plus difficile ou désagréable sans RII.
+
+
+\begin{figure}[h]
+  \centering
+  \begin{subfigure}[t]{\linewidth}
+    \begin{minipage}{0.5\linewidth}
+       \centering
+       \iincludegraphics[width = 4cm]{image.png}
+    \end{minipage}
+    \begin{minipage}{0.5\linewidth}
+        \centering
+        \iincludegraphics[width = 6cm]{image-vis.png}
+    \end{minipage}
+    \caption{Une image et sa visualisation}
+    \label{subfig:ilatex-visualisation-image}
+    \bigskip
+  \end{subfigure}
+  \begin{subfigure}[t]{\linewidth}
+    \begin{minipage}{0.5\linewidth}
+       \centering
+       \iincludegraphics[width = 5.5cm]{table.png}
+    \end{minipage}
+    \begin{minipage}{0.5\linewidth}
+        \centering
+        \iincludegraphics[width = 6cm]{table-vis.png}
+    \end{minipage}
+    \caption{Un tableau et sa visualisation}
+    \label{subfig:ilatex-visualisation-tableau}
+    \bigskip
+  \end{subfigure}
+  \begin{subfigure}[t]{\linewidth}
+    \begin{minipage}{0.5\linewidth}
+       \centering
+       \iincludegraphics[width = 6cm]{grid-layout.png}
+    \end{minipage}
+    \begin{minipage}{0.5\linewidth}
+        \centering
+        \iincludegraphics[width = 6cm]{grid-layout-vis.png}
+    \end{minipage}
+    \caption{Une grille de mise en page et sa visualisation}
+    \label{subfig:ilatex-visualisation-grille}
+  \end{subfigure}
+  \caption{Exemples des visualisations disponibles dans \iLaTeX{}.
+  Les éléments interactifs du PDF tels qu'ils apparaissent dans \iLaTeX{} sont affichés à gauche, et les visualisations du code les ayant générés sont affichées à droite (les images ne sont pas à l'échelle).
+  Chaque visualisation ayant été modifiée, le code a déjà été mis à jour, et le document sera recompilé dès que la visualisation sera fermée. 
+  \psubref{subfig:ilatex-visualisation-image} L'image a été rognée de façon à isoler le tableau central dans la visualisation --- d'où la région éclaircie en dehors du rectangle.
+  \psubref{subfig:ilatex-visualisation-tableau} Les deux dernières colonnes ont été inversées dans la visualisation.
+  \psubref{subfig:ilatex-visualisation-grille} La séparation entre les deux cellules de la première ligne a été déplacée vers la droite dans la visualisation.}
+  \label{fig:ilatex-visualisations}
+  \Description{Exemples d'une image, d'un tableau, d'une grille de mise en page et de leurs visualisations. La visualisation (a) contient une image dont une partie est sélectionnée dans un rectangle. La visualisation (b) contient le code des cellules du tableau sous forme de grille. La visualisation (c) contient le code de la grille sous forme d'une grille dont les dimensions sont proportionnées à celles de la grille issue du PDF.}
+\end{figure}
+
+
+
+\subsection{Implémentation}
+Le prototype est implémenté en tant qu'extension de l'éditeur Visual Studio Code\footnote{\url{https://code.visualstudio.com/}} (VSC), un éditeur de code open-source.
+L'extension est écrite en TypeScript, HTML et CSS et organisée selon le patron de conception MVC.
+Les particularités de son implémentation sont discutées ci-dessous.
+
+
+\subsubsection{Extraction du code à visualiser}
+Contrairement à la plupart des langages de programmation, \LaTeX{} n'est pas un langage hors-contexte, mais un langage récursivement énumérable (avec des caractéristiques peu communes telles que le concept de \emph{catcodes}, qui permet de modifier dynamiquement la signification de toute unité lexicale n'importe où dans le document).
+En théorie, il est donc impossible d'écrire un analyseur syntaxique destiné à structurer le code que l'on souhaite visualiser en utilisant des outils traditionnellement dédiés à ce type de tâche.
+Néanmoins, certaines conventions propres à \LaTeX{} demeurent très couramment utilisées (\eg la notion d'environnement).
+En pratique, il est donc possible d'écrire un analyseur syntaxique qui accepte une proportion raisonnable de documents \LaTeX{} qui respectent lesdites conventions.
+
+Pour les besoins du prototype, nous avons donc écrit un analyseur syntaxique de documents \LaTeX{} le plus générique possible dont le but est de fournir juste assez d'informations et de structure pour identifier les morceaux de code à visualiser, tels que certaines commandes spécifiques et leurs paramètres.
+L'arbre de syntaxe abstraite ainsi généré est ensuite parcouru afin d'identifier les sous-arbres représentant des morceaux de code pertinents à visualiser (\eg un environnement nommé \texttt{itabular}).
+Cette conception minimale a été choisie pour (1) maximiser le succès de l'analyse et (2) minimiser le temps d'exécution.
+En contrepartie, chaque visualisation est responsable d'effectuer une analyse statique du code plus approfondie si nécessaire.
+
+
+\subsubsection{Annotation du document PDF}
+Le format de fichier PDF --- typiquement utilisé en sortie par les moteurs \LaTeX{} --- n'est pas conçu pour contenir des informations sur les régions du code \LaTeX{} à l'origine des différents éléments qui le composent.
+Afin d'outrepasser cette limitation, nous avons choisi d'utiliser des annotations PDF dont la boîte se superpose à celle de l'élément à associer à un morceau de code.
+Celles-ci sont générées en englobant le morceau de code à visualiser dans une commande \texttt{ilatex} personnalisée\footnote{Bien que cela nécessite l'utilisation d'ne commande spéciale pour le moment, il convient de noter que puisque tout peut être redéfini dans \LaTeX{}, les commandes et environnements existants pourraient être silencieusement modifiés afin que ceux-ci utilisent automatiquement la commande \texttt{ilatex}.}, comme dans \verb|\ilatex{\iincludegraphics{fig.pdf}}|.
+Elles sont en outre numérotées (le numéro étant incrémenté chaque fois que la commande \texttt{ilatex} est évaluée par le moteur \LaTeX{}).
+
+
+\subsubsection{Affichage du PDF augmenté}
+Une fois le document compilé en un PDF annoté, celui-ci est affiché à l'aide d'un moteur de rendu personnalisé (basé sur PDF.js\footnote{\url{https://github.com/mozilla/pdf.js/}}).
+Celui-ci est responsable d'extraire toutes les annotations insérées par la commande \texttt{ilatex} et de les afficher sous forme de rectangles colorés autour des éléments disposant d'une visualisation.
+Lorsque l'un d'eux est cliqué, \iLaTeX{} identifie le morceau de code auquel correspond l'annotation afin d'afficher la bonne visualisation.
+Celui-ci est identifié en comparant le numéro attribué à l'annotation du PDF à l'ordre des morceaux de code identifiés lors de l'analyse de l'arbre de syntaxe abstraite.
+Ce mécanisme repose sur l'hypothèse que si un morceau de code $C_1$ est situé avant un morceau de code $C_2$ dans le document, alors $C_1$ sera lu et traité par le moteur \LaTeX{} avant $C_2$.
+
+
+
+\subsection{Évaluation préliminaire}
+Étant donné la variabilité de l'expertise et des besoins de chaque utilisateur de \LaTeX{} (comme en attestent les différents profils des participants interviewés --- voir la Table \ref{tab:participants}), une étude quantitative de l'efficacité de \iLaTeX{} (\eg vitesse d'édition, nombre d'essais-et-erreurs) ne nous semble pas être très pertinente.
+À l'inverse, une étude plus qualitative --- telle qu'une étude de terrain --- permettrait de mieux comprendre les contextes dans lesquels les RII sont préférées à l'édition du code et de découvrir des utilisations inattendues et des fonctionnalités manquantes.
+Cependant, le contexte sanitaire en place depuis l'émergence de la pandémie de COVID-19 ne nous a pour l'instant pas permis d'organiser une telle évaluation.
+En dépit de cela, et une fois les interviews terminées, nous avons toutefois décidé de recueillir les avis des participants sur une vidéo d'une version précoce de \iLaTeX{} afin d'obtenir une première estimation de son potentiel.
+
+\subsubsection{Méthodologie}
+Nous avons présenté à chaque participant une vidéo d'un prototype de \iLaTeX{} d'une durée d'environ deux minutes.
+Celle-ci présentait l'interface utilisateur du logiciel et l'utilisation de versions préliminaires des visualisations du code des images et des tableaux (semblables à celles présentées dans cette section).
+La vidéo étant muette, nous expliquions chaque action en voix off à l'aide d'un script.
+Une fois la vidéo terminée, nous avons demandé aux participants ce qu'ils avaient compris du système, s'ils aimeraient l'essayer, et s'il y avait d'autres types d'éléments du PDF ou de morceaux de code \LaTeX{} qu'ils souhaiteraient manipuler d'une façon similaire.
+Ces évaluations ont été enregistrées dans les mêmes conditions que celles des interviews.
+
+\subsubsection{Résultats}
+La majorité des participants ont exprimé des réactions positives concernant la vidéo du prototype : \citeparticipant[P1]{Mais comment t'as codé ça ? C'est trop cool !} ; \citeparticipant[P7]{vend ton truc à Overleaf [\ldots] qu'ils le rajoutent !}
+Tous ont indiqué avoir compris le fonctionnement de \iLaTeX{}.
+Plusieurs ont également fait la remarque que cela semblait facile à utiliser : \citeparticipant[P4]{c'est vachement intuitif, [\ldots] ça fait référence à des compétences que les gens ont déjà} ; \citeparticipant[P8]{je pense que c'est plus user-friendly que juste modifier le code}.
+Les utilisateurs les plus experts semblent eux aussi enthousiastes à l'idée d'utiliser le système.
+P5 a d'ailleurs insisté sur le fait que \iLaTeX{} ne cherche pas à supprimer l'accès au code (\citeparticipant{si ce n'était pas comme ça je ne me verrais pas interagir avec}), et P11 a reconnu que \iLaTeX{} pourrait \citeparticipant[P11]{m'encourager à utiliser plus d'illustrations et de tableaux}.
+En outre, P4 a souligné le potentiel pédagogique des visualisations : \citeparticipant{si je devais donner un cours sur \LaTeX{}, c'est un outil que j'utiliserais vraiment beaucoup je pense}, car il permet selon elle d'\citeparticipant[P4]{en apprendre un peu plus et un peu plus vite sur le code}.
+
+Certains participants ont suggéré de nouvelles fonctionnalités pour les visualisations existantes (\eg sélectionner l'alignement horizontal des cellules d'une colonne de tableau), et plusieurs d'entre eux ont également mentionné qu'ils aimeraient avoir un contrôle plus direct sur les positions et les marges des différents éléments de leurs documents --- motivant ainsi le développement ultérieur de l'environnement \texttt{gridlayout}.
+Quelques participants ont estimé qu'ils n'interagiraient que peu avec les visualisations de code peu compliqué (\eg les paramètres de la commande \texttt{iincludegraphics}), mais qu'ils seraient beaucoup plus intéressés par le système si celui-ci permettait de visualiser le code d'autres types de contenu.
+Les exemples recueillis comprennent les figures composées de plusieurs sous-figures (P4), les molécules créés avec le paquet \texttt{chemfig} (P7), la configuration du style des éléments bibliographiques en éditant directement l'un d'entre eux (P6), et l'édition localisée des longues formules mathématiques (P9).
+En outre, il est intéressant de noter que très peu de participants ont exprimé le souhait de pouvoir interagir avec le PDF dans le but de formater le document --- allant ainsi dans le sens de la distinction entre RII et WYSIWYG.
+
+
+
+\subsection{Limitations}
+Bien que le prototype fonctionne dans sa forme actuelle, celui-ci souffre de plusieurs limitations qui en font plutôt une preuve de concept.
+D'une part, la simplicité de la grammaire reconnue par l'analyseur syntaxique ne permet pas de reconnaître certaines constructions (\eg les commandes utilisant des chevrons dans les présentations Beamer).
+Le système ne supporte par ailleurs que les documents constitués d'un seul fichier \LaTeX{}.
+D'autre part, les trois visualisations que nous avons implémentées sont limitées en terme de fonctionnalités (\eg pas de fusion de cellules de tableau) et de robustesse (\eg tous les types de colonne ne sont pas supportés).
+
+En outre, une évaluation plus systématique et longitudinale de \iLaTeX{} est nécessaire pour mieux comprendre les apports et les limites des RII pour l'édition de langages de description de document.
+Néanmoins, bien que les avis que nous avons récoltés ne permettent pas de conclure de manière définitive sur l'apport en utilité ou en efficacité de \iLaTeX{}, il mettent en évidence l'intérêt que des utilisateurs de \LaTeX{} semblent porter aux RII --- soulignant l'importance de mener une évaluation plus approfondie d'un tel système.
+
+
+
+
+%% ========================================================
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+Nous avons présenté le concept de représentations intermédiaires interactives, un nouveau genre d'interface utilisateur pour les éditeurs de langages de description de document.
+Nous avons motivé son utilité en réalisant une analyse thématique des difficultés rencontrées par 11 utilisateurs de \LaTeX{} que nous avons interviewés, et nous l'avons également mis en œuvre à travers \iLaTeX{}, un éditeur \LaTeX{} expérimental doté de RII.
+\iLaTeX{} a reçu des critiques majoritairement positives lors d'une évaluation préliminaire auprès des participants que nous avions interviewé, qui nous encouragent donc à poursuivre ce travail.
+
+Parmi les directions possibles, quatre d'entre elles nous semblent particulièrement intéressantes à explorer.
+%
+Premièrement, une évaluation plus complète de \iLaTeX{} nous paraît donc primordiale.
+Nous pensons qu'une étude de terrain auprès d'utilisateurs de \iLaTeX{} serait la plus adaptée pour évaluer le prototype de manière plus approfondie.
+%
+Deuxièmement, une analyse des besoins spécifiques de certains utilisateurs (\eg formules mathématiques, molécules) permettrait de doter les visualisations existantes de fonctionnalités supplémentaires adaptées et de développer de nouvelles visualisations répondant à d'autres besoins.
+%
+Troisièmement, développer des métriques adaptées permettrait de mieux estimer la robustesse de \iLaTeX{} (\eg le taux de succès de l'analyse syntaxique sur un corpus de fichiers \LaTeX{}\footnote{L'évaluation pourrait par exemple porter sur les archives des sources \LaTeX{} des articles d'un laboratoire, ou encore sur celles publiées sur une plate-forme en ligne comme arXiv (\url{https://arxiv.org/}).}) et l'utilité potentielle de ses visualisations (\eg la proportion de documents \LaTeX{} contenant du code susceptible d'être visualisé).
+%
+Quatrièmement, nous pensons qu'il est important d'appliquer le concept de RII à d'autres langages de description de documents que \LaTeX{} (\eg adapter la visualisation de tableau afin de l'utiliser avec des tableaux HTML ou Markdown).
+Cela permettrait non seulement de mieux comprendre le degré de généricité de ce type d'interface utilisateur, mais également le potentiel de réutilisation de ses visualisations.
+
+
+% \begin{acks}
+% 
+% \end{acks}
