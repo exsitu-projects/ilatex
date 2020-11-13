@@ -20,14 +20,36 @@
 \setcounter{Annotation@ilatex}{1}
 
 
+% Define a command to convert and print a length
+% From https://tex.stackexchange.com/a/8337
+\def\convertto#1#2{\strip@pt\dimexpr #2*65536/\number\dimexpr 1#1}
+
+
 % Define a command to write a new mapping between
 % a line in a source file and an identifier
 % in the output file created above
 \newcommand{\WriteMapToCurrentLine@ilatex}[1]{%
+    % Important values about the mapping
     \immediate\write\Output@ilatex{type #1}%
     \immediate\write\Output@ilatex{path \currfileabspath}%
     \immediate\write\Output@ilatex{line \the\inputlineno}%
     \immediate\write\Output@ilatex{id \theAnnotation@ilatex}%
+    % Context data which might be useful for some visualisations
+    % (e.g. current values of certain dimension macros to convert relative lengths)
+    \immediate\write\Output@ilatex{graphicspath \graphicspath@ilatex}%
+    \immediate\write\Output@ilatex{length_paperwidth \convertto{pt}{\paperwidth}}%
+    \immediate\write\Output@ilatex{length_paperheight \convertto{pt}{\paperheight}}%
+    \immediate\write\Output@ilatex{length_textwidth \convertto{pt}{\textwidth}}%
+    \immediate\write\Output@ilatex{length_textheight \convertto{pt}{\textheight}}%
+    \immediate\write\Output@ilatex{length_linewidth \convertto{pt}{\linewidth}}%
+    \immediate\write\Output@ilatex{length_columnwidth \convertto{pt}{\columnwidth}}%
+    \immediate\write\Output@ilatex{length_baselineskip \convertto{pt}{\baselineskip}}%
+    \immediate\write\Output@ilatex{length_parskip \convertto{pt}{\parskip}}%
+    \immediate\write\Output@ilatex{length_hsize \convertto{pt}{\hsize}}%
+    \immediate\write\Output@ilatex{length_vsize \convertto{pt}{\vsize}}%
+    \immediate\write\Output@ilatex{length_em \convertto{pt}{1em}}%
+    \immediate\write\Output@ilatex{length_ex \convertto{pt}{1ex}}%
+    % End of the mapping
     \immediate\write\Output@ilatex{---}%
 }
 
@@ -54,6 +76,14 @@
 \newcommand{\iincludegraphics}[2][]{%
     \ilatex{includegraphics}{\includegraphics[#1]{#2}}%
 }
+
+
+% Patch the \graphicspath command provided by the graphicx package
+% to save the list of directories provided by the user (if any)
+% into the \graphicspath@ilatex macro (defined below).
+% By default, the macro points to the relative current directory.
+\def\graphicspath@ilatex{.}
+\apptocmd{\graphicspath}{\def\graphicspath@ilatex{#1}}
 
 
 % Define a custom tabular-like environement
