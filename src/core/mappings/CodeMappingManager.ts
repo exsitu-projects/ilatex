@@ -80,7 +80,11 @@ export class CodeMappingManager {
         return mappingsAsText
             .split("---\n")
             .filter(mappingAsText => mappingAsText.length > 0)
-            .map(mappingAsText => CodeMapping.fromLatexGeneratedMapping(mappingAsText, sourceFiles));
+            .map(mappingAsText => CodeMapping.fromLatexGeneratedMapping(
+                mappingAsText,
+                path.dirname(this.ilatex.mainSourceFileUri.path),
+                sourceFiles
+            ));
     }
 
     getMappingsWith(absolutePath: string, type?: string, lineNumber?: number): CodeMapping[] {

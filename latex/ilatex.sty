@@ -25,7 +25,7 @@
 % in the output file created above
 \newcommand{\WriteMapToCurrentLine@ilatex}[1]{%
     \immediate\write\Output@ilatex{type #1}%
-    \immediate\write\Output@ilatex{abspath \currfileabspath}%
+    \immediate\write\Output@ilatex{path \currfileabspath}%
     \immediate\write\Output@ilatex{line \the\inputlineno}%
     \immediate\write\Output@ilatex{id \theAnnotation@ilatex}%
     \immediate\write\Output@ilatex{---}%
