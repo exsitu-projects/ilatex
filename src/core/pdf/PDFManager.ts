@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
+import * as path from "path";
 import { InteractiveLatex } from "../InteractiveLaTeX";
 
 
@@ -33,7 +34,12 @@ export class PDFManager {
 
             // Create a new terminal and use it to run latexmk to build a PDF from the sources
             const terminal = vscode.window.createTerminal("iLaTeX");
-            const observer = vscode.window.onDidCloseTerminal(terminal => {
+            const observer = vscode.window.onDidCloseTerminal(closedTerminal => {
+                // Ensure the closed terminal is the one created just above
+                if (closedTerminal !== terminal) {
+                    return;
+                }
+
                 // The callback will be used only once; therefore it can be removed safely
                 observer.dispose();
 
@@ -41,19 +47,21 @@ export class PDFManager {
                     this.ilatex.webviewManager.sendNewPDFCompilationStatus(false);
                 }
 
-                if (terminal.exitStatus && terminal.exitStatus.code !== 0) {
+                // Depending on the exit code, either resolve or reject the promise
+                // returned by the buildPDF method
+                if (closedTerminal.exitStatus && closedTerminal.exitStatus.code !== 0) {
                     rejectCompilation("LaTeX compilation error");
-                    return;
                 }
-
-                resolveCompilation();
+                else {
+                    resolveCompilation();
+                }
             });
 
             const terminalSafeFilename = this.ilatex.mainSourceFileUri.path.replace(/ /g, "\\ ");
-            terminal.sendText(`cd ${terminalSafeFilename.substr(0, terminalSafeFilename.lastIndexOf("/"))}`);
+            terminal.sendText(`cd ${path.dirname(terminalSafeFilename)}`);
             terminal.sendText(`latexmk -interaction=nonstopmode ${terminalSafeFilename}`);
             // terminal.sendText(`latexmk -c`);
-
+            
             // Close the terminal right after running latexmk
             // Note: if no exit code is specified, the exit command
             // reuses the exit code output by the last command
