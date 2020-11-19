@@ -2,7 +2,7 @@
     "compilerOptions": {
 		"composite": true,
 		"module": "ESNext",
-		"target": "es6",
+		"target": "es2019",
 		"outDir": "out/webview",
 		"lib": [
 			"dom"
