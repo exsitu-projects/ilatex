@@ -37,18 +37,18 @@
     % Context data which might be useful for some visualisations
     % (e.g. current values of certain dimension macros to convert relative lengths)
     \immediate\write\Output@ilatex{graphicspath \graphicspath@ilatex}%
-    \immediate\write\Output@ilatex{length_paperwidth \convertto{pt}{\paperwidth}}%
-    \immediate\write\Output@ilatex{length_paperheight \convertto{pt}{\paperheight}}%
-    \immediate\write\Output@ilatex{length_textwidth \convertto{pt}{\textwidth}}%
-    \immediate\write\Output@ilatex{length_textheight \convertto{pt}{\textheight}}%
-    \immediate\write\Output@ilatex{length_linewidth \convertto{pt}{\linewidth}}%
-    \immediate\write\Output@ilatex{length_columnwidth \convertto{pt}{\columnwidth}}%
-    \immediate\write\Output@ilatex{length_baselineskip \convertto{pt}{\baselineskip}}%
-    \immediate\write\Output@ilatex{length_parskip \convertto{pt}{\parskip}}%
-    \immediate\write\Output@ilatex{length_hsize \convertto{pt}{\hsize}}%
-    \immediate\write\Output@ilatex{length_vsize \convertto{pt}{\vsize}}%
-    \immediate\write\Output@ilatex{length_em \convertto{pt}{1em}}%
-    \immediate\write\Output@ilatex{length_ex \convertto{pt}{1ex}}%
+    \immediate\write\Output@ilatex{length_macro_paperwidth \convertto{pt}{\paperwidth}}%
+    \immediate\write\Output@ilatex{length_macro_paperheight \convertto{pt}{\paperheight}}%
+    \immediate\write\Output@ilatex{length_macro_textwidth \convertto{pt}{\textwidth}}%
+    \immediate\write\Output@ilatex{length_macro_textheight \convertto{pt}{\textheight}}%
+    \immediate\write\Output@ilatex{length_macro_linewidth \convertto{pt}{\linewidth}}%
+    \immediate\write\Output@ilatex{length_macro_columnwidth \convertto{pt}{\columnwidth}}%
+    \immediate\write\Output@ilatex{length_macro_baselineskip \convertto{pt}{\baselineskip}}%
+    \immediate\write\Output@ilatex{length_macro_parskip \convertto{pt}{\parskip}}%
+    \immediate\write\Output@ilatex{length_macro_hsize \convertto{pt}{\hsize}}%
+    \immediate\write\Output@ilatex{length_macro_vsize \convertto{pt}{\vsize}}%
+    \immediate\write\Output@ilatex{length_unit_em \convertto{pt}{1em}}%
+    \immediate\write\Output@ilatex{length_unit_ex \convertto{pt}{1ex}}%
     % End of the mapping
     \immediate\write\Output@ilatex{---}%
 }
