@@ -1,6 +1,8 @@
-import { LatexLength, LatexLengthOptions } from "../../../shared/utils/LatexLength";
+import { LatexLength } from "../../../shared/latex-length/LatexLength";
 import { LatexASTVisitorAdapter } from "../../../core/ast/visitors/LatexASTVisitorAdapter";
 import { ASTParameterNode, ASTParameterAssignmentNode } from "../../../core/ast/LatexASTNode";
+import { LatexLengthCustomSettings } from "../../../shared/latex-length/LatexLengthSettings";
+import { CodeMapping } from "../../../core/mappings/CodeMapping";
 
 export interface Options {
     width?: LatexLength;
@@ -12,16 +14,22 @@ export interface Options {
 }
 
 export class OptionsExtractor extends LatexASTVisitorAdapter {
-    private static readonly LATEX_LENGTH_OPTIONS: LatexLengthOptions = {
-        // big points is the default unit for includegraphics (in graphicx package)
+    private static readonly LATEX_LENGTH_SETTINGS = {
+        // Big points are the default unit for includegraphics (in graphicx package)
         defaultUnit: "bp"
     };
 
     readonly options: Options;
+    private latexLengthSettings: LatexLengthCustomSettings;
 
-    constructor() {
+    constructor(mapping: CodeMapping) {
         super();
+
         this.options = {};
+        this.latexLengthSettings = {
+            ...mapping.contextualLatexLengthSettings,
+            ...OptionsExtractor.LATEX_LENGTH_SETTINGS
+        };
     }
 
     protected visitParameterNode(node: ASTParameterNode): void {
@@ -40,10 +48,10 @@ export class OptionsExtractor extends LatexASTVisitorAdapter {
         const value = node.value.value.value.trim();
 
         if (key === "width") {
-            this.options.width = LatexLength.from(value, OptionsExtractor.LATEX_LENGTH_OPTIONS);
+            this.options.width = LatexLength.from(value, this.latexLengthSettings);
         }
         else if (key === "height") {
-            this.options.height = LatexLength.from(value, OptionsExtractor.LATEX_LENGTH_OPTIONS);
+            this.options.height = LatexLength.from(value, this.latexLengthSettings);
         }
         else if (key === "scale") {
             this.options.scale = parseFloat(value);
@@ -51,7 +59,7 @@ export class OptionsExtractor extends LatexASTVisitorAdapter {
         else if (key === "trim") {
             this.options.trim = value
                 .split(/\s+/)
-                .map(lengthAsText => LatexLength.from(lengthAsText, OptionsExtractor.LATEX_LENGTH_OPTIONS));
+                .map(lengthAsText => LatexLength.from(lengthAsText, this.latexLengthSettings));
         }
         else if (key === "clip") {
             this.options.clip = value.trim().toLowerCase() === "true";

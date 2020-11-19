@@ -1,11 +1,13 @@
 import * as vscode from "vscode";
 import * as path from "path";
+import * as fs from "fs";
 import { VisualisationModelFactory, VisualisationModel, VisualisationModelUtilities } from "../../../core/visualisations/VisualisationModel";
 import { AbstractVisualisationModel, NotificationHandlerSpecification } from "../../../core/visualisations/AbstractVisualisationModel";
 import { ASTNode, ASTCommandNode, ASTNodeType, ASTParameterListNode, ASTParameterNode } from "../../../core/ast/LatexASTNode";
 import { Options, OptionsExtractor } from "./OptionsExtractor";
-import { LatexLength } from "../../../shared/utils/LatexLength";
+import { LatexLength } from "../../../shared/latex-length/LatexLength";
 import { CodeMapping } from "../../../core/mappings/CodeMapping";
+import { fstat } from "fs";
 
 
 class IncludegraphicsModel extends AbstractVisualisationModel<ASTCommandNode> {
@@ -46,6 +48,31 @@ class IncludegraphicsModel extends AbstractVisualisationModel<ASTCommandNode> {
         this.options = this.extractOptionsFromASTNode();
     }
 
+    // Try to return the first absolute image path which point to an actual file
+    // using all the paths specified in the code mapping context
+    // plus the path to the directory containing the main source file last
+    // (which is the default directory used by graphicx's includegraphics?).
+    // If neither of them work, return null.
+    get absoluteImagePath(): string | null {
+        const imageDirectoryRelativePaths = new Set(this.codeMapping.context.graphicsPaths);
+        imageDirectoryRelativePaths.add(".");
+
+        for (let imageDirectoryRelativePath of imageDirectoryRelativePaths) {
+            // All the paths are relative to the the main source file's directory...?
+            const absoluteImagePath = path.resolve(
+                path.dirname(this.utilities.mainSourceFileUri.path),
+                imageDirectoryRelativePath,
+                this.imagePath
+            );
+            
+            if (fs.existsSync(absoluteImagePath)) {
+                return absoluteImagePath;
+            }
+        }
+
+        return null;
+    }
+
     private extractImagePathFromASTNode(): string {
         return this.pathNode.value;
     }
@@ -55,7 +82,7 @@ class IncludegraphicsModel extends AbstractVisualisationModel<ASTCommandNode> {
             return {};
         }
 
-        const optionsReader = new OptionsExtractor();
+        const optionsReader = new OptionsExtractor(this.codeMapping);
         this.optionsNode!.visitWith(optionsReader);
 
         return optionsReader.options;
@@ -70,11 +97,12 @@ class IncludegraphicsModel extends AbstractVisualisationModel<ASTCommandNode> {
         };
 
         // For each existing option, add an attribute
-        if (this.options.width?.canBeConverted) {
+        // TODO: handle length conversion failures
+        if (this.options.width !== undefined) {
             contentAttributes["data-opt-width"] = this.options.width.px.toString();
         }
 
-        if (this.options.height?.canBeConverted) {
+        if (this.options.height !== undefined) {
             contentAttributes["data-opt-height"] = this.options.height.px.toString();
         }
 
@@ -97,6 +125,8 @@ class IncludegraphicsModel extends AbstractVisualisationModel<ASTCommandNode> {
     }
 
     protected createNotificationHandlerSpecifications(): NotificationHandlerSpecification[] {
+        const self = this;
+
         return [
             ...super.createNotificationHandlerSpecifications(),
 
@@ -112,15 +142,19 @@ class IncludegraphicsModel extends AbstractVisualisationModel<ASTCommandNode> {
                         }
                     }
 
-                    setOptionIfDefined("width", new LatexLength(newOptionsInPx.width, "px"));
-                    setOptionIfDefined("height", new LatexLength(newOptionsInPx.height, "px"));
+                    function createLatexLengthOption(valueInPx: number): LatexLength {
+                        return new LatexLength(valueInPx, "px", "", self.codeMapping.contextualLatexLengthSettings);
+                    }
+
+                    setOptionIfDefined("width", createLatexLengthOption(newOptionsInPx.width));
+                    setOptionIfDefined("height", createLatexLengthOption(newOptionsInPx.height));
                     setOptionIfDefined("scale", newOptionsInPx.scale);
                     setOptionIfDefined("clip", newOptionsInPx.clip);
                     setOptionIfDefined("trim", newOptionsInPx.trim && [
-                        new LatexLength(newOptionsInPx.trim.left, "px"),
-                        new LatexLength(newOptionsInPx.trim.bottom, "px"),
-                        new LatexLength(newOptionsInPx.trim.right, "px"),
-                        new LatexLength(newOptionsInPx.trim.top, "px"),
+                        createLatexLengthOption(newOptionsInPx.trim.left),
+                        createLatexLengthOption(newOptionsInPx.trim.bottom),
+                        createLatexLengthOption(newOptionsInPx.trim.right),
+                        createLatexLengthOption(newOptionsInPx.trim.top),
                     ]);
 
                     await this.updateOptions(newOptions);
@@ -170,19 +204,15 @@ class IncludegraphicsModel extends AbstractVisualisationModel<ASTCommandNode> {
         this.optionsEndPosition = this.optionsStartPosition.translate(0, replacementText.length);
     }
 
-    // Note: includegraphics paths are considered relative to the main LaTeX file
-    // TODO: resolve the absolute path in LaTeX and write it in the mapping file?
-    private createWebviewImageUri(): vscode.Uri {
-        const relativeImagePath = path.resolve(
-            path.dirname(this.utilities.mainSourceFileUri.path),
-            this.imagePath
-        );
-
-        return this.utilities.createWebviewSafeUri(vscode.Uri.file(relativeImagePath));
+    private createWebviewSafeImagePath(): string {
+        const absoluteImagePath = this.absoluteImagePath;
+        return absoluteImagePath !== null
+             ? this.utilities.createWebviewSafeUri(vscode.Uri.file(absoluteImagePath)).toString()
+             : "NO_IMAGE_FILE_FOUND";
     }
 
     protected renderContentAsHTML(): string {
-        const uri = this.createWebviewImageUri();
+        const uri = this.createWebviewSafeImagePath();
         return `
             <div class="frame">
                 <img

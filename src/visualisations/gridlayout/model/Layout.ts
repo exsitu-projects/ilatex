@@ -1,8 +1,8 @@
-import * as vscode from "vscode";
 import * as P from "parsimmon";
 import { ASTEnvironementNode, ASTParameterNode } from "../../../core/ast/LatexASTNode";
-import { LatexLength } from "../../../shared/utils/LatexLength";
+import { LatexLength } from "../../../shared/latex-length/LatexLength";
 import { LayoutExtractor } from "./LayoutExtractor";
+import { CodeMapping } from "../../../core/mappings/CodeMapping";
 
 
 export interface CellOptions {
@@ -97,10 +97,10 @@ export class Layout {
     readonly astNode: ASTEnvironementNode;
     readonly options: LayoutOptions;
 
-    constructor(astNode: ASTEnvironementNode) {
+    constructor(astNode: ASTEnvironementNode, mapping: CodeMapping) {
         this.rows = [];
         this.astNode = astNode;
-        this.options = Layout.extractOptionsFrom(astNode);
+        this.options = Layout.extractOptionsFrom(astNode, mapping);
     }
 
     get nbRows(): number {
@@ -117,18 +117,18 @@ export class Layout {
         );
     }
 
-    private static extractOptionsFrom(gridlayoutNode: ASTEnvironementNode): LayoutOptions {
+    private static extractOptionsFrom(gridlayoutNode: ASTEnvironementNode, mapping: CodeMapping): LayoutOptions {
         const options: LayoutOptions = {};
         
         if (gridlayoutNode.value.parameters[0].length > 0) {
             const parameterNode = gridlayoutNode.value.parameters[0][0] as ASTParameterNode;
-            options["width"] = LatexLength.from(parameterNode.value);
+            options["width"] = LatexLength.from(parameterNode.value, mapping.contextualLatexLengthSettings);
         }
 
         return options;
     }
 
-    static extractFrom(gridlayoutNode: ASTEnvironementNode, document: vscode.TextDocument): Layout {
-        return LayoutExtractor.extractLayoutFrom(gridlayoutNode, document);
+    static extractFrom(gridlayoutNode: ASTEnvironementNode, mapping: CodeMapping): Layout {
+        return LayoutExtractor.extractLayoutFrom(gridlayoutNode, mapping);
     }
 }

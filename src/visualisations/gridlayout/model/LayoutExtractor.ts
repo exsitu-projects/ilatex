@@ -3,21 +3,22 @@ import * as P from "parsimmon";
 import { ASTEnvironementNode } from "../../../core/ast/LatexASTNode";
 import { LatexASTVisitorAdapter } from "../../../core/ast/visitors/LatexASTVisitorAdapter";
 import { Layout } from "./Layout";
+import { CodeMapping } from "../../../core/mappings/CodeMapping";
 
 
 export class LayoutExtractor extends LatexASTVisitorAdapter {
-    private readonly document: vscode.TextDocument;
+    private readonly codeMapping: CodeMapping;
     private readonly layout: Layout;
 
-    private constructor(gridlayoutNode: ASTEnvironementNode, document: vscode.TextDocument) {
+    private constructor(gridlayoutNode: ASTEnvironementNode, mapping: CodeMapping) {
         super();
 
-        this.document = document;
-        this.layout = new Layout(gridlayoutNode);
+        this.codeMapping = mapping;
+        this.layout = new Layout(gridlayoutNode, mapping);
     }
 
-    private getDocumentContent (start: P.Index, end: P.Index): string {
-        return this.document.getText(new vscode.Range(
+    private getDocumentContent(start: P.Index, end: P.Index): string {
+        return this.codeMapping.sourceFile.document.getText(new vscode.Range(
             new vscode.Position(start.line - 1, start.column - 1),
             new vscode.Position(end.line - 1, end.column - 1)
         ));
@@ -41,9 +42,9 @@ export class LayoutExtractor extends LatexASTVisitorAdapter {
         }
     }
 
-    static extractLayoutFrom(gridlayoutNode: ASTEnvironementNode, document: vscode.TextDocument): Layout {
+    static extractLayoutFrom(gridlayoutNode: ASTEnvironementNode, mapping: CodeMapping): Layout {
         // Fill a new layout by visiting the AST
-        const gridExtractor = new LayoutExtractor(gridlayoutNode, document);
+        const gridExtractor = new LayoutExtractor(gridlayoutNode, mapping);
         const layout = gridExtractor.layout;
         gridlayoutNode.value.content.visitWith(gridExtractor, 0);
 

@@ -4,7 +4,6 @@ import { AbstractVisualisationModel, NotificationHandlerSpecification } from "..
 import { ASTNode, ASTEnvironementNode, ASTNodeType, ASTParameterNode } from "../../../core/ast/LatexASTNode";
 import { Cell, Layout, Row } from "./Layout";
 import { HtmlUtils } from "../../../shared/utils/HtmlUtils";
-import { SourceFile } from "../../../core/mappings/SourceFile";
 import { CodeMapping } from "../../../core/mappings/CodeMapping";
 
 
@@ -23,7 +22,7 @@ class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
     constructor(node: ASTEnvironementNode, mapping: CodeMapping, utilities: VisualisationModelUtilities) {
         super(node, mapping, utilities);
 
-        this.layout = Layout.extractFrom(node, mapping.sourceFile.document);
+        this.layout = Layout.extractFrom(node, mapping);
         this.lastModifiedCellSize = null;
         this.lastModifiedRowHeight = null;
     }
