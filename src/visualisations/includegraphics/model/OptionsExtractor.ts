@@ -8,7 +8,12 @@ export interface Options {
     width?: LatexLength;
     height?: LatexLength;
     scale?: number;
-    trim?: LatexLength[];
+    trim?: {
+        left: LatexLength,
+        bottom: LatexLength,
+        right: LatexLength
+        top: LatexLength,
+    };
     clip?: boolean;
     keepaspectratio?: boolean;
 }
@@ -57,9 +62,23 @@ export class OptionsExtractor extends LatexASTVisitorAdapter {
             this.options.scale = parseFloat(value);
         }
         else if (key === "trim") {
-            this.options.trim = value
+            const trimLengths = value
                 .split(/\s+/)
                 .map(lengthAsText => LatexLength.from(lengthAsText, this.latexLengthSettings));
+
+            // If there are more or less than 4 lengths,
+            // the syntax of the trim value is considered invalid
+            if (trimLengths.length !== 4) {
+                console.warn(`The 'trim' parameter has ${trimLengths.length} values (instead of 4): it will be ignored.`);
+                return;
+            }
+
+            this.options.trim = {
+                left: trimLengths[0],
+                bottom: trimLengths[1],
+                right: trimLengths[2],
+                top: trimLengths[3]
+            };
         }
         else if (key === "clip") {
             this.options.clip = value.trim().toLowerCase() === "true";

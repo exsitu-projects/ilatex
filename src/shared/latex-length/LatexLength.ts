@@ -155,9 +155,9 @@ export class LatexLength {
 
     convertTo(unit: string): number {
         // If the target unit is the same than the current unit,
-        // we can simply return the current value
+        // we can simply return the current value (rounded)
         if (this.unit === unit) {
-            return this.value;
+            return this.round(this.value, this.unit);
         } 
 
         // If the target unit is standard, use the dedicated getter-style method
@@ -171,12 +171,33 @@ export class LatexLength {
         return this.round(this.valueInPoints / this.settings.lengthMacroValues[unit], unit);
     }
 
-    withValue(value: number): LatexLength {
-        return new LatexLength(value, this.unit, this.suffix, this.settings);
+    withValue(value: number, valueUnit?: string): LatexLength {
+        // If the given value is not using the same unit as this length, it must be converted first!
+        let newValue = (valueUnit && valueUnit !== this.unit)
+                     ? new LatexLength(value, valueUnit, this.suffix, this.settings).convertTo(this.unit)
+                     : value;
+
+        return new LatexLength(newValue, this.unit, this.suffix, this.settings);
     }
 
     withUnit(unit: string): LatexLength {
         return new LatexLength(this.convertTo(unit), unit, this.suffix, this.settings);
+    }
+
+    toString(round: boolean = true): string {
+        // If there is a suffix, prefix it with a space
+        const spacedSuffixOrEmptyString = this.suffix ? ` ${this.suffix}` : "";
+
+        // Round the current value if needed
+        const valueToPrint = round
+                           ? this.round(this.value, this.unit)
+                           : this.value;
+
+        // If the rounded value is equal to 1 and the unit is a length macro,
+        // do not display any value before the unit (a common LaTeX pattern)
+        return (!LatexLength.isStandardUnit(this.unit) && valueToPrint === 1)
+             ? `${this.unit}${this.suffix}`
+             : `${valueToPrint}${this.unit}${this.suffix}`;
     }
 
     private round(value: number, unit: string): number {

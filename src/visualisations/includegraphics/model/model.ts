@@ -7,7 +7,21 @@ import { ASTNode, ASTCommandNode, ASTNodeType, ASTParameterListNode, ASTParamete
 import { Options, OptionsExtractor } from "./OptionsExtractor";
 import { LatexLength } from "../../../shared/latex-length/LatexLength";
 import { CodeMapping } from "../../../core/mappings/CodeMapping";
-import { fstat } from "fs";
+
+
+// TODO: avoid copying this type by hand...
+interface RawViewOptions {
+    width?: number;
+    height?: number;
+    scale?: number;
+    trim?: {
+        top: number;
+        bottom: number;
+        left: number;
+        right: number;
+    }
+    clip?: boolean;
+}
 
 
 class IncludegraphicsModel extends AbstractVisualisationModel<ASTCommandNode> {
@@ -111,10 +125,10 @@ class IncludegraphicsModel extends AbstractVisualisationModel<ASTCommandNode> {
         }
 
         if (this.options.trim !== undefined) {
-            contentAttributes["data-opt-trim-left"] = this.options.trim[0].px.toString();
-            contentAttributes["data-opt-trim-bottom"] = this.options.trim[1].px.toString();
-            contentAttributes["data-opt-trim-right"] = this.options.trim[2].px.toString();
-            contentAttributes["data-opt-trim-top"] = this.options.trim[3].px.toString();
+            contentAttributes["data-opt-trim-left"] = this.options.trim.left.px.toString();
+            contentAttributes["data-opt-trim-bottom"] = this.options.trim.bottom.px.toString();
+            contentAttributes["data-opt-trim-right"] = this.options.trim.right.px.toString();
+            contentAttributes["data-opt-trim-top"] = this.options.trim.top.px.toString();
         }
 
         if (this.options.clip !== undefined) {
@@ -133,49 +147,74 @@ class IncludegraphicsModel extends AbstractVisualisationModel<ASTCommandNode> {
             {
                 title: "set-options",
                 handler: async payload => {
-                    const newOptionsInPx = payload.newOptions;
-                    const newOptions: Options = {};
-
-                    function setOptionIfDefined<K extends keyof Options>(key: K, value: Options[K]): void {
-                        if (newOptionsInPx[key] !== undefined) {
-                            newOptions[key] = value;
-                        }
-                    }
-
-                    function createLatexLengthOption(valueInPx: number): LatexLength {
-                        return new LatexLength(valueInPx, "px", "", self.codeMapping.contextualLatexLengthSettings);
-                    }
-
-                    setOptionIfDefined("width", createLatexLengthOption(newOptionsInPx.width));
-                    setOptionIfDefined("height", createLatexLengthOption(newOptionsInPx.height));
-                    setOptionIfDefined("scale", newOptionsInPx.scale);
-                    setOptionIfDefined("clip", newOptionsInPx.clip);
-                    setOptionIfDefined("trim", newOptionsInPx.trim && [
-                        createLatexLengthOption(newOptionsInPx.trim.left),
-                        createLatexLengthOption(newOptionsInPx.trim.bottom),
-                        createLatexLengthOption(newOptionsInPx.trim.right),
-                        createLatexLengthOption(newOptionsInPx.trim.top),
-                    ]);
-
-                    await this.updateOptions(newOptions);
+                    const rawOptions = payload.newOptions as RawViewOptions;
+                    const updatedOptions = this.createUpdatedOptionsFromRawViewOptions(rawOptions);
+                    
+                    await this.setOptions(updatedOptions);
                 }
             }
         ];
     }
 
-    private async updateOptions(newOptions: Options): Promise<void> {
+    private createUpdatedOptionsFromRawViewOptions(rawOptions: RawViewOptions): Options {
+        const self = this;
+
+        // For the moment, there is no need to reuse the current options (only the current length units)
+        // We therefore start with an empty options object
+        const updatedOptions: Options = {};
+
+        // Either reuse the unit/suffix/settings of the current length option or create a new one
+        function createNewLengthWithOldUnitOrInPx(valueInPx: number, currentLengthOption: LatexLength | undefined): LatexLength {
+            return currentLengthOption
+                ? currentLengthOption.withValue(valueInPx, "px")
+                : new LatexLength(valueInPx, "px", "", self.codeMapping.contextualLatexLengthSettings);
+        }
+
+        if (rawOptions.width) {
+            updatedOptions.width = createNewLengthWithOldUnitOrInPx(rawOptions.width, this.options.width);
+        }
+        if (rawOptions.height) {
+            updatedOptions.height = createNewLengthWithOldUnitOrInPx(rawOptions.height, this.options.height);
+        }
+        if (rawOptions.scale) {
+            updatedOptions.scale = rawOptions.scale;
+        }
+        if (rawOptions.clip) {
+            updatedOptions.clip = rawOptions.clip;
+        }
+        if (rawOptions.trim) {
+            updatedOptions.trim = {
+                left: createNewLengthWithOldUnitOrInPx(rawOptions.trim.left, this.options.trim?.left),
+                bottom: createNewLengthWithOldUnitOrInPx(rawOptions.trim.bottom, this.options.trim?.bottom),
+                right: createNewLengthWithOldUnitOrInPx(rawOptions.trim.right, this.options.trim?.right),
+                top: createNewLengthWithOldUnitOrInPx(rawOptions.trim.top, this.options.trim?.top),
+            };
+        }
+
+        return updatedOptions;
+    }
+
+    private async setOptions(newOptions: Options): Promise<void> {
         const editor = await this.codeMapping.sourceFile.getOrDisplayInEditor();
 
-        // Transform options as optional key-value  parameters for the includegraphics command
+        // Transform options as optional key-value parameters for the includegraphics command
         const allOptionsAsStrings = [];
-        if (newOptions.width) { allOptionsAsStrings.push(`width=${newOptions.width.px}px`); }
-        if (newOptions.height) { allOptionsAsStrings.push(`height=${newOptions.height.px}px`); }
-        if (newOptions.trim) {
-            const trimValuesInPxAsStrings = newOptions.trim
-                .map(value => `${value.px}px`)
-                .join(" ");
 
-            allOptionsAsStrings.push(`trim=${trimValuesInPxAsStrings}`);
+        if (newOptions.width) { allOptionsAsStrings.push(`width=${newOptions.width.toString()}`); }
+        if (newOptions.height) { allOptionsAsStrings.push(`height=${newOptions.height.toString()}`); }
+        if (newOptions.trim) {
+            const sortedTrimLengths = [
+                newOptions.trim.left,
+                newOptions.trim.bottom,
+                newOptions.trim.right,
+                newOptions.trim.top
+            ];
+
+            allOptionsAsStrings.push(`trim=${
+                sortedTrimLengths
+                    .map(length => length.toString())
+                    .join(" ")
+            }`);
         }
         if (newOptions.clip) { allOptionsAsStrings.push(`clip`); }
 
