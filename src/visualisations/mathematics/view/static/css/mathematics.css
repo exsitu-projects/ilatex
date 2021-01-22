@@ -14,7 +14,7 @@
 }
 
 [data-visualisation-name="mathematics"] .complete-math-code:hover {
-    background-color: #f3f3f3;
+    background-color: #e6e6e6;
 }
 
 [data-visualisation-name="mathematics"] .selected-math-region-code {
@@ -23,7 +23,12 @@
 }
 
 [data-visualisation-name="mathematics"] .complete-math-code .selected-region-code {
-    background-color: rgba(251, 149, 31, 0.75);
+    background-color: #8CD3FF;
+}
+
+[data-visualisation-name="mathematics"] .complete-math-code .hovered-region-code,
+[data-visualisation-name="mathematics"] .complete-math-code .selected-region-code.hovered-region-code {
+    background-color: #FDC34C;
 }
 
 [data-visualisation-name="mathematics"] span[data-source-location-start][data-source-location-end] {
@@ -31,13 +36,13 @@
     cursor: default;
 }
 
-[data-visualisation-name="mathematics"] span[data-source-location-start][data-source-location-end]:hover {
-    background-color: rgba(251, 149, 31, 0.75);
+[data-visualisation-name="mathematics"] span[data-source-location-start][data-source-location-end]:hover,
+[data-visualisation-name="mathematics"] span[data-source-location-start][data-source-location-end].selected-region:hover {
+    background-color: #FDC34C;
 }
 
 [data-visualisation-name="mathematics"] span[data-source-location-start][data-source-location-end].selected-region {
-    /* background-color: rgba(31, 145, 251, 0.75); */
-    background-color: rgba(251, 149, 31, 0.75);
+    background-color: #8CD3FF;
 }
 
 [data-visualisation-name="mathematics"] .typeset-math {
