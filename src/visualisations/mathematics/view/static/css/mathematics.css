@@ -26,22 +26,7 @@
     background-color: rgba(251, 149, 31, 0.75);
 }
 
-
-[data-visualisation-name="mathematics"] .selected-math-region-code .offset-range {
-    padding: 0 1em 0 0;
-    color: #AAA;
-}
-
-[data-visualisation-name="mathematics"] .selected-math-region-code .offset-range::before {
-    content: "[pos: ";
-}
-
-[data-visualisation-name="mathematics"] .selected-math-region-code .offset-range::after {
-    content: "]";
-}
-
 [data-visualisation-name="mathematics"] span[data-source-location-start][data-source-location-end] {
-    /* background-color: rgba(0, 0, 0, 0.05); */
     border-radius: 2px;
     cursor: default;
 }

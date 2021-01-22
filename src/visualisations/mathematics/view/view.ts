@@ -15,7 +15,6 @@ class MathematicsView extends AbstractVisualisationView {
     
     private viewNode: HTMLElement;
     private completeMathCodeNode: HTMLElement;
-    private selectedMathRegionCodeNode: HTMLElement;
     private typesetMathNode: HTMLElement;
 
     // Reference to the currently selected region of the typeset maths (if any)
@@ -41,10 +40,6 @@ class MathematicsView extends AbstractVisualisationView {
         this.completeMathCodeNode.classList.add("complete-math-code");
         this.viewNode.append(this.completeMathCodeNode);
 
-        this.selectedMathRegionCodeNode = document.createElement("div");
-        this.selectedMathRegionCodeNode.classList.add("selected-math-region-code");
-        this.viewNode.append(this.selectedMathRegionCodeNode);
-
         this.typesetMathNode = document.createElement("div");
         this.typesetMathNode.classList.add("typeset-math");
         this.viewNode.append(this.typesetMathNode);
@@ -52,7 +47,6 @@ class MathematicsView extends AbstractVisualisationView {
         this.selectedMathRegionNode = null;
 
         this.updateCompleteMathCodeNode();
-        this.updateSelectedMathRegionCodeNode();
         this.updateTypesetMathNode();
 
         this.startHandlingMouseEvents();
@@ -117,31 +111,6 @@ class MathematicsView extends AbstractVisualisationView {
         }
     }
 
-    private updateSelectedMathRegionCodeNode(): void {
-        this.selectedMathRegionCodeNode.innerHTML = "";
-
-        // If no region is currently selected, display nothing
-        if (!this.someMathRegionIsSelected) {
-            return;
-        }
-
-        // Otherwise, display the offset range and the related subset of math. code
-        const offsetRange = this.selectedMathRegionCodeOffsetRange;
-        const codeSubset = this.selectedMathRegionCodeSubset;
-
-        const offsetRangeNode = document.createElement("span");
-        offsetRangeNode.classList.add("offset-range");
-        offsetRangeNode.textContent = offsetRange[0] === offsetRange[1]
-            ? `${offsetRange[0]}`
-            : `${offsetRange[0]}–${offsetRange[1]}`;
-        this.selectedMathRegionCodeNode.append(offsetRangeNode);
-        
-        const codeEditorNode = document.createElement("input");
-        codeEditorNode.classList.add("code-editor");
-        codeEditorNode.value = codeSubset;
-        this.selectedMathRegionCodeNode.append(codeEditorNode);
-    }
-
     private updateTypesetMathNode(): void {
         katex.render(this.trimmedMathCode, this.typesetMathNode, {
             displayMode: true
@@ -166,7 +135,6 @@ class MathematicsView extends AbstractVisualisationView {
         
         // In any case, update the complete code + the code of the selected region
         this.updateCompleteMathCodeNode();
-        this.updateSelectedMathRegionCodeNode();
     }
 
     private onCompleteMathCodeEdit(event: InputEvent): void {
@@ -214,7 +182,6 @@ class MathematicsView extends AbstractVisualisationView {
         this.selectedMathRegionNode = null;
 
         this.updateCompleteMathCodeNode();
-        this.updateSelectedMathRegionCodeNode();
         this.updateTypesetMathNode();
     };
 
