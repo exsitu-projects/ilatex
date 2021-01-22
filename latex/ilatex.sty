@@ -4,6 +4,7 @@
 \RequirePackage[abspath]{currfile}
 \RequirePackage{pdfcomment}
 \RequirePackage{graphicx}
+\RequirePackage{amsmath}
 
 
 % Create an output file named '.ilatex-mappings'
@@ -114,6 +115,29 @@
 % Using a hook provided by the etoolbox package seems to work well!
 \AtBeginEnvironment{itabular}{%
     \WriteMapToCurrentLine@ilatex{tabular}%
+}
+
+% Define a custom equation-like environement
+% which can be manipulated through ilatex.
+\NewEnviron{imaths}
+{%
+    \let\CurrentAnnotationValue@ilatex\theAnnotation@ilatex%
+    \par\noindent
+    \vspace{\abovedisplayskip}
+    \pdftooltip{%
+    \begin{minipage}{\linewidth}%
+    \begin{equation*}%
+        \BODY
+    \end{equation*}%
+    \end{minipage}%
+    }{ilatex-code-mapping-id-\CurrentAnnotationValue@ilatex}%
+    \stepcounter{Annotation@ilatex}%
+    \vspace{\belowdisplayskip}
+}
+{}
+
+\AtBeginEnvironment{imaths}{%
+    \WriteMapToCurrentLine@ilatex{mathematics}%
 }
 
 

@@ -1,4 +1,6 @@
 import * as vscode from "vscode";
+import * as fs from "fs";
+import * as readline from "readline";
 import { LatexAST } from "../ast/LatexAST";
 
 export class NotInitialisedError {}
@@ -85,5 +87,16 @@ export class SourceFile {
         if (!success) {
             console.error("An error occured when trying to save the source file.");
         }
+    }
+
+    readContentSync(): string {
+        return fs.readFileSync(this.absolutePath)
+            .toString();
+    }
+
+    readContentSplitByLineSync(): string[] {
+        return this.readContentSync()
+            .replace(/\r\n/g,"\n") /* to cope with Windows' EOL */
+            .split("\n");
     }
 }

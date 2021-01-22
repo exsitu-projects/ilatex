@@ -8,12 +8,14 @@ import { TabularModelFactory } from "../../visualisations/tabular/model/model";
 import { GridLayoutModelFactory } from "../../visualisations/gridlayout/model/model";
 import { SourceFile } from "../mappings/SourceFile";
 import { CodeMapping, CodeMappingID } from "../mappings/CodeMapping";
+import { MathematicsModelFactory } from "../../visualisations/mathematics/model/model";
 
 export class VisualisationModelManager {
     private static readonly AVAILABLE_VISUALISATION_FACTORIES: VisualisationModelFactory[] = [
+        new MathematicsModelFactory(),
         new IncludegraphicsModelFactory(),
         new TabularModelFactory(),
-        new GridLayoutModelFactory()
+        new GridLayoutModelFactory(),
     ];
 
     private ilatex: InteractiveLatex;

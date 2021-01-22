@@ -6,6 +6,7 @@ import { WebviewToCoreMessageType, CoreToWebviewMessageType, UpdateVisualisation
 import { IncludegraphicsViewFactory } from "../../visualisations/includegraphics/view/view";
 import { TabularViewFactory } from "../../visualisations/tabular/view/view";
 import { GridLayoutViewFactory } from "../../visualisations/gridlayout/view/view";
+import { MathematicsViewFactory } from "../../visualisations/mathematics/view/view";
 
 export interface VisualisationDisplayRequest {
     codeMappingId: number;
@@ -23,7 +24,8 @@ export class VisualisationViewManager {
     private static readonly AVAILABLE_VISUALISATION_FACTORIES: VisualisationViewFactory[] = [
         new IncludegraphicsViewFactory(),
         new TabularViewFactory(),
-        new GridLayoutViewFactory()
+        new GridLayoutViewFactory(),
+        new MathematicsViewFactory()
     ];
 
     private messenger: Messenger;
