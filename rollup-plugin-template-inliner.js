@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+import { minify } from "html-minifier";
 
 
 function collectStaticDataFromDirectory(pathToStaticDirectory) {
@@ -81,10 +82,12 @@ function getAllStaticDataByType() {
 
 function inlineStaticData(html, pathToBundle, staticData) {
     const inlinedCss = staticData.cssFiles
-        .map(({ fileName, content }) => `
-            <!-- ${fileName} -->
-            <style>${content}</style>
-        `)
+        .map(({ fileName, content }) => {
+            return `
+                <!-- ${fileName} -->
+                <style>${content}</style>
+            `;
+        })
         .join("");
 
     const jsFilesWithBundle = [
@@ -104,11 +107,19 @@ function inlineStaticData(html, pathToBundle, staticData) {
         .join("");
 
     return html
-        .replace("</head>", inlinedCss + inlinedJs + "</head>");
+        .replace("</head>", () => inlinedCss + inlinedJs + "</head>");
 }
 
+// Default plugin options
+const DEFAULT_PLUGIN_OPTIONS = {
+    minify: false, // Whether to minify the output HTML (i.e. including JS and CSS)
+};
+
 // Custom plugin for inlining everything in a single HTML file
-export default function templateInliner(options) {
+export default function templateInliner(pluginOptions = {}) {
+    // Any option provided in the 'options' object will override the default values
+    const options = { ...DEFAULT_PLUGIN_OPTIONS, ...pluginOptions };
+
     return {
         name: "template-inliner",
 
@@ -118,6 +129,7 @@ export default function templateInliner(options) {
         },
 
         writeBundle(outputOptions, bundle) {
+
             const staticData = getAllStaticDataByType();
             const pathToBundle = outputOptions.file;
 
@@ -125,15 +137,21 @@ export default function templateInliner(options) {
             const pathToInlinedHtmlFile = path.resolve("./", path.parse(outputOptions.file).dir, "webview.inlined.html");
 
             const htmlTemplate = fs.readFileSync(pathToHtmlTemplate, "utf-8");
-            const finalHtml = inlineStaticData(htmlTemplate, pathToBundle, staticData);
+            let inlinedHtml = inlineStaticData(htmlTemplate, pathToBundle, staticData);
 
-            fs.writeFileSync(pathToInlinedHtmlFile, finalHtml, "utf-8");
+            // Optionally minify the HTML before writing it to the output file
+            if (options.minify) {
+                inlinedHtml = minify(inlinedHtml, {
+                    removeComments: true,
+                    minifyCSS: true,
+                    minifyJS: {
+                        keep_fnames: true
+                    },
+                });
+            }
 
-            // this.emitFile({
-            //     type: "asset",
-            //     filename: "webview.html",
-            //     source: finalHtml
-            // });
+            fs.writeFileSync(pathToInlinedHtmlFile, inlinedHtml, "utf-8");
+            console.info(`[rollup-plugin-template-inliner] HTML with inlined JS/CSS → ${pathToInlinedHtmlFile}`);
         }
     };
 };
