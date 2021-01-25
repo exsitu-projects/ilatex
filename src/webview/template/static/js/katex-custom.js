@@ -7032,7 +7032,7 @@ var buildMathML_buildExpression = function buildExpression(expression, options, 
       group.setAttribute("rspace", "0em");
     }
 
-    console.info("buildMathML_buildExpression returned (case 1):", expression, [group]);
+    // console.info("buildMathML_buildExpression returned (case 1):", expression, [group]);
     // debugger;
 
     return [group];
@@ -7046,7 +7046,7 @@ var buildMathML_buildExpression = function buildExpression(expression, options, 
   for (var i = 0; i < expression.length; i++) {
     var _group = buildMathML_buildGroup(expression[i], options);
 
-    console.log("_group in buildMathML_buildExpression:", _group);
+    // console.log("_group in buildMathML_buildExpression:", _group);
 
     if (_group instanceof mathMLTree_MathNode && lastGroup instanceof mathMLTree_MathNode) {
       // Concatenate adjacent <mtext>s
@@ -7091,7 +7091,7 @@ var buildMathML_buildExpression = function buildExpression(expression, options, 
     lastGroup = _group;
   }
 
-  console.info("buildMathML_buildExpression returned (case 2):", expression, groups);
+  // console.info("buildMathML_buildExpression returned (case 2):", expression, groups);
   // debugger;
   
   return groups;
@@ -10271,7 +10271,7 @@ var array_mathmlBuilder = function mathmlBuilder(group, options) {
     table.setAttribute("scriptlevel", "1");
   }
 
-  console.info("MathML builder:", group, table);
+  // console.info("MathML builder:", group, table);
 
   return table;
 }; // Convenience function for aligned and alignedat environments.
@@ -16270,7 +16270,7 @@ function () {
       this.formLigatures(body);
     }
 
-    console.log("Expression body just parsed:", body, this.handleInfixNodes(body));
+    // console.log("Expression body just parsed:", body, this.handleInfixNodes(body));
 
     return this.handleInfixNodes(body);
   }
@@ -16960,7 +16960,7 @@ function () {
       this.switchMode(outerMode);
     }
 
-    console.log("Group just parsed:", result);
+    // console.log("Group just parsed:", result);
 
     return result;
   }
@@ -17160,7 +17160,7 @@ function () {
       }
     }
 
-    console.log("Symbol just parsed:", symbol);
+    // console.log("Symbol just parsed:", symbol);
 
     return symbol;
   };
