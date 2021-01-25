@@ -2,11 +2,13 @@
 export const enum CoreToWebviewMessageType {
     UpdateVisualisations = "UpdateVisualisations",
     UpdatePDF = "UpdatePDF",
-    UpdateCompilationStatus = "UpdateCompilationStatus"
+    UpdateCompilationStatus = "UpdateCompilationStatus",
+    UpdateVisualisationStatusMessage = "UpdateVisualisationStatusMessage"
 }
 
 export const enum WebviewToCoreMessageType {
-    NotifyVisualisationModel = "NotifyVisualisationModel"
+    NotifyVisualisationModel = "NotifyVisualisationModel",
+    SaveAndRecompileRequest = "SaveAndRecompileRequest",
 }
 
 export type MessageType =
@@ -17,7 +19,7 @@ export type MessageType =
 export interface UpdateVisualisationsMessage {
     type: CoreToWebviewMessageType.UpdateVisualisations;
     newVisualisationsAsHtml: string;
-    requestedByVisualisation: boolean;
+    updateOpenVisualisation: boolean;
 }
 
 export interface UpdatePDFMessage {
@@ -30,8 +32,13 @@ export interface UpdateCompilationStatusMessage {
     pdfIsCurrentlyCompiled: boolean;
 }
 
+export interface UpdateVisualisationStatusMessage {
+    type: CoreToWebviewMessageType.UpdateVisualisationStatusMessage;
+    enableVisualisations: boolean;
+}
+
 export type CoreToWebviewMessage =
-    UpdateVisualisationsMessage | UpdatePDFMessage | UpdateCompilationStatusMessage;
+    UpdateVisualisationsMessage | UpdatePDFMessage | UpdateCompilationStatusMessage | UpdateVisualisationStatusMessage;
 
 
 // Specification of each type of message which can be sent by the webview to the core
@@ -42,8 +49,12 @@ export interface NotifyVisualisationModelMessage {
     notification: object;
 };
 
+export interface SaveAndRecompileRequestMessage {
+    type: WebviewToCoreMessageType.SaveAndRecompileRequest;
+}
+
 export type WebviewToCoreMessage =
-    NotifyVisualisationModelMessage;
+    NotifyVisualisationModelMessage | SaveAndRecompileRequestMessage;
 
 
 // Generic type of a message exchanged between the core and the webview

@@ -14,12 +14,14 @@ export class CodeMappingManager {
 
     private ilatex: InteractiveLatex;
     private mappings: CodeMapping[];
-    private sourceFileChangeWatchers: fs.FSWatcher[];
+
+    private sourceFileSaveWatchers: fs.FSWatcher[];
 
     constructor(ilatex: InteractiveLatex) {
         this.ilatex = ilatex;
         this.mappings = [];
-        this.sourceFileChangeWatchers = [];
+
+        this.sourceFileSaveWatchers = [];
     }
 
     private get latexGeneratedMappingFilePath(): string {
@@ -50,8 +52,18 @@ export class CodeMappingManager {
         return sourceFiles;
     }
 
+    get someSourceFileIsDirty(): boolean {
+        return this.allSourceFiles.some(sourceFile => sourceFile.document.isDirty);
+    }
+
+    async saveAllSourceFiles(): Promise<void> {
+        await Promise.all(
+            this.allSourceFiles.map(sourceFile => sourceFile.saveDocument())
+        );
+    }
+
     dispose(): void {
-        this.stopObservingSourceFileChanges();
+        this.stopObservingSourceFileSaves();
     }
 
     private readLatexGeneratedMappingFile(): string {
@@ -104,43 +116,41 @@ export class CodeMappingManager {
     }
 
     async updateMappingsFromLatexGeneratedFile(): Promise<void> {
-        this.stopObservingSourceFileChanges();
+        this.stopObservingSourceFileSaves();
 
         this.mappings = this.createMappingsFromLatexGeneratedFile();
         await this.readAndParseAllSourceFiles();
 
-        this.startObservingDocumentChanges();
+        this.startObservingSourceFileSaves();
     }
 
-    private startObservingDocumentChanges(): void {
+    private startObservingSourceFileSaves(): void {
         for (let sourceFile of this.allSourceFiles) {
             const sourceFileChangeDebouncer = new TaskDebouncer(
                 CodeMappingManager.DELAY_BETWEEN_FILE_CHANGE_POLLING
             );
     
-            this.sourceFileChangeWatchers.push(
+            this.sourceFileSaveWatchers.push(
                 fs.watch(sourceFile.absolutePath, (event, filename) => {
                     sourceFileChangeDebouncer.add(async () => {
-                        await this.onSourceFileChange();
+                        await this.onSourceFileSave();
                     });
                 })
             );
         }
     }
 
-    private stopObservingSourceFileChanges(): void {
-        for (let watcher of this.sourceFileChangeWatchers) {
+    private stopObservingSourceFileSaves(): void {
+        for (let watcher of this.sourceFileSaveWatchers) {
             watcher.close();
         }
 
-        this.sourceFileChangeWatchers = [];
+        this.sourceFileSaveWatchers = [];
     }
 
-    // Every time a source file is modified,
+    // Every time a source file is SAVED,
     // both the PDF and the visualisations must be updated
-    // (e.g. after saving a modified LaTeX document in VSCode)
-    private async onSourceFileChange(): Promise<void> {
-        console.log("source file changed ; about to update everything...");
+    private async onSourceFileSave(): Promise<void> {
         await this.ilatex.updatePDFAndVisualisations();
     }
 }

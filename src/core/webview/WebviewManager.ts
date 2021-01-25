@@ -56,6 +56,19 @@ export class WebviewManager {
                 });
             }
         );
+
+        this.setHandlerFor(
+            WebviewToCoreMessageType.SaveAndRecompileRequest,
+            async (message) => {
+                await this.ilatex.codeMappingManager.saveAllSourceFiles();
+
+                // If the PDF is not already being compiled, rebuild it once the files have been saved
+                if (!this.ilatex.pdfManager.isBuildingPDF) {
+                    await this.ilatex.pdfManager.buildPDFAndUpdateWebview();
+                }
+
+            }
+        );
     }
 
     private startObservingWebviewPanelStateChanges(): void {
@@ -98,13 +111,13 @@ export class WebviewManager {
         return this.webview.asWebviewUri(uri);
     }
 
-    sendNewVisualisationViewContent(newContent: string, requestedByVisualisation: boolean = false): void {
+    sendNewVisualisationViewContent(newContent: string, updateOpenVisualisation: boolean = false): void {
         console.info("About to send new visualisation content to the webview...");
 
         this.messenger.sendMessage({
             type: CoreToWebviewMessageType.UpdateVisualisations,
             newVisualisationsAsHtml: newContent,
-            requestedByVisualisation: requestedByVisualisation
+            updateOpenVisualisation: updateOpenVisualisation
         });
     }
 
@@ -123,6 +136,15 @@ export class WebviewManager {
         this.messenger.sendMessage({
             type: CoreToWebviewMessageType.UpdateCompilationStatus,
             pdfIsCurrentlyCompiled: pdfIsCurrentylCompiled
+        });        
+    }
+
+    sendNewVisualisationStatus(enableVisualisations: boolean): void {
+        console.info("About to send a new visualisation status to the webview...");
+
+        this.messenger.sendMessage({
+            type: CoreToWebviewMessageType.UpdateVisualisationStatusMessage,
+            enableVisualisations: enableVisualisations
         });        
     }
 }

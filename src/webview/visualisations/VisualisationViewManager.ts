@@ -2,7 +2,7 @@ import { AnnotationMaskCoordinates } from "../pdf/PDFPageRenderer";
 import { Messenger } from "../Messenger";
 import { VisualisationView, VisualisationViewFactory } from "./VisualisationView";
 import { VisualisationPopup } from "./VisualisationPopup";
-import { WebviewToCoreMessageType, CoreToWebviewMessageType, UpdateVisualisationsMessage } from "../../shared/messenger/messages";
+import { WebviewToCoreMessageType, CoreToWebviewMessageType, UpdateVisualisationsMessage, UpdateVisualisationStatusMessage } from "../../shared/messenger/messages";
 import { IncludegraphicsViewFactory } from "../../visualisations/includegraphics/view/view";
 import { TabularViewFactory } from "../../visualisations/tabular/view/view";
 import { GridLayoutViewFactory } from "../../visualisations/gridlayout/view/view";
@@ -21,6 +21,7 @@ export interface VisualisationDisplayRequest {
 
 export class VisualisationViewManager {
     static readonly REQUEST_VISUALISATION_DISPLAY_EVENT = "request-visualisation-display";
+    static readonly VISUALISATIONS_ARE_UNAVAILABLE_BODY_CLASS = "visualisations-unavailable";
     private static readonly AVAILABLE_VISUALISATION_FACTORIES: VisualisationViewFactory[] = [
         new IncludegraphicsViewFactory(),
         new TabularViewFactory(),
@@ -37,6 +38,8 @@ export class VisualisationViewManager {
     private currentlyDisplayedVisualisationView: VisualisationView | null;
     private currentlyDisplayedVisualisationPopup: VisualisationPopup | null;
 
+    private enableVisualisations: boolean;
+
     constructor(messenger: Messenger) {
         this.messenger = messenger;
 
@@ -50,8 +53,11 @@ export class VisualisationViewManager {
         this.currentlyDisplayedVisualisationView = null;
         this.currentlyDisplayedVisualisationPopup = null;
 
+        this.enableVisualisations = true;
+
         this.startHandlingVisualisationDisplayRequests();
         this.startHandlingVisualisationContentUpdates();
+        this.startHandlingVisualisationStatusUpdate();
     }
 
     private getVisualisationContentNodeWith(codeMappingId: number): HTMLElement | null {
@@ -132,10 +138,9 @@ export class VisualisationViewManager {
         // Update the content of the visualisations using the HTML provided by the core
         this.visualisationContentContainerNode.innerHTML = message.newVisualisationsAsHtml;
         
-        // If the update was requested by the visualisation which is currenty displayed,
-        // ensure it is still displayed and forward it the message (so it can update itself)
-        if (this.currentlyDisplayedVisualisationView
-        && message.requestedByVisualisation) {
+        // If the update allows to safely update any visualisation currently on display,
+        // check if one is displayed and forward it the message so that it can update itself
+        if (message.updateOpenVisualisation && this.currentlyDisplayedVisualisationView) {
             const codeMappingId = this.currentlyDisplayedVisualisationView.codeMappingId;
             const newContentNode = this.visualisationContentContainerNode
                 .querySelector(`.visualisation[data-code-mapping-id="${codeMappingId}"]`) as HTMLElement;
@@ -152,6 +157,29 @@ export class VisualisationViewManager {
             CoreToWebviewMessageType.UpdateVisualisations,
             (message: UpdateVisualisationsMessage) => {
                 this.handleVisualisationContentUpdate(message);
+            }
+        );
+    }
+
+    private handleVisualisationStatusUpdate(message: UpdateVisualisationStatusMessage): void {
+        this.enableVisualisations = message.enableVisualisations;
+        document.body.classList.toggle(
+            VisualisationViewManager.VISUALISATIONS_ARE_UNAVAILABLE_BODY_CLASS,
+            !this.enableVisualisations
+        );
+
+        // If the visualisations just became unavailable,
+        // make sure to close the one currently in display (if any)
+        if (!this.enableVisualisations) {
+            this.currentlyDisplayedVisualisationPopup?.close();
+        }
+    }
+
+    private startHandlingVisualisationStatusUpdate(): void {
+        this.messenger.setHandlerFor(
+            CoreToWebviewMessageType.UpdateVisualisationStatusMessage,
+            (message: UpdateVisualisationStatusMessage) => {
+                this.handleVisualisationStatusUpdate(message);
             }
         );
     }

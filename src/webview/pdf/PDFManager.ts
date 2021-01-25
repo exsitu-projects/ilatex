@@ -1,11 +1,12 @@
 import * as pdfjs from "./PdfJsApi";
 import { Messenger } from "../Messenger";
 import { PDFRenderer } from "./PDFRenderer";
-import { CoreToWebviewMessageType, UpdateCompilationStatusMessage, UpdatePDFMessage } from "../../shared/messenger/messages";
+import { CoreToWebviewMessageType, UpdateCompilationStatusMessage, UpdatePDFMessage, WebviewToCoreMessageType } from "../../shared/messenger/messages";
 import { TaskQueuer } from "../../shared/tasks/TaskQueuer";
 import { TaskDebouncer } from "../../shared/tasks/TaskDebouncer";
 import { PDFOverlayManager } from "./overlay/PDFOverlayManager";
 import { PDFOverlayNotification, PDFOverlayNotificationType } from "./overlay/PDFOverlayNotification";
+import { PDFOverlayButton } from "./overlay/PDFOverlayButton";
 
 const pdfIsCurrentlyCompiledNotification = new PDFOverlayNotification(
     PDFOverlayNotificationType.Loading,
@@ -30,6 +31,16 @@ export class PDFManager {
     private pdfSyncTaskRunner: TaskQueuer;
     private pdfResizingRequestDebouncer: TaskDebouncer;
 
+    private recompilePdfActionButton = new PDFOverlayButton(
+        "Recompile",
+        "recompile-pdf-button",
+        self => {
+            this.messenger.sendMessage({
+                type: WebviewToCoreMessageType.SaveAndRecompileRequest
+            });
+        }
+    );
+
     constructor(messenger: Messenger) {
         this.messenger = messenger;
         this.renderer = null;
@@ -49,6 +60,8 @@ export class PDFManager {
         this.startHandlingPdfUpdates();
         this.startHandlingWindowResizes();
         this.startHandlingCompilationStatusChanges();
+
+        this.displayPermanentActionButtons();
     }
 
     async loadPDF(pdfUri: string): Promise<boolean> {
@@ -78,6 +91,10 @@ export class PDFManager {
             await newRenderer.init();
             await newRenderer.redraw(this.pdfContainerNode);
         }
+    }
+
+    displayPermanentActionButtons(): void {
+        this.overlayManager.displayActionButton(this.recompilePdfActionButton);
     }
 
     updatePDFCompilationStatus(pdfIsCurrentlyCompiled: boolean): void {

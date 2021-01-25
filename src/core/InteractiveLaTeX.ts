@@ -14,6 +14,9 @@ export class InteractiveLatex {
     readonly webviewManager: WebviewManager;
     readonly visualisationModelManager: VisualisationModelManager;
 
+    private textFileChangeDisposable: vscode.Disposable;
+    private textFileSaveDisposable: vscode.Disposable;
+
     private constructor(mainSourceFileUri: vscode.Uri, webviewPanel: vscode.WebviewPanel) {
         this.mainSourceFileUri = mainSourceFileUri;
         this.webviewPanel = webviewPanel;
@@ -22,6 +25,19 @@ export class InteractiveLatex {
         this.pdfManager = new PDFManager(this);
         this.webviewManager = new WebviewManager(this, webviewPanel);
         this.visualisationModelManager = new VisualisationModelManager(this);
+
+        // Register observers for changes and saves in any text document
+        // Every time a source file containing code mappings is MODIFIED or SAVED,
+        // the 'dirty' status of the underlying document may change
+        // Since this status is used to determine whether visualisations can be made
+        // available to the users or not (in the webview), such changes must be tracked
+        // in order to update the webview accordingly
+        this.textFileChangeDisposable = vscode.workspace.onDidChangeTextDocument(
+            async (event) => await this.onSourceFileChange(event)
+        );
+        this.textFileSaveDisposable = vscode.workspace.onDidSaveTextDocument(
+            async (event) => await this.onSourceFileSave(event)
+        );
     }
 
     private async init(): Promise<void> {
@@ -39,6 +55,49 @@ export class InteractiveLatex {
         this.pdfManager.dispose();
         this.webviewManager.dispose();
         this.visualisationModelManager.dispose();
+
+        this.textFileChangeDisposable.dispose();
+        this.textFileSaveDisposable.dispose();
+    }
+
+    // Visualisations should be available as long as no source file with code mappings is dirty
+    updateVisualisationsAvailiability(): void {
+        console.log("enabled", !this.codeMappingManager.someSourceFileIsDirty);
+        this.webviewManager.sendNewVisualisationStatus(
+            !this.codeMappingManager.someSourceFileIsDirty
+        );
+    }
+
+    private onSourceFileChange(event: vscode.TextDocumentChangeEvent): void {
+        const modifiedFileAbsolutePath = event.document.uri.path;
+        const modifiedSourceFile = this.codeMappingManager.allSourceFiles.find(file => file.absolutePath === modifiedFileAbsolutePath);
+
+        if (!modifiedSourceFile) {
+            return;
+        }
+        else {
+            // if (event.contentChanges.some(change =>
+            //     this.visualisationModelManager.hasModelAbleToHandleChangeIn(modifiedFileAbsolutePath, change.range))
+            // ) {
+                // Do something
+            // }
+
+            console.log("Update availability after change");
+            this.updateVisualisationsAvailiability();
+        }
+    }
+
+    private onSourceFileSave(document: vscode.TextDocument): void {
+        const savedFileAbsolutePath = document.uri.path;
+        const savedSourceFile = this.codeMappingManager.allSourceFiles.find(file => file.absolutePath === savedFileAbsolutePath);
+
+        if (!savedSourceFile) {
+            return;
+        }
+        else {
+            console.log("Update availability after save");
+            this.updateVisualisationsAvailiability();
+        }        
     }
 
     // Generate a new PDF, extract new visualisations,

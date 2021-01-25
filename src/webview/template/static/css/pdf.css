@@ -28,8 +28,10 @@
     --box-shadow-spread: 10px;
 }
 
-.pdf-currently-compiled .annotation-mask,
-.pdf-currently-compiled .annotation-mask:hover {
+body.pdf-currently-compiled .annotation-mask,
+body.pdf-currently-compiled .annotation-mask:hover,
+body.visualisations-unavailable .annotation-mask,
+body.visualisations-unavailable .annotation-mask:hover {
     --box-shadow-color: #777777;
     --box-shadow-spread: 5px;
 

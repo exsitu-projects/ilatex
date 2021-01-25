@@ -1,8 +1,11 @@
+/* Notifications */
+
 #notification-container {
     position: fixed;
     top: 0px;
     left: 0;
     width: 100%;
+    z-index: 500;
 }
 
 #notification-container .notification {
@@ -41,4 +44,42 @@
     background-position: center;
     background-size: 100%;
     vertical-align: middle;
+}
+
+
+
+/* Action buttons */
+
+#action-button-container {
+    position: fixed;
+    top: 0px;
+    left: 0;
+    width: 100%;
+    z-index: 500;
+}
+
+#action-button-container .button {
+    width: fit-content;
+    margin: 10px 10px 0 10px;
+    padding: 10px;
+    background-color: #00498a;
+    border: none;
+    color: #FFF;
+    animation: fade-in 250ms ease-in-out;
+}
+
+#action-button-container .button:hover {
+    background-color: #043764;    
+}
+
+/*
+ * The recompile button is hidden by default.
+ * It is only displayed when the visualisations are not available.
+*/
+#recompile-pdf-button {
+    display: none;
+}
+
+body.visualisations-unavailable #recompile-pdf-button {
+    display: block;
 }

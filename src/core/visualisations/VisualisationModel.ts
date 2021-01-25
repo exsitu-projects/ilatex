@@ -22,6 +22,7 @@ export interface VisualisationModel {
     readonly codeMappingId: CodeMappingID;
     readonly uid: ModelUID
 
+    isAbleToHandleChangeIn(filePath: string, range: vscode.Range): boolean;
     handleViewNotification(message: NotifyVisualisationModelMessage): Promise<void>;
     createViewContent(): string;
 }

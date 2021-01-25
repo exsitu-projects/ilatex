@@ -1,3 +1,4 @@
+import * as vscode from "vscode";
 import { InteractiveLatex } from "../InteractiveLaTeX";
 import { VisualisableNodeExtractor } from "./VisualisableNodeExtractor";
 import { VisualisationModelFactory, VisualisationModel, ModelUID, VisualisationModelUtilities } from "./VisualisationModel";
@@ -22,7 +23,6 @@ export class VisualisationModelManager {
 
     private nodeExtractor: VisualisableNodeExtractor;
     private visualisationModels: VisualisationModel[];
-
 
     constructor(ilatex: InteractiveLatex) {
         this.ilatex = ilatex;
@@ -81,6 +81,10 @@ export class VisualisationModelManager {
             .find(model => model.codeMappingId === id);
 
         return result ?? null;
+    }
+
+    hasModelAbleToHandleChangeIn(filePath: string, range: vscode.Range): boolean {
+        return this.visualisationModels.some(model => model.isAbleToHandleChangeIn(filePath, range));
     }
 
     async dispatchNotification(message: NotifyVisualisationModelMessage): Promise<void> {
@@ -200,15 +204,15 @@ export class VisualisationModelManager {
         );
     }
 
-    updateWebviewVisualisations(requestedByVisualisation: boolean = false): void {
+    updateWebviewVisualisations(updateOpenVisualisation: boolean = false): void {
         this.ilatex.webviewManager.sendNewVisualisationViewContent(
             this.visualisationViewsContent,
-            requestedByVisualisation
+            updateOpenVisualisation
         );
     }
 
-    extractNewModelsAndUpdateWebview(requestedByVisualisation: boolean = false): void {
+    extractNewModelsAndUpdateWebview(updateOpenVisualisation: boolean = false): void {
         this.extractNewModels();
-        this.updateWebviewVisualisations(requestedByVisualisation);
+        this.updateWebviewVisualisations(updateOpenVisualisation);
     }
 }
