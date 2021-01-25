@@ -7,9 +7,11 @@ import { InteractiveLatex } from "../InteractiveLaTeX";
 
 export class PDFManager {
     private ilatex: InteractiveLatex;
+    private buildTaskIsRunning: boolean;
 
     constructor(ilatex: InteractiveLatex) {
         this.ilatex = ilatex;
+        this.buildTaskIsRunning = false;
     }
 
     get pdfUri(): vscode.Uri {
@@ -20,13 +22,21 @@ export class PDFManager {
         return fs.existsSync(this.pdfUri.path);
     }
 
+    get isBuildingPDF(): boolean {
+        return this.buildTaskIsRunning;
+    }
+
     dispose(): void {
 
     }
 
     // Return a promise which is resolved when the compilation of the LaTeX document succeeds
-    // and rejected when the compilation fails
+    // and rejected when the compilation fails, or a failing promise if a build task is already running
     buildPDF(notifyWebview: boolean = true): Promise<void> {
+        if (this.isBuildingPDF) {
+            return Promise.reject("The PDF building task did not start: at most one building task can be ran at once.");
+        }
+
         return new Promise<void>((resolveCompilation, rejectCompilation) => {
             if (notifyWebview) {
                 this.ilatex.webviewManager.sendNewPDFCompilationStatus(true);
@@ -55,6 +65,8 @@ export class PDFManager {
                 else {
                     resolveCompilation();
                 }
+
+                this.buildTaskIsRunning = false;
             });
 
             const terminalSafeFilename = this.ilatex.mainSourceFileUri.path.replace(/ /g, "\\ ");
