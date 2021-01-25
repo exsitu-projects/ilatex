@@ -51,7 +51,7 @@ export class CodeMappingManager {
     }
 
     dispose(): void {
-        this.startObservingDocumentChanges();
+        this.stopObservingSourceFileChanges();
     }
 
     private readLatexGeneratedMappingFile(): string {
