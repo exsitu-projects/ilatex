@@ -24,8 +24,6 @@ export class DecorationManager {
         this.textFileSaveDisposable = vscode.window.onDidChangeVisibleTextEditors(
             async (event) => await this.onVisibleEditorsChange(event)
         );
-
-        this.redecorateVisibleEditorsWithCurrentVisualisations();
     }
 
     dispose(): void {
@@ -69,7 +67,7 @@ export class DecorationManager {
         } 
     }
 
-    private redecorateVisibleEditorsWithCurrentVisualisations(): void {
+    redecorateVisibleEditorsWithCurrentVisualisations(): void {
         this.redecorateVisibleEditorsWith(
             this.ilatex.visualisationModelManager.models
         );
