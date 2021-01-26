@@ -66,7 +66,6 @@ export class InteractiveLatex {
 
     // Visualisations should be available as long as no source file with code mappings is dirty
     updateVisualisationsAvailiability(): void {
-        console.log("enabled", !this.codeMappingManager.someSourceFileIsDirty);
         this.webviewManager.sendNewVisualisationStatus(
             !this.codeMappingManager.someSourceFileIsDirty
         );
@@ -80,13 +79,6 @@ export class InteractiveLatex {
             return;
         }
         else {
-            // if (event.contentChanges.some(change =>
-            //     this.visualisationModelManager.hasModelAbleToHandleChangeIn(modifiedFileAbsolutePath, change.range))
-            // ) {
-                // Do something
-            // }
-
-            console.log("Update availability after change");
             this.updateVisualisationsAvailiability();
         }
     }
@@ -99,7 +91,6 @@ export class InteractiveLatex {
             return;
         }
         else {
-            console.log("Update availability after save");
             this.updateVisualisationsAvailiability();
         }        
     }

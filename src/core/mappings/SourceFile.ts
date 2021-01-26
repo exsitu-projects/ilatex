@@ -83,7 +83,7 @@ export class SourceFile {
         }
 
         const success = await this.document.save();
-        console.log(`${this.absolutePath} has been saved`);
+        // console.log(`${this.absolutePath} has been saved`);
         if (!success) {
             console.error("An error occured when trying to save the source file.");
         }
