@@ -30,6 +30,7 @@ export interface UpdatePDFMessage {
 export interface UpdateCompilationStatusMessage {
     type: CoreToWebviewMessageType.UpdateCompilationStatus;
     pdfIsCurrentlyCompiled: boolean;
+    lastCompilationFailed: boolean;
 }
 
 export interface UpdateVisualisationStatusMessage {

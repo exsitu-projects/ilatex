@@ -30,6 +30,8 @@
 
 body.pdf-currently-compiled .annotation-mask,
 body.pdf-currently-compiled .annotation-mask:hover,
+body.last-pdf-compilation-failed .annotation-mask,
+body.last-pdf-compilation-failed .annotation-mask:hover,
 body.visualisations-unavailable .annotation-mask,
 body.visualisations-unavailable .annotation-mask:hover {
     --box-shadow-color: #777777;
@@ -37,3 +39,4 @@ body.visualisations-unavailable .annotation-mask:hover {
 
     cursor: not-allowed;
 }
+

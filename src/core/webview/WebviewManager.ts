@@ -130,12 +130,13 @@ export class WebviewManager {
         });
     }
 
-    sendNewPDFCompilationStatus(pdfIsCurrentylCompiled: boolean): void {
+    sendNewPDFCompilationStatus(pdfIsCurrentylCompiled: boolean, lastCompilationFailed: boolean = false): void {
         console.info("About to send a new PDF compilation status to the webview...");
 
         this.messenger.sendMessage({
             type: CoreToWebviewMessageType.UpdateCompilationStatus,
-            pdfIsCurrentlyCompiled: pdfIsCurrentylCompiled
+            pdfIsCurrentlyCompiled: pdfIsCurrentylCompiled,
+            lastCompilationFailed: lastCompilationFailed
         });        
     }
 

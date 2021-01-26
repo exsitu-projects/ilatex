@@ -53,17 +53,19 @@ export class PDFManager {
                 // The callback will be used only once; therefore it can be removed safely
                 observer.dispose();
 
-                if (notifyWebview) {
-                    this.ilatex.webviewManager.sendNewPDFCompilationStatus(false);
-                }
-
                 // Depending on the exit code, either resolve or reject the promise
                 // returned by the buildPDF method
                 if (closedTerminal.exitStatus && closedTerminal.exitStatus.code !== 0) {
                     rejectCompilation("LaTeX compilation error");
+                    if (notifyWebview) {
+                        this.ilatex.webviewManager.sendNewPDFCompilationStatus(false, true);
+                    }
                 }
                 else {
                     resolveCompilation();
+                    if (notifyWebview) {
+                        this.ilatex.webviewManager.sendNewPDFCompilationStatus(false, false);
+                    }
                 }
 
                 this.buildTaskIsRunning = false;

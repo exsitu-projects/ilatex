@@ -17,6 +17,7 @@ export class PDFManager {
     private static readonly DELAY_BETWEEN_PDF_RESIZES: number = 50; // ms
     static readonly UPDATE_PDF_EVENT = "update-pdf";
     static readonly PDF_CURRENTLY_RECOMPILED_BODY_CLASS = "pdf-currently-compiled";
+    static readonly LAST_PDF_COMPILATION_FAILED_BODY_CLASS = "last-pdf-compilation-failed";
 
     private readonly messenger: Messenger;
     private renderer: PDFRenderer | null;
@@ -97,7 +98,7 @@ export class PDFManager {
         this.overlayManager.displayActionButton(this.recompilePdfActionButton);
     }
 
-    updatePDFCompilationStatus(pdfIsCurrentlyCompiled: boolean): void {
+    updatePDFCompilationStatus(pdfIsCurrentlyCompiled: boolean, lastCompilationFailed: boolean): void {
         // If the status does not change, there is nothing to do
         if (this.pdfIsCurrentlyCompiled === pdfIsCurrentlyCompiled) {
             console.warn("The new PDF compilation status is the same than the current status.");
@@ -116,6 +117,8 @@ export class PDFManager {
             document.body.classList.remove(PDFManager.PDF_CURRENTLY_RECOMPILED_BODY_CLASS);
             pdfIsCurrentlyCompiledNotification.hide();
         }
+
+        document.body.classList.toggle(PDFManager.LAST_PDF_COMPILATION_FAILED_BODY_CLASS, lastCompilationFailed);
     }
 
     startHandlingPdfUpdates() {
@@ -143,7 +146,7 @@ export class PDFManager {
         this.messenger.setHandlerFor(
             CoreToWebviewMessageType.UpdateCompilationStatus,
             (message: UpdateCompilationStatusMessage)=> {
-                this.updatePDFCompilationStatus(message.pdfIsCurrentlyCompiled);
+                this.updatePDFCompilationStatus(message.pdfIsCurrentlyCompiled, message.lastCompilationFailed);
             }
         );
     }
