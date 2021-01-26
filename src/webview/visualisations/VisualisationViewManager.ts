@@ -92,10 +92,13 @@ export class VisualisationViewManager {
         });
 
         const popup = new VisualisationPopup(view, request.annotationMaskCoordinates, () => {
-            // When the popup is closed, save the source document and
-            // reset all the references to the now hidden visualisation
-            this.currentlyDisplayedVisualisationView!.saveSourceDocument();
-
+            // Only save the source document if visualisation are still enabled when the popup is closed
+            // (to avoid saving the document if the popup is closed because the user edited the code manually)
+            if (this.enableVisualisations) {
+                this.currentlyDisplayedVisualisationView!.saveSourceDocument();
+            }
+            
+            // In any case, reset all the references to the now hidden visualisation
             this.currentlyDisplayedVisualisationView = null;
             this.currentlyDisplayedVisualisationPopup = null;
         });
@@ -116,6 +119,11 @@ export class VisualisationViewManager {
     }
 
     private handleVisualisationDisplayRequest(request: VisualisationDisplayRequest): void {
+        // If visualisations are currently disabled, do not fulfil this request
+        if (!this.enableVisualisations) {
+            return;
+        }
+
         // Ensure no visualisation is displayed
         this.hideCurrentlyDisplayedVisualisation();
 
