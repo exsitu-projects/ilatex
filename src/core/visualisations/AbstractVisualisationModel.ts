@@ -121,6 +121,7 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
             "data-name": this.visualisationName,
             "data-uid": this.uid.toString(),
             "data-code-mapping-id": this.codeMapping.id.toString(),
+            "data-source-file-name": this.sourceFile.name,
             "data-code-start-position": `${this.astNode.start.line};${this.astNode.start.column}`,
             "data-code-end-position": `${this.astNode.end.line};${this.astNode.end.column}`
         };

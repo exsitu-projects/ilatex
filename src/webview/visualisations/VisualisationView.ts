@@ -22,6 +22,7 @@ export interface VisualisationView {
     readonly visualisationUid: number;
     readonly codeMappingId: number;
     readonly contentTitle: string;
+    readonly sourceFileName: string;
     readonly sourceCodeRange: CodeRange;
 
     render(): HTMLElement;

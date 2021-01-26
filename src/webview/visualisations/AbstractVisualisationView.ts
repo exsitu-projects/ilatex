@@ -22,6 +22,7 @@ export abstract class AbstractVisualisationView implements VisualisationView {
 
     protected contentNode: HTMLElement;
     readonly contentTitle: string;
+    readonly sourceFileName: string;
     readonly sourceCodeRange: CodeRange;
 
     constructor(contentNode: HTMLElement, context: VisualisationViewInstantiationContext) {
@@ -33,6 +34,7 @@ export abstract class AbstractVisualisationView implements VisualisationView {
 
         this.contentNode = contentNode;
         this.contentTitle = contentNode.getAttribute("data-name")!;
+        this.sourceFileName = contentNode.getAttribute("data-source-file-name")!;
         this.sourceCodeRange =
             AbstractVisualisationView.extractSourceCodeRangeFromContentNode(contentNode);
     }

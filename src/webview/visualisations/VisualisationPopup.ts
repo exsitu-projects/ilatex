@@ -90,7 +90,7 @@ export class VisualisationPopup {
         locationNode.classList.add("location");
         titleNode.append(locationNode);
 
-        locationNode.innerHTML = this.getVisualisationSourceCodeRangeAsText();
+        locationNode.innerHTML = this.getVisualisationLocationInSourceCode();
 
         // Reveal the code of the visualisation when the title is clicked
         titleNode.addEventListener("click", event => {
@@ -110,7 +110,7 @@ export class VisualisationPopup {
 
     // Must be called in case the visualisation is updated
     updateTitleBar() {
-        this.titleBarNode!.querySelector(".location")!.innerHTML = this.getVisualisationSourceCodeRangeAsText();
+        this.titleBarNode!.querySelector(".location")!.innerHTML = this.getVisualisationLocationInSourceCode();
     }
 
     createContent() {
@@ -130,11 +130,13 @@ export class VisualisationPopup {
         this.contentNode!.append(this.visualisationView.render());
     }
 
-    getVisualisationSourceCodeRangeAsText() {
-        const location = this.visualisationView.sourceCodeRange;
-        return location.start.line === location.end.line
-             ? `(line ${location.start.line + 1})`
-             : `(lines ${location.start.line + 1}&#8198;–&#8198;${location.end.line + 1})`;         
+    getVisualisationLocationInSourceCode() {
+        const fileName = this.visualisationView.sourceFileName;
+        const range = this.visualisationView.sourceCodeRange;
+
+        return range.start.line === range.end.line
+             ? `(${fileName} &middot; line ${range.start.line + 1})`
+             : `(${fileName} &middot; lines ${range.start.line + 1}&#8198;–&#8198;${range.end.line + 1})`;         
     }
 
     startHandlingBackgroundClicks() {

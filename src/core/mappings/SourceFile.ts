@@ -1,18 +1,20 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
-import * as readline from "readline";
+import * as path from "path";
 import { LatexAST } from "../ast/LatexAST";
 
 export class NotInitialisedError {}
 
 export class SourceFile {
     readonly absolutePath: string;
+    readonly name: string;
 
     private cachedDocument: vscode.TextDocument | null;
     private cachedAst: LatexAST | null;
 
     constructor(absolutePath: string) {
         this.absolutePath = absolutePath;
+        this.name = path.basename(absolutePath);
 
         this.cachedDocument = null;
         this.cachedAst = null;
