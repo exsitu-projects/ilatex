@@ -39,6 +39,10 @@ export class VisualisationModelManager {
             .join("\n");
     }
 
+    get models(): VisualisationModel[] {
+        return [...this.visualisationModels];
+    }
+
     private get modelUtilities(): VisualisationModelUtilities {
         return {
             mainSourceFileUri: this.ilatex.mainSourceFileUri,

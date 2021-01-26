@@ -4,6 +4,7 @@ import { NotifyVisualisationModelMessage } from "../../shared/messenger/messages
 import { ASTCommandNode, ASTEnvironementNode, ASTNode, ASTNodeType } from "../ast/LatexASTNode";
 import { HtmlUtils } from "../../shared/utils/HtmlUtils";
 import { CodeMapping, CodeMappingID } from "../mappings/CodeMapping";
+import { SourceFile } from "../mappings/SourceFile";
 
 export type NotificationHandler = (notification: any) => Promise<void>;
 export interface NotificationHandlerSpecification {
@@ -36,6 +37,20 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
 
     get codeMappingId(): CodeMappingID {
         return this.codeMapping.id;
+    }
+
+    get sourceFile(): SourceFile {
+        return this.codeMapping.sourceFile;
+    }
+
+    // This accessor is implemented with a default behaviour
+    // It should be overriden if needed to ensure it always return the range of
+    // the entire piece of code manipulated by the visualisation
+    get codeRange(): vscode.Range {
+        return new vscode.Range(
+            new vscode.Position(this.astNode.start.line - 1, this.astNode.start.column - 1),
+            new vscode.Position(this.astNode.end.line - 1, this.astNode.end.column - 1)
+        );
     }
 
     // This method is implemented with a default behaviour

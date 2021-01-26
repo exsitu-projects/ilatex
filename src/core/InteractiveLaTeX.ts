@@ -3,6 +3,7 @@ import { PDFManager } from "./pdf/PDFManager";
 import { WebviewManager } from "./webview/WebviewManager";
 import { VisualisationModelManager } from "./visualisations/VisualisationModelManager";
 import { CodeMappingManager } from "./mappings/CodeMappingManager";
+import { DecorationManager } from "./decorations/DecorationManager";
 
 
 export class InteractiveLatex {
@@ -13,6 +14,7 @@ export class InteractiveLatex {
     readonly pdfManager: PDFManager;
     readonly webviewManager: WebviewManager;
     readonly visualisationModelManager: VisualisationModelManager;
+    readonly decorationManager: DecorationManager;
 
     private textFileChangeDisposable: vscode.Disposable;
     private textFileSaveDisposable: vscode.Disposable;
@@ -25,6 +27,7 @@ export class InteractiveLatex {
         this.pdfManager = new PDFManager(this);
         this.webviewManager = new WebviewManager(this, webviewPanel);
         this.visualisationModelManager = new VisualisationModelManager(this);
+        this.decorationManager = new DecorationManager(this);
 
         // Register observers for changes and saves in any text document
         // Every time a source file containing code mappings is MODIFIED or SAVED,
@@ -55,6 +58,7 @@ export class InteractiveLatex {
         this.pdfManager.dispose();
         this.webviewManager.dispose();
         this.visualisationModelManager.dispose();
+        this.decorationManager.dispose();
 
         this.textFileChangeDisposable.dispose();
         this.textFileSaveDisposable.dispose();

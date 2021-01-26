@@ -20,7 +20,10 @@ export abstract class ModelIDGenerator {
 export interface VisualisationModel {
     readonly visualisationName: string;
     readonly codeMappingId: CodeMappingID;
-    readonly uid: ModelUID
+    readonly uid: ModelUID;
+
+    readonly sourceFile: SourceFile;
+    readonly codeRange: vscode.Range;
 
     isAbleToHandleChangeIn(filePath: string, range: vscode.Range): boolean;
     handleViewNotification(message: NotifyVisualisationModelMessage): Promise<void>;
