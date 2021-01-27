@@ -1,5 +1,8 @@
+import * as vscode from "vscode";
 import * as P from "parsimmon";
 import { LatexASTVisitor } from "./visitors/LatexASTVisitor";
+import { PositionInFile } from "../utils/PositionInFile";
+import { RangeInFile } from "../utils/RangeInFile";
 
 
 /** Possible types of an AST node. */
@@ -70,15 +73,17 @@ export class ASTNode<
     readonly name: string;
     readonly type: T;
     readonly value: V;
-    readonly start: P.Index;
-    readonly end: P.Index;
+    readonly range: RangeInFile;
 
     constructor(name: string, type: T, value: V, start: P.Index, end: P.Index) {
         this.name = name;
         this.type = type;
         this.value = value;
-        this.start = start;
-        this.end = end;
+
+        this.range = new RangeInFile(
+            PositionInFile.fromParsimmonIndex(start),
+            PositionInFile.fromParsimmonIndex(end)
+        );
     }
 
     visitWith(visitor: LatexASTVisitor, depth: number = 0, maxDepth: number = Number.MAX_SAFE_INTEGER): void {

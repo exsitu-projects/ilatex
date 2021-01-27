@@ -34,8 +34,8 @@ export class LayoutExtractor extends LatexASTVisitorAdapter {
         // Every a new cell on every cell environment
         if (node.name === "cell") {
             const cellTextContent = this.getDocumentContent(
-                node.value.content.start,
-                node.value.content.end
+                node.value.content.range.from.asParsimmonIndex,
+                node.value.content.range.to.asParsimmonIndex
             );
 
             this.layout.lastRow.addNewCell(node, cellTextContent);

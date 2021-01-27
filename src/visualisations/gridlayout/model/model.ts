@@ -40,13 +40,14 @@ class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
         const editor = await this.codeMapping.sourceFile.getOrDisplayInEditor();
 
         // Select the code
-        const startPosition = new vscode.Position(cell.start.line - 1, cell.start.column - 1);
-        const endPosition = new vscode.Position(cell.end.line - 1, cell.end.column - 1);
-        editor.selections = [new vscode.Selection(startPosition, endPosition)];
+        editor.selections = [new vscode.Selection(
+            cell.range.from.asVscodePosition,
+            cell.range.to.asVscodePosition
+        )];
 
         // If the selected range is not visible, scroll to the selection
         editor.revealRange(
-            new vscode.Range(startPosition, endPosition),
+            cell.range.asVscodeRange,
             vscode.TextEditorRevealType.InCenterIfOutsideViewport
         );
     }
@@ -66,14 +67,14 @@ class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
         // use the last value to compute the end of the range to edit
         // Note: we assume the beginning and the end of the range are located on the same line!
         const editRangeEndLine = this.lastModifiedCellSize === null
-                               ? cellSizeParameterNode.end.line - 1
-                               : cellSizeParameterNode.start.line - 1;
+                               ? cellSizeParameterNode.range.to.line - 1
+                               : cellSizeParameterNode.range.from.line - 1;
         const editRangeEndColumn = this.lastModifiedCellSize === null
-                                 ? cellSizeParameterNode.end.column - 1
-                                 : cellSizeParameterNode.start.column - 1 + this.lastModifiedCellSize.length;
+                                 ? cellSizeParameterNode.range.to.column - 1
+                                 : cellSizeParameterNode.range.from.column - 1 + this.lastModifiedCellSize.length;
 
         const rangeToEdit = new vscode.Range(
-            cellSizeParameterNode.start.line - 1, cellSizeParameterNode.start.column - 1,
+            cellSizeParameterNode.range.from.line - 1, cellSizeParameterNode.range.from.column - 1,
             editRangeEndLine, editRangeEndColumn
         );
 
@@ -97,14 +98,14 @@ class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
         // use the last value to compute the end of the range to edit
         // Note: in this case, we know that the beginning and the end of the range are on the same line!
         const editRangeEndLine = this.lastModifiedRowHeight === null
-                               ? rowHeightParameterNode.end.line - 1
-                               : rowHeightParameterNode.start.line - 1;
+                               ? rowHeightParameterNode.range.to.line - 1
+                               : rowHeightParameterNode.range.from.line - 1;
         const editRangeEndColumn = this.lastModifiedRowHeight === null
-                                 ? rowHeightParameterNode.end.column - 1
-                                 : rowHeightParameterNode.start.column - 1 + this.lastModifiedRowHeight.length;
+                                 ? rowHeightParameterNode.range.to.column - 1
+                                 : rowHeightParameterNode.range.from.column - 1 + this.lastModifiedRowHeight.length;
 
         const rangeToEdit = new vscode.Range(
-            rowHeightParameterNode.start.line - 1, rowHeightParameterNode.start.column - 1,
+            rowHeightParameterNode.range.from.line - 1, rowHeightParameterNode.range.from.column - 1,
             editRangeEndLine, editRangeEndColumn
         );
 

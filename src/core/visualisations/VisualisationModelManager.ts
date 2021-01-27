@@ -122,7 +122,7 @@ export class VisualisationModelManager {
             // 1. Create models from AST nodes whose line number is exactly the same
             // than the line number of one of the mappings
             for (let node of astNodes) {
-                const lineNumber = node.start.line;
+                const lineNumber = node.range.from.line;
 
                 // Get all the mappings of the same type and at the same line than the current match
                 const mappingsAtCurrentNodeLine = [...remainingMappingsForCurrentFactory.values()]
@@ -168,11 +168,11 @@ export class VisualisationModelManager {
             //  will probably be the line at which the macro is expanded).
             // In an attempt to fix this type of issue, we accept "approximate"
             // line number matchings: models are created from remaining mappings and nodes
-            // in the order in which they appear (in the AST and in the LaTeX generated file).
+            // in the order in which they start (in the AST and in the LaTeX generated file).
             const remaingMappingsSortedByLineNumber = [...remainingMappingsForCurrentFactory.values()]
                 .sort((mapping1, mapping2) => mapping1.lineNumber - mapping2.lineNumber);
             const remaingNodesSortedByStartPosition = [...astNodesWithNoMapping.values()]
-                .sort((node1, node2) => node1.start.offset - node2.start.offset);
+                .sort((node1, node2) => node1.range.from.offset - node2.range.from.offset);
             
             for (let mapping of remaingMappingsSortedByLineNumber) {
                 const node = remaingNodesSortedByStartPosition.shift();

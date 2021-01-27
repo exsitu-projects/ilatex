@@ -3,6 +3,7 @@ import { ASTEnvironementNode, ASTParameterNode } from "../../../core/ast/LatexAS
 import { LatexLength } from "../../../shared/latex-length/LatexLength";
 import { LayoutExtractor } from "./LayoutExtractor";
 import { CodeMapping } from "../../../core/mappings/CodeMapping";
+import { RangeInFile } from "../../../core/utils/RangeInFile";
 
 
 export interface CellOptions {
@@ -14,10 +15,8 @@ export class Cell {
     readonly cellIndex: number;
 
     readonly astNode: ASTEnvironementNode;
-    readonly start: P.Index;
-    readonly end: P.Index;
-    readonly contentStart: P.Index;
-    readonly contentEnd: P.Index;
+    readonly range: RangeInFile;
+    readonly contentRange: RangeInFile;
 
     readonly textContent: string;
     readonly options: CellOptions;
@@ -32,10 +31,8 @@ export class Cell {
         this.cellIndex = cellIndex;
 
         this.astNode = astNode;
-        this.start = astNode.start;
-        this.end = astNode.end;
-        this.contentStart = astNode.value.content.start;
-        this.contentEnd = astNode.value.content.end;
+        this.range = astNode.range;
+        this.contentRange = astNode.value.content.range;
 
         this.textContent = textContent;
         this.options = Cell.extractOptionsFrom(astNode);

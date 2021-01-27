@@ -39,14 +39,15 @@ class MathematicsModel extends AbstractVisualisationModel<ASTEnvironementNode> {
             .reverse()
             .find(node => node.type !== ASTNodeType.Whitespace);
 
-        const editRangePositions = (firstNonWhitespaceNode !== undefined && lastNonWhitespaceNode !== undefined)
-            ? { start: firstNonWhitespaceNode.start, end: lastNonWhitespaceNode.end }
-            : { start: this.astNode.value.content.start, end: this.astNode.value.content.end };
-        
-        const rangeToEdit = new vscode.Range(
-            new vscode.Position(editRangePositions.start.line - 1, editRangePositions.start.column - 1),
-            new vscode.Position(editRangePositions.end.line - 1, editRangePositions.end.column - 1)
-        );
+        const rangeToEdit = (firstNonWhitespaceNode !== undefined && lastNonWhitespaceNode !== undefined)
+            ? new vscode.Range(
+                firstNonWhitespaceNode.range.from.asVscodePosition,
+                lastNonWhitespaceNode.range.to.asVscodePosition
+            )
+            : new vscode.Range(
+                this.astNode.value.content.range.from.asVscodePosition,
+                this.astNode.value.content.range.to.asVscodePosition
+            );
 
         await editor.edit(editBuilder => {
             editBuilder.replace(rangeToEdit, trimmedMathCode);
@@ -56,8 +57,8 @@ class MathematicsModel extends AbstractVisualisationModel<ASTEnvironementNode> {
     protected renderContentAsHTML(): string {
         const fileContent = this.codeMapping.sourceFile.readContentSync();
         const mathsAsText = fileContent.substring(
-            this.astNode.value.content.start.offset,
-            this.astNode.value.content.end.offset
+            this.astNode.value.content.range.from.offset,
+            this.astNode.value.content.range.to.offset
         );
 
         return mathsAsText;

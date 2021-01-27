@@ -47,10 +47,7 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
     // It should be overriden if needed to ensure it always return the range of
     // the entire piece of code manipulated by the visualisation
     get codeRange(): vscode.Range {
-        return new vscode.Range(
-            new vscode.Position(this.astNode.start.line - 1, this.astNode.start.column - 1),
-            new vscode.Position(this.astNode.end.line - 1, this.astNode.end.column - 1)
-        );
+        return this.astNode.range.asVscodeRange;
     }
 
     // This method is implemented with a default behaviour
@@ -87,13 +84,14 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
         const editor = await this.codeMapping.sourceFile.getOrDisplayInEditor();
 
         // Select the code
-        const startPosition = new vscode.Position(this.astNode.start.line - 1, this.astNode.start.column - 1);
-        const endPosition = new vscode.Position(this.astNode.end.line - 1, this.astNode.end.column - 1);
-        editor.selections = [new vscode.Selection(startPosition, endPosition)];
+        editor.selections = [new vscode.Selection(
+            this.astNode.range.from.asVscodePosition,
+            this.astNode.range.to.asVscodePosition,
+        )];
 
         // If the selected range is not visible, scroll to the selection
         editor.revealRange(
-            new vscode.Range(startPosition, endPosition),
+            this.astNode.range.asVscodeRange,
             vscode.TextEditorRevealType.InCenterIfOutsideViewport
         );
     }
@@ -122,8 +120,8 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
             "data-uid": this.uid.toString(),
             "data-code-mapping-id": this.codeMapping.id.toString(),
             "data-source-file-name": this.sourceFile.name,
-            "data-code-start-position": `${this.astNode.start.line};${this.astNode.start.column}`,
-            "data-code-end-position": `${this.astNode.end.line};${this.astNode.end.column}`
+            "data-code-start-position": `${this.astNode.range.from.line};${this.astNode.range.from.column}`,
+            "data-code-end-position": `${this.astNode.range.to.line};${this.astNode.range.to.column}`
         };
     }
 
@@ -169,14 +167,14 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
 
         // If there is at least one parameter, the change must occur
         // between the start of the first one and the end of the last one
-        const firstParameterStart = parameters.find(specifiedParameter => specifiedParameter.length > 0)![0].start;
+        const firstParameterStart = parameters.find(specifiedParameter => specifiedParameter.length > 0)![0].range.from;
         const lastParameterEnd = [...parameters]
             .reverse()
-            .find(specifiedParameter => specifiedParameter.length > 0)![0].end;
+            .find(specifiedParameter => specifiedParameter.length > 0)![0].range.to;
 
         return new vscode.Range(
-            new vscode.Position(firstParameterStart.line - 1, firstParameterStart.column - 1),
-            new vscode.Position(lastParameterEnd.line - 1, lastParameterEnd.column - 1)
+            firstParameterStart.asVscodePosition,
+            lastParameterEnd.asVscodePosition
         ).contains(range);
     }
 
@@ -190,13 +188,13 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
         // (or the start of the body if there is none) and the end of body
         const firstExistingParameter = parameters.find(specifiedParameter => specifiedParameter.length > 0);
         const startPosition = firstExistingParameter !== undefined
-            ? firstExistingParameter[0].start
-            : body.start;
-        const endPosition = body.end;
+            ? firstExistingParameter[0].range.from
+            : body.range.from;
+        const endPosition = body.range.to;
 
         return new vscode.Range(
-            new vscode.Position(startPosition.line - 1, startPosition.column - 1),
-            new vscode.Position(endPosition.line - 1, endPosition.column - 1)
+            startPosition.asVscodePosition,
+            endPosition.asVscodePosition
         ).contains(range);
     }
 }

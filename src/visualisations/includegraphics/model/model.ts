@@ -49,10 +49,10 @@ class IncludegraphicsModel extends AbstractVisualisationModel<ASTCommandNode> {
         
         // Pre-compute values required to determine where to insert/replace command options
         const optionsStart = this.hasOptionsNode
-                           ? this.optionsNode!.start
+                           ? this.optionsNode!.range.from.asParsimmonIndex
                            : this.astNode.value.nameEnd;
         const optionsEnd = this.hasOptionsNode
-                         ? this.optionsNode!.end
+                         ? this.optionsNode!.range.to.asParsimmonIndex
                          : this.astNode.value.nameEnd;
 
         this.optionsStartPosition = new vscode.Position(optionsStart.line - 1, optionsStart.column - 1);

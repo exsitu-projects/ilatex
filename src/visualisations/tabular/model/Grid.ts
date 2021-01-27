@@ -49,7 +49,7 @@ export class Cell {
             throw new NoNodeError();
         }
 
-        return firstNode.start;
+        return firstNode.range.from.asParsimmonIndex;
     }
 
     get end(): P.Index {
@@ -58,7 +58,7 @@ export class Cell {
             throw new NoNodeError();
         }
 
-        return lastNode.end;
+        return lastNode.range.to.asParsimmonIndex;
     }
 
     private get firstContentNode(): ASTNode {
@@ -88,7 +88,7 @@ export class Cell {
             return this.end;
         }
 
-        return this.firstContentNode.start;
+        return this.firstContentNode.range.from.asParsimmonIndex;
     }
 
     // The content ends where the last content node ends
@@ -98,7 +98,7 @@ export class Cell {
             return this.end;
         }
 
-        return this.lastContentNode.end;
+        return this.lastContentNode.range.to.asParsimmonIndex;
     }
 
     get textContent(): string {
