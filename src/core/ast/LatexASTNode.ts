@@ -75,6 +75,8 @@ export class ASTNode<
     readonly value: V;
     readonly range: RangeInFile;
 
+    private hasUnhandledEdits: boolean;
+
     constructor(name: string, type: T, value: V, start: P.Index, end: P.Index) {
         this.name = name;
         this.type = type;
@@ -84,6 +86,16 @@ export class ASTNode<
             PositionInFile.fromParsimmonIndex(start),
             PositionInFile.fromParsimmonIndex(end)
         );
+
+        this.hasUnhandledEdits = false;
+    }
+
+    get hasBeenEditedByTheUser(): boolean {
+        return this.hasUnhandledEdits;
+    }
+
+    markEditedByTheUser(): void {
+        this.hasUnhandledEdits = true;
     }
 
     visitWith(visitor: LatexASTVisitor, depth: number = 0, maxDepth: number = Number.MAX_SAFE_INTEGER): void {

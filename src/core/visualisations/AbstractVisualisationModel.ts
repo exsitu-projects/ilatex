@@ -50,6 +50,10 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
         return this.astNode.range.asVscodeRange;
     }
 
+    get hasBeenManuallyEdited(): boolean {
+        return this.astNode.hasBeenEditedByTheUser;
+    }
+
     // This method is implemented with a default behaviour
     // It should be overriden if a visualisation model requires to perform different tests
     // to decide whether it is capable to handle the changes in the range within the file locatrd at the given path
