@@ -17,7 +17,6 @@ export class InteractiveLatex {
     readonly decorationManager: DecorationManager;
 
     private textFileChangeDisposable: vscode.Disposable;
-    private textFileSaveDisposable: vscode.Disposable;
 
     private constructor(mainSourceFileUri: vscode.Uri, webviewPanel: vscode.WebviewPanel) {
         this.mainSourceFileUri = mainSourceFileUri;
@@ -29,22 +28,16 @@ export class InteractiveLatex {
         this.visualisationModelManager = new VisualisationModelManager(this);
         this.decorationManager = new DecorationManager(this);
 
-        // Register observers for changes and saves in any text document
-        // Every time a source file containing code mappings is MODIFIED or SAVED,
-        // the 'dirty' status of the underlying document may change
-        // Since this status is used to determine whether visualisations can be made
-        // available to the users or not (in the webview), such changes must be tracked
-        // in order to update the webview accordingly
         this.textFileChangeDisposable = vscode.workspace.onDidChangeTextDocument(
             async (event) => await this.onSourceFileChange(event)
-        );
-        this.textFileSaveDisposable = vscode.workspace.onDidSaveTextDocument(
-            async (event) => await this.onSourceFileSave(event)
         );
     }
 
     private async init(): Promise<void> {
         await this.updatePDFAndVisualisations();
+
+        // Once visualisations have been created, start to decorate editors
+        this.decorationManager.redecorateVisibleEditorsWithCurrentVisualisations();
     }
 
     // This method will be called by the extension
@@ -61,7 +54,6 @@ export class InteractiveLatex {
         this.decorationManager.dispose();
 
         this.textFileChangeDisposable.dispose();
-        this.textFileSaveDisposable.dispose();
     }
 
     // Visualisations should be available as long as no source file with code mappings is dirty
@@ -79,24 +71,13 @@ export class InteractiveLatex {
             return;
         }
         else {
+            modifiedSourceFile.processFileChange(event);
+            this.decorationManager.redecorateVisibleEditorsWithCurrentVisualisations();
             this.updateVisualisationsAvailiability();
         }
     }
 
-    private onSourceFileSave(document: vscode.TextDocument): void {
-        const savedFileAbsolutePath = document.uri.path;
-        const savedSourceFile = this.codeMappingManager.allSourceFiles.find(file => file.absolutePath === savedFileAbsolutePath);
-
-        if (!savedSourceFile) {
-            return;
-        }
-        else {
-            this.updateVisualisationsAvailiability();
-        }        
-    }
-
-    // Generate a new PDF, extract new visualisations,
-    // and update the webview with both.
+    // Generate a new PDF, extract new visualisations, and update the webview with both.
     // This global update is a multi-steps process:
     // 1. the whole document must be recompiled;
     // 2. the new PDF must be sent to the webview;
@@ -104,7 +85,8 @@ export class InteractiveLatex {
     // 4. new mappings, source files, ASTs and visualisations models
     //    must be generated from scratch;
     // 5. the new visualisation models must generate new content
-    //    that must be sent to the webview.
+    //    that must be sent to the webview;
+    // 6. the editors must be redecorated.
     async updatePDFAndVisualisations(): Promise<void> {
         // Steps 1 and 2
         await this.pdfManager.buildPDFAndUpdateWebview();
@@ -114,6 +96,10 @@ export class InteractiveLatex {
 
         // Step 4 and 5
         this.visualisationModelManager.extractNewModelsAndUpdateWebview();
+        this.updateVisualisationsAvailiability();
+
+        // Step 6
+        this.decorationManager.redecorateVisibleEditorsWithCurrentVisualisations();
     }
 
     static createFromMainLatexDocument(mainLatexDocument: vscode.TextDocument, webviewPanel: vscode.WebviewPanel): Promise<InteractiveLatex> {
