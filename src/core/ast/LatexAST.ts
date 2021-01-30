@@ -1,6 +1,7 @@
 import * as P from "parsimmon";
 import { ASTNode, ASTNodeType, ASTCommandNode, ASTEnvironementNode, ASTLatexNode } from "./LatexASTNode";
 import { language } from "./LatexASTParsers";
+import { LatexASTNodeCollecter } from "./visitors/LatexASTNodeCollecter";
 import { LatexASTVisitor } from "./visitors/LatexASTVisitor";
 
 
@@ -21,13 +22,27 @@ export type ASTRoot = ASTLatexNode;
 /** Class of an AST for a simple subset of Latex. */
 export class LatexAST {
     private rootNode: ASTRoot;
+    private allNodesCached: ASTNode[] | null;
     
     constructor(input: string) {
         this.rootNode = this.parse(input);
+        this.allNodesCached = null;
     }
 
     get root() {
         return this.rootNode;
+    }
+
+    get nodes(): ASTNode[] {
+        // Either use the cached list of all nodes if it has already been computed,
+        // or compute the list and cache it first
+        if (!this.allNodesCached) {
+            const nodeCollecter = new LatexASTNodeCollecter();
+            this.rootNode.visitWith(nodeCollecter);
+            this.allNodesCached = nodeCollecter.nodes;
+        }
+
+        return this.allNodesCached;
     }
 
     private parse(input: string): ASTRoot {
