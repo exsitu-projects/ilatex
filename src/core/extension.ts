@@ -29,7 +29,9 @@ function createIlatexInstanceForRootDocument(document: vscode.TextDocument): Pro
 		.then(ilatex => {
 			webviewPanel.onDidDispose(() => {
 				ilatex.webviewManager.dispose();
+
 				rootLatexDocumentPathsToIlatexInstances.delete(document.uri.path);
+				vscode.commands.executeCommand("setContext", "ilatex:hasActiveInstances", rootLatexDocumentPathsToIlatexInstances.size > 0);
 
 				console.info(`The iLaTeX instance for root LaTeX document ${path.basename(document.uri.path)} has been removed (after its webview panel has been closed).`);
 			});
@@ -74,11 +76,32 @@ export function activate(context: vscode.ExtensionContext): void {
 		createIlatexInstanceForRootDocument(document)
 			.then(ilatex => {
 				vscode.window.showInformationMessage(`A new instance of iLatex has been started from root document ${path.basename(documentPath)}.`);
+
 				rootLatexDocumentPathsToIlatexInstances.set(documentPath, ilatex);
+				vscode.commands.executeCommand("setContext", "ilatex:hasActiveInstances", true);
 			});
 	});
 
+	let disposable2 = vscode.commands.registerCommand("ilatex.recompile", async () => {
+		console.log("ilatex recompile command");
+		const activeEditor = vscode.window.activeTextEditor;
+		if (!activeEditor || !activeEditor.document) {
+			return;
+		}
+		
+		for (let ilatexInstance of rootLatexDocumentPathsToIlatexInstances.values()) {
+			const activeEditorContainsFileFromCurrentInstance = ilatexInstance.codeMappingManager.allSourceFiles.some(file => {
+				return file.absolutePath === activeEditor.document.uri.path;
+			});
+
+			if (activeEditorContainsFileFromCurrentInstance) {
+				await ilatexInstance.updatePDFAndVisualisations();
+			}
+		}
+	});
+
 	context.subscriptions.push(disposable);
+	context.subscriptions.push(disposable2);
 }
 
 export function deactivate(): void {

@@ -19,7 +19,12 @@
 		"commands": [
 			{
 				"command": "ilatex.init",
-				"title": "Initialise iLaTeX"
+				"title": "Initialise iLaTeX from the document open in the active editor"
+			},
+			{
+				"command": "ilatex.recompile",
+				"title": "Recompile the document open in the active editor with iLaTeX",
+				"enablement": "ilatex:hasActiveInstances == true"
 			}
 		]
 	},
