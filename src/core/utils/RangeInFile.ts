@@ -17,6 +17,10 @@ export class RangeInFile {
         this.to = to;
     }
 
+    get isSingleLine(): boolean {
+        return this.from.line === this.to.line;
+    }
+
     get asVscodeRange(): vscode.Range {
         return new vscode.Range(
             this.from.asVscodePosition,
