@@ -23,12 +23,14 @@ export class VisualisationModelManager {
 
     private nodeExtractor: VisualisableNodeExtractor;
     private visualisationModels: VisualisationModel[];
+    private visualisationModelChangeObserverDispoables: vscode.Disposable[];
 
     constructor(ilatex: InteractiveLatex) {
         this.ilatex = ilatex;
         
         this.nodeExtractor = new VisualisableNodeExtractor();
         this.visualisationModels = [];
+        this.visualisationModelChangeObserverDispoables = [];
 
         this.initNodeExtractor();
     }
@@ -59,7 +61,7 @@ export class VisualisationModelManager {
     }
 
     dispose(): void {
-
+        this.stopObservingCurrentModelChanges();
     }
 
     private initNodeExtractor(): void {
@@ -89,6 +91,24 @@ export class VisualisationModelManager {
 
     hasModelAbleToHandleChangeIn(filePath: string, range: vscode.Range): boolean {
         return this.visualisationModels.some(model => model.isAbleToHandleChangeIn(filePath, range));
+    }
+
+    private startObservingCurrentModelChanges(): void {
+        for (let model of this.visualisationModels) {
+            const observable = model.onModelChangeEventEmitter.event(model => {
+                this.updateOneWebviewVisualisation(model);
+            });
+
+            this.visualisationModelChangeObserverDispoables.push(observable);
+        }
+    }
+
+    private stopObservingCurrentModelChanges(): void {
+        for (let disposable of this.visualisationModelChangeObserverDispoables) {
+            disposable.dispose();
+        }
+
+        this.visualisationModelChangeObserverDispoables = [];
     }
 
     async dispatchNotification(message: NotifyVisualisationModelMessage): Promise<void> {
@@ -193,12 +213,15 @@ export class VisualisationModelManager {
     }
 
     extractNewModels(): void {
+        this.stopObservingCurrentModelChanges();
         this.visualisationModels = [];
 
         const sourceFiles = this.ilatex.codeMappingManager.allSourceFiles;
         for (let sourceFile of sourceFiles) {
             this.extractModelsFrom(sourceFile);
         }
+
+        this.startObservingCurrentModelChanges();
 
         console.info(`${this.visualisationModels.length} visualisations model(s) have been created from the mappings:`);
         console.log(
@@ -208,8 +231,15 @@ export class VisualisationModelManager {
         );
     }
 
-    updateWebviewVisualisations(updateOpenVisualisation: boolean = false): void {
-        this.ilatex.webviewManager.sendNewVisualisationViewContent(
+    private updateOneWebviewVisualisation(model: VisualisationModel): void {
+        this.ilatex.webviewManager.sendNewContentForOneVisualisation(
+            model.uid,
+            model.createViewContent()
+        );
+    }
+
+    updateAllWebviewVisualisations(updateOpenVisualisation: boolean = false): void {
+        this.ilatex.webviewManager.sendNewContentForAllVisualisations(
             this.visualisationViewsContent,
             updateOpenVisualisation
         );
@@ -217,6 +247,6 @@ export class VisualisationModelManager {
 
     extractNewModelsAndUpdateWebview(updateOpenVisualisation: boolean = false): void {
         this.extractNewModels();
-        this.updateWebviewVisualisations(updateOpenVisualisation);
+        this.updateAllWebviewVisualisations(updateOpenVisualisation);
     }
 }

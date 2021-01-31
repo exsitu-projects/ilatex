@@ -1,6 +1,7 @@
 // Types of messages which can be exchanged between the core and the webview
 export const enum CoreToWebviewMessageType {
-    UpdateVisualisations = "UpdateVisualisations",
+    UpdateOneVisualisation = "UpdateOneVisualisation",
+    UpdateAllVisualisations = "UpdateAllVisualisations",
     UpdatePDF = "UpdatePDF",
     UpdateCompilationStatus = "UpdateCompilationStatus",
     UpdateVisualisationStatusMessage = "UpdateVisualisationStatusMessage"
@@ -16,9 +17,16 @@ export type MessageType =
 
 
 // Specification of each type of message which can be sent by the core to the webview
-export interface UpdateVisualisationsMessage {
-    type: CoreToWebviewMessageType.UpdateVisualisations;
-    newVisualisationsAsHtml: string;
+export interface UpdateOneVisualisationMessage {
+    type: CoreToWebviewMessageType.UpdateOneVisualisation;
+    visualisationUid: number;
+    visualisationContentAsHtml: string;
+    updateOpenVisualisation: boolean;
+}
+
+export interface UpdateAllVisualisationsMessage {
+    type: CoreToWebviewMessageType.UpdateAllVisualisations;
+    allVisualisationsContentAsHtml: string;
     updateOpenVisualisation: boolean;
 }
 
@@ -39,7 +47,11 @@ export interface UpdateVisualisationStatusMessage {
 }
 
 export type CoreToWebviewMessage =
-    UpdateVisualisationsMessage | UpdatePDFMessage | UpdateCompilationStatusMessage | UpdateVisualisationStatusMessage;
+    | UpdateOneVisualisationMessage
+    | UpdateAllVisualisationsMessage
+    | UpdatePDFMessage
+    | UpdateCompilationStatusMessage
+    | UpdateVisualisationStatusMessage;
 
 
 // Specification of each type of message which can be sent by the webview to the core

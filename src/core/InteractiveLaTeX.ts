@@ -73,7 +73,7 @@ export class InteractiveLatex {
         else {
             modifiedSourceFile.processFileChange(event);
             this.decorationManager.redecorateVisibleEditorsWithCurrentVisualisations();
-            this.updateVisualisationsAvailiability();
+            // this.updateVisualisationsAvailiability();
         }
     }
 

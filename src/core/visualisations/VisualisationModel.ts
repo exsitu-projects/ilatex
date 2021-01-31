@@ -26,6 +26,7 @@ export interface VisualisationModel {
     readonly codeRange: vscode.Range;
 
     readonly hasBeenManuallyEdited: boolean;
+    readonly onModelChangeEventEmitter: vscode.EventEmitter<this>;
 
     isAbleToHandleChangeIn(filePath: string, range: vscode.Range): boolean;
     handleViewNotification(message: NotifyVisualisationModelMessage): Promise<void>;

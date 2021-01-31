@@ -2,11 +2,12 @@ import { AnnotationMaskCoordinates } from "../pdf/PDFPageRenderer";
 import { Messenger } from "../Messenger";
 import { VisualisationView, VisualisationViewFactory } from "./VisualisationView";
 import { VisualisationPopup } from "./VisualisationPopup";
-import { WebviewToCoreMessageType, CoreToWebviewMessageType, UpdateVisualisationsMessage, UpdateVisualisationStatusMessage } from "../../shared/messenger/messages";
+import { WebviewToCoreMessageType, CoreToWebviewMessageType, UpdateOneVisualisationMessage, UpdateAllVisualisationsMessage, UpdateVisualisationStatusMessage } from "../../shared/messenger/messages";
 import { IncludegraphicsViewFactory } from "../../visualisations/includegraphics/view/view";
 import { TabularViewFactory } from "../../visualisations/tabular/view/view";
 import { GridLayoutViewFactory } from "../../visualisations/gridlayout/view/view";
 import { MathematicsViewFactory } from "../../visualisations/mathematics/view/view";
+import { createSecureContext } from "tls";
 
 export interface VisualisationDisplayRequest {
     codeMappingId: number;
@@ -142,9 +143,35 @@ export class VisualisationViewManager {
         );
     }
 
-    private handleVisualisationContentUpdate(message: UpdateVisualisationsMessage): void {
+    private handleOneVisualisationContentUpdate(message: UpdateOneVisualisationMessage): void {
+        const uid = message.visualisationUid;
+
+        // Update the content of the visualisation using the HTML provided by the core
+        const currentContentNode = this.visualisationContentContainerNode.querySelector(`.visualisation[data-uid="${uid}"]`);
+        if (currentContentNode) {
+            currentContentNode.outerHTML = message.visualisationContentAsHtml;
+        }
+        else {
+            this.visualisationContentContainerNode.innerHTML += message.visualisationContentAsHtml;
+            console.warn(`The content of the updated visualisation (UID ${message.visualisationUid}) has been appended instead of being replaced: it did not exist before.`);
+        }
+        
+        // If the update allows to safely update any visualisation currently on display,
+        // check if one is displayed and forward it the message so that it can update itself
+        if (message.updateOpenVisualisation && this.currentlyDisplayedVisualisationView) {
+            const newContentNode = this.visualisationContentContainerNode
+                .querySelector(`.visualisation[data-uid="${uid}"]`) as HTMLElement;
+
+            if (newContentNode) {
+                this.currentlyDisplayedVisualisationView.updateWith(newContentNode);
+                this.currentlyDisplayedVisualisationPopup!.onAfterDisplayedVisualationContentUpdate();
+            }
+        }
+    }
+
+    private handleAllVisualisationsContentUpdate(message: UpdateAllVisualisationsMessage): void {
         // Update the content of the visualisations using the HTML provided by the core
-        this.visualisationContentContainerNode.innerHTML = message.newVisualisationsAsHtml;
+        this.visualisationContentContainerNode.innerHTML = message.allVisualisationsContentAsHtml;
         
         // If the update allows to safely update any visualisation currently on display,
         // check if one is displayed and forward it the message so that it can update itself
@@ -162,9 +189,16 @@ export class VisualisationViewManager {
 
     private startHandlingVisualisationContentUpdates(): void {
         this.messenger.setHandlerFor(
-            CoreToWebviewMessageType.UpdateVisualisations,
-            (message: UpdateVisualisationsMessage) => {
-                this.handleVisualisationContentUpdate(message);
+            CoreToWebviewMessageType.UpdateOneVisualisation,
+            (message: UpdateOneVisualisationMessage) => {
+                this.handleOneVisualisationContentUpdate(message);
+            }
+        );
+
+        this.messenger.setHandlerFor(
+            CoreToWebviewMessageType.UpdateAllVisualisations,
+            (message: UpdateAllVisualisationsMessage) => {
+                this.handleAllVisualisationsContentUpdate(message);
             }
         );
     }

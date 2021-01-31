@@ -22,6 +22,8 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
 
     private notificationTitlesToHandlers: Map<string, NotificationHandler>;
 
+    readonly onModelChangeEventEmitter: vscode.EventEmitter<this>;
+
     constructor(node: T, codeMapping: CodeMapping, utilities: VisualisationModelUtilities) {
         this.uid = ModelIDGenerator.getUniqueId();
 
@@ -33,6 +35,8 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
             this.createNotificationHandlerSpecifications()
                 .map(specification  => [specification.title, specification.handler])
         );
+
+        this.onModelChangeEventEmitter = new vscode.EventEmitter();
     }
 
     get codeMappingId(): CodeMappingID {

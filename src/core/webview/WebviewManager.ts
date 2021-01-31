@@ -4,6 +4,7 @@ import { CoreToWebviewMessageType, NotifyVisualisationModelMessage, WebviewToCor
 import { TaskQueuer } from "../../shared/tasks/TaskQueuer";
 import { InteractiveLatex } from "../InteractiveLaTeX";
 import { ExtensionFileReader } from "../utils/FileReader";
+import { ModelUID } from "../visualisations/VisualisationModel";
 import { WebviewMessenger } from "./WebviewMessenger";
 
 
@@ -83,7 +84,7 @@ export class WebviewManager {
             if (!webviewWasVisible
             &&  event.webviewPanel.visible) {
                 this.ilatex.pdfManager.updateWebviewPDF();
-                this.ilatex.visualisationModelManager.updateWebviewVisualisations();
+                this.ilatex.visualisationModelManager.updateAllWebviewVisualisations();
             }
             
             webviewWasVisible = event.webviewPanel.visible;
@@ -111,12 +112,30 @@ export class WebviewManager {
         return this.webview.asWebviewUri(uri);
     }
 
-    sendNewVisualisationViewContent(newContent: string, updateOpenVisualisation: boolean = false): void {
-        console.info("About to send new visualisation content to the webview...");
+    sendNewContentForOneVisualisation(
+        visualisationUid: ModelUID,
+        newContent: string,
+        updateOpenVisualisation: boolean = true
+    ): void {
+        console.info("About to send new content for all visualisations to the webview...");
 
         this.messenger.sendMessage({
-            type: CoreToWebviewMessageType.UpdateVisualisations,
-            newVisualisationsAsHtml: newContent,
+            type: CoreToWebviewMessageType.UpdateOneVisualisation,
+            visualisationUid: visualisationUid,
+            visualisationContentAsHtml: newContent,
+            updateOpenVisualisation: updateOpenVisualisation
+        });
+    }
+
+    sendNewContentForAllVisualisations(
+        newContent: string,
+        updateOpenVisualisation: boolean = false
+    ): void {
+        console.info("About to send new content for all visualisations to the webview...");
+
+        this.messenger.sendMessage({
+            type: CoreToWebviewMessageType.UpdateAllVisualisations,
+            allVisualisationsContentAsHtml: newContent,
             updateOpenVisualisation: updateOpenVisualisation
         });
     }

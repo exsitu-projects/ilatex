@@ -78,17 +78,22 @@ export class ASTNode<
 
     private hasUnhandledEdits: boolean;
 
+    readonly withinNodeUserEditEventEmitter: vscode.EventEmitter<SourceFileChange>;
+    readonly acrossNodeUserEditEventEmitter: vscode.EventEmitter<SourceFileChange>;
+
     constructor(name: string, type: T, value: V, start: P.Index, end: P.Index) {
         this.name = name;
         this.type = type;
         this.value = value;
-
         this.range = new RangeInFile(
             PositionInFile.fromParsimmonIndex(start),
             PositionInFile.fromParsimmonIndex(end)
         );
 
         this.hasUnhandledEdits = false;
+
+        this.withinNodeUserEditEventEmitter = new vscode.EventEmitter();
+        this.acrossNodeUserEditEventEmitter = new vscode.EventEmitter();
     }
 
     get hasBeenEditedByTheUser(): boolean {
@@ -155,12 +160,12 @@ export class ASTNode<
 
     onWitihinNodeUserEdit(change: SourceFileChange): void {
         this.hasUnhandledEdits = true;
-
+        this.withinNodeUserEditEventEmitter.fire(change);
     }
 
     onAcrossNodeUserEdit(change: SourceFileChange): void {
         this.hasUnhandledEdits = true;
-
+        this.acrossNodeUserEditEventEmitter.fire(change);
     }
 
     visitWith(visitor: LatexASTVisitor, depth: number = 0, maxDepth: number = Number.MAX_SAFE_INTEGER): void {

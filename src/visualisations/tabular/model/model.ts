@@ -21,6 +21,17 @@ class TabularModel extends AbstractVisualisationModel<ASTEnvironementNode> {
         this.grid = Grid.extractFrom(this.astNode, mapping.sourceFile.document);
         this.options = Options.extractFrom(this.astNode);
 
+        node.withinNodeUserEditEventEmitter.event(change => {
+            console.log("Tabular model about to be modified...");
+
+            this.grid = Grid.extractFrom(this.astNode, mapping.sourceFile.document);
+            this.options = Options.extractFrom(this.astNode);
+
+            console.log("Tabular model has just been modified:", this.grid, this.options);
+
+            this.onModelChangeEventEmitter.fire(this);
+        });
+
         // console.log("==== GRID EXTRACTED ====");
         // console.log(this.grid.rows);
     }
