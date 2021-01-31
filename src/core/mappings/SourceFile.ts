@@ -143,6 +143,11 @@ export class SourceFile {
                 node.range.to.shift.offset += offsetShift;                
             };
 
+            const nbLinesOfAddedText = (change.text.match(/\n/g) || []).length + 1;
+            const lastNewlineIndex = change.text.lastIndexOf("\n");
+            const startIndexOfLastLineOfAddedText = lastNewlineIndex + 1;
+            const lengthOfLastLineOfAddedText = change.text.substring(startIndexOfLastLineOfAddedText).length;
+
             // console.log("Change kind:", changeKind);
             // console.log("Change:", change);
             // console.log("Shift:", lineShift, offsetShift);
@@ -166,10 +171,6 @@ export class SourceFile {
                         // In this particular case, the column must also be shifted!
                         // It can either concern the start column only or both the start and end columns
                         // (if the end column is located on the same line than the start column)
-                        const nbLinesOfAddedText = (change.text.match(/\n/g) || []).length + 1;
-                        const lastNewlineIndex = change.text.lastIndexOf("\n");
-                        const startIndexOfLastLineOfAddedText = lastNewlineIndex + 1;
-                        const lengthOfLastLineOfAddedText = change.text.substring(startIndexOfLastLineOfAddedText).length;
                         let columnShift = 0;
 
                         if (changeKind === FileChangeKind.Insertion) {
@@ -202,8 +203,45 @@ export class SourceFile {
 
                 // Case 3: the modified range overlaps with the range of the node.
                 else if (change.range.intersection(node.range.asVscodeRange)) {
-                    // TODO: notify the visualisation?
-                    node.markEditedByTheUser();
+                    // Case 3.1: the modified range is contained within the node
+                    if (changeStart.isAfterOrEqual(nodeStart) && changeEnd.isBeforeOrEqual(nodeEnd)) {
+                        // In this case, only shift the end of the node
+                        node.range.to.shift.lines += lineShift;
+                        node.range.to.shift.offset += offsetShift;  
+
+                        // If the change ends on the same line than the node end,
+                        // the column of the node end must also be shifted
+                        if (changeEnd.line === nodeEnd.line) {
+                            // TODO: implement
+
+                            let columnShift = 0;
+
+                            if (changeKind === FileChangeKind.Insertion) {
+                                columnShift = nbLinesOfAddedText === 1
+                                    ? lengthOfLastLineOfAddedText // if the node start is shifted on the same line
+                                    : lengthOfLastLineOfAddedText - changeStart.character; // if the node start is moved to another line
+                            }
+                            else if (changeKind === FileChangeKind.Deletion) {
+                                columnShift = change.range.isSingleLine
+                                    ? changeStart.character - changeEnd.character
+                                    : changeStart.character - changeEnd.character;
+                            }
+                            else if (changeKind === FileChangeKind.Replacement) {
+                                columnShift = change.range.isSingleLine
+                                    ? lengthOfLastLineOfAddedText - change.rangeLength // if the node start is shifted on the same line
+                                    : lengthOfLastLineOfAddedText - changeEnd.character; // if the node start is moved to another line
+                            }
+
+                            node.range.to.shift.column += columnShift;
+                        }
+
+                        node.onWitihinNodeUserEdit(change);
+                    }
+
+                    // Case 3.2: a part of the modified range is outside the range of the node
+                    else {
+                        node.onAcrossNodeUserEdit(change);
+                    }
                 }
 
                 else {

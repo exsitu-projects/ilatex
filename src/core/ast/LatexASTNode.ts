@@ -94,8 +94,14 @@ export class ASTNode<
         return this.hasUnhandledEdits;
     }
 
-    markEditedByTheUser(): void {
+    onWitihinNodeUserEdit(event: vscode.TextDocumentContentChangeEvent): void {
         this.hasUnhandledEdits = true;
+
+    }
+
+    onAcrossNodeUserEdit(event: vscode.TextDocumentContentChangeEvent): void {
+        this.hasUnhandledEdits = true;
+
     }
 
     visitWith(visitor: LatexASTVisitor, depth: number = 0, maxDepth: number = Number.MAX_SAFE_INTEGER): void {
