@@ -1,4 +1,5 @@
 import * as P from "parsimmon";
+import { SourceFileChange } from "../mappings/SourceFileChange";
 import { ASTNode, ASTNodeType, ASTCommandNode, ASTEnvironementNode, ASTLatexNode } from "./LatexASTNode";
 import { language } from "./LatexASTParsers";
 import { LatexASTNodeCollecter } from "./visitors/LatexASTNodeCollecter";
@@ -43,6 +44,12 @@ export class LatexAST {
         }
 
         return this.allNodesCached;
+    }
+
+    processSourceFileEdit(change: SourceFileChange): void {
+        for (let node of this.nodes) {
+            node.processSourceFileEdit(change);
+        }
     }
 
     private parse(input: string): ASTRoot {

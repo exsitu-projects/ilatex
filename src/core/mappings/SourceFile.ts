@@ -113,10 +113,7 @@ export class SourceFile {
     async processFileChange(changeEvents: vscode.TextDocumentChangeEvent): Promise<void> {
         for (let event of changeEvents.contentChanges) {
             const change = new SourceFileChange(event);
-
-            for (let node of this.ast.nodes) {
-                node.processSourceFileEdit(change);
-            }
+            this.ast.processSourceFileEdit(change);
         }
     }
 }
