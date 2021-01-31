@@ -115,12 +115,6 @@ export class ASTNode<
 
             // Special case: the node starts on the same line than the last line of the modified range
             if (nodeStart.line === change.end.line) {
-                this.range.from.shift.lines += change.shift.lines;
-                this.range.from.shift.offset += change.shift.offset;
-
-                this.range.to.shift.lines += change.shift.lines;
-                this.range.to.shift.offset += change.shift.offset;
-                
                 // In this particular case, the column must also be shifted!
                 // It can either concern the start column only or both the start and end columns
                 // (if the end column is located on the same line than the start column)
