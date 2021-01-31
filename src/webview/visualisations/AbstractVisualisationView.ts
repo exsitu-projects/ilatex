@@ -7,8 +7,8 @@ import { AnnotationMaskCoordinates } from "../pdf/PDFPageRenderer";
 function parseLocationFromAttribute(attributeValue: string) {
     const [_, line, column] = /(\d+);(\d+)/.exec(attributeValue)!;
     return {
-        line: Number(line) - 1,
-        column: Number(column) - 1
+        line: Number(line),
+        column: Number(column)
     };
 }
 
@@ -23,7 +23,7 @@ export abstract class AbstractVisualisationView implements VisualisationView {
     protected contentNode: HTMLElement;
     readonly contentTitle: string;
     readonly sourceFileName: string;
-    readonly sourceCodeRange: CodeRange;
+    private lastKnownSourceCodeRange: CodeRange;
 
     constructor(contentNode: HTMLElement, context: VisualisationViewInstantiationContext) {
         this.instanciationContext = context;
@@ -35,12 +35,16 @@ export abstract class AbstractVisualisationView implements VisualisationView {
         this.contentNode = contentNode;
         this.contentTitle = contentNode.getAttribute("data-name")!;
         this.sourceFileName = contentNode.getAttribute("data-source-file-name")!;
-        this.sourceCodeRange =
+        this.lastKnownSourceCodeRange =
             AbstractVisualisationView.extractSourceCodeRangeFromContentNode(contentNode);
     }
 
     get visualisationUid(): number {
         return this.lastKnownUid;
+    }
+
+    get sourceCodeRange(): CodeRange {
+        return this.lastKnownSourceCodeRange;
     }
 
     saveSourceDocument(): void {
@@ -90,6 +94,11 @@ export abstract class AbstractVisualisationView implements VisualisationView {
     updateWith(newContentNode: HTMLElement): void {
         // Update the UID of the visualisation (which changes which each update from the model)
         this.lastKnownUid = AbstractVisualisationView.extractVisualisationUidFrom(newContentNode);
+
+        // Update the location in the source code (which may change if the code has been edited)
+        this.lastKnownSourceCodeRange =
+            AbstractVisualisationView.extractSourceCodeRangeFromContentNode(newContentNode);
+
     };
 
 
