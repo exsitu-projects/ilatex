@@ -3,6 +3,7 @@ import * as P from "parsimmon";
 import { LatexASTVisitor } from "./visitors/LatexASTVisitor";
 import { PositionInFile } from "../utils/PositionInFile";
 import { RangeInFile } from "../utils/RangeInFile";
+import { SourceFileChange } from "../mappings/SourceFileChange";
 
 
 /** Possible types of an AST node. */
@@ -94,12 +95,76 @@ export class ASTNode<
         return this.hasUnhandledEdits;
     }
 
-    onWitihinNodeUserEdit(event: vscode.TextDocumentContentChangeEvent): void {
+    processSourceFileEdit(change: SourceFileChange): void {
+        const nodeStart = this.range.from.asVscodePosition;
+        const nodeEnd = this.range.to.asVscodePosition;
+
+        // Case 1: the node ends strictly before the modified range.
+        if (nodeEnd.isBefore(change.start)) {
+            // In this case, the node is completely unaffected: there is nothing to do.
+            return;
+        }
+
+        // Case 2: the node starts stricly after the modified range.
+        else if (nodeStart.isAfter(change.end)) {
+            this.range.from.shift.lines += change.shift.lines;
+            this.range.from.shift.offset += change.shift.offset;
+
+            this.range.to.shift.lines += change.shift.lines;
+            this.range.to.shift.offset += change.shift.offset;
+
+            // Special case: the node starts on the same line than the last line of the modified range
+            if (nodeStart.line === change.end.line) {
+                this.range.from.shift.lines += change.shift.lines;
+                this.range.from.shift.offset += change.shift.offset;
+
+                this.range.to.shift.lines += change.shift.lines;
+                this.range.to.shift.offset += change.shift.offset;
+                
+                // In this particular case, the column must also be shifted!
+                // It can either concern the start column only or both the start and end columns
+                // (if the end column is located on the same line than the start column)
+                this.range.from.shift.columns += change.shift.columns;
+                if (this.range.isSingleLine) {
+                    this.range.to.shift.columns += change.shift.columns;
+                }
+            }
+        }
+
+        // Case 3: the modified range overlaps with the range of the node.
+        else if (change.event.range.intersection(this.range.asVscodeRange)) {
+            // Case 3.1: the modified range is contained within the node
+            if (change.start.isAfterOrEqual(nodeStart) && change.end.isBeforeOrEqual(nodeEnd)) {
+                // In this case, only shift the end of the node
+                this.range.to.shift.lines += change.shift.lines;
+                this.range.to.shift.offset += change.shift.offset;  
+
+                // If the change ends on the same line than the node end,
+                // the column of the node end must also be shifted
+                if (change.end.line === nodeEnd.line) {
+                    this.range.to.shift.columns += change.shift.columns;
+                }
+
+                this.onWitihinNodeUserEdit(change);
+            }
+
+            // Case 3.2: a part of the modified range is outside the range of the node
+            else {
+                this.onAcrossNodeUserEdit(change);
+            }
+        }
+
+        else {
+            console.error("Unexpected case in processSourceFileEdit():", change, this);
+        }
+    }
+
+    onWitihinNodeUserEdit(change: SourceFileChange): void {
         this.hasUnhandledEdits = true;
 
     }
 
-    onAcrossNodeUserEdit(event: vscode.TextDocumentContentChangeEvent): void {
+    onAcrossNodeUserEdit(change: SourceFileChange): void {
         this.hasUnhandledEdits = true;
 
     }

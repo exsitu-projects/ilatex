@@ -2,15 +2,8 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
 import { LatexAST } from "../ast/LatexAST";
-import { LatexASTVisitorAdapter } from "../ast/visitors/LatexASTVisitorAdapter";
-import { ASTNode } from "../ast/LatexASTNode";
-import { RangeInFile } from "../utils/RangeInFile";
+import { SourceFileChange } from "./SourceFileChange";
 
-const enum FileChangeKind {
-    Insertion = "Insertion",
-    Deletion = "Deletion",
-    Replacement = "Replacement"
-}
 
 export class NotInitialisedError {}
 
@@ -118,135 +111,11 @@ export class SourceFile {
     }
 
     async processFileChange(changeEvents: vscode.TextDocumentChangeEvent): Promise<void> {
-        for (let change of changeEvents.contentChanges) {
-            const changeStart = change.range.start;
-            const changeEnd = change.range.end;
-
-            let changeKind = FileChangeKind.Replacement;
-            if (change.text.length === 0) { changeKind = FileChangeKind.Deletion; }
-            else if (change.rangeLength === 0) { changeKind = FileChangeKind.Insertion; }
-
-            // The line shift is given by the number of new lines minus the number of lines in the edited range.
-            const lineShift =  (change.text.match(/\n/g) || "").length // nb. lines added
-                     - (change.range.end.line - change.range.start.line); // nb. lines removed/replaced
-
-            // The offset shift is given by the length of the new text minus the length of the edited range.
-            const offsetShift = change.text.length - change.rangeLength;
-
-            // Note: the column shift only makes sense for a node that starts on the same line than the end of the edited range;
-            // and in this case, it cannot be computed without knowing the current column of the node start.
-            const shiftLineAndOffsetOf = (node: ASTNode) => {
-                node.range.from.shift.lines += lineShift;
-                node.range.from.shift.offset += offsetShift;
-
-                node.range.to.shift.lines += lineShift;
-                node.range.to.shift.offset += offsetShift;                
-            };
-
-            const nbLinesOfAddedText = (change.text.match(/\n/g) || []).length + 1;
-            const lastNewlineIndex = change.text.lastIndexOf("\n");
-            const startIndexOfLastLineOfAddedText = lastNewlineIndex + 1;
-            const lengthOfLastLineOfAddedText = change.text.substring(startIndexOfLastLineOfAddedText).length;
-
-            // console.log("Change kind:", changeKind);
-            // console.log("Change:", change);
-            // console.log("Shift:", lineShift, offsetShift);
+        for (let event of changeEvents.contentChanges) {
+            const change = new SourceFileChange(event);
 
             for (let node of this.ast.nodes) {
-                const nodeStart = node.range.from.asVscodePosition;
-                const nodeEnd = node.range.to.asVscodePosition;
-
-                // Case 1: the node ends strictly before the modified range.
-                if (nodeEnd.isBefore(changeStart)) {
-                    // In this case, the node is completely unaffected: there is nothing to do.
-                    continue;
-                }
-
-                // Case 2: the node starts stricly after the modified range.
-                else if (nodeStart.isAfter(changeEnd)) {
-                    // Case 2.1: the node starts on the same line than the last line of the modified range
-                    if (nodeStart.line === changeEnd.line) {
-                        shiftLineAndOffsetOf(node);
-                        
-                        // In this particular case, the column must also be shifted!
-                        // It can either concern the start column only or both the start and end columns
-                        // (if the end column is located on the same line than the start column)
-                        let columnShift = 0;
-
-                        if (changeKind === FileChangeKind.Insertion) {
-                            columnShift = nbLinesOfAddedText === 1
-                                ? lengthOfLastLineOfAddedText // if the node start is shifted on the same line
-                                : lengthOfLastLineOfAddedText - changeStart.character; // if the node start is moved to another line
-                        }
-                        else if (changeKind === FileChangeKind.Deletion) {
-                            columnShift = change.range.isSingleLine
-                                ? changeStart.character - changeEnd.character
-                                : changeStart.character - changeEnd.character;
-                        }
-                        else if (changeKind === FileChangeKind.Replacement) {
-                            columnShift = change.range.isSingleLine
-                                ? lengthOfLastLineOfAddedText - change.rangeLength // if the node start is shifted on the same line
-                                : lengthOfLastLineOfAddedText - changeEnd.character; // if the node start is moved to another line
-                        }
-
-                        node.range.from.shift.column += columnShift;
-                        if (node.range.isSingleLine) {
-                            node.range.to.shift.column += columnShift;
-                        }
-                    }
-
-                    // Case 2.2: the node starts on a line below the last line of the modified range.
-                    else {
-                        shiftLineAndOffsetOf(node);
-                    }
-                }
-
-                // Case 3: the modified range overlaps with the range of the node.
-                else if (change.range.intersection(node.range.asVscodeRange)) {
-                    // Case 3.1: the modified range is contained within the node
-                    if (changeStart.isAfterOrEqual(nodeStart) && changeEnd.isBeforeOrEqual(nodeEnd)) {
-                        // In this case, only shift the end of the node
-                        node.range.to.shift.lines += lineShift;
-                        node.range.to.shift.offset += offsetShift;  
-
-                        // If the change ends on the same line than the node end,
-                        // the column of the node end must also be shifted
-                        if (changeEnd.line === nodeEnd.line) {
-                            // TODO: implement
-
-                            let columnShift = 0;
-
-                            if (changeKind === FileChangeKind.Insertion) {
-                                columnShift = nbLinesOfAddedText === 1
-                                    ? lengthOfLastLineOfAddedText // if the node start is shifted on the same line
-                                    : lengthOfLastLineOfAddedText - changeStart.character; // if the node start is moved to another line
-                            }
-                            else if (changeKind === FileChangeKind.Deletion) {
-                                columnShift = change.range.isSingleLine
-                                    ? changeStart.character - changeEnd.character
-                                    : changeStart.character - changeEnd.character;
-                            }
-                            else if (changeKind === FileChangeKind.Replacement) {
-                                columnShift = change.range.isSingleLine
-                                    ? lengthOfLastLineOfAddedText - change.rangeLength // if the node start is shifted on the same line
-                                    : lengthOfLastLineOfAddedText - changeEnd.character; // if the node start is moved to another line
-                            }
-
-                            node.range.to.shift.column += columnShift;
-                        }
-
-                        node.onWitihinNodeUserEdit(change);
-                    }
-
-                    // Case 3.2: a part of the modified range is outside the range of the node
-                    else {
-                        node.onAcrossNodeUserEdit(change);
-                    }
-                }
-
-                else {
-                    console.error("Unexpected case 4", change, node);
-                }
+                node.processSourceFileEdit(change);
             }
         }
     }

@@ -14,7 +14,7 @@ export class UnspecifiedOffsetError {}
 /** The amount of shift of a position in a file. */
 export interface PositionShift {
     lines: number;
-    column: number;
+    columns: number;
     offset: number;
 };
 
@@ -42,7 +42,7 @@ export class PositionInFile {
 
         this.shift = {
             lines: 0,
-            column: 0,
+            columns: 0,
             offset: 0
         };
     }
@@ -54,7 +54,7 @@ export class PositionInFile {
 
     /** Zero-based column number (with a possible shift). */
     get column(): number {
-        return this.initialColumn + this.shift.column;
+        return this.initialColumn + this.shift.columns;
     }
 
     /**
