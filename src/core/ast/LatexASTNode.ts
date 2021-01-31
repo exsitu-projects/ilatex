@@ -78,6 +78,7 @@ export class ASTNode<
 
     private hasUnhandledEdits: boolean;
 
+    readonly beforeNodeUserEditEventEmitter: vscode.EventEmitter<SourceFileChange>;
     readonly withinNodeUserEditEventEmitter: vscode.EventEmitter<SourceFileChange>;
     readonly acrossNodeUserEditEventEmitter: vscode.EventEmitter<SourceFileChange>;
 
@@ -92,6 +93,7 @@ export class ASTNode<
 
         this.hasUnhandledEdits = false;
 
+        this.beforeNodeUserEditEventEmitter = new vscode.EventEmitter();
         this.withinNodeUserEditEventEmitter = new vscode.EventEmitter();
         this.acrossNodeUserEditEventEmitter = new vscode.EventEmitter();
     }
@@ -128,6 +130,8 @@ export class ASTNode<
                     this.range.to.shift.columns += change.shift.columns;
                 }
             }
+
+            this.onBeforeNodeUserEdit(change);
         }
 
         // Case 3: the modified range overlaps with the range of the node.
@@ -158,12 +162,16 @@ export class ASTNode<
         }
     }
 
-    onWitihinNodeUserEdit(change: SourceFileChange): void {
+    private onBeforeNodeUserEdit(change: SourceFileChange): void {
+        this.beforeNodeUserEditEventEmitter.fire(change);
+    }
+
+    private onWitihinNodeUserEdit(change: SourceFileChange): void {
         this.hasUnhandledEdits = true;
         this.withinNodeUserEditEventEmitter.fire(change);
     }
 
-    onAcrossNodeUserEdit(change: SourceFileChange): void {
+    private onAcrossNodeUserEdit(change: SourceFileChange): void {
         this.hasUnhandledEdits = true;
         this.acrossNodeUserEditEventEmitter.fire(change);
     }
