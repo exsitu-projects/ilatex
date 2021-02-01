@@ -24,11 +24,10 @@ export interface VisualisationModel {
 
     readonly sourceFile: SourceFile;
     readonly codeRange: vscode.Range;
+    readonly isOutOfSyncWithCode: boolean;
 
-    readonly hasBeenManuallyEdited: boolean;
     readonly onModelChangeEventEmitter: vscode.EventEmitter<this>;
 
-    isAbleToHandleChangeIn(filePath: string, range: vscode.Range): boolean;
     handleViewNotification(message: NotifyVisualisationModelMessage): Promise<void>;
     createViewContent(): string;
 }

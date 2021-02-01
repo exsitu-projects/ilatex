@@ -89,10 +89,6 @@ export class VisualisationModelManager {
         return result ?? null;
     }
 
-    hasModelAbleToHandleChangeIn(filePath: string, range: vscode.Range): boolean {
-        return this.visualisationModels.some(model => model.isAbleToHandleChangeIn(filePath, range));
-    }
-
     private startObservingCurrentModelChanges(): void {
         for (let model of this.visualisationModels) {
             const observable = model.onModelChangeEventEmitter.event(model => {
