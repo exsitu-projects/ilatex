@@ -4,6 +4,7 @@ import { LatexASTVisitor } from "./visitors/LatexASTVisitor";
 import { PositionInFile } from "../utils/PositionInFile";
 import { RangeInFile } from "../utils/RangeInFile";
 import { SourceFileChange } from "../mappings/SourceFileChange";
+import { SourceFile } from "../mappings/SourceFile";
 
 
 /** Possible types of an AST node. */
@@ -76,13 +77,20 @@ export class ASTNode<
     readonly value: V;
     readonly range: RangeInFile;
 
-    private hasUnhandledEdits: boolean;
+    private hasBeenEditedWithinItsRange: boolean;
+    private hasBeenEditedAcrossItsRange: boolean;
 
     readonly beforeNodeUserEditEventEmitter: vscode.EventEmitter<SourceFileChange>;
     readonly withinNodeUserEditEventEmitter: vscode.EventEmitter<SourceFileChange>;
     readonly acrossNodeUserEditEventEmitter: vscode.EventEmitter<SourceFileChange>;
 
-    constructor(name: string, type: T, value: V, start: P.Index, end: P.Index) {
+    constructor(
+        name: string,
+        type: T,
+        value: V,
+        start: P.Index,
+        end: P.Index
+    ) {
         this.name = name;
         this.type = type;
         this.value = value;
@@ -91,7 +99,8 @@ export class ASTNode<
             PositionInFile.fromParsimmonIndex(end)
         );
 
-        this.hasUnhandledEdits = false;
+        this.hasBeenEditedWithinItsRange = false;
+        this.hasBeenEditedAcrossItsRange = false;
 
         this.beforeNodeUserEditEventEmitter = new vscode.EventEmitter();
         this.withinNodeUserEditEventEmitter = new vscode.EventEmitter();
@@ -99,7 +108,8 @@ export class ASTNode<
     }
 
     get hasBeenEditedByTheUser(): boolean {
-        return this.hasUnhandledEdits;
+        return this.hasBeenEditedWithinItsRange
+            || this.hasBeenEditedAcrossItsRange;
     }
 
     processSourceFileEdit(change: SourceFileChange): void {
@@ -166,13 +176,19 @@ export class ASTNode<
             this.range.to.shift.columns += change.shift.columns;
         }
 
-        this.hasUnhandledEdits = true;
+        // this.hasUnhandledEdits = true;
+        this.hasBeenEditedWithinItsRange = true;
         this.withinNodeUserEditEventEmitter.fire(change);
     }
 
     private processUserEditAcrossNode(change: SourceFileChange): void {
-        this.hasUnhandledEdits = true;
+        // this.hasUnhandledEdits = true;
+        this.hasBeenEditedAcrossItsRange = true;
         this.acrossNodeUserEditEventEmitter.fire(change);
+    }
+
+    async getContentIn(sourceFile: SourceFile): Promise<string> {
+        return sourceFile.document.getText(this.range.asVscodeRange);
     }
 
     visitWith(visitor: LatexASTVisitor, depth: number = 0, maxDepth: number = Number.MAX_SAFE_INTEGER): void {
