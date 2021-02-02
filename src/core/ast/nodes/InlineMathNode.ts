@@ -1,23 +1,23 @@
-import { ASTNode } from "./ASTNode";
-import { RangeInFile } from "../../utils/RangeInFile";
-import { latexParsers } from "../parsers";
+import { ASTNode, ASTNodeContext, ASTNodeParser } from "./ASTNode";
 import { ASTVisitor } from "../visitors/ASTVisitor";
 import { MathNode } from "./MathNode";
 
 export class InlineMathNode extends ASTNode {
     static readonly type = "inline-math" as const;
-    static readonly parser = latexParsers.inlineMath;
 
     readonly type = InlineMathNode.type;
-    readonly parser = InlineMathNode.parser;
     readonly content: MathNode;
+    protected parser: ASTNodeParser<InlineMathNode>;
 
     constructor(
         content: MathNode,
-        range: RangeInFile
+        context: ASTNodeContext,
+        parser: ASTNodeParser<InlineMathNode>
     ) {
-        super(range);
+        super(context);
+
         this.content = content;
+        this.parser = parser;
     }
     
     toString(): string {

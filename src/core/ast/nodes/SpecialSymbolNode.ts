@@ -1,23 +1,23 @@
-import { ASTNode } from "./ASTNode";
-import { RangeInFile } from "../../utils/RangeInFile";
-import { latexParsers } from "../parsers";
+import { ASTNode, ASTNodeContext, ASTNodeParser } from "./ASTNode";
 import { ASTVisitor } from "../visitors/ASTVisitor";
 
 
 export class SpecialSymbolNode extends ASTNode {
     static readonly type = "special-symbol" as const;
-    static readonly parser = latexParsers.specialSymbol;
 
     readonly type = SpecialSymbolNode.type;
-    readonly parser = SpecialSymbolNode.parser;
     readonly symbol: string;
+    protected parser: ASTNodeParser<SpecialSymbolNode>;
 
     constructor(
         symbol: string,
-        range: RangeInFile
+        context: ASTNodeContext,
+        parser: ASTNodeParser<SpecialSymbolNode>
     ) {
-        super(range);
+        super(context);
+
         this.symbol = symbol;
+        this.parser = parser;
     }
     
     toString(): string {

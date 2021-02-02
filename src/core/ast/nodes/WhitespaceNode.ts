@@ -1,19 +1,19 @@
-import { ASTNode } from "./ASTNode";
-import { RangeInFile } from "../../utils/RangeInFile";
-import { latexParsers } from "../parsers";
+import { ASTNode, ASTNodeContext, ASTNodeParser } from "./ASTNode";
 import { ASTVisitor } from "../visitors/ASTVisitor";
 
 export class WhitespaceNode extends ASTNode {
     static readonly type = "whitespace" as const;
-    static readonly parser = latexParsers.whitespace;
 
     readonly type = WhitespaceNode.type;
-    readonly parser = WhitespaceNode.parser;
+    protected parser: ASTNodeParser<WhitespaceNode>;
 
     constructor(
-        range: RangeInFile
+        context: ASTNodeContext,
+        parser: ASTNodeParser<WhitespaceNode>
     ) {
-        super(range);
+        super(context);
+
+        this.parser = parser;
     }
     
     toString(): string {

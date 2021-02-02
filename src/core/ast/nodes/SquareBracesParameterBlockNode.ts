@@ -1,24 +1,24 @@
-import { ASTNode } from "./ASTNode";
-import { RangeInFile } from "../../utils/RangeInFile";
-import { latexParsers } from "../parsers";
+import { ASTNode, ASTNodeContext, ASTNodeParser } from "./ASTNode";
 import { ASTVisitor } from "../visitors/ASTVisitor";
 import { ParameterNode } from "./ParameterNode";
 import { ParameterListNode } from "./ParameterListNode";
 
 export class SquareBracesParameterBlockNode extends ASTNode {
     static readonly type = "square-braces-parameter-block" as const;
-    static readonly parser = latexParsers.squareBracesParameterBlock;
 
     readonly type = SquareBracesParameterBlockNode.type;
-    readonly parser = SquareBracesParameterBlockNode.parser;
     readonly content: ParameterNode | ParameterListNode;
+    protected parser: ASTNodeParser<SquareBracesParameterBlockNode>;
 
     constructor(
         content: ParameterNode | ParameterListNode,
-        range: RangeInFile
+        context: ASTNodeContext,
+        parser: ASTNodeParser<SquareBracesParameterBlockNode>
     ) {
-        super(range);
+        super(context);
+
         this.content = content;
+        this.parser = parser;
     }
     
     toString(): string {

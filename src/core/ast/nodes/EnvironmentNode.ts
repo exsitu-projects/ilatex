@@ -1,12 +1,9 @@
-import * as P from "parsimmon";
-import { ASTNode, ASTNodeParser } from "./ASTNode";
-import { RangeInFile } from "../../utils/RangeInFile";
-import { latexParsers } from "../parsers";
+import { ASTNode, ASTNodeContext, ASTNodeParser } from "./ASTNode";
 import { ASTVisitor } from "../visitors/ASTVisitor";
 import { CommandNode } from "./CommandNode";
 import { CurlyBracesParameterBlockNode } from "./CurlyBracesParameterBlockNode";
 import { SquareBracesParameterBlockNode } from "./SquareBracesParameterBlockNode";
-import { EmptyASTValue, EMPTY_AST_VALUE } from "../parsers";
+import { EmptyASTValue, EMPTY_AST_VALUE } from "../LatexParser";
 
 
 export type EnvironmentNodeParameters = (
@@ -18,16 +15,14 @@ export type EnvironmentNodeParameters = (
 
 export class EnvironmentNode extends ASTNode {
     static readonly type = "environment" as const;
-    static readonly parser = latexParsers.commandOrEnvironment as ASTNodeParser<EnvironmentNode>;
 
     readonly type = EnvironmentNode.type;
-    readonly parser = EnvironmentNode.parser;
-
     readonly name: string;
     readonly beginCommand: CommandNode;
     readonly parameters: EnvironmentNodeParameters;
     readonly body: ASTNode;
     readonly endCommand: CommandNode;
+    protected parser: ASTNodeParser<EnvironmentNode>;
 
     constructor(
         name: string,
@@ -35,15 +30,17 @@ export class EnvironmentNode extends ASTNode {
         parameters: EnvironmentNodeParameters,
         body: ASTNode,
         endCommand: CommandNode,
-        range: RangeInFile
+        context: ASTNodeContext,
+        parser: ASTNodeParser<EnvironmentNode>
     ) {
-        super(range);
+        super(context);
         
         this.name = name;
         this.beginCommand = beginCommand;
         this.parameters = parameters;
         this.body = body;
         this.endCommand = endCommand;
+        this.parser = parser;
     }
     
     toString(): string {

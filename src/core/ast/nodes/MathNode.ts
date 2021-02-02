@@ -1,22 +1,22 @@
-import { ASTNode } from "./ASTNode";
-import { RangeInFile } from "../../utils/RangeInFile";
-import { latexParsers } from "../parsers";
+import { ASTNode, ASTNodeContext, ASTNodeParser } from "./ASTNode";
 import { ASTVisitor } from "../visitors/ASTVisitor";
 
 export class MathNode extends ASTNode {
     static readonly type = "math" as const;
-    static readonly parser = latexParsers;
 
     readonly type = MathNode.type;
-    readonly parser = MathNode.parser;
     readonly content: string;
+    protected parser: ASTNodeParser<MathNode>;
 
     constructor(
         content: string,
-        range: RangeInFile
+        context: ASTNodeContext,
+        parser: ASTNodeParser<MathNode>
     ) {
-        super(range);
+        super(context);
+
         this.content = content;
+        this.parser = parser;
     }
     
     toString(): string {

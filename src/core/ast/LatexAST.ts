@@ -1,65 +1,67 @@
 import * as P from "parsimmon";
+import { SourceFile } from "../mappings/SourceFile";
 import { SourceFileChange } from "../mappings/SourceFileChange";
+import { ASTParser } from "./ASTParser";
 import { ASTNode } from "./nodes/ASTNode";
 import { LatexNode } from "./nodes/LatexNode";
-import { latexParsers } from "./parsers";
 import { ASTNodeCollecter } from "./visitors/ASTNodeCollecter";
 import { ASTVisitor } from "./visitors/ASTVisitor";
-
-/** Class of errors thrown when the parsing process fails. */
-class LatexParsingError {
-    readonly failure: P.Failure;
-
-    constructor(failure: P.Failure) {
-        this.failure = failure;
-    }
-}
 
 
 /** Type of the root node of an AST. */
 export type ASTRootNode = LatexNode;
 
 
+export class NoASTRootNodeError {}
+
+
 /** Class of an AST for a simple subset of Latex. */
 export class LatexAST {
-    private rootNode: ASTRootNode;
+    private sourceFile: SourceFile;
+
+    private rootNode: ASTRootNode | null;
     private allNodesCached: ASTNode[] | null;
     
-    constructor(input: string) {
-        this.rootNode = this.parse(input);
+    constructor(sourceFile: SourceFile) {
+        this.sourceFile = sourceFile;
+
+        this.rootNode = null;
         this.allNodesCached = null;
     }
 
-    get root() {
+    get hasRoot(): boolean {
+        return !!this.rootNode;
+    }
+
+    get root(): ASTRootNode {
+        if (!this.rootNode) {
+            throw new NoASTRootNodeError();
+        }
+
         return this.rootNode;
     }
 
+    // TODO: handle cache issues when nodes are modified deep down in the tree
     get nodes(): ASTNode[] {
         // Either use the cached list of all nodes if it has already been computed,
-        // or compute the list and cache it first
+        // or compute the list and cache it first (asussming there is a root node)
         if (!this.allNodesCached) {
             const nodeCollecter = new ASTNodeCollecter();
-            this.rootNode.visitWith(nodeCollecter);
+            this.root.visitWith(nodeCollecter);
             this.allNodesCached = nodeCollecter.nodes;
         }
 
         return this.allNodesCached;
     }
 
+    async init(): Promise<void> {
+        const parser = new ASTParser(this.sourceFile);
+        this.rootNode = await parser.parse();
+    }
+
     processSourceFileEdit(change: SourceFileChange): void {
         for (let node of this.nodes) {
             node.processSourceFileEdit(change);
-        }
-    }
-
-    private parse(input: string): ASTRootNode {
-        const parserResult = latexParsers.latex(input);
-        
-        if (parserResult.status === true) {
-            return parserResult.value;
-        }
-        else {
-            throw new LatexParsingError(parserResult);
         }
     }
 

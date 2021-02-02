@@ -1,11 +1,9 @@
 import * as P from "parsimmon";
-import { ASTNode, ASTNodeParser } from "./ASTNode";
-import { RangeInFile } from "../../utils/RangeInFile";
-import { latexParsers } from "../parsers";
+import { ASTNode, ASTNodeContext, ASTNodeParser } from "./ASTNode";
 import { ASTVisitor } from "../visitors/ASTVisitor";
 import { CurlyBracesParameterBlockNode } from "./CurlyBracesParameterBlockNode";
 import { SquareBracesParameterBlockNode } from "./SquareBracesParameterBlockNode";
-import { EmptyASTValue, EMPTY_AST_VALUE } from "../parsers";
+import { EmptyASTValue, EMPTY_AST_VALUE } from "../LatexParser";
 
 
 export type CommandNodeParameters = (
@@ -17,22 +15,23 @@ export type CommandNodeParameters = (
 
 export class CommandNode extends ASTNode {
     static readonly type = "command" as const;
-    static readonly parser = latexParsers.commandOrEnvironment as ASTNodeParser<CommandNode>;
 
     readonly type = CommandNode.type;
-    readonly parser = CommandNode.parser;
     readonly name: string;
     readonly parameters: CommandNodeParameters;
+    protected parser: ASTNodeParser<CommandNode>;
 
     constructor(
         name: string,
         parameters: CommandNodeParameters,
-        range: RangeInFile
+        context: ASTNodeContext,
+        parser: ASTNodeParser<CommandNode>
     ) {
-        super(range);
+        super(context);
 
         this.name = name;
         this.parameters = parameters;
+        this.parser = parser;
     }
 
     toString(): string {

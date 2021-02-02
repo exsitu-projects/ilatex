@@ -1,27 +1,27 @@
-import { ASTNode } from "./ASTNode";
-import { RangeInFile } from "../../utils/RangeInFile";
-import { latexParsers } from "../parsers";
+import { ASTNode, ASTNodeContext, ASTNodeParser } from "./ASTNode";
 import { ASTVisitor } from "../visitors/ASTVisitor";
 import { ParameterKeyNode } from "./ParameterKeyNode";
 import { ParameterValueNode } from "./ParameterValueNode";
 
 export class ParameterAssignmentNode extends ASTNode {
     static readonly type = "parameter-assignment" as const;
-    static readonly parser = latexParsers.parameterAssignment;
 
     readonly type = ParameterAssignmentNode.type;
-    readonly parser = ParameterAssignmentNode.parser;
     readonly key: ParameterKeyNode;
     readonly value: ParameterValueNode;
+    protected parser: ASTNodeParser<ParameterAssignmentNode>;
 
     constructor(
         key: ParameterKeyNode,
         value: ParameterValueNode,
-        range: RangeInFile
+        context: ASTNodeContext,
+        parser: ASTNodeParser<ParameterAssignmentNode>
     ) {
-        super(range);
+        super(context);
+
         this.key = key;
         this.value = value;
+        this.parser = parser;
     }
     
     toString(): string {

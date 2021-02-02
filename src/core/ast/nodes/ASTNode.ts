@@ -10,34 +10,61 @@ import { SourceFile } from "../../mappings/SourceFile";
 export type ASTNodeParser<T extends ASTNode> = (input: string) => P.Result<T>;
 
 
+export interface ASTNodeContext {
+    range: RangeInFile,
+    sourceFile: SourceFile
+};
+
+
 export abstract class ASTNode {
     readonly abstract type: string;
-    readonly abstract parser: ASTNodeParser<ASTNode>;
+    protected abstract parser: ASTNodeParser<ASTNode>;
+    readonly sourceFile: SourceFile;
     readonly range: RangeInFile;
-
+    
     protected hasBeenEditedWithinItsRange: boolean;
     protected hasBeenEditedAcrossItsRange: boolean;
+
+    private reparsingError: P.Failure | null;
 
     readonly beforeNodeUserEditEventEmitter: vscode.EventEmitter<SourceFileChange>;
     readonly withinNodeUserEditEventEmitter: vscode.EventEmitter<SourceFileChange>;
     readonly acrossNodeUserEditEventEmitter: vscode.EventEmitter<SourceFileChange>;
 
+    readonly parsingFailureEventEmitter: vscode.EventEmitter<P.Failure>;
+
+    readonly beforeNodeDetachmentEventEmitter: vscode.EventEmitter<ASTNode>;
+    readonly afterNodeDetachmentEventEmitter: vscode.EventEmitter<ASTNode>;
+
     constructor(
-        range: RangeInFile
+        context: ASTNodeContext
     ) {
-        this.range = range;
+        this.sourceFile = context.sourceFile;
+        this.range = context.range;
+        // this.parser = context.parser;
 
         this.hasBeenEditedWithinItsRange = false;
         this.hasBeenEditedAcrossItsRange = false;
 
+        this.reparsingError = null;
+
         this.beforeNodeUserEditEventEmitter = new vscode.EventEmitter();
         this.withinNodeUserEditEventEmitter = new vscode.EventEmitter();
         this.acrossNodeUserEditEventEmitter = new vscode.EventEmitter();
+
+        this.parsingFailureEventEmitter =  new vscode.EventEmitter();
+
+        this.beforeNodeDetachmentEventEmitter = new vscode.EventEmitter();
+        this.afterNodeDetachmentEventEmitter = new vscode.EventEmitter();
     }
 
     get hasBeenEditedByTheUser(): boolean {
         return this.hasBeenEditedWithinItsRange
             || this.hasBeenEditedAcrossItsRange;
+    }
+
+    get hasReparsingError(): boolean {
+        return !!this.reparsingError;
     }
 
     processSourceFileEdit(change: SourceFileChange): void {
@@ -59,7 +86,7 @@ export abstract class ASTNode {
         else if (change.event.range.intersection(this.range.asVscodeRange)) {
             // Case 3.1: the modified range is contained within the node
             if (change.start.isAfterOrEqual(nodeStart) && change.end.isBeforeOrEqual(nodeEnd)) {
-                this.processUserEditWitihinNode(change);
+                this.processUserEditWithinNode(change);
             }
 
             // Case 3.2: a part of the modified range is outside the range of the node
@@ -94,7 +121,7 @@ export abstract class ASTNode {
         this.beforeNodeUserEditEventEmitter.fire(change);
     }
 
-    private processUserEditWitihinNode(change: SourceFileChange): void {
+    private processUserEditWithinNode(change: SourceFileChange): void {
         this.range.to.shift.lines += change.shift.lines;
         this.range.to.shift.offset += change.shift.offset;  
 
@@ -117,6 +144,47 @@ export abstract class ASTNode {
 
     async getContentIn(sourceFile: SourceFile): Promise<string> {
         return sourceFile.document.getText(this.range.asVscodeRange);
+    }
+
+    protected updateWith(newNode: ASTNode): void {
+        
+    }
+
+    protected onBeforeSelfUpdate(): void {
+
+    }
+
+    protected onAfterSelfUpdate(): void {
+        
+    }
+
+    async reparseIn(sourceFile: SourceFile): Promise<void> {
+        const text = await this.getContentIn(sourceFile);
+        const result = this.parser(text);
+
+        if (result.status) {
+            this.reparsingError = null;
+
+            this.onBeforeSelfUpdate();
+            this.updateWith(result.value);
+            this.onAfterSelfUpdate();
+        }
+        else {
+            this.reparsingError = result;
+            this.parsingFailureEventEmitter.fire(result);
+        }
+    }
+
+    // protected async onChildNodeParsingFailure(childNode: ASTNode): void {
+    //     await this.reparseIn();
+    // }
+
+    protected startObservingChildNodeParsingFailure(): void {
+
+    }
+
+    protected stopObservingChildNodeParsingFailure(): void {
+        
     }
 
     abstract visitWith(visitor: ASTVisitor, depth: number, maxDepth: number): void;

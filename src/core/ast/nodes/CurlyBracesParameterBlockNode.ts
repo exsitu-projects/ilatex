@@ -1,24 +1,24 @@
-import { ASTNode } from "./ASTNode";
-import { RangeInFile } from "../../utils/RangeInFile";
-import { latexParsers } from "../parsers";
+import { ASTNode, ASTNodeContext, ASTNodeParser } from "./ASTNode";
 import { ASTVisitor } from "../visitors/ASTVisitor";
 import { ParameterListNode } from "./ParameterListNode";
 import { ParameterNode } from "./ParameterNode";
 
 export class CurlyBracesParameterBlockNode extends ASTNode {
     static readonly type = "curly-braces-parameter-block" as const;
-    static readonly parser = latexParsers.curlyBracesParameterBlock;
 
     readonly type = CurlyBracesParameterBlockNode.type;
-    readonly parser = CurlyBracesParameterBlockNode.parser;
     readonly content: ParameterNode | ParameterListNode;
+    protected parser: ASTNodeParser<CurlyBracesParameterBlockNode>;
 
     constructor(
         content: ParameterNode | ParameterListNode,
-        range: RangeInFile
+        context: ASTNodeContext,
+        parser: ASTNodeParser<CurlyBracesParameterBlockNode>
     ) {
-        super(range);
+        super(context);
+        
         this.content = content;
+        this.parser = parser;
     }
     
     toString(): string {
