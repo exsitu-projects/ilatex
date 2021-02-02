@@ -1,10 +1,10 @@
 import { ASTNode } from "./ASTNode";
 import { RangeInFile } from "../../utils/RangeInFile";
 import { language } from "../LatexASTParsers";
-import { LatexASTVisitor } from "../visitors/LatexASTVisitor";
+import { ASTVisitor } from "../visitors/ASTVisitor";
 import { CurlyBracesParameterBlockNode } from "./CurlyBracesParameterBlockNode";
 import { SquareBracesParameterBlockNode } from "./SquareBracesParameterBlockNode";
-import { EmptyASTValue } from "../parsers";
+import { EmptyASTValue, EMPTY_AST_VALUE } from "../parsers";
 
 
 export type CommandNodeParameters = (
@@ -20,6 +20,7 @@ export class CommandNode extends ASTNode {
 
     readonly type = CommandNode.type;
     readonly parser = CommandNode.parser;
+    readonly name: string;
     readonly parameters: CommandNodeParameters;
 
     constructor(
@@ -28,14 +29,28 @@ export class CommandNode extends ASTNode {
         range: RangeInFile
     ) {
         super(range);
+
+        this.name = name;
         this.parameters = parameters;
     }
 
+    toString(): string {
+        return `Command [\\${this.name}]`;
+    }
+
     visitWith(
-        visitor: LatexASTVisitor,
+        visitor: ASTVisitor,
         depth: number = 0,
         maxDepth: number = Number.MAX_SAFE_INTEGER
     ) {
-        // TODO: implement
+        visitor.visit(this, depth);
+
+        for (let parameterNode of this.parameters) {
+            if (parameterNode === EMPTY_AST_VALUE) {
+                continue;
+            }
+
+            parameterNode.visitWith(visitor, depth + 1, maxDepth);
+        }
     };
 }

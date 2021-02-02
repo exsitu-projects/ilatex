@@ -1,7 +1,7 @@
 import { ASTNode } from "./ASTNode";
 import { RangeInFile } from "../../utils/RangeInFile";
 import { language } from "../LatexASTParsers";
-import { LatexASTVisitor } from "../visitors/LatexASTVisitor";
+import { ASTVisitor } from "../visitors/ASTVisitor";
 
 export class CommentNode extends ASTNode {
     static readonly type = "comment" as const;
@@ -19,11 +19,7 @@ export class CommentNode extends ASTNode {
         this.content = content.substring(1); // Ignore the percent sign
     }
 
-    visitWith(
-        visitor: LatexASTVisitor,
-        depth: number = 0,
-        maxDepth: number = Number.MAX_SAFE_INTEGER
-    ) {
-        // TODO: implement
-    };
+    toString(): string {
+        return `Comment`;
+    }
 }

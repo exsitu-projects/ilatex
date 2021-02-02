@@ -1,7 +1,7 @@
 import { ASTNode } from "./ASTNode";
 import { RangeInFile } from "../../utils/RangeInFile";
 import { language } from "../LatexASTParsers";
-import { LatexASTVisitor } from "../visitors/LatexASTVisitor";
+import { ASTVisitor } from "../visitors/ASTVisitor";
 import { ParameterKeyNode } from "./ParameterKeyNode";
 import { ParameterValueNode } from "./ParameterValueNode";
 
@@ -23,12 +23,18 @@ export class ParameterAssignmentNode extends ASTNode {
         this.key = key;
         this.value = value;
     }
+    
+    toString(): string {
+        return `Parameter assignment [${this.key.name} = ${this.value.value}]`;
+    }
 
     visitWith(
-        visitor: LatexASTVisitor,
+        visitor: ASTVisitor,
         depth: number = 0,
         maxDepth: number = Number.MAX_SAFE_INTEGER
     ) {
-        // TODO: implement
+        visitor.visit(this, depth);
+        this.key.visitWith(visitor, depth + 1, maxDepth);
+        this.value.visitWith(visitor, depth + 1, maxDepth);
     };
 }

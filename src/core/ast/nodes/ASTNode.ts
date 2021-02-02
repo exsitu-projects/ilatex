@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import * as P from "parsimmon";
-import { LatexASTVisitor } from "../visitors/LatexASTVisitor";
+import { ASTVisitor } from "../visitors/ASTVisitor";
 import { PositionInFile } from "../../utils/PositionInFile";
 import { RangeInFile } from "../../utils/RangeInFile";
 import { SourceFileChange } from "../../mappings/SourceFileChange";
@@ -119,5 +119,7 @@ export abstract class ASTNode {
         return sourceFile.document.getText(this.range.asVscodeRange);
     }
 
-    abstract visitWith(visitor: LatexASTVisitor, depth: number, maxDepth: number): void;
+    visitWith(visitor: ASTVisitor, depth: number, maxDepth: number): void {
+        visitor.visit(this, depth);
+    };
 }

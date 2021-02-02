@@ -2,29 +2,37 @@ import * as P from "parsimmon";
 import { ASTNode } from "./ASTNode";
 import { RangeInFile } from "../../utils/RangeInFile";
 import { language } from "../LatexASTParsers";
-import { LatexASTVisitor } from "../visitors/LatexASTVisitor";
+import { ASTVisitor } from "../visitors/ASTVisitor";
 
-export class BlockNode<Content = ASTNode[]> extends ASTNode {
+export class BlockNode extends ASTNode {
     static readonly type = "block" as const;
     static readonly parser = (text: string) => language.block;
 
     readonly type = BlockNode.type;
     readonly parser = BlockNode.parser;
-    readonly content: Content;
+    readonly content: ASTNode[];
 
     constructor(
-        content: Content,
+        content: ASTNode[],
         range: RangeInFile
     ) {
         super(range);
         this.content = content;
     }
 
+    toString(): string {
+        return `Block`;
+    }
+
     visitWith(
-        visitor: LatexASTVisitor,
+        visitor: ASTVisitor,
         depth: number = 0,
         maxDepth: number = Number.MAX_SAFE_INTEGER
     ) {
-        // TODO: implement
+        visitor.visit(this, depth);
+
+        for (let contentNode of this.content) {
+            contentNode.visitWith(visitor, depth + 1, maxDepth);
+        }
     };
 }

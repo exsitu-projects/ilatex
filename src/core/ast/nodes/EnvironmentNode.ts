@@ -1,11 +1,11 @@
 import { ASTNode } from "./ASTNode";
 import { RangeInFile } from "../../utils/RangeInFile";
 import { language } from "../LatexASTParsers";
-import { LatexASTVisitor } from "../visitors/LatexASTVisitor";
+import { ASTVisitor } from "../visitors/ASTVisitor";
 import { CommandNode } from "./CommandNode";
 import { CurlyBracesParameterBlockNode } from "./CurlyBracesParameterBlockNode";
 import { SquareBracesParameterBlockNode } from "./SquareBracesParameterBlockNode";
-import { EmptyASTValue } from "../parsers";
+import { EmptyASTValue, EMPTY_AST_VALUE } from "../parsers";
 
 
 export type EnvironmentNodeParameters = (
@@ -15,7 +15,7 @@ export type EnvironmentNodeParameters = (
 )[];
 
 
-export class EnvironmentNode<BodyContent = ASTNode> extends ASTNode {
+export class EnvironmentNode extends ASTNode {
     static readonly type = "environment" as const;
     static readonly parser = (text: string) => language.block;
 
@@ -25,14 +25,14 @@ export class EnvironmentNode<BodyContent = ASTNode> extends ASTNode {
     readonly name: string;
     readonly beginCommand: CommandNode;
     readonly parameters: EnvironmentNodeParameters;
-    readonly body: BodyContent;
+    readonly body: ASTNode;
     readonly endCommand: CommandNode;
 
     constructor(
         name: string,
         beginCommand: CommandNode,
         parameters: EnvironmentNodeParameters,
-        body: BodyContent,
+        body: ASTNode,
         endCommand: CommandNode,
         range: RangeInFile
     ) {
@@ -44,12 +44,27 @@ export class EnvironmentNode<BodyContent = ASTNode> extends ASTNode {
         this.body = body;
         this.endCommand = endCommand;
     }
+    
+    toString(): string {
+        return `Environment [${this.name}]`;
+    }
 
     visitWith(
-        visitor: LatexASTVisitor,
+        visitor: ASTVisitor,
         depth: number = 0,
         maxDepth: number = Number.MAX_SAFE_INTEGER
     ) {
-        // TODO: implement
+        visitor.visit(this, depth);
+
+        this.beginCommand.visitWith(visitor, depth + 1, maxDepth);
+        for (let parameterNode of this.parameters) {
+            if (parameterNode === EMPTY_AST_VALUE) {
+                continue;
+            }
+
+            parameterNode.visitWith(visitor, depth + 1, maxDepth);
+        }
+        this.body.visitWith(visitor, depth + 1, maxDepth);
+        this.endCommand.visitWith(visitor, depth + 1, maxDepth);
     };
 }

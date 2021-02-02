@@ -1,7 +1,7 @@
 import { ASTNode } from "./ASTNode";
 import { RangeInFile } from "../../utils/RangeInFile";
 import { language } from "../LatexASTParsers";
-import { LatexASTVisitor } from "../visitors/LatexASTVisitor";
+import { ASTVisitor } from "../visitors/ASTVisitor";
 import { ParameterNode } from "./ParameterNode";
 import { ParameterListNode } from "./ParameterListNode";
 
@@ -20,12 +20,18 @@ export class SquareBracesParameterBlockNode extends ASTNode {
         super(range);
         this.content = content;
     }
+    
+    toString(): string {
+        return `[] parameter`;
+    }
 
     visitWith(
-        visitor: LatexASTVisitor,
+        visitor: ASTVisitor,
         depth: number = 0,
         maxDepth: number = Number.MAX_SAFE_INTEGER
     ) {
-        // TODO: implement
+        visitor.visit(this, depth);
+
+        this.content.visitWith(visitor, depth + 1, maxDepth);
     };
 }
