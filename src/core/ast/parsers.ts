@@ -201,7 +201,7 @@ function createEnvironementParser(environement: EnvironementSpecification): P.Pa
 
 // Language of a simplified subset of LaTeX
 // It can be parsed by using the 'latex' rule as the axiom of the grammar
-const language = P.createLanguage<{
+type LanguageParsersOutput = {
     latex: LatexNode,
     text: TextNode,
     whitespace: WhitespaceNode,
@@ -217,15 +217,16 @@ const language = P.createLanguage<{
     curlyBracesParameterBlock: CurlyBracesParameterBlockNode,
     parameter: ParameterNode,
     optionalParameter: ParameterNode,
-    // environementNameParameter: ParameterNode,
     squareBracesParameterBlock: SquareBracesParameterBlockNode,
     parameterKey: ParameterKeyNode,
     parameterValue: ParameterValueNode,
     parameterAssignment: ParameterAssignmentNode,
     parameterList: ParameterListNode,
     specialSymbol: SpecialSymbolNode,
-    comment: CommentNode,
-}>({
+    comment: CommentNode    
+};
+
+const language = P.createLanguage<LanguageParsersOutput>({
     text: lang => {
         return regularSentences
             .thru(createParserTransformerWithRange((value, range) => new TextNode(value, range)));
@@ -511,4 +512,55 @@ const language = P.createLanguage<{
     }
 });
 
-export { language };
+// Extensive list of parser names that are exposed outside of this file
+// This seems required to bypass a TypeScript error related to a self-reference
+// of the Parsimmon language defined above
+// (probably due to the fact every parser receives an object of every parser as input)
+type ExposedParserNames =
+    | "latex"
+    | "text"
+    | "whitespace"
+    | "commandOrEnvironment"
+    | "math"
+    | "inlineMath"
+    | "displayMath"
+    | "block"
+    | "curlyBracesParameterBlock"
+    | "parameter"
+    | "optionalParameter"
+    | "squareBracesParameterBlock"
+    | "parameterKey"
+    | "parameterValue"
+    | "parameterAssignment"
+    | "parameterList"
+    | "specialSymbol"
+    | "comment";
+
+/*
+ * Dictionnary of parsing functions for the simplified LaTeX language.
+ * For the actual implementation, see the def. of Parsimmon language.
+ */
+const latexParsers: {
+    [K in ExposedParserNames]: (input: string) => P.Result<LanguageParsersOutput[K]>;
+} = {
+    latex: language.latex.parse,
+    text: language.text.parse,
+    whitespace: language.whitespace.parse,
+    commandOrEnvironment: language.commandOrEnvironment.parse,
+    math: language.math.parse,
+    inlineMath: language.inlineMath.parse,
+    displayMath: language.displayMath.parse,
+    block: language.block.parse,
+    curlyBracesParameterBlock: language.curlyBracesParameterBlock.parse,
+    parameter: language.parameter.parse,
+    optionalParameter: language.optionalParameter.parse,
+    squareBracesParameterBlock: language.squareBracesParameterBlock.parse,
+    parameterKey: language.parameterKey.parse,
+    parameterValue: language.parameterValue.parse,
+    parameterAssignment: language.parameterAssignment.parse,
+    parameterList: language.parameterList.parse,
+    specialSymbol: language.specialSymbol.parse,
+    comment: language.comment.parse
+};
+
+export { latexParsers };

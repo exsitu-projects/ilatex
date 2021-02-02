@@ -1,12 +1,12 @@
 import { ASTNode } from "./ASTNode";
 import { RangeInFile } from "../../utils/RangeInFile";
-import { language } from "../LatexASTParsers";
+import { latexParsers } from "../parsers";
 import { ASTVisitor } from "../visitors/ASTVisitor";
 import { MathNode } from "./MathNode";
 
 export class DisplayMathNode extends ASTNode {
     static readonly type = "display-math" as const;
-    static readonly parser = (text: string) => language.block;
+    static readonly parser = latexParsers.displayMath;
 
     readonly type = DisplayMathNode.type;
     readonly parser = DisplayMathNode.parser;

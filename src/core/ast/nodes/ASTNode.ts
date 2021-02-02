@@ -7,12 +7,12 @@ import { SourceFileChange } from "../../mappings/SourceFileChange";
 import { SourceFile } from "../../mappings/SourceFile";
 
 
-export type ASTNodeParser<T extends ASTNode> = (text: string) => T;
+export type ASTNodeParser<T extends ASTNode> = (input: string) => P.Result<T>;
 
 
 export abstract class ASTNode {
     readonly abstract type: string;
-    // readonly abstract parser: ASTNodeParser<this>;
+    readonly abstract parser: ASTNodeParser<ASTNode>;
     readonly range: RangeInFile;
 
     protected hasBeenEditedWithinItsRange: boolean;

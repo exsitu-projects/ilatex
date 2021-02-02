@@ -1,13 +1,13 @@
 import { ASTNode } from "./ASTNode";
 import { RangeInFile } from "../../utils/RangeInFile";
-import { language } from "../LatexASTParsers";
+import { latexParsers } from "../parsers";
 import { ASTVisitor } from "../visitors/ASTVisitor";
 import { ParameterKeyNode } from "./ParameterKeyNode";
 import { ParameterValueNode } from "./ParameterValueNode";
 
 export class ParameterAssignmentNode extends ASTNode {
     static readonly type = "parameter-assignment" as const;
-    static readonly parser = (text: string) => language.block;
+    static readonly parser = latexParsers.parameterAssignment;
 
     readonly type = ParameterAssignmentNode.type;
     readonly parser = ParameterAssignmentNode.parser;

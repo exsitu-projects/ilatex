@@ -1,13 +1,13 @@
 import { ASTNode } from "./ASTNode";
 import { RangeInFile } from "../../utils/RangeInFile";
-import { language } from "../LatexASTParsers";
+import { latexParsers } from "../parsers";
 import { ASTVisitor } from "../visitors/ASTVisitor";
 import { ParameterListNode } from "./ParameterListNode";
 import { ParameterNode } from "./ParameterNode";
 
 export class CurlyBracesParameterBlockNode extends ASTNode {
     static readonly type = "curly-braces-parameter-block" as const;
-    static readonly parser = (text: string) => language.block;
+    static readonly parser = latexParsers.curlyBracesParameterBlock;
 
     readonly type = CurlyBracesParameterBlockNode.type;
     readonly parser = CurlyBracesParameterBlockNode.parser;

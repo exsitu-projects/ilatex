@@ -1,11 +1,11 @@
 import { ASTNode } from "./ASTNode";
 import { RangeInFile } from "../../utils/RangeInFile";
-import { language } from "../LatexASTParsers";
+import { latexParsers } from "../parsers";
 import { ASTVisitor } from "../visitors/ASTVisitor";
 
 export class WhitespaceNode extends ASTNode {
     static readonly type = "whitespace" as const;
-    static readonly parser = (text: string) => language.block;
+    static readonly parser = latexParsers.whitespace;
 
     readonly type = WhitespaceNode.type;
     readonly parser = WhitespaceNode.parser;

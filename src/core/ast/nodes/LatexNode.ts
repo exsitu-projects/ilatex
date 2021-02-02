@@ -1,12 +1,12 @@
 import { ASTNode } from "./ASTNode";
 import { RangeInFile } from "../../utils/RangeInFile";
-import { language } from "../LatexASTParsers";
+import { latexParsers } from "../parsers";
 import { ASTVisitor } from "../visitors/ASTVisitor";
 
 
 export class LatexNode extends ASTNode {
     static readonly type = "latex" as const;
-    static readonly parser = (text: string) => language.block;
+    static readonly parser = latexParsers.latex;
 
     readonly type = LatexNode.type;
     readonly parser = LatexNode.parser;

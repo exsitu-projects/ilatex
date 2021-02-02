@@ -1,10 +1,10 @@
 import * as P from "parsimmon";
 import { SourceFileChange } from "../mappings/SourceFileChange";
-import { ASTNode, ASTNodeType, ASTCommandNode, ASTEnvironementNode, ASTLatexNode } from "./LatexASTNode";
-import { language } from "./LatexASTParsers";
-import { LatexASTNodeCollecter } from "./visitors/LatexASTNodeCollecter";
-import { LatexASTVisitor } from "./visitors/LatexASTVisitor";
-
+import { ASTNode } from "./nodes/ASTNode";
+import { LatexNode } from "./nodes/LatexNode";
+import { latexParsers } from "./parsers";
+import { ASTNodeCollecter } from "./visitors/ASTNodeCollecter";
+import { ASTVisitor } from "./visitors/ASTVisitor";
 
 /** Class of errors thrown when the parsing process fails. */
 class LatexParsingError {
@@ -17,12 +17,12 @@ class LatexParsingError {
 
 
 /** Type of the root node of an AST. */
-export type ASTRoot = ASTLatexNode;
+export type ASTRootNode = LatexNode;
 
 
 /** Class of an AST for a simple subset of Latex. */
 export class LatexAST {
-    private rootNode: ASTRoot;
+    private rootNode: ASTRootNode;
     private allNodesCached: ASTNode[] | null;
     
     constructor(input: string) {
@@ -38,7 +38,7 @@ export class LatexAST {
         // Either use the cached list of all nodes if it has already been computed,
         // or compute the list and cache it first
         if (!this.allNodesCached) {
-            const nodeCollecter = new LatexASTNodeCollecter();
+            const nodeCollecter = new ASTNodeCollecter();
             this.rootNode.visitWith(nodeCollecter);
             this.allNodesCached = nodeCollecter.nodes;
         }
@@ -52,8 +52,8 @@ export class LatexAST {
         }
     }
 
-    private parse(input: string): ASTRoot {
-        const parserResult = language.latex.parse(input);
+    private parse(input: string): ASTRootNode {
+        const parserResult = latexParsers.latex(input);
         
         if (parserResult.status === true) {
             return parserResult.value;
@@ -63,7 +63,7 @@ export class LatexAST {
         }
     }
 
-    visitWith(visitor: LatexASTVisitor, maxDepth: number = Number.MAX_SAFE_INTEGER): void {
+    visitWith(visitor: ASTVisitor, maxDepth: number = Number.MAX_SAFE_INTEGER): void {
         this.root.visitWith(visitor, 0, maxDepth);
     }
 }

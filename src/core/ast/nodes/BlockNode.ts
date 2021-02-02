@@ -1,12 +1,11 @@
-import * as P from "parsimmon";
 import { ASTNode } from "./ASTNode";
 import { RangeInFile } from "../../utils/RangeInFile";
-import { language } from "../LatexASTParsers";
+import { latexParsers } from "../parsers";
 import { ASTVisitor } from "../visitors/ASTVisitor";
 
 export class BlockNode extends ASTNode {
     static readonly type = "block" as const;
-    static readonly parser = (text: string) => language.block;
+    static readonly parser = latexParsers.block;
 
     readonly type = BlockNode.type;
     readonly parser = BlockNode.parser;

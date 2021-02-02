@@ -1,13 +1,13 @@
 import { ASTNode } from "./ASTNode";
 import { RangeInFile } from "../../utils/RangeInFile";
-import { language } from "../LatexASTParsers";
+import { latexParsers } from "../parsers";
 import { ASTVisitor } from "../visitors/ASTVisitor";
 import { ParameterNode } from "./ParameterNode";
 import { ParameterListNode } from "./ParameterListNode";
 
 export class SquareBracesParameterBlockNode extends ASTNode {
     static readonly type = "square-braces-parameter-block" as const;
-    static readonly parser = (text: string) => language.block;
+    static readonly parser = latexParsers.squareBracesParameterBlock;
 
     readonly type = SquareBracesParameterBlockNode.type;
     readonly parser = SquareBracesParameterBlockNode.parser;

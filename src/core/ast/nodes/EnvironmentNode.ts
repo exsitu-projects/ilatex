@@ -1,6 +1,7 @@
-import { ASTNode } from "./ASTNode";
+import * as P from "parsimmon";
+import { ASTNode, ASTNodeParser } from "./ASTNode";
 import { RangeInFile } from "../../utils/RangeInFile";
-import { language } from "../LatexASTParsers";
+import { latexParsers } from "../parsers";
 import { ASTVisitor } from "../visitors/ASTVisitor";
 import { CommandNode } from "./CommandNode";
 import { CurlyBracesParameterBlockNode } from "./CurlyBracesParameterBlockNode";
@@ -17,7 +18,7 @@ export type EnvironmentNodeParameters = (
 
 export class EnvironmentNode extends ASTNode {
     static readonly type = "environment" as const;
-    static readonly parser = (text: string) => language.block;
+    static readonly parser = latexParsers.commandOrEnvironment as ASTNodeParser<EnvironmentNode>;
 
     readonly type = EnvironmentNode.type;
     readonly parser = EnvironmentNode.parser;
