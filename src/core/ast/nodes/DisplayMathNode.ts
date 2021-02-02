@@ -29,7 +29,7 @@ export class DisplayMathNode extends ASTNode {
         depth: number = 0,
         maxDepth: number = Number.MAX_SAFE_INTEGER
     ) {
-        visitor.visit(this, depth);
+        visitor.visitDisplayMathNode(this, depth);
 
         this.content.visitWith(visitor, depth + 1, maxDepth);
     };

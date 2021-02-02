@@ -29,7 +29,7 @@ export class BlockNode extends ASTNode {
         depth: number = 0,
         maxDepth: number = Number.MAX_SAFE_INTEGER
     ) {
-        visitor.visit(this, depth);
+        visitor.visitBlockNode(this, depth);
 
         for (let contentNode of this.content) {
             contentNode.visitWith(visitor, depth + 1, maxDepth);

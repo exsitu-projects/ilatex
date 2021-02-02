@@ -43,7 +43,7 @@ export class CommandNode extends ASTNode {
         depth: number = 0,
         maxDepth: number = Number.MAX_SAFE_INTEGER
     ) {
-        visitor.visit(this, depth);
+        visitor.visitCommandNode(this, depth);
 
         for (let parameterNode of this.parameters) {
             if (parameterNode === EMPTY_AST_VALUE) {

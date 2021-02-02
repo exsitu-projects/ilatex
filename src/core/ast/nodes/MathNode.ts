@@ -22,4 +22,12 @@ export class MathNode extends ASTNode {
     toString(): string {
         return `Math`;
     }
+
+    visitWith(
+        visitor: ASTVisitor,
+        depth: number = 0,
+        maxDepth: number = Number.MAX_SAFE_INTEGER
+    ) {
+        visitor.visitMathNode(this, depth);
+    }
 }

@@ -33,7 +33,7 @@ export class ParameterAssignmentNode extends ASTNode {
         depth: number = 0,
         maxDepth: number = Number.MAX_SAFE_INTEGER
     ) {
-        visitor.visit(this, depth);
+        visitor.visitParameterAssignmentNode(this, depth);
         this.key.visitWith(visitor, depth + 1, maxDepth);
         this.value.visitWith(visitor, depth + 1, maxDepth);
     };

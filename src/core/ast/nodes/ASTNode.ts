@@ -119,7 +119,5 @@ export abstract class ASTNode {
         return sourceFile.document.getText(this.range.asVscodeRange);
     }
 
-    visitWith(visitor: ASTVisitor, depth: number, maxDepth: number): void {
-        visitor.visit(this, depth);
-    };
+    abstract visitWith(visitor: ASTVisitor, depth: number, maxDepth: number): void;
 }

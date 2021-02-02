@@ -54,7 +54,7 @@ export class EnvironmentNode extends ASTNode {
         depth: number = 0,
         maxDepth: number = Number.MAX_SAFE_INTEGER
     ) {
-        visitor.visit(this, depth);
+        visitor.visitEnvironmentNode(this, depth);
 
         this.beginCommand.visitWith(visitor, depth + 1, maxDepth);
         for (let parameterNode of this.parameters) {

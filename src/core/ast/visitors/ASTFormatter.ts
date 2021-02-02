@@ -1,19 +1,16 @@
-import { ASTVisitor } from "./ASTVisitor";
-import { ASTNode } from "../nodes/ASTNode";
-import { ParameterNode } from "../nodes/ParameterNode";
-import { ParameterValueNode } from "../nodes/ParameterValueNode";
-import { ParameterAssignmentNode } from "../nodes/ParameterAssignmentNode";
 import { ASTVisitorAdapter } from "./ASTVisitorAdapter";
+import { ASTNode } from "../nodes/ASTNode";
 
 
- 
-export class ASTFormatter implements ASTVisitor {
+export class ASTFormatter extends ASTVisitorAdapter {
     prefix: string ;
     indent: number;
 
     private formattedStrings: string[];
 
     constructor() {
+        super();
+
         this.prefix = "| ";
         this.indent = 2;
 

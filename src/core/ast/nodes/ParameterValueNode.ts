@@ -22,4 +22,12 @@ export class ParameterValueNode extends ASTNode {
     toString(): string {
         return `Parameter value [${this.value}]`;
     }
+
+    visitWith(
+        visitor: ASTVisitor,
+        depth: number = 0,
+        maxDepth: number = Number.MAX_SAFE_INTEGER
+    ) {
+        visitor.visitParameterValueNode(this, depth);
+    }
 }

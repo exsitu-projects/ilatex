@@ -1,15 +1,16 @@
+import { ASTVisitorAdapter } from "./ASTVisitorAdapter";
 import { ASTNode } from "../nodes/ASTNode";
-import { ASTVisitor } from "./ASTVisitor";
 
 /** Visitor that builds a list of all the visited nodes. */
-export class ASTNodeCollecter implements ASTVisitor {
+export class ASTNodeCollecter extends ASTVisitorAdapter {
     readonly nodes: ASTNode[];
 
     constructor() {
+        super();
         this.nodes = [];
     }
 
-    visit(node: ASTNode, depth: number): void {
+    protected visitNode(node: ASTNode, depth: number): void {
         this.nodes.push(node);
     }
 };

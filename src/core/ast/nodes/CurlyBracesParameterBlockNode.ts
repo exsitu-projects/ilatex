@@ -30,7 +30,7 @@ export class CurlyBracesParameterBlockNode extends ASTNode {
         depth: number = 0,
         maxDepth: number = Number.MAX_SAFE_INTEGER
     ) {
-        visitor.visit(this, depth);
+        visitor.visitCurlyBracesParameterBlockNode(this, depth);
 
         this.content.visitWith(visitor, depth + 1, maxDepth);
     };

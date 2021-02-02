@@ -19,4 +19,12 @@ export class WhitespaceNode extends ASTNode {
     toString(): string {
         return `Whitespace`;
     }
+
+    visitWith(
+        visitor: ASTVisitor,
+        depth: number = 0,
+        maxDepth: number = Number.MAX_SAFE_INTEGER
+    ) {
+        visitor.visitWhitespaceNode(this, depth);
+    }
 }

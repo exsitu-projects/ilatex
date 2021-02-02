@@ -22,4 +22,12 @@ export class TextNode extends ASTNode {
     toString(): string {
         return `Text`;
     }
+
+    visitWith(
+        visitor: ASTVisitor,
+        depth: number = 0,
+        maxDepth: number = Number.MAX_SAFE_INTEGER
+    ) {
+        visitor.visitTextNode(this, depth);
+    }
 }

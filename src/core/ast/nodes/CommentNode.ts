@@ -22,4 +22,12 @@ export class CommentNode extends ASTNode {
     toString(): string {
         return `Comment`;
     }
+
+    visitWith(
+        visitor: ASTVisitor,
+        depth: number = 0,
+        maxDepth: number = Number.MAX_SAFE_INTEGER
+    ) {
+        visitor.visitCommentNode(this, depth);
+    }
 }
