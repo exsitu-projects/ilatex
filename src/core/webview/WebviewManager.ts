@@ -65,7 +65,7 @@ export class WebviewManager {
 
                 // If the PDF is not already being compiled, rebuild it once the files have been saved
                 if (!this.ilatex.pdfManager.isBuildingPDF) {
-                    await this.ilatex.pdfManager.buildPDFAndUpdateWebview();
+                    await this.ilatex.pdfManager.recompilePDFAndUpdateWebview();
                 }
 
             }

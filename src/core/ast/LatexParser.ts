@@ -1,6 +1,6 @@
 import * as P from "parsimmon";
 import Parsimmon = require("parsimmon");
-import { SourceFile } from "../mappings/SourceFile";
+import { SourceFile } from "../source-files/SourceFile";
 import { PositionInFile } from "../utils/PositionInFile";
 import { RangeInFile } from "../utils/RangeInFile";
 import { ASTNode, ASTNodeContext, ASTNodeParser } from "./nodes/ASTNode";
@@ -656,85 +656,7 @@ export class LatexParser {
     }
 
     async parse(): Promise<P.Result<LatexNode>> {
-        // TODO: get the file content in an async fashion here
-        const input = this.sourceFile.readContentSync();
+        const input = await this.sourceFile.getContent();
         return this.parsers.latex.parse(input);
     }
 }
-
-
-// Extensive list of parser names that are exposed outside of this file
-// This seems required to bypass a TypeScript error related to a self-reference
-// of the Parsimmon language defined above
-// (probably due to the fact every parser receives an object of every parser as input)
-// type ExposedParserNames =
-//     | "latex"
-//     | "text"
-//     | "whitespace"
-//     | "commandOrEnvironment"
-//     | "math"
-//     | "inlineMath"
-//     | "displayMath"
-//     | "block"
-//     | "curlyBracesParameterBlock"
-//     | "parameter"
-//     | "optionalParameter"
-//     | "squareBracesParameterBlock"
-//     | "parameterKey"
-//     | "parameterValue"
-//     | "parameterAssignment"
-//     | "parameterList"
-//     | "specialSymbol"
-//     | "comment";
-
-/*
- * Dictionnary of parsing functions for the simplified LaTeX language.
- * For the actual implementation, see the def. of Parsimmon language.
- */
-// const latexParsers: {
-//     [K in ExposedParserNames]: (input: string) => P.Result<LanguageParsersOutput[K]>;
-// } = {
-//     latex: language.latex.parse,
-//     text: language.text.parse,
-//     whitespace: language.whitespace.parse,
-//     commandOrEnvironment: language.commandOrEnvironment.parse,
-//     math: language.math.parse,
-//     inlineMath: language.inlineMath.parse,
-//     displayMath: language.displayMath.parse,
-//     block: language.block.parse,
-//     curlyBracesParameterBlock: language.curlyBracesParameterBlock.parse,
-//     parameter: language.parameter.parse,
-//     optionalParameter: language.optionalParameter.parse,
-//     squareBracesParameterBlock: language.squareBracesParameterBlock.parse,
-//     parameterKey: language.parameterKey.parse,
-//     parameterValue: language.parameterValue.parse,
-//     parameterAssignment: language.parameterAssignment.parse,
-//     parameterList: language.parameterList.parse,
-//     specialSymbol: language.specialSymbol.parse,
-//     comment: language.comment.parse
-// };
-
-// const latexParsers2: {
-//     [K in ExposedParserNames]: P.Parser<LanguageParsersOutput[K]>;
-// } = {
-//     latex: language.latex,
-//     text: language.text,
-//     whitespace: language.whitespace,
-//     commandOrEnvironment: language.commandOrEnvironment,
-//     math: language.math,
-//     inlineMath: language.inlineMath,
-//     displayMath: language.displayMath,
-//     block: language.block,
-//     curlyBracesParameterBlock: language.curlyBracesParameterBlock,
-//     parameter: language.parameter,
-//     optionalParameter: language.optionalParameter,
-//     squareBracesParameterBlock: language.squareBracesParameterBlock,
-//     parameterKey: language.parameterKey,
-//     parameterValue: language.parameterValue,
-//     parameterAssignment: language.parameterAssignment,
-//     parameterList: language.parameterList,
-//     specialSymbol: language.specialSymbol,
-//     comment: language.comment
-// };
-
-// export { latexParsers, latexParsers2 };

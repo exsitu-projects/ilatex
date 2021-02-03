@@ -2,48 +2,55 @@ import * as vscode from "vscode";
 import { PDFManager } from "./pdf/PDFManager";
 import { WebviewManager } from "./webview/WebviewManager";
 import { VisualisationModelManager } from "./visualisations/VisualisationModelManager";
-import { CodeMappingManager } from "./mappings/CodeMappingManager";
 import { DecorationManager } from "./decorations/DecorationManager";
+import { SourceFileManager } from "./source-files/SourceFileManager";
+import { CodeMappingManager } from "./code-mappings/CodeMappingManager";
+import { SourceFile } from "./source-files/SourceFile";
 
 
 export class InteractiveLatex {
     readonly mainSourceFileUri: vscode.Uri;
     private webviewPanel: vscode.WebviewPanel;
 
+    readonly sourceFileManager: SourceFileManager;
     readonly codeMappingManager: CodeMappingManager;
     readonly pdfManager: PDFManager;
     readonly webviewManager: WebviewManager;
     readonly visualisationModelManager: VisualisationModelManager;
     readonly decorationManager: DecorationManager;
 
-    private textFileChangeDisposable: vscode.Disposable;
+    private sourceFileChangeObserverDisposable: vscode.Disposable;
+    private sourceFileSaveObserverDisposable: vscode.Disposable;
 
     private constructor(mainSourceFileUri: vscode.Uri, webviewPanel: vscode.WebviewPanel) {
         this.mainSourceFileUri = mainSourceFileUri;
         this.webviewPanel = webviewPanel;
 
+        this.sourceFileManager = new SourceFileManager(this);
         this.codeMappingManager = new CodeMappingManager(this);
         this.pdfManager = new PDFManager(this);
         this.webviewManager = new WebviewManager(this, webviewPanel);
         this.visualisationModelManager = new VisualisationModelManager(this);
         this.decorationManager = new DecorationManager(this);
 
-        this.textFileChangeDisposable = vscode.workspace.onDidChangeTextDocument(
-            async (event) => await this.onSourceFileChange(event)
-        );
+        this.sourceFileChangeObserverDisposable =
+            this.sourceFileManager.sourceFileChangeEventEmitter.event(
+                async sourceFile => await this.onSourceFileChange(sourceFile)
+            );
+        
+        this.sourceFileSaveObserverDisposable =
+            this.sourceFileManager.sourceFileSaveEventEmitter.event(
+                async sourceFile => await this.onSourceFileSave(sourceFile)
+            );
     }
 
     private async init(): Promise<void> {
-        await this.updatePDFAndVisualisations();
+        await this.recompileAndUpdate();
 
         // Once visualisations have been created, start to decorate editors
         this.decorationManager.redecorateVisibleEditorsWithCurrentVisualisations();
     }
 
-    // This method will be called by the extension
-    // everytime an iLaTeX  instance is to be disposed
-    // (e.g. when its webview panel has been closed).
-    // It must therefore performs the necessery clean up.
     dispose(): void {
         console.warn(`iLaTeX instance for root document ${this.mainSourceFileUri.path} is about to be disposed...`);
 
@@ -53,56 +60,39 @@ export class InteractiveLatex {
         this.visualisationModelManager.dispose();
         this.decorationManager.dispose();
 
-        this.textFileChangeDisposable.dispose();
+        this.sourceFileChangeObserverDisposable.dispose();
+        this.sourceFileSaveObserverDisposable.dispose();
     }
 
-    // Visualisations should be available as long as no source file with code mappings is dirty
-    updateVisualisationsAvailiability(): void {
-        this.webviewManager.sendNewVisualisationStatus(
-            !this.codeMappingManager.someSourceFileIsDirty
-        );
+    private async onSourceFileChange(sourceFile: SourceFile): Promise<void> {
+        this.decorationManager.redecorateVisibleEditorsWithCurrentVisualisations();
+        // TODO: notify the visualisations/webview manager here
     }
 
-    private onSourceFileChange(event: vscode.TextDocumentChangeEvent): void {
-        const modifiedFileAbsolutePath = event.document.uri.path;
-        const modifiedSourceFile = this.codeMappingManager.allSourceFiles.find(file => file.absolutePath === modifiedFileAbsolutePath);
-
-        if (!modifiedSourceFile) {
-            return;
-        }
-        else {
-            modifiedSourceFile.processFileChange(event);
-            this.decorationManager.redecorateVisibleEditorsWithCurrentVisualisations();
-            // this.updateVisualisationsAvailiability();
-        }
+    private async onSourceFileSave(sourceFile: SourceFile): Promise<void> {
+        await this.recompileAndUpdate();
     }
 
-    // Generate a new PDF, extract new visualisations, and update the webview with both.
-    // This global update is a multi-steps process:
-    // 1. the whole document must be recompiled;
-    // 2. the new PDF must be sent to the webview;
-    // 3. the new code mapping files must be read;
-    // 4. new mappings, source files, ASTs and visualisations models
-    //    must be generated from scratch;
-    // 5. the new visualisation models must generate new content
-    //    that must be sent to the webview;
-    // 6. the editors must be redecorated.
-    async updatePDFAndVisualisations(): Promise<void> {
-        // Steps 1 and 2
-        await this.pdfManager.buildPDFAndUpdateWebview();
+    // Recompile the document and update everything
+    async recompileAndUpdate(): Promise<void> {
+        // 1. Recompile the PDF and update it in the webview
+        await this.pdfManager.recompilePDFAndUpdateWebview();
         
-        // Step 3 and 4
-        await this.codeMappingManager.updateMappingsFromLatexGeneratedFile();
+        // 2. Update the code mappings from the new code mapping file
+        this.codeMappingManager.updateCodeMappingsFromLatexGeneratedFile();
 
-        // Step 4 and 5
+        // 3. Update the source files
+        // TODO: use another way to update source files (not just from code mappings...)
+        this.sourceFileManager.updateSourceFilesFromCodeMappings();
+
+        // 4. Update the visualisations (models + views in the webview)
         this.visualisationModelManager.extractNewModelsAndUpdateWebview();
-        this.updateVisualisationsAvailiability();
 
-        // Step 6
+        // 5. Update the decorations in the editor
         this.decorationManager.redecorateVisibleEditorsWithCurrentVisualisations();
     }
 
-    static createFromMainLatexDocument(mainLatexDocument: vscode.TextDocument, webviewPanel: vscode.WebviewPanel): Promise<InteractiveLatex> {
+    static fromMainLatexDocument(mainLatexDocument: vscode.TextDocument, webviewPanel: vscode.WebviewPanel): Promise<InteractiveLatex> {
         return new Promise(async (resolve, reject) => {
             const ilatex = new InteractiveLatex(mainLatexDocument.uri, webviewPanel);
             await ilatex.init();

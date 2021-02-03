@@ -1,10 +1,9 @@
 import * as vscode from "vscode";
 import * as P from "parsimmon";
 import { ASTVisitor } from "../visitors/ASTVisitor";
-import { PositionInFile } from "../../utils/PositionInFile";
 import { RangeInFile } from "../../utils/RangeInFile";
-import { SourceFileChange } from "../../mappings/SourceFileChange";
-import { SourceFile } from "../../mappings/SourceFile";
+import { SourceFileChange } from "../../source-files/SourceFileChange";
+import { SourceFile } from "../../source-files/SourceFile";
 import { ArrayMap } from "../../../shared/utils/ArrayMap";
 
 
@@ -73,13 +72,21 @@ export abstract class ASTNode {
         return !!this.reparsingError;
     }
 
-    get textContent(): string {
-        return this.sourceFile.document.getText(this.range.asVscodeRange);
+    get textContent(): Promise<string> {
+        return this.sourceFile.getContent(this.range);
     }
 
     abstract get childNodes(): ASTNode[];
 
-    processSourceFileEdit(change: SourceFileChange): void {
+    // Dispatch a source file change to every child node of the current node
+    dispatchSourceFileChange(change: SourceFileChange): void {
+        this.processSourceFileChange(change);
+        for (let node of this.childNodes) {
+            node.dispatchSourceFileChange(change);
+        }
+    }
+
+    private processSourceFileChange(change: SourceFileChange): void {
         const nodeStart = this.range.from.asVscodePosition;
         const nodeEnd = this.range.to.asVscodePosition;
 
@@ -91,19 +98,19 @@ export abstract class ASTNode {
 
         // Case 2: the node starts stricly after the modified range.
         else if (nodeStart.isAfter(change.end)) {
-            this.processUserEditBeforeNode(change);
+            this.processSourceFileChangeBeforeNode(change);
         }
 
         // Case 3: the modified range overlaps with the range of the node.
         else if (change.event.range.intersection(this.range.asVscodeRange)) {
             // Case 3.1: the modified range is contained within the node
             if (change.start.isAfterOrEqual(nodeStart) && change.end.isBeforeOrEqual(nodeEnd)) {
-                this.processUserEditWithinNode(change);
+                this.processSourceFileChangeWithinNode(change);
             }
 
             // Case 3.2: a part of the modified range is outside the range of the node
             else {
-                this.processUserEditAcrossNode(change);
+                this.processSourceFileChangeAcrossNode(change);
             }
         }
 
@@ -112,7 +119,7 @@ export abstract class ASTNode {
         }
     }
 
-    private processUserEditBeforeNode(change: SourceFileChange): void {
+    private processSourceFileChangeBeforeNode(change: SourceFileChange): void {
         this.range.from.shift.lines += change.shift.lines;
         this.range.from.shift.offset += change.shift.offset;
 
@@ -133,7 +140,7 @@ export abstract class ASTNode {
         this.beforeNodeUserEditEventEmitter.fire(change);
     }
 
-    private processUserEditWithinNode(change: SourceFileChange): void {
+    private processSourceFileChangeWithinNode(change: SourceFileChange): void {
         this.range.to.shift.lines += change.shift.lines;
         this.range.to.shift.offset += change.shift.offset;  
 
@@ -148,61 +155,40 @@ export abstract class ASTNode {
         this.withinNodeUserEditEventEmitter.fire(change);
     }
 
-    private processUserEditAcrossNode(change: SourceFileChange): void {
+    private processSourceFileChangeAcrossNode(change: SourceFileChange): void {
         // this.hasUnhandledEdits = true;
         this.hasBeenEditedAcrossItsRange = true;
         this.acrossNodeUserEditEventEmitter.fire(change);
     }
 
-    protected signalChildNodesWillBeDetached(): void {
+    protected signalNodeWillBeDetached(): void {
         // Signal all the current child nodes of this node that they will be detached from the AST
         const childNodes = this.childNodes;
         for (let node of childNodes) {
             node.signalNodeWillBeDetached();
         }
-    }
-    protected signalChildNodesHaveBeenDetached(): void {
-        // Signal all the current child nodes of this node that they have been detached from the AST
-        const childNodes = this.childNodes;
-        for (let node of childNodes) {
-            node.signalNodeHasBeenDetached();
-        }
-    }
 
-    protected signalNodeWillBeDetached(): void {
-        this.signalChildNodesWillBeDetached();
         this.beforeNodeDetachmentEventEmitter.fire(this);
     }
 
     protected signalNodeHasBeenDetached(): void {
         this.afterNodeDetachmentEventEmitter.fire(this);
-        this.signalChildNodesHaveBeenDetached();
+
+        // Signal all the current child nodes of this node that they have been detached from the AST
+        const childNodes = this.childNodes;
+        for (let node of childNodes) {
+            node.signalNodeHasBeenDetached();
+        }
 
         this.stopObservingAllChildNodes();
     }
 
     protected abstract replaceChildNode<T extends ASTNode>(currentChildNode: T, newChildNode: T): void;
 
-    // protected onBeforeSelfUpdate(): void {
-    //     this.signalChildNodesWillBeDetached();
-
-    //     // Stop observing the current child nodes of this node
-    //     // since they will be updated immediately after this method ends
-    //     this.stopObservingChildNodes();
-    // }
-
-    // protected onAfterSelfUpdate(): void {
-    //     this.signalChildNodesHaveBeenDetached();
-
-    //     // Start observing the new child nodes of this node
-    //     // since they have been updated just before this method started
-    //     this.startObservingChildNodes();
-    // }
-
-    private reparse(): void {
+    private async reparse(): Promise<void> {
         console.info("About to re-parse AST node:", this);
 
-        const result = this.parser(this.textContent, {
+        const result = this.parser(await this.textContent, {
             sourceFile: this.sourceFile,
             range: this.range
         });
@@ -215,7 +201,7 @@ export abstract class ASTNode {
     protected startObservingChildNode(node: ASTNode): void {
         this.childNodesToObserverDisposables.add(node,
             // Observe reparsing completions (both for successes and failures)
-            node.reparsingEndEventEmitter.event(({node, result}) => {
+            node.reparsingEndEventEmitter.event(async ({node, result}) => {
                 // If the reparsing was successful, replace the child node with the newly parsed one
                 if (result.status) {
                     node.signalNodeWillBeDetached();
@@ -224,7 +210,7 @@ export abstract class ASTNode {
                 }
                 // Otherwise, try to reparse this node
                 else {
-                    this.reparse();
+                    await this.reparse();
                 }
             })
         ); 

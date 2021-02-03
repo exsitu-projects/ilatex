@@ -1,7 +1,6 @@
 import { ASTNode, ASTNodeContext, ASTNodeParser } from "./ASTNode";
 import { ASTVisitor } from "../visitors/ASTVisitor";
 
-
 export class SpecialSymbolNode extends ASTNode {
     static readonly type = "special-symbol" as const;
 

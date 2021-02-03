@@ -1,10 +1,10 @@
 import * as P from "parsimmon";
-import { SourceFile } from "../mappings/SourceFile";
+import { SourceFile } from "../source-files/SourceFile";
 import { LatexParser } from "./LatexParser";
 
 
 /** An error thrown when an AST parser fails at parsing a source file. */
-class LatexParsingError {
+export class ASTParsingError {
     readonly failure: P.Failure;
 
     constructor(failure: P.Failure) {
@@ -36,7 +36,7 @@ export class ASTParser {
             return potentialAstRoot.value;
         }
         else {
-            throw new LatexParsingError(potentialAstRoot);
+            throw new ASTParsingError(potentialAstRoot);
         }
     }
 }

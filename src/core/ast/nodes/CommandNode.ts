@@ -1,4 +1,3 @@
-import * as P from "parsimmon";
 import { ASTNode, ASTNodeContext, ASTNodeParser } from "./ASTNode";
 import { ASTVisitor } from "../visitors/ASTVisitor";
 import { CurlyBracesParameterBlockNode } from "./CurlyBracesParameterBlockNode";

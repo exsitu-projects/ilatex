@@ -54,7 +54,7 @@ export class VisualisationModelManager {
 
             // TODO: only parse and extract new vis. models from the given source file?
             requestNewParsingOf: async (sourceFile: SourceFile) => {
-                await this.ilatex.codeMappingManager.updateMappingsFromLatexGeneratedFile();
+                await this.ilatex.codeMappingManager.updateCodeMappingsFromLatexGeneratedFile();
                 this.extractNewModelsAndUpdateWebview(true);
             }
         };

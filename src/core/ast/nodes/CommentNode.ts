@@ -1,5 +1,4 @@
 import { ASTNode, ASTNodeContext, ASTNodeParser } from "./ASTNode";
-import { RangeInFile } from "../../utils/RangeInFile";
 import { ASTVisitor } from "../visitors/ASTVisitor";
 
 export class CommentNode extends ASTNode {

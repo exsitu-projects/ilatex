@@ -32,7 +32,7 @@ export class PDFManager {
 
     // Return a promise which is resolved when the compilation of the LaTeX document succeeds
     // and rejected when the compilation fails, or a failing promise if a build task is already running
-    buildPDF(notifyWebview: boolean = true): Promise<void> {
+    recompilePDF(notifyWebview: boolean = true): Promise<void> {
         if (this.isBuildingPDF) {
             return Promise.reject("The PDF building task did not start: at most one building task can be ran at once.");
         }
@@ -90,11 +90,11 @@ export class PDFManager {
         this.ilatex.webviewManager.sendNewPDF(this.pdfUri);
     }
 
-    buildPDFAndUpdateWebview(): Promise<void> {
+    recompilePDFAndUpdateWebview(): Promise<void> {
         // Use the terminal closing as a signal to trigger an update of the webview PDF
         // This is a workaround to the fact that there is no built-in way
         // to wait for the end of a running process in a VSCode terminal
-        return this.buildPDF()
+        return this.recompilePDF()
             .then(() => { this.updateWebviewPDF(); });
     }
 }
