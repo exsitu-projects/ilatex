@@ -19,10 +19,18 @@ export class SpecialSymbolNode extends ASTNode {
         this.symbol = symbol;
         this.parser = parser;
     }
+
+    get childNodes(): ASTNode[] {
+        return [];
+    }
     
     toString(): string {
         return `Special symbol [${this.symbol}]`;
     }
+
+    protected replaceChildNode<T extends ASTNode>(currentChildNode: T, newChildNode: T): void {
+        // Since this node does not have any child node, there is nothing to do
+    };
 
     visitWith(
         visitor: ASTVisitor,

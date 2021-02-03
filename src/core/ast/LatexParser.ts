@@ -1,4 +1,5 @@
 import * as P from "parsimmon";
+import Parsimmon = require("parsimmon");
 import { SourceFile } from "../mappings/SourceFile";
 import { PositionInFile } from "../utils/PositionInFile";
 import { RangeInFile } from "../utils/RangeInFile";
@@ -114,17 +115,21 @@ type LatexParsersSpecification = {
     comment: CommentNode
 };
 
+type LatexReparsers = {[K in keyof LatexParsersSpecification]: ASTNodeParser<LatexParsersSpecification[K]> };
+
 export class LatexParser {
     private readonly sourceFile: SourceFile;
     private readonly parsers: P.TypedLanguage<LatexParsersSpecification>;
+    private readonly reparsers: LatexReparsers;
 
     constructor(sourceFile: SourceFile) {
         this.sourceFile = sourceFile;
         this.parsers = this.createLanguageParsers();
+        this.reparsers = this.createReparsers();
     }
 
     private contextualiseParserOutput<ParserOutput, TransformerOutput extends ASTNode>(
-        reparser: P.Parser<TransformerOutput>,
+        reparser: ASTNodeParser<TransformerOutput>,
         transformer: (value: ParserOutput, context: ASTNodeContext, reparser: ASTNodeParser<TransformerOutput>) => TransformerOutput
     ) {
         const sourceFile = this.sourceFile;
@@ -140,7 +145,7 @@ export class LatexParser {
                             PositionInFile.fromParsimmonIndex(end),
                         )
                     },
-                    (input: string) => reparser.parse(input) //as P.Result<TransformerOutput> // TODO: remove this cast?
+                    reparser
                 );
             });
 
@@ -153,12 +158,12 @@ export class LatexParser {
         for (let parameter of parameters) {
             const parameterParser = (parameter.type === "curly")
                 ? wrapInCurlyBracesBlockParser(parameter.parser) // TODO: fix
-                    .thru(this.contextualiseParserOutput(this.parsers.curlyBracesParameterBlock, (value, context, parser) =>
-                        new CurlyBracesParameterBlockNode(value[1], context, parser)
+                    .thru(this.contextualiseParserOutput(this.reparsers.curlyBracesParameterBlock, (value, context, reparser) =>
+                        new CurlyBracesParameterBlockNode(value[1], context, reparser)
                     ))
                 : wrapInSquareBracesBlockParser(parameter.parser) // TODO: fix
-                    .thru(this.contextualiseParserOutput(this.parsers.squareBracesParameterBlock, (value, context, parser) =>
-                        new SquareBracesParameterBlockNode(value[1], context, parser)
+                    .thru(this.contextualiseParserOutput(this.reparsers.squareBracesParameterBlock, (value, context, reparser) =>
+                        new SquareBracesParameterBlockNode(value[1], context, reparser)
                     ));
             
             // If the argument is optional, the parser can be applied zero or one time
@@ -191,7 +196,7 @@ export class LatexParser {
         // (though optional ones may of course be absent)
         return P.seq(P.string("\\"), nameParser, ...parametersParsers)
             .thru(this.contextualiseParserOutput(
-                this.parsers.anyCommand, // TODO: fix
+                this.reparsers.anyCommand, // TODO: fix
                 (value, context, reparser) => new CommandNode(value[1], value[2], context, reparser)
             ));
     }
@@ -199,7 +204,7 @@ export class LatexParser {
     private createEnvironementParser(environement: EnvironementSpecification): P.Parser<EnvironmentNode> {
         const nameParser = (environement.nameParser ?? P.string(environement.name))
             .thru(this.contextualiseParserOutput(
-                this.parsers.parameter, // TODO: fix
+                this.reparsers.parameter, // TODO: fix
                 (value, context, reparser) => new ParameterNode(value, context, reparser)
             ));
         
@@ -232,7 +237,7 @@ export class LatexParser {
             environement.contentParser,
             endParser
         )
-            .thru(this.contextualiseParserOutput(this.parsers.anyEnvironement, (value, context, reparser) => {
+            .thru(this.contextualiseParserOutput(this.reparsers.anyEnvironement, (value, context, reparser) => {
                 // If a name parser is specified, use the value it output as the environement name
                 // Otherwise, use the given name
                 const name = (environement.nameParser
@@ -255,12 +260,12 @@ export class LatexParser {
         return P.createLanguage<LatexParsersSpecification>({
             text: lang => {
                 return regularSentences
-                    .thru(this.contextualiseParserOutput(this.parsers.text, (value, context, reparser) => new TextNode(value, context, reparser)));
+                    .thru(this.contextualiseParserOutput(this.reparsers.text, (value, context, reparser) => new TextNode(value, context, reparser)));
             },
         
             whitespace: lang => {
                 return P.whitespace
-                    .thru(this.contextualiseParserOutput(this.parsers.whitespace, (value, context, reparser) => new WhitespaceNode(context, reparser)));
+                    .thru(this.contextualiseParserOutput(this.reparsers.whitespace, (value, context, reparser) => new WhitespaceNode(context, reparser)));
             },
             
             specificEnvironement: lang => {
@@ -345,7 +350,7 @@ export class LatexParser {
         
             anyCommand: lang => {
                 return P.regexp(/\\(([^a-z])|(([a-z]+\*?)))/i)
-                    .thru(this.contextualiseParserOutput(this.parsers.anyCommand, (value, context, reparser) => new CommandNode(
+                    .thru(this.contextualiseParserOutput(this.reparsers.anyCommand, (value, context, reparser) => new CommandNode(
                         value.substr(1), // Ignore the the leading backslash
                         [], // An unspecified command always has no parameter
                         context,
@@ -421,7 +426,7 @@ export class LatexParser {
                 )
                     .atLeast(1)
                     .thru(this.contextualiseParserOutput(
-                        this.parsers.math,
+                        this.reparsers.math,
                         (value, context, reparser) => new MathNode(value.join(""), context, reparser)
                     ));
             },
@@ -429,7 +434,7 @@ export class LatexParser {
             inlineMath: lang => {
                 return P.seq(singleDollar, lang.math, singleDollar)
                     .thru(this.contextualiseParserOutput(
-                        this.parsers.inlineMath,
+                        this.reparsers.inlineMath,
                         (value, context, reparser) => new InlineMathNode(value[1], context, reparser)
                     )); 
             },
@@ -437,7 +442,7 @@ export class LatexParser {
             displayMath: lang => {
                 return P.seq(doubleDollar, lang.math, doubleDollar)
                     .thru(this.contextualiseParserOutput(
-                        this.parsers.displayMath,
+                        this.reparsers.displayMath,
                         (value, context, reparser) => new DisplayMathNode(value[1], context, reparser)
                     )); 
             },
@@ -449,7 +454,7 @@ export class LatexParser {
         
                 return wrapInCurlyBracesBlockParser(lang.latex.or(emptyStringParser))
                     .thru(this.contextualiseParserOutput(
-                        this.parsers.block,
+                        this.reparsers.block,
                         (value, context, reparser) => new BlockNode(
                             value[1] === EMPTY_AST_VALUE ? [] : value[1].content,
                             context,
@@ -461,7 +466,7 @@ export class LatexParser {
             curlyBracesParameterBlock: lang => {
                 return wrapInCurlyBracesBlockParser(lang.parameter)
                     .thru(this.contextualiseParserOutput(
-                        this.parsers.curlyBracesParameterBlock,
+                        this.reparsers.curlyBracesParameterBlock,
                         (value, context, reparser) => new CurlyBracesParameterBlockNode(value[1], context, reparser)
                     ));
             },
@@ -470,7 +475,7 @@ export class LatexParser {
                 // TODO: use a more robust approach
                 return P.regexp(/[^%}]*/)
                     .thru(this.contextualiseParserOutput(
-                        this.parsers.parameter,
+                        this.reparsers.parameter,
                         (value, context, reparser) => new ParameterNode(value, context, reparser)
                     ));
             },
@@ -479,7 +484,7 @@ export class LatexParser {
                 // TODO: use a more robust approach
                 return P.regexp(/[^%\]]*/)
                     .thru(this.contextualiseParserOutput(
-                        this.parsers.optionalParameter,
+                        this.reparsers.optionalParameter,
                         (value, context, reparser) => new ParameterNode(value, context, reparser)
                     ));
             },
@@ -491,7 +496,7 @@ export class LatexParser {
             squareBracesParameterBlock: lang => {
                 return wrapInSquareBracesBlockParser(lang.parameterList)
                 .thru(this.contextualiseParserOutput(
-                    this.parsers.squareBracesParameterBlock,
+                    this.reparsers.squareBracesParameterBlock,
                     (value, context, reparser) => new SquareBracesParameterBlockNode(value[1], context, reparser)
                 ));
             },
@@ -499,7 +504,7 @@ export class LatexParser {
             parameterKey: lang => {
                 return alphanum
                     .thru(this.contextualiseParserOutput(
-                        this.parsers.parameterKey,
+                        this.reparsers.parameterKey,
                         (value, context, reparser) => new ParameterKeyNode(value, context, reparser)
                     ));
             },
@@ -508,7 +513,7 @@ export class LatexParser {
                 // TODO: use a more robust approach
                 return P.regexp(/[^,\]]+/m)
                     .thru(this.contextualiseParserOutput(
-                        this.parsers.parameterValue,
+                        this.reparsers.parameterValue,
                         (value, context, reparser) => new ParameterValueNode(value, context, reparser)
                     ));
             },
@@ -516,7 +521,7 @@ export class LatexParser {
             parameterAssignment: lang => {
                 return P.seq(lang.parameterKey, equal.trim(P.optWhitespace), lang.parameterValue)
                     .thru(this.contextualiseParserOutput(
-                        this.parsers.parameterAssignment,
+                        this.reparsers.parameterAssignment,
                         (value, context, reparser) => new ParameterAssignmentNode(
                             value[0],
                             value[2],
@@ -533,7 +538,7 @@ export class LatexParser {
                 ) as P.Parser<ParameterAssignmentNode | ParameterValueNode>)
                     .sepBy(comma.trim(P.optWhitespace))
                     .thru(this.contextualiseParserOutput(
-                        this.parsers.parameterList,
+                        this.reparsers.parameterList,
                         (value, context, reparser) => new ParameterListNode(value, context, reparser)
                     ));
             },
@@ -545,7 +550,7 @@ export class LatexParser {
                     P.string("#")
                 )
                     .thru(this.contextualiseParserOutput(
-                        this.parsers.specialSymbol,
+                        this.reparsers.specialSymbol,
                         (value, context, reparser) => new SpecialSymbolNode(value, context, reparser)
                     ));
             },
@@ -553,7 +558,7 @@ export class LatexParser {
             comment: lang => {
                 return P.regexp(/%.*/)
                     .thru(this.contextualiseParserOutput(
-                        this.parsers.comment,
+                        this.reparsers.comment,
                         (value, context, reparser) => new CommentNode(value, context, reparser)
                     ));
             },
@@ -580,11 +585,74 @@ export class LatexParser {
                 )
                     .atLeast(1)
                     .thru(this.contextualiseParserOutput(
-                        this.parsers.latex,
+                        this.reparsers.latex,
                         (value, context, reparser) => new LatexNode(value, context, reparser)
                     ));
             }
         });
+    }
+
+    private createReparsers(): LatexReparsers {
+        const createParserWithPaddedInput = <T>(parser: P.Parser<T>, input: string, context: ASTNodeContext) => {
+            // Left-pad the given input with a special string
+            // meant to make the actual parser start at the same position
+            // than the start position of the given node's context
+            // (so that calls to P.Index return correct positions!)
+            const newlinesToSimulate = "\n".repeat(context.range.from.line);
+            const lastLineToSimulate = " ".repeat(context.range.from.column);
+            const otherCharactersToSimulate = " ".repeat(
+                context.range.from.offset // all the characters...
+                - context.range.from.line // ...minus the newlines
+                - context.range.from.column // ...minus those of the last line
+            );
+
+            const leftPaddedInput = [
+                otherCharactersToSimulate,
+                newlinesToSimulate,
+                lastLineToSimulate,
+                input
+            ].join("");
+
+            const leftPaddingSkipper = () => Parsimmon((paddedInput, index) => {
+                return Parsimmon.makeSuccess(context.range.from.offset, null);
+            });
+
+            return {
+                parserForPaddedInput: P.seqMap(leftPaddingSkipper(), parser, (_, result) => result),
+                paddedInput: leftPaddedInput
+            };
+        };
+
+        const createASTNodeReparserFor = <T>(parser: P.Parser<T>) =>
+            (input: string, context: ASTNodeContext) => {
+                const { parserForPaddedInput, paddedInput } = createParserWithPaddedInput(parser, input, context);
+                return parserForPaddedInput.parse(paddedInput);
+        };
+
+        return {
+            latex: createASTNodeReparserFor(this.parsers.latex),
+            text: createASTNodeReparserFor(this.parsers.text),
+            whitespace: createASTNodeReparserFor(this.parsers.whitespace),
+            specificEnvironement: createASTNodeReparserFor(this.parsers.specificEnvironement),
+            anyEnvironement: createASTNodeReparserFor(this.parsers.anyEnvironement),
+            specificCommand: createASTNodeReparserFor(this.parsers.specificCommand),
+            anyCommand: createASTNodeReparserFor(this.parsers.anyCommand),
+            commandOrEnvironment: createASTNodeReparserFor(this.parsers.commandOrEnvironment),
+            math: createASTNodeReparserFor(this.parsers.math),
+            inlineMath: createASTNodeReparserFor(this.parsers.inlineMath),
+            displayMath: createASTNodeReparserFor(this.parsers.displayMath),
+            block: createASTNodeReparserFor(this.parsers.block),
+            curlyBracesParameterBlock: createASTNodeReparserFor(this.parsers.curlyBracesParameterBlock),
+            parameter: createASTNodeReparserFor(this.parsers.parameter),
+            optionalParameter: createASTNodeReparserFor(this.parsers.optionalParameter),
+            squareBracesParameterBlock: createASTNodeReparserFor(this.parsers.squareBracesParameterBlock),
+            parameterKey: createASTNodeReparserFor(this.parsers.parameterKey),
+            parameterValue: createASTNodeReparserFor(this.parsers.parameterValue),
+            parameterAssignment: createASTNodeReparserFor(this.parsers.parameterAssignment),
+            parameterList: createASTNodeReparserFor(this.parsers.parameterList),
+            specialSymbol: createASTNodeReparserFor(this.parsers.specialSymbol),
+            comment: createASTNodeReparserFor(this.parsers.comment)
+        };
     }
 
     async parse(): Promise<P.Result<LatexNode>> {

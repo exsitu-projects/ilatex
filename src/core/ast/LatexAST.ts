@@ -1,3 +1,4 @@
+import * as vscode from "vscode";
 import * as P from "parsimmon";
 import { SourceFile } from "../mappings/SourceFile";
 import { SourceFileChange } from "../mappings/SourceFileChange";
@@ -21,12 +22,16 @@ export class LatexAST {
 
     private rootNode: ASTRootNode | null;
     private allNodesCached: ASTNode[] | null;
+
+    private rootNodeObserverDisposable: vscode.Disposable | null;
     
     constructor(sourceFile: SourceFile) {
         this.sourceFile = sourceFile;
 
         this.rootNode = null;
         this.allNodesCached = null;
+
+        this.rootNodeObserverDisposable = null;
     }
 
     get hasRoot(): boolean {
@@ -63,6 +68,24 @@ export class LatexAST {
         for (let node of this.nodes) {
             node.processSourceFileEdit(change);
         }
+    }
+
+    protected startObservingRootNode(): void {
+        // Observe reparsing completions (both for successes and failures)
+        this.rootNodeObserverDisposable = this.root.reparsingEndEventEmitter.event(({node, result}) => {
+            if (result.status) {
+                // TODO: Update the node
+                console.info("The reparsing of root node of the AST suceeded: the root node must be changed!", result);
+            }
+            else {
+                // TODO: re-parse the whole AST/handle the parsing error
+                console.error("The reparsing of root node of the AST failed!", result);
+            }
+        });
+    }
+
+    protected stopObservingChildNode(): void {
+        this.rootNodeObserverDisposable?.dispose();
     }
 
     visitWith(visitor: ASTVisitor, maxDepth: number = Number.MAX_SAFE_INTEGER): void {

@@ -5,6 +5,10 @@ import { CurlyBracesParameterBlockNode } from "./CurlyBracesParameterBlockNode";
 import { SquareBracesParameterBlockNode } from "./SquareBracesParameterBlockNode";
 import { EmptyASTValue, EMPTY_AST_VALUE } from "../LatexParser";
 
+type NonEmptyCommandNodeParameters = (
+    | CurlyBracesParameterBlockNode
+    | SquareBracesParameterBlockNode
+)[];
 
 export type CommandNodeParameters = (
     | CurlyBracesParameterBlockNode
@@ -34,9 +38,26 @@ export class CommandNode extends ASTNode {
         this.parser = parser;
     }
 
+    get childNodes(): ASTNode[] {
+        return this.parameters
+            .filter(parameter => parameter !== EMPTY_AST_VALUE) as NonEmptyCommandNodeParameters;
+    }
+
     toString(): string {
         return `Command [\\${this.name}]`;
     }
+
+    protected replaceChildNode<T extends ASTNode>(currentChildNode: T, newChildNode: T): void {
+        const indexOfCurrentChildNode = this.parameters.indexOf(currentChildNode as any);
+        if (indexOfCurrentChildNode >= 0) {
+            this.stopObservingChildNode(currentChildNode);
+            this.parameters.splice(indexOfCurrentChildNode, 1, newChildNode as any);
+            this.startObservingChildNode(newChildNode);
+        }
+        else {
+            console.error(`AST node replacement failed (in node ${this.toString()}): the current child node was not found.`);
+        }
+    };
 
     visitWith(
         visitor: ASTVisitor,

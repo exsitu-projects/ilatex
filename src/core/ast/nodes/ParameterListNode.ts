@@ -20,11 +20,27 @@ export class ParameterListNode extends ASTNode {
         this.parameters = parameters;
         this.parser = parser;
     }
+
+    get childNodes(): ASTNode[] {
+        return [...this.parameters];
+    }
     
     toString(): string {
         return `Parameter list`;
     }
 
+    protected replaceChildNode<T extends ASTNode>(currentChildNode: T, newChildNode: T): void {
+        const indexOfCurrentChildNode = this.parameters.indexOf(currentChildNode as any);
+        if (indexOfCurrentChildNode >= 0) {
+            this.stopObservingChildNode(currentChildNode);
+            this.parameters.splice(indexOfCurrentChildNode, 1, newChildNode as any);
+            this.startObservingChildNode(newChildNode);
+        }
+        else {
+            console.error(`AST node replacement failed (in node ${this.toString()}): the current child node was not found.`);
+        }
+    };
+    
     visitWith(
         visitor: ASTVisitor,
         depth: number = 0,

@@ -18,10 +18,18 @@ export class ParameterKeyNode extends ASTNode {
         this.name = name;
         this.parser = parser;
     }
+
+    get childNodes(): ASTNode[] {
+        return [];
+    }
     
     toString(): string {
         return `Parameter key [${this.name}]`;
     }
+
+    protected replaceChildNode<T extends ASTNode>(currentChildNode: T, newChildNode: T): void {
+        // Since this node does not have any child node, there is nothing to do
+    };
 
     visitWith(
         visitor: ASTVisitor,

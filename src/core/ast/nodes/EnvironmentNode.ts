@@ -5,6 +5,11 @@ import { CurlyBracesParameterBlockNode } from "./CurlyBracesParameterBlockNode";
 import { SquareBracesParameterBlockNode } from "./SquareBracesParameterBlockNode";
 import { EmptyASTValue, EMPTY_AST_VALUE } from "../LatexParser";
 
+type NonEmptyEnvironementsNodeParameters = (
+    | CurlyBracesParameterBlockNode
+    | SquareBracesParameterBlockNode
+)[];
+
 
 export type EnvironmentNodeParameters = (
     | CurlyBracesParameterBlockNode
@@ -42,10 +47,51 @@ export class EnvironmentNode extends ASTNode {
         this.endCommand = endCommand;
         this.parser = parser;
     }
+
+    get childNodes(): ASTNode[] {
+        const nonEmptyParameters = this.parameters
+            .filter(parameter => parameter !== EMPTY_AST_VALUE) as NonEmptyEnvironementsNodeParameters;
+        
+        return [
+            this.beginCommand,
+            ...nonEmptyParameters,
+            this.body,
+            this.endCommand
+        ];
+    }
     
     toString(): string {
         return `Environment [${this.name}]`;
     }
+
+    protected replaceChildNode<T extends ASTNode>(currentChildNode: T, newChildNode: T): void {
+        const writeableThis = this as Writeable<this>;
+        const indexOfCurrentChildNodeInParameters = this.parameters.indexOf(currentChildNode as any);
+
+        if (this.beginCommand === currentChildNode as any) {
+            this.stopObservingChildNode(currentChildNode);
+            writeableThis.beginCommand = newChildNode as any;
+            this.startObservingChildNode(newChildNode);
+        }
+        else if (indexOfCurrentChildNodeInParameters >= 0) {
+            this.stopObservingChildNode(currentChildNode);
+            this.parameters.splice(indexOfCurrentChildNodeInParameters, 1, newChildNode as any);
+            this.startObservingChildNode(newChildNode);
+        }
+        else if (this.body === currentChildNode as any) {
+            this.stopObservingChildNode(currentChildNode);
+            writeableThis.body = newChildNode as any;
+            this.startObservingChildNode(newChildNode);
+        }
+        else if (this.endCommand === currentChildNode as any) {
+            this.stopObservingChildNode(currentChildNode);
+            writeableThis.endCommand = newChildNode as any;
+            this.startObservingChildNode(newChildNode);
+        }
+        else {
+            console.error(`AST node replacement failed (in node ${this.toString()}): the current child node was not found.`);
+        }
+    };
 
     visitWith(
         visitor: ASTVisitor,

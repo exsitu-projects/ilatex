@@ -18,10 +18,18 @@ export class ParameterValueNode extends ASTNode {
         this.value = value;
         this.parser = parser;
     }
+
+    get childNodes(): ASTNode[] {
+        return [];
+    }
     
     toString(): string {
         return `Parameter value [${this.value}]`;
     }
+
+    protected replaceChildNode<T extends ASTNode>(currentChildNode: T, newChildNode: T): void {
+        // Since this node does not have any child node, there is nothing to do
+    };
 
     visitWith(
         visitor: ASTVisitor,

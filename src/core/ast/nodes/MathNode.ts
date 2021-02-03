@@ -18,10 +18,18 @@ export class MathNode extends ASTNode {
         this.content = content;
         this.parser = parser;
     }
+
+    get childNodes(): ASTNode[] {
+        return [];
+    }
     
     toString(): string {
         return `Math`;
     }
+
+    protected replaceChildNode<T extends ASTNode>(currentChildNode: T, newChildNode: T): void {
+        // Since this node does not have any child node, there is nothing to do
+    };
 
     visitWith(
         visitor: ASTVisitor,

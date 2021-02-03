@@ -19,11 +19,28 @@ export class DisplayMathNode extends ASTNode {
         this.content = content;
         this.parser = parser;
     }
+
+    get childNodes(): ASTNode[] {
+        return [this.content];
+    }
     
     toString(): string {
         return `Display math`;
     }
 
+    protected replaceChildNode<T extends ASTNode>(currentChildNode: T, newChildNode: T): void {
+        const writeableThis = this as Writeable<this>;
+
+        if (this.content === currentChildNode as any) {
+            this.stopObservingChildNode(currentChildNode);
+            writeableThis.content = newChildNode as any;
+            this.startObservingChildNode(newChildNode);
+        }
+        else {
+            console.error(`AST node replacement failed (in node ${this.toString()}): the current child node was not found.`);
+        }
+    };
+    
     visitWith(
         visitor: ASTVisitor,
         depth: number = 0,

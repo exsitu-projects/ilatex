@@ -23,10 +23,33 @@ export class ParameterAssignmentNode extends ASTNode {
         this.value = value;
         this.parser = parser;
     }
+
+    get childNodes(): ASTNode[] {
+        return [this.key, this.value];
+    }
     
     toString(): string {
         return `Parameter assignment [${this.key.name} = ${this.value.value}]`;
     }
+
+    protected replaceChildNode<T extends ASTNode>(currentChildNode: T, newChildNode: T): void {
+        const writeableThis = this as Writeable<this>;
+
+        if (this.key === currentChildNode as any) {
+            this.stopObservingChildNode(currentChildNode);
+            writeableThis.key = newChildNode as any;
+            this.startObservingChildNode(newChildNode);
+        }
+        else if (this.value === currentChildNode as any) {
+            this.stopObservingChildNode(currentChildNode);
+            writeableThis.value = newChildNode as any;
+            this.startObservingChildNode(newChildNode);
+        }
+        else {
+            console.error(`AST node replacement failed (in node ${this.toString()}): the current child node was not found.`);
+        }
+    };
+    
 
     visitWith(
         visitor: ASTVisitor,

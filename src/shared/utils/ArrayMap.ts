@@ -17,13 +17,13 @@ export class ArrayMap<K, V> {
         return this.map.has(key);
     }
 
-    add(key: K, value: V): void {
+    add(key: K, ...values: V[]): void {
         if (!this.hasKey(key)) {
             this.map.set(key, []);
         }
 
-        const values = this.map.get(key);
-        values?.push(value);
+        const currentValues = this.map.get(key);
+        values?.push(...values);
     }
 
     getValuesOf(key: K): V[] {

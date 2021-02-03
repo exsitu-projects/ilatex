@@ -5,9 +5,10 @@ import { PositionInFile } from "../../utils/PositionInFile";
 import { RangeInFile } from "../../utils/RangeInFile";
 import { SourceFileChange } from "../../mappings/SourceFileChange";
 import { SourceFile } from "../../mappings/SourceFile";
+import { ArrayMap } from "../../../shared/utils/ArrayMap";
 
 
-export type ASTNodeParser<T extends ASTNode> = (input: string) => P.Result<T>;
+export type ASTNodeParser<T extends ASTNode> = (input: string, context: ASTNodeContext) => P.Result<T>;
 
 
 export interface ASTNodeContext {
@@ -30,11 +31,14 @@ export abstract class ASTNode {
     readonly beforeNodeUserEditEventEmitter: vscode.EventEmitter<SourceFileChange>;
     readonly withinNodeUserEditEventEmitter: vscode.EventEmitter<SourceFileChange>;
     readonly acrossNodeUserEditEventEmitter: vscode.EventEmitter<SourceFileChange>;
-
-    readonly parsingFailureEventEmitter: vscode.EventEmitter<P.Failure>;
+    
+    // TODO: make protected?
+    readonly reparsingEndEventEmitter: vscode.EventEmitter<{node: ASTNode, result: P.Result<ASTNode>}>;
 
     readonly beforeNodeDetachmentEventEmitter: vscode.EventEmitter<ASTNode>;
     readonly afterNodeDetachmentEventEmitter: vscode.EventEmitter<ASTNode>;
+
+    private childNodesToObserverDisposables: ArrayMap<ASTNode, vscode.Disposable>;
 
     constructor(
         context: ASTNodeContext
@@ -52,10 +56,12 @@ export abstract class ASTNode {
         this.withinNodeUserEditEventEmitter = new vscode.EventEmitter();
         this.acrossNodeUserEditEventEmitter = new vscode.EventEmitter();
 
-        this.parsingFailureEventEmitter =  new vscode.EventEmitter();
+        this.reparsingEndEventEmitter =  new vscode.EventEmitter();
 
         this.beforeNodeDetachmentEventEmitter = new vscode.EventEmitter();
         this.afterNodeDetachmentEventEmitter = new vscode.EventEmitter();
+
+        this.childNodesToObserverDisposables = new ArrayMap();
     }
 
     get hasBeenEditedByTheUser(): boolean {
@@ -66,6 +72,12 @@ export abstract class ASTNode {
     get hasReparsingError(): boolean {
         return !!this.reparsingError;
     }
+
+    get textContent(): string {
+        return this.sourceFile.document.getText(this.range.asVscodeRange);
+    }
+
+    abstract get childNodes(): ASTNode[];
 
     processSourceFileEdit(change: SourceFileChange): void {
         const nodeStart = this.range.from.asVscodePosition;
@@ -142,49 +154,100 @@ export abstract class ASTNode {
         this.acrossNodeUserEditEventEmitter.fire(change);
     }
 
-    async getContentIn(sourceFile: SourceFile): Promise<string> {
-        return sourceFile.document.getText(this.range.asVscodeRange);
-    }
-
-    protected updateWith(newNode: ASTNode): void {
-        
-    }
-
-    protected onBeforeSelfUpdate(): void {
-
-    }
-
-    protected onAfterSelfUpdate(): void {
-        
-    }
-
-    async reparseIn(sourceFile: SourceFile): Promise<void> {
-        const text = await this.getContentIn(sourceFile);
-        const result = this.parser(text);
-
-        if (result.status) {
-            this.reparsingError = null;
-
-            this.onBeforeSelfUpdate();
-            this.updateWith(result.value);
-            this.onAfterSelfUpdate();
+    protected signalChildNodesWillBeDetached(): void {
+        // Signal all the current child nodes of this node that they will be detached from the AST
+        const childNodes = this.childNodes;
+        for (let node of childNodes) {
+            node.signalNodeWillBeDetached();
         }
-        else {
-            this.reparsingError = result;
-            this.parsingFailureEventEmitter.fire(result);
+    }
+    protected signalChildNodesHaveBeenDetached(): void {
+        // Signal all the current child nodes of this node that they have been detached from the AST
+        const childNodes = this.childNodes;
+        for (let node of childNodes) {
+            node.signalNodeHasBeenDetached();
         }
     }
 
-    // protected async onChildNodeParsingFailure(childNode: ASTNode): void {
-    //     await this.reparseIn();
+    protected signalNodeWillBeDetached(): void {
+        this.signalChildNodesWillBeDetached();
+        this.beforeNodeDetachmentEventEmitter.fire(this);
+    }
+
+    protected signalNodeHasBeenDetached(): void {
+        this.afterNodeDetachmentEventEmitter.fire(this);
+        this.signalChildNodesHaveBeenDetached();
+
+        this.stopObservingAllChildNodes();
+    }
+
+    protected abstract replaceChildNode<T extends ASTNode>(currentChildNode: T, newChildNode: T): void;
+
+    // protected onBeforeSelfUpdate(): void {
+    //     this.signalChildNodesWillBeDetached();
+
+    //     // Stop observing the current child nodes of this node
+    //     // since they will be updated immediately after this method ends
+    //     this.stopObservingChildNodes();
     // }
 
-    protected startObservingChildNodeParsingFailure(): void {
+    // protected onAfterSelfUpdate(): void {
+    //     this.signalChildNodesHaveBeenDetached();
 
+    //     // Start observing the new child nodes of this node
+    //     // since they have been updated just before this method started
+    //     this.startObservingChildNodes();
+    // }
+
+    private reparse(): void {
+        console.info("About to re-parse AST node:", this);
+
+        const result = this.parser(this.textContent, {
+            sourceFile: this.sourceFile,
+            range: this.range
+        });
+
+        console.log("Re-parsing result:", result);
+
+        this.reparsingError = result.status ? null : result;
     }
 
-    protected stopObservingChildNodeParsingFailure(): void {
-        
+    protected startObservingChildNode(node: ASTNode): void {
+        this.childNodesToObserverDisposables.add(node,
+            // Observe reparsing completions (both for successes and failures)
+            node.reparsingEndEventEmitter.event(({node, result}) => {
+                // If the reparsing was successful, replace the child node with the newly parsed one
+                if (result.status) {
+                    node.signalNodeWillBeDetached();
+                    this.replaceChildNode(node, result.value);
+                    node.signalNodeHasBeenDetached();
+                }
+                // Otherwise, try to reparse this node
+                else {
+                    this.reparse();
+                }
+            })
+        ); 
+    }
+
+    protected startObservingAllChildNodes(): void {
+        const childNodes = this.childNodes;
+        for (let node of childNodes) {
+            this.startObservingChildNode(node);
+        }
+    }
+
+    protected stopObservingChildNode(node: ASTNode): void {
+        const disposables = this.childNodesToObserverDisposables.getValuesOf(node);
+        for (let disposable of disposables) {
+            disposable.dispose();
+        }
+    }
+
+    protected stopObservingAllChildNodes(): void {
+        for (let node of this.childNodes) {
+            this.stopObservingChildNode(node);
+        }
     }
 
     abstract visitWith(visitor: ASTVisitor, depth: number, maxDepth: number): void;
