@@ -24,6 +24,7 @@ export interface VisualisationModel {
     readonly viewDidOpenEventEmitter: vscode.EventEmitter<VisualisationModel>;
     readonly viewDidCloseEventEmitter: vscode.EventEmitter<VisualisationModel>;
     readonly statusChangeEventEmitter: vscode.EventEmitter<VisualisationModel>;
+    readonly contentChangeEventEmitter: vscode.EventEmitter<VisualisationModel>;
 
     readonly sourceFile: SourceFile;
     readonly codeMapping: CodeMapping;
@@ -33,4 +34,5 @@ export interface VisualisationModel {
     readonly content: VisualisationContent;
 
     processViewMessage(message: NotifyVisualisationModelMessage): Promise<void>;
+    dispose(): void;
 }

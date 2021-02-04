@@ -22,15 +22,16 @@ export abstract class ASTNode {
     readonly sourceFile: SourceFile;
     readonly range: RangeInFile;
     
-    protected hasBeenEditedWithinItsRange: boolean;
-    protected hasBeenEditedAcrossItsRange: boolean;
+    // protected hasBeenEditedWithinItsRange: boolean;
+    // protected hasBeenEditedAcrossItsRange: boolean;
 
     private reparsingError: P.Failure | null;
 
-    readonly beforeNodeUserEditEventEmitter: vscode.EventEmitter<SourceFileChange>;
-    readonly withinNodeUserEditEventEmitter: vscode.EventEmitter<SourceFileChange>;
-    readonly acrossNodeUserEditEventEmitter: vscode.EventEmitter<SourceFileChange>;
-    
+    protected readonly beforeNodeUserEditEventEmitter: vscode.EventEmitter<SourceFileChange>;
+    protected readonly withinNodeUserEditEventEmitter: vscode.EventEmitter<SourceFileChange>;
+    protected readonly acrossNodeUserEditEventEmitter: vscode.EventEmitter<SourceFileChange>;
+
+    readonly textContentChangeEventEmitter: vscode.EventEmitter<ASTNode>;
     // TODO: make protected?
     readonly reparsingEndEventEmitter: vscode.EventEmitter<{node: ASTNode, result: P.Result<ASTNode>}>;
 
@@ -44,10 +45,9 @@ export abstract class ASTNode {
     ) {
         this.sourceFile = context.sourceFile;
         this.range = context.range;
-        // this.parser = context.parser;
-
-        this.hasBeenEditedWithinItsRange = false;
-        this.hasBeenEditedAcrossItsRange = false;
+        
+        // this.hasBeenEditedWithinItsRange = false;
+        // this.hasBeenEditedAcrossItsRange = false;
 
         this.reparsingError = null;
 
@@ -55,7 +55,8 @@ export abstract class ASTNode {
         this.withinNodeUserEditEventEmitter = new vscode.EventEmitter();
         this.acrossNodeUserEditEventEmitter = new vscode.EventEmitter();
 
-        this.reparsingEndEventEmitter =  new vscode.EventEmitter();
+        this.textContentChangeEventEmitter = new vscode.EventEmitter();
+        this.reparsingEndEventEmitter = new vscode.EventEmitter();
 
         this.beforeNodeDetachmentEventEmitter = new vscode.EventEmitter();
         this.afterNodeDetachmentEventEmitter = new vscode.EventEmitter();
@@ -63,10 +64,10 @@ export abstract class ASTNode {
         this.childNodesToObserverDisposables = new ArrayMap();
     }
 
-    get hasBeenEditedByTheUser(): boolean {
-        return this.hasBeenEditedWithinItsRange
-            || this.hasBeenEditedAcrossItsRange;
-    }
+    // get hasBeenEditedByTheUser(): boolean {
+    //     return this.hasBeenEditedWithinItsRange
+    //         || this.hasBeenEditedAcrossItsRange;
+    // }
 
     get hasReparsingError(): boolean {
         return !!this.reparsingError;
@@ -88,7 +89,7 @@ export abstract class ASTNode {
         );
     }
 
-    // Dispatch a source file change to every child node of the current node
+    // Dispatch a source file change to this node + every of its children in the AST
     dispatchSourceFileChange(change: SourceFileChange): void {
         this.processSourceFileChange(change);
         for (let node of this.childNodes) {
@@ -160,15 +161,13 @@ export abstract class ASTNode {
             this.range.to.shift.columns += change.shift.columns;
         }
 
-        // this.hasUnhandledEdits = true;
-        this.hasBeenEditedWithinItsRange = true;
         this.withinNodeUserEditEventEmitter.fire(change);
+        this.textContentChangeEventEmitter.fire(this);
     }
 
     private processSourceFileChangeAcrossNode(change: SourceFileChange): void {
-        // this.hasUnhandledEdits = true;
-        this.hasBeenEditedAcrossItsRange = true;
         this.acrossNodeUserEditEventEmitter.fire(change);
+        this.textContentChangeEventEmitter.fire(this);
     }
 
     protected signalNodeWillBeDetached(): void {

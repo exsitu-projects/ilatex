@@ -11,7 +11,8 @@ export class VisualisationModelManager {
     private visualisationModels: VisualisationModel[];
     private visualisationModelsExtractor: VisualisationModelExtractor;
 
-    readonly modelAvailabilityChangeEventEmitter: vscode.EventEmitter<VisualisationModel>;
+    readonly modelStatusChangeEventEmitter: vscode.EventEmitter<VisualisationModel>;
+    readonly modelContentChangeEventEmitter: vscode.EventEmitter<VisualisationModel>;
     readonly modelChangeEventEmitter: vscode.EventEmitter<VisualisationModel[]>;
 
     private modelObserverDisposables: vscode.Disposable[];
@@ -22,7 +23,8 @@ export class VisualisationModelManager {
         this.visualisationModels = [];
         this.visualisationModelsExtractor = new VisualisationModelExtractor(ilatex);
 
-        this.modelAvailabilityChangeEventEmitter = new vscode.EventEmitter();
+        this.modelStatusChangeEventEmitter = new vscode.EventEmitter();
+        this.modelContentChangeEventEmitter = new vscode.EventEmitter();
         this.modelChangeEventEmitter = new vscode.EventEmitter();
 
         this.modelObserverDisposables = [];
@@ -62,23 +64,39 @@ export class VisualisationModelManager {
 
     private startObservingModels(): void {
         for (let model of this.models) {
-            model.statusChangeEventEmitter.event(
-                model => {
-                    this.modelAvailabilityChangeEventEmitter.fire(model);
+            this.modelObserverDisposables.push(
+                model.statusChangeEventEmitter.event(model => {
+                    this.modelStatusChangeEventEmitter.fire(model);
                     this.ilatex.webviewManager.sendNewStatusForOneVisualisation(model);
                 }
-            );
+            ));
+
+            this.modelObserverDisposables.push(
+                model.contentChangeEventEmitter.event(model => {
+                    this.modelStatusChangeEventEmitter.fire(model);
+                    this.ilatex.webviewManager.sendNewContentForOneVisualisation(model);
+                }
+            ));
         }
     }
 
     private stopObservingModels(): void {
         for (let disposable of this.modelObserverDisposables) {
-            disposable.dispose;
+            disposable.dispose();
+        }
+    }
+
+    private disposeOfAllModels(): void {
+        this.stopObservingModels();
+
+        for (let model of this.models) {
+            model.dispose();
         }
     }
 
     extractNewModels(): void {
-        this.stopObservingModels();
+        this.disposeOfAllModels();
+
         this.visualisationModels = this.visualisationModelsExtractor.extractModelsForAllSourceFiles();
         this.startObservingModels();
 

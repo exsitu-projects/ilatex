@@ -24,30 +24,71 @@ abstract class VisualisationModelUIDGenerator {
     }
 }
 
+/** A flag indicating whether a model content update was successful (`true`) or not (`false`). */
+export type VisualisationModelContentUpdateResult = boolean;
+
 export abstract class AbstractVisualisationModel<T extends ASTNode> implements VisualisationModel {
     abstract readonly name: string;
     readonly uid: VisualisationModelUID;
     private readonly context: VisualisableCodeContext<T>;
     protected readonly utilities: VisualisationModelUtilities;
 
+    private astNodeHasBeenDetached: boolean;
+    private lastContentUpdateFailed: boolean;
+
     readonly viewDidOpenEventEmitter: vscode.EventEmitter<VisualisationModel>;
     readonly viewDidCloseEventEmitter: vscode.EventEmitter<VisualisationModel>;
     readonly statusChangeEventEmitter: vscode.EventEmitter<VisualisationModel>;
+    readonly contentChangeEventEmitter: vscode.EventEmitter<VisualisationModel>;
+    protected contentUpdateEndEventEmitter: vscode.EventEmitter<VisualisationModelContentUpdateResult>;
     
     private viewMessageTitlesToHandlers: Map<string, ViewMessageHandler>;
+
+    private contentUpdateEndObserverDisposable: vscode.Disposable;
+    private astNodeChangeObserverDisposable: vscode.Disposable;
+    private astNodeDetachmentObserverDisposable: vscode.Disposable;
 
     constructor(context: VisualisableCodeContext<T>, utilities: VisualisationModelUtilities) {
         this.uid = VisualisationModelUIDGenerator.getUniqueId();
         this.context = context;
         this.utilities = utilities;
 
+        this.astNodeHasBeenDetached = false;
+        this.lastContentUpdateFailed = false;
+
         this.viewDidOpenEventEmitter = new vscode.EventEmitter();
         this.viewDidCloseEventEmitter = new vscode.EventEmitter();
         this.statusChangeEventEmitter = new vscode.EventEmitter();
+        this.contentChangeEventEmitter = new vscode.EventEmitter();
+        this.contentUpdateEndEventEmitter = new vscode.EventEmitter();
 
         this.viewMessageTitlesToHandlers = new Map(
             this.viewMessageHandlerSpecifications.map(specification => [specification.title, specification.handler])
         );
+
+        this.contentUpdateEndObserverDisposable =
+            this.contentUpdateEndEventEmitter.event(async updateSuccess => {
+                if (updateSuccess) {
+                    this.lastContentUpdateFailed = false;
+                    this.contentChangeEventEmitter.fire(this);
+                }
+                else {
+                    this.lastContentUpdateFailed = true;
+                    this.contentChangeEventEmitter.fire(this);
+                    this.statusChangeEventEmitter.fire(this);
+                }
+            });
+
+        this.astNodeChangeObserverDisposable =
+            this.astNode.textContentChangeEventEmitter.event(async node => {
+                this.updateContentData();
+            });
+
+        this.astNodeDetachmentObserverDisposable =
+            this.astNode.beforeNodeDetachmentEventEmitter.event(async node => {
+                this.astNodeHasBeenDetached = true;
+                this.statusChangeEventEmitter.fire(this);
+            });
     }     
 
     get sourceFile(): SourceFile {
@@ -64,7 +105,7 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
 
     get status(): VisualisationStatus {
         return {
-            available: true // TODO: actually implement
+            available: !this.lastContentUpdateFailed && !this.astNodeHasBeenDetached
         };
     }
 
@@ -76,6 +117,8 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
         const attributes = HtmlUtils.makeAttributesFromKeysOf(this.contentHtmlAttributes);
         return `<div ${attributes}>${this.contentAsHtml}</div>`;
     }
+
+    protected abstract contentDataAsHtml(): string;
 
     protected get contentHtmlAttributes(): Record<string, string> {
         return {
@@ -111,6 +154,14 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
             }
         ];
     }
+
+    dispose(): void {
+        this.contentUpdateEndObserverDisposable.dispose();
+        this.astNodeChangeObserverDisposable.dispose();
+        this.astNodeDetachmentObserverDisposable.dispose();
+    }
+
+    protected abstract updateContentData(): Promise<VisualisationModelContentUpdateResult>;
 
     async processViewMessage(message: NotifyVisualisationModelMessage): Promise<void> {
         const title = message.title;
