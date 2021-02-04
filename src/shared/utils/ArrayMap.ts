@@ -9,6 +9,17 @@ export class ArrayMap<K, V> {
         return this.map.keys();
     }
 
+    get values(): IterableIterator<V> {
+        const self = this;
+        return (function*() {
+            for (let array of self.map.values()) {
+                for (let value of array) {
+                    yield value;
+                }
+            }
+        })();
+    }
+
     get entries(): IterableIterator<[K, V[]]> {
         return this.map.entries();
     }
