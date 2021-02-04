@@ -81,11 +81,38 @@ export class PositionInFile {
         };
     }
 
+    isBefore(otherPosition: PositionInFile): boolean {
+        return this.asVscodePosition.isBefore(otherPosition.asVscodePosition);
+    }
+
+    isBeforeOrEqual(otherPosition: PositionInFile): boolean {
+        return this.asVscodePosition.isBeforeOrEqual(otherPosition.asVscodePosition);
+    }
+
+    isEqual(otherPosition: PositionInFile): boolean {
+        return this.asVscodePosition.isEqual(otherPosition.asVscodePosition);
+    }
+
+    isAfterOrEqual(otherPosition: PositionInFile): boolean {
+        return this.asVscodePosition.isAfterOrEqual(otherPosition.asVscodePosition);
+    }
+
+    isAfter(otherPosition: PositionInFile): boolean {
+        return this.asVscodePosition.isAfter(otherPosition.asVscodePosition);
+    }
+
     static fromVscodePosition(position: vscode.Position): PositionInFile {
         return new PositionInFile(position.line, position.character);
     }
 
     static fromParsimmonIndex(index: P.Index): PositionInFile {
         return new PositionInFile(index.line - 1, index.column - 1, index.offset);
+    }
+
+    /** Standard comparison function that can be used for sorting positions in ascending order (e.g. with Array.sort). */
+    static compareInAscendingOrder(position1: PositionInFile, position2: PositionInFile): number {
+        return position1.isBefore(position2) ? -1
+            :  position1.isAfter(position2) ? +1
+            :  0;
     }
 }

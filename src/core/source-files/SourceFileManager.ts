@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { CodeMapping } from "../code-mappings/CodeMapping";
 import { InteractiveLatex } from "../InteractiveLaTeX";
 import { SourceFile } from "./SourceFile";
 import { SourceFileChange } from "./SourceFileChange";
@@ -40,6 +41,14 @@ export class SourceFileManager {
 
     hasSourceFileWithPath(absolutePath: string): boolean {
         return this.sourceFiles.some(sourceFile => sourceFile.uri.path === absolutePath);
+    }
+
+    getSourceFileWithPath(absolutePath: string): SourceFile | undefined {
+        return this.sourceFiles.find(sourceFile => sourceFile.uri.path === absolutePath);
+    }
+
+    getSourceFileOfCodeMapping(codeMapping: CodeMapping): SourceFile | undefined {
+        return this.getSourceFileWithPath(codeMapping.absolutePath);
     }
 
     dispose() {

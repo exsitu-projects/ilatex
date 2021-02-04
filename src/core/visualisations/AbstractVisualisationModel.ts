@@ -1,105 +1,85 @@
 import * as vscode from "vscode";
-import { VisualisationModel, ModelUID, ModelIDGenerator, VisualisationModelUtilities } from "./VisualisationModel";
 import { NotifyVisualisationModelMessage } from "../../shared/messenger/messages";
-import { ASTCommandNode, ASTEnvironementNode, ASTNode, ASTNodeType } from "../ast/LatexASTNode";
 import { HtmlUtils } from "../../shared/utils/HtmlUtils";
-import { CodeMapping, CodeMappingID } from "../mappings/CodeMapping";
-import { SourceFile } from "../mappings/SourceFile";
+import { ASTNode } from "../ast/nodes/ASTNode";
+import { CodeMapping } from "../code-mappings/CodeMapping";
+import { SourceFile } from "../source-files/SourceFile";
+import { VisualisationContent, VisualisationModel, VisualisationModelUID } from "./VisualisationModel";
+import { VisualisableCodeContext } from "./VisualisationModelProvider";
+import { VisualisationModelUtilities } from "./VisualisationModelUtilities";
 
-export type NotificationHandler = (notification: any) => Promise<void>;
-export interface NotificationHandlerSpecification {
+
+export type ViewMessageHandler = (notification: any) => Promise<void>;
+export interface ViewMessageHandlerSpecification {
     title: string;
-    handler: NotificationHandler
+    handler: ViewMessageHandler
+}
+
+abstract class VisualisationModelUIDGenerator {
+    private static maxUsedValue: number = 0;
+    
+    static getUniqueId(): VisualisationModelUID {
+        VisualisationModelUIDGenerator.maxUsedValue += 1;
+        return this.maxUsedValue;
+    }
 }
 
 export abstract class AbstractVisualisationModel<T extends ASTNode> implements VisualisationModel {
-    abstract readonly visualisationName: string;
-    readonly uid: ModelUID;
-
-    protected readonly astNode: T;
-    protected readonly codeMapping: CodeMapping;
+    abstract readonly name: string;
+    readonly uid: VisualisationModelUID;
+    private readonly context: VisualisableCodeContext<T>;
     protected readonly utilities: VisualisationModelUtilities;
 
-    private notificationTitlesToHandlers: Map<string, NotificationHandler>;
+    readonly viewDidOpenEventEmitter: vscode.EventEmitter<VisualisationModel>;
+    readonly viewDidCloseEventEmitter: vscode.EventEmitter<VisualisationModel>;
+    readonly availabilityChangeEventEmitter: vscode.EventEmitter<VisualisationModel>;
+    
+    private viewMessageTitlesToHandlers: Map<string, ViewMessageHandler>;
 
-    readonly onModelChangeEventEmitter: vscode.EventEmitter<this>;
-
-    constructor(node: T, codeMapping: CodeMapping, utilities: VisualisationModelUtilities) {
-        this.uid = ModelIDGenerator.getUniqueId();
-
-        this.astNode = node;
-        this.codeMapping = codeMapping;
+    constructor(context: VisualisableCodeContext<T>, utilities: VisualisationModelUtilities) {
+        this.uid = VisualisationModelUIDGenerator.getUniqueId();
+        this.context = context;
         this.utilities = utilities;
 
-        this.notificationTitlesToHandlers = new Map(
-            this.createNotificationHandlerSpecifications()
-                .map(specification  => [specification.title, specification.handler])
+        this.viewDidOpenEventEmitter = new vscode.EventEmitter();
+        this.viewDidCloseEventEmitter = new vscode.EventEmitter();
+        this.availabilityChangeEventEmitter = new vscode.EventEmitter();
+
+        this.viewMessageTitlesToHandlers = new Map(
+            this.viewMessageHandlerSpecifications.map(specification => [specification.title, specification.handler])
         );
-
-        this.onModelChangeEventEmitter = new vscode.EventEmitter();
-    }
-
-    get codeMappingId(): CodeMappingID {
-        return this.codeMapping.id;
-    }
+    }     
 
     get sourceFile(): SourceFile {
-        return this.codeMapping.sourceFile;
+        return this.context.sourceFile;
     }
 
-    // This accessor is implemented with a default behaviour
-    // It should be overriden if needed to ensure it always return the range of
-    // the entire piece of code manipulated by the visualisation
-    get codeRange(): vscode.Range {
-        return this.astNode.range.asVscodeRange;
+    get codeMapping(): CodeMapping {
+        return this.context.codeMapping;
     }
 
-    get isOutOfSyncWithCode(): boolean {
-        return this.astNode.hasBeenEditedByTheUser;
+    get astNode(): T {
+        return this.context.astNode;
     }
 
-    private async saveMappedSourceFile(): Promise<void> {
-        const sourceFile = await this.codeMapping.sourceFile;
-        await sourceFile.saveDocument();
+    get content(): VisualisationContent {
+        return this.contentAsHtml;
     }
 
-    private async revealCodeInEditor(): Promise<void> {
-        const editor = await this.codeMapping.sourceFile.getOrDisplayInEditor();
-
-        // Select the code
-        editor.selections = [new vscode.Selection(
-            this.astNode.range.from.asVscodePosition,
-            this.astNode.range.to.asVscodePosition,
-        )];
-
-        // If the selected range is not visible, scroll to the selection
-        editor.revealRange(
-            this.astNode.range.asVscodeRange,
-            vscode.TextEditorRevealType.InCenterIfOutsideViewport
-        );
+    get isAvailable(): boolean {
+        // TODO: implement
+        return false;
     }
 
-    protected createNotificationHandlerSpecifications(): NotificationHandlerSpecification[] {
-        return [
-            {
-                title: "reveal-code",
-                handler: async notifiction => {
-                    this.revealCodeInEditor();
-                }
-            },
-            {
-                title: "save-source-document",
-                handler: async notifiction => {
-                    this.saveMappedSourceFile();
-                }
-            }
-        ];
+    protected get contentAsHtml(): string {
+        const attributes = HtmlUtils.makeAttributesFromKeysOf(this.contentHtmlAttributes);
+        return `<div ${attributes}>${this.contentAsHtml}</div>`;
     }
 
-    protected createContentAttributes(): Record<string, string> {
+    protected get contentHtmlAttributes(): Record<string, string> {
         return {
             "class": "visualisation",
-            "data-name": this.visualisationName,
+            "data-name": this.name,
             "data-uid": this.uid.toString(),
             "data-code-mapping-id": this.codeMapping.id.toString(),
             "data-source-file-name": this.sourceFile.name,
@@ -108,32 +88,37 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
         };
     }
 
-    protected requestNewParsing(): void {
-        this.utilities.requestNewParsingOf(this.codeMapping.sourceFile);
+    protected get viewMessageHandlerSpecifications(): ViewMessageHandlerSpecification[] {
+        return [
+            {
+                title: "reveal-code-in-editor",
+                handler: async notifiction => {
+                    await this.astNode.revealInEditor();
+                }
+            },
+            {
+                title: "view-did-open",
+                handler: async notifiction => {
+                    this.viewDidOpenEventEmitter.fire(this);
+                }
+            },
+            {
+                title: "view-did-close",
+                handler: async notifiction => {
+                    this.viewDidCloseEventEmitter.fire(this);
+                }
+            }
+        ];
     }
 
-    async handleViewNotification(message: NotifyVisualisationModelMessage): Promise<void> {
+    async processViewMessage(message: NotifyVisualisationModelMessage): Promise<void> {
         const title = message.title;
-        if (!this.notificationTitlesToHandlers.has(title)) {
-            console.error(`There is no notification handler for notifications titled "${title}"`);
+        if (!this.viewMessageTitlesToHandlers.has(title)) {
+            console.error(`There is no notification handler for notifications titled "${title}".`);
             return;
         }
 
-        const handler = this.notificationTitlesToHandlers.get(title)!;
+        const handler = this.viewMessageTitlesToHandlers.get(title)!;
         await handler(message.notification);
-    }
-
-    protected abstract renderContentAsHTML(): string;
-
-    createViewContent(): string {
-        const attributes = HtmlUtils.makeAttributesFromKeysOf(
-            this.createContentAttributes()
-        );
-
-        return `
-            <div ${attributes}>
-                ${this.renderContentAsHTML()}
-            </div>
-        `;
     }
 }

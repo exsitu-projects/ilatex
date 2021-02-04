@@ -1,50 +1,30 @@
 import * as vscode from "vscode";
 import { NotifyVisualisationModelMessage } from "../../shared/messenger/messages";
-import { ASTNode } from "../ast/LatexASTNode";
-import { CodeMapping, CodeMappingID } from "../mappings/CodeMapping";
-import { SourceFile } from "../mappings/SourceFile";
+import { ASTNode } from "../ast/nodes/ASTNode";
+import { CodeMapping } from "../code-mappings/CodeMapping";
+import { SourceFile } from "../source-files/SourceFile";
 
-// Type and generator of unique model identifiers
-// Each model instance must have a *unique* identifier,
-// which uniquely identifies this very version of the model
-export type ModelUID = number;
-export abstract class ModelIDGenerator {
-    private static maxUsedValue: number = 0;
-    
-    static getUniqueId(): ModelUID {
-        ModelIDGenerator.maxUsedValue += 1;
-        return this.maxUsedValue;
-    }
-}
+/** Type of a unique visualisation model identifier. */
+export type VisualisationModelUID = number;
+
+/** Type of the content produced by visualisation models and expected by visualisation views (currently a HTML string). */
+export type VisualisationContent = string;
+
 
 export interface VisualisationModel {
-    readonly visualisationName: string;
-    readonly codeMappingId: CodeMappingID;
-    readonly uid: ModelUID;
+    readonly name: string;
+    readonly uid: VisualisationModelUID;
+
+    readonly viewDidOpenEventEmitter: vscode.EventEmitter<VisualisationModel>;
+    readonly viewDidCloseEventEmitter: vscode.EventEmitter<VisualisationModel>;
+    readonly availabilityChangeEventEmitter: vscode.EventEmitter<VisualisationModel>;
 
     readonly sourceFile: SourceFile;
-    readonly codeRange: vscode.Range;
-    readonly isOutOfSyncWithCode: boolean;
+    readonly codeMapping: CodeMapping;
+    readonly astNode: ASTNode;
 
-    readonly onModelChangeEventEmitter: vscode.EventEmitter<this>;
+    readonly content: VisualisationContent;
+    readonly isAvailable: boolean;
 
-    handleViewNotification(message: NotifyVisualisationModelMessage): Promise<void>;
-    createViewContent(): string;
-}
-
-export interface VisualisationModelUtilities {
-    readonly mainSourceFileUri: vscode.Uri;
-    createWebviewSafeUri(uri: vscode.Uri): vscode.Uri;
-    requestNewParsingOf(sourceFile: SourceFile): Promise<void>;
-}
-
-export interface VisualisationModelFactory {
-    readonly visualisationName: string;
-    readonly astMatchingRule: (node: ASTNode) => boolean;
-
-    createModel(
-        node: ASTNode,
-        mapping: CodeMapping,
-        utilities: VisualisationModelUtilities
-    ): VisualisationModel;
+    processViewMessage(message: NotifyVisualisationModelMessage): Promise<void>;
 }

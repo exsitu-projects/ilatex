@@ -78,6 +78,16 @@ export abstract class ASTNode {
 
     abstract get childNodes(): ASTNode[];
 
+    async revealInEditor(): Promise<void> {
+        const editor = await this.sourceFile.getOrOpenInEditor();
+
+        // If the selected range is not visible, scroll to the selection
+        editor.revealRange(
+            this.range.asVscodeRange,
+            vscode.TextEditorRevealType.InCenterIfOutsideViewport
+        );
+    }
+
     // Dispatch a source file change to every child node of the current node
     dispatchSourceFileChange(change: SourceFileChange): void {
         this.processSourceFileChange(change);
