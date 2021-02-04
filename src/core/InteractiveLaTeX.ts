@@ -66,13 +66,13 @@ export class InteractiveLatex {
 
     private async onSourceFileChange(sourceFile: SourceFile): Promise<void> {
         this.decorationManager.redecorateVisibleEditorsWithCurrentVisualisations();
-        // TODO: notify the visualisations/webview manager here
     }
 
     private async onSourceFileSave(sourceFile: SourceFile): Promise<void> {
         await this.recompileAndUpdate();
     }
 
+    // TODO: use a queue
     // Recompile the document and update everything
     async recompileAndUpdate(): Promise<void> {
         // 1. Recompile the PDF and update it in the webview

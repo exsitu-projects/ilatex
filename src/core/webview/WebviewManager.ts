@@ -146,13 +146,22 @@ export class WebviewManager {
         });        
     }
 
-    // TODO: hook somewhere for this?
-    sendNewVisualisationStatus(enableVisualisations: boolean): void {
+    sendNewStatusForOneVisualisation(visualisationModel: VisualisationModel): void {
         console.info("About to send a new visualisation status to the webview...");
 
         this.messenger.sendMessage({
             type: CoreToWebviewMessageType.UpdateVisualisationStatusMessage,
-            enableVisualisations: enableVisualisations
+            visualisationUid: visualisationModel.uid,
+            visualisationIsAvailable: visualisationModel.status.available
+        });        
+    }
+
+    sendNewStatusForAllVisualisations(enableAllVisualisations: boolean): void {
+        console.info("About to send a new visualisation status to the webview...");
+
+        this.messenger.sendMessage({
+            type: CoreToWebviewMessageType.UpdateVisualisationStatusMessage,
+            enableAllVisualisations: enableAllVisualisations
         });        
     }
 }

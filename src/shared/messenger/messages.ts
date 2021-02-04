@@ -41,9 +41,15 @@ export interface UpdateCompilationStatusMessage {
     lastCompilationFailed: boolean;
 }
 
-export interface UpdateVisualisationStatusMessage {
+export interface UpdateOneVisualisationStatusMessage {
     type: CoreToWebviewMessageType.UpdateVisualisationStatusMessage;
-    enableVisualisations: boolean;
+    visualisationUid: number;
+    visualisationIsAvailable: boolean;
+}
+
+export interface UpdateAllVisualisationStatusMessage {
+    type: CoreToWebviewMessageType.UpdateVisualisationStatusMessage;
+    enableAllVisualisations: boolean;
 }
 
 export type CoreToWebviewMessage =
@@ -51,7 +57,8 @@ export type CoreToWebviewMessage =
     | UpdateAllVisualisationsMessage
     | UpdatePDFMessage
     | UpdateCompilationStatusMessage
-    | UpdateVisualisationStatusMessage;
+    | UpdateOneVisualisationStatusMessage
+    | UpdateAllVisualisationStatusMessage;
 
 
 // Specification of each type of message which can be sent by the webview to the core

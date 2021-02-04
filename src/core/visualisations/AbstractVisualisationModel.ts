@@ -4,7 +4,7 @@ import { HtmlUtils } from "../../shared/utils/HtmlUtils";
 import { ASTNode } from "../ast/nodes/ASTNode";
 import { CodeMapping } from "../code-mappings/CodeMapping";
 import { SourceFile } from "../source-files/SourceFile";
-import { VisualisationContent, VisualisationModel, VisualisationModelUID } from "./VisualisationModel";
+import { VisualisationContent, VisualisationModel, VisualisationModelUID, VisualisationStatus } from "./VisualisationModel";
 import { VisualisableCodeContext } from "./VisualisationModelProvider";
 import { VisualisationModelUtilities } from "./VisualisationModelUtilities";
 
@@ -32,7 +32,7 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
 
     readonly viewDidOpenEventEmitter: vscode.EventEmitter<VisualisationModel>;
     readonly viewDidCloseEventEmitter: vscode.EventEmitter<VisualisationModel>;
-    readonly availabilityChangeEventEmitter: vscode.EventEmitter<VisualisationModel>;
+    readonly statusChangeEventEmitter: vscode.EventEmitter<VisualisationModel>;
     
     private viewMessageTitlesToHandlers: Map<string, ViewMessageHandler>;
 
@@ -43,7 +43,7 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
 
         this.viewDidOpenEventEmitter = new vscode.EventEmitter();
         this.viewDidCloseEventEmitter = new vscode.EventEmitter();
-        this.availabilityChangeEventEmitter = new vscode.EventEmitter();
+        this.statusChangeEventEmitter = new vscode.EventEmitter();
 
         this.viewMessageTitlesToHandlers = new Map(
             this.viewMessageHandlerSpecifications.map(specification => [specification.title, specification.handler])
@@ -62,13 +62,14 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
         return this.context.astNode;
     }
 
-    get content(): VisualisationContent {
-        return this.contentAsHtml;
+    get status(): VisualisationStatus {
+        return {
+            available: true // TODO: actually implement
+        };
     }
 
-    get isAvailable(): boolean {
-        // TODO: implement
-        return false;
+    get content(): VisualisationContent {
+        return this.contentAsHtml;
     }
 
     protected get contentAsHtml(): string {

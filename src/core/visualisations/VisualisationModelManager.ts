@@ -62,8 +62,11 @@ export class VisualisationModelManager {
 
     private startObservingModels(): void {
         for (let model of this.models) {
-            model.availabilityChangeEventEmitter.event(
-                model => this.modelAvailabilityChangeEventEmitter.fire(model)
+            model.statusChangeEventEmitter.event(
+                model => {
+                    this.modelAvailabilityChangeEventEmitter.fire(model);
+                    this.ilatex.webviewManager.sendNewStatusForOneVisualisation(model);
+                }
             );
         }
     }
