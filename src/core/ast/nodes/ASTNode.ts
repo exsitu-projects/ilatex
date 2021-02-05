@@ -77,6 +77,13 @@ export abstract class ASTNode {
         return this.sourceFile.getContent(this.range);
     }
 
+    async setTextContent(newContent: string): Promise<void> {
+        const editor = await this.sourceFile.getOrOpenInEditor();
+        await editor.edit(editBuilder => {
+            editBuilder.replace(this.range.asVscodeRange, newContent);
+        });
+    }
+
     abstract get childNodes(): ASTNode[];
 
     async revealInEditor(): Promise<void> {
