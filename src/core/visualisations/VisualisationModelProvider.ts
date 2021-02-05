@@ -17,8 +17,8 @@ export interface VisualisableCodeContext<T extends ASTNode> {
 }
 
 export interface VisualisationModelProvider {
-    readonly canProvideForCodeMapping: (mapping: CodeMapping) => boolean;
-    readonly canProvideForASTNode: (node: ASTNode) => boolean;
+    canProvideForCodeMapping(mapping: CodeMapping): boolean;
+    canProvideForASTNode(node: ASTNode): boolean;
 
     provideModelWith<T extends ASTNode>(
         context: VisualisableCodeContext<T>,

@@ -32,6 +32,8 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
     readonly uid: VisualisationModelUID;
     private readonly context: VisualisableCodeContext<T>;
     protected readonly utilities: VisualisationModelUtilities;
+    
+    protected abstract contentDataAsHtml: string;
 
     private astNodeHasBeenDetached: boolean;
     private lastContentUpdateFailed: boolean;
@@ -118,8 +120,6 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
         return `<div ${attributes}>${this.contentAsHtml}</div>`;
     }
 
-    protected abstract contentDataAsHtml(): string;
-
     protected get contentHtmlAttributes(): Record<string, string> {
         return {
             "class": "visualisation",
@@ -161,7 +161,7 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
         this.astNodeDetachmentObserverDisposable.dispose();
     }
 
-    protected abstract updateContentData(): Promise<VisualisationModelContentUpdateResult>;
+    protected abstract updateContentData(): Promise<void>;
 
     async processViewMessage(message: NotifyVisualisationModelMessage): Promise<void> {
         const title = message.title;
