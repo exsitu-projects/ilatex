@@ -58,19 +58,19 @@ export class CommandNode extends ASTNode {
         }
     };
 
-    visitWith(
+    async visitWith(
         visitor: ASTVisitor,
         depth: number = 0,
         maxDepth: number = Number.MAX_SAFE_INTEGER
     ) {
-        visitor.visitCommandNode(this, depth);
+        await visitor.visitCommandNode(this, depth);
 
         for (let parameterNode of this.parameters) {
             if (parameterNode === EMPTY_AST_VALUE) {
                 continue;
             }
 
-            parameterNode.visitWith(visitor, depth + 1, maxDepth);
+            await parameterNode.visitWith(visitor, depth + 1, maxDepth);
         }
     };
 }

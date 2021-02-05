@@ -29,7 +29,7 @@ export class ASTFormatter extends ASTVisitorAdapter {
         return " ".repeat(this.indent * depth);
     }
 
-    visit(node: ASTNode, depth: number): void {
+    protected async visitNode(node: ASTNode, depth: number): Promise<void> {
         const padding = this.createPadding(depth);
         this.formattedStrings.push(
             `${padding}${this.prefix}${node.toString()}`

@@ -41,15 +41,15 @@ export class ParameterListNode extends ASTNode {
         }
     };
     
-    visitWith(
+    async visitWith(
         visitor: ASTVisitor,
         depth: number = 0,
         maxDepth: number = Number.MAX_SAFE_INTEGER
     ) {
-        visitor.visitParameterListNode(this, depth);
+        await visitor.visitParameterListNode(this, depth);
 
         for (let parameterNode of this.parameters) {
-            parameterNode.visitWith(visitor, depth + 1, maxDepth);
+            await parameterNode.visitWith(visitor, depth + 1, maxDepth);
         }
     };
 }

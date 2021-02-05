@@ -39,15 +39,15 @@ export class BlockNode extends ASTNode {
         }
     };
 
-    visitWith(
+    async visitWith(
         visitor: ASTVisitor,
         depth: number = 0,
         maxDepth: number = Number.MAX_SAFE_INTEGER
     ) {
-        visitor.visitBlockNode(this, depth);
+        await visitor.visitBlockNode(this, depth);
 
         for (let contentNode of this.content) {
-            contentNode.visitWith(visitor, depth + 1, maxDepth);
+            await contentNode.visitWith(visitor, depth + 1, maxDepth);
         }
     };
 }

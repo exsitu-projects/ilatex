@@ -34,7 +34,7 @@ export class ASTNodeCandidatesExtractor extends ASTVisitorAdapter {
         this.modelProvidersToCandidateNodes = new ArrayMap();
     }
 
-    protected visitNode(node: ASTNode) {
+    protected async visitNode(node: ASTNode): Promise<void> {
         for (let modelProvider of this.modelProviders) {
             if (modelProvider.canProvideForASTNode(node)) {
                 this.modelProvidersToCandidateNodes.add(modelProvider, node);

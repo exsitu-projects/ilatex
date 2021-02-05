@@ -41,13 +41,13 @@ export class InlineMathNode extends ASTNode {
         }
     };
     
-    visitWith(
+    async visitWith(
         visitor: ASTVisitor,
         depth: number = 0,
         maxDepth: number = Number.MAX_SAFE_INTEGER
     ) {
-        visitor.visitInlineMathNode(this, depth);
+        await visitor.visitInlineMathNode(this, depth);
 
-        this.content.visitWith(visitor, depth + 1, maxDepth);
+        await this.content.visitWith(visitor, depth + 1, maxDepth);
     };
 }

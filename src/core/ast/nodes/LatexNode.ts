@@ -40,15 +40,15 @@ export class LatexNode extends ASTNode {
         }
     };
     
-    visitWith(
+    async visitWith(
         visitor: ASTVisitor,
         depth: number = 0,
         maxDepth: number = Number.MAX_SAFE_INTEGER
     ) {
-        visitor.visitLatexNode(this, depth);
+        await visitor.visitLatexNode(this, depth);
 
         for (let contentNode of this.content) {
-            contentNode.visitWith(visitor, depth + 1, maxDepth);
+            await contentNode.visitWith(visitor, depth + 1, maxDepth);
         }
     };
 }

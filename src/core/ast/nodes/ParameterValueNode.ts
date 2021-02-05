@@ -31,11 +31,11 @@ export class ParameterValueNode extends ASTNode {
         // Since this node does not have any child node, there is nothing to do
     };
 
-    visitWith(
+    async visitWith(
         visitor: ASTVisitor,
         depth: number = 0,
         maxDepth: number = Number.MAX_SAFE_INTEGER
     ) {
-        visitor.visitParameterValueNode(this, depth);
+        await visitor.visitParameterValueNode(this, depth);
     }
 }

@@ -10,7 +10,7 @@ export class ASTNodeCollecter extends ASTVisitorAdapter {
         this.nodes = [];
     }
 
-    protected visitNode(node: ASTNode, depth: number): void {
+    protected async visitNode(node: ASTNode, depth: number): Promise<void> {
         this.nodes.push(node);
     }
 };

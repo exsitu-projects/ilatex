@@ -245,5 +245,5 @@ export abstract class ASTNode {
         }
     }
 
-    abstract visitWith(visitor: ASTVisitor, depth: number, maxDepth: number): void;
+    abstract visitWith(visitor: ASTVisitor, depth: number, maxDepth: number): Promise<void>;
 }

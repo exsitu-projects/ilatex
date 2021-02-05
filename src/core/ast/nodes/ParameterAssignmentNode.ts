@@ -51,13 +51,13 @@ export class ParameterAssignmentNode extends ASTNode {
     };
     
 
-    visitWith(
+    async visitWith(
         visitor: ASTVisitor,
         depth: number = 0,
         maxDepth: number = Number.MAX_SAFE_INTEGER
     ) {
-        visitor.visitParameterAssignmentNode(this, depth);
-        this.key.visitWith(visitor, depth + 1, maxDepth);
-        this.value.visitWith(visitor, depth + 1, maxDepth);
+        await visitor.visitParameterAssignmentNode(this, depth);
+        await this.key.visitWith(visitor, depth + 1, maxDepth);
+        await this.value.visitWith(visitor, depth + 1, maxDepth);
     };
 }

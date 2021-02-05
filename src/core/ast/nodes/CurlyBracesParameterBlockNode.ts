@@ -43,13 +43,13 @@ export class CurlyBracesParameterBlockNode extends ASTNode {
         }
     };
     
-    visitWith(
+    async visitWith(
         visitor: ASTVisitor,
         depth: number = 0,
         maxDepth: number = Number.MAX_SAFE_INTEGER
     ) {
-        visitor.visitCurlyBracesParameterBlockNode(this, depth);
+        await visitor.visitCurlyBracesParameterBlockNode(this, depth);
 
-        this.content.visitWith(visitor, depth + 1, maxDepth);
+        await this.content.visitWith(visitor, depth + 1, maxDepth);
     };
 }

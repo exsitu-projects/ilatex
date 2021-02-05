@@ -93,22 +93,22 @@ export class EnvironmentNode extends ASTNode {
         }
     };
 
-    visitWith(
+    async visitWith(
         visitor: ASTVisitor,
         depth: number = 0,
         maxDepth: number = Number.MAX_SAFE_INTEGER
     ) {
-        visitor.visitEnvironmentNode(this, depth);
+        await visitor.visitEnvironmentNode(this, depth);
 
-        this.beginCommand.visitWith(visitor, depth + 1, maxDepth);
+        await this.beginCommand.visitWith(visitor, depth + 1, maxDepth);
         for (let parameterNode of this.parameters) {
             if (parameterNode === EMPTY_AST_VALUE) {
                 continue;
             }
 
-            parameterNode.visitWith(visitor, depth + 1, maxDepth);
+            await parameterNode.visitWith(visitor, depth + 1, maxDepth);
         }
-        this.body.visitWith(visitor, depth + 1, maxDepth);
-        this.endCommand.visitWith(visitor, depth + 1, maxDepth);
+        await this.body.visitWith(visitor, depth + 1, maxDepth);
+        await this.endCommand.visitWith(visitor, depth + 1, maxDepth);
     };
 }
