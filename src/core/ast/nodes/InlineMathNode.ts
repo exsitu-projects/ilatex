@@ -46,6 +46,10 @@ export class InlineMathNode extends ASTNode {
         depth: number = 0,
         maxDepth: number = Number.MAX_SAFE_INTEGER
     ) {
+        if (depth > maxDepth) {
+            return;
+        }
+        
         await visitor.visitInlineMathNode(this, depth);
 
         await this.content.visitWith(visitor, depth + 1, maxDepth);

@@ -56,6 +56,10 @@ export class ParameterAssignmentNode extends ASTNode {
         depth: number = 0,
         maxDepth: number = Number.MAX_SAFE_INTEGER
     ) {
+        if (depth > maxDepth) {
+            return;
+        }
+        
         await visitor.visitParameterAssignmentNode(this, depth);
         await this.key.visitWith(visitor, depth + 1, maxDepth);
         await this.value.visitWith(visitor, depth + 1, maxDepth);

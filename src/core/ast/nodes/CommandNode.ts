@@ -63,6 +63,10 @@ export class CommandNode extends ASTNode {
         depth: number = 0,
         maxDepth: number = Number.MAX_SAFE_INTEGER
     ) {
+        if (depth > maxDepth) {
+            return;
+        }
+        
         await visitor.visitCommandNode(this, depth);
 
         for (let parameterNode of this.parameters) {

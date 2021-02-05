@@ -36,6 +36,10 @@ export class ParameterNode extends ASTNode {
         depth: number = 0,
         maxDepth: number = Number.MAX_SAFE_INTEGER
     ) {
+        if (depth > maxDepth) {
+            return;
+        }
+        
         await visitor.visitParameterNode(this, depth);
     }
 }

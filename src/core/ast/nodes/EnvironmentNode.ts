@@ -98,6 +98,10 @@ export class EnvironmentNode extends ASTNode {
         depth: number = 0,
         maxDepth: number = Number.MAX_SAFE_INTEGER
     ) {
+        if (depth > maxDepth) {
+            return;
+        }
+        
         await visitor.visitEnvironmentNode(this, depth);
 
         await this.beginCommand.visitWith(visitor, depth + 1, maxDepth);

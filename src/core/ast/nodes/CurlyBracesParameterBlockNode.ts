@@ -48,6 +48,10 @@ export class CurlyBracesParameterBlockNode extends ASTNode {
         depth: number = 0,
         maxDepth: number = Number.MAX_SAFE_INTEGER
     ) {
+        if (depth > maxDepth) {
+            return;
+        }
+        
         await visitor.visitCurlyBracesParameterBlockNode(this, depth);
 
         await this.content.visitWith(visitor, depth + 1, maxDepth);

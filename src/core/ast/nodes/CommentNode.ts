@@ -36,6 +36,10 @@ export class CommentNode extends ASTNode {
         depth: number = 0,
         maxDepth: number = Number.MAX_SAFE_INTEGER
     ) {
+        if (depth > maxDepth) {
+            return;
+        }
+        
         await visitor.visitCommentNode(this, depth);
     }
 }
