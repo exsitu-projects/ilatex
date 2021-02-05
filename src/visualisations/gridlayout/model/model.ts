@@ -1,136 +1,34 @@
 import * as vscode from "vscode";
-import { VisualisationModelFactory, VisualisationModel, VisualisationModelUtilities } from "../../../core/visualisations/VisualisationModel";
-import { AbstractVisualisationModel, NotificationHandlerSpecification } from "../../../core/visualisations/AbstractVisualisationModel";
-import { ASTNode, ASTEnvironementNode, ASTNodeType, ASTParameterNode } from "../../../core/ast/LatexASTNode";
+import { AbstractVisualisationModel, ViewMessageHandlerSpecification } from "../../../core/visualisations/AbstractVisualisationModel";
+import { EnvironmentNode } from "../../../core/ast/nodes/EnvironmentNode";
+import { VisualisableCodeContext } from "../../../core/visualisations/VisualisationModelProvider";
+import { VisualisationModelUtilities } from "../../../core/visualisations/VisualisationModelUtilities";
 import { Cell, Layout, Row } from "./Layout";
 import { HtmlUtils } from "../../../shared/utils/HtmlUtils";
-import { CodeMapping } from "../../../core/mappings/CodeMapping";
 
+class NoLayoutError {}
 
-class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
-    static readonly visualisationName = "gridlayout";
-    readonly visualisationName = GridLayoutModel.visualisationName;
+export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode> {
+    readonly name = "Grid layout";
+    private layout: Layout | null;
 
-    private layout: Layout;
-
-    // String of the last cell size/row height (as it was written in the document)
-    // This is required to avoid re-parsing the document when setting temporary dimensions
-    // (so that the value can be updated in real time during a drag-and-drop)
-    private lastModifiedCellSize: string | null;
-    private lastModifiedRowHeight: string | null;
-
-    constructor(node: ASTEnvironementNode, mapping: CodeMapping, utilities: VisualisationModelUtilities) {
-        super(node, mapping, utilities);
-
-        this.layout = Layout.extractFrom(node, mapping);
-        this.lastModifiedCellSize = null;
-        this.lastModifiedRowHeight = null;
+    constructor(context: VisualisableCodeContext<EnvironmentNode>, utilities: VisualisationModelUtilities) {
+        super(context, utilities);
+        this.layout = null;
     }
 
-    private getRowAt(rowIndex: number): Row {
-        return this.layout.rows[rowIndex];
+    protected get contentDataAsHtml(): string {
+        return `
+            <div class="layout">
+                ${this.layout?.rows.map(GridLayoutModel.renderRowAsHtml).join("\n")}
+            </div>
+        `;
     }
 
-    private getCellAt(rowIndex: number, cellIndex: number): Cell {
-        return this.getRowAt(rowIndex)
-            .cells[cellIndex];
-    }
-
-    private async selectCell(cell: Cell): Promise<void> {
-        const editor = await this.codeMapping.sourceFile.getOrDisplayInEditor();
-
-        // Select the code
-        editor.selections = [new vscode.Selection(
-            cell.range.from.asVscodePosition,
-            cell.range.to.asVscodePosition
-        )];
-
-        // If the selected range is not visible, scroll to the selection
-        editor.revealRange(
-            cell.range.asVscodeRange,
-            vscode.TextEditorRevealType.InCenterIfOutsideViewport
-        );
-    }
-
-    private async resizeCell(cell: Cell, newRelativeSize: number): Promise<void> {
-        const editor = await this.codeMapping.sourceFile.getOrDisplayInEditor();
-        const cellSizeParameterNode = cell.astNode.value.parameters[0][0] as ASTParameterNode;
-
-        // Round the number of decimals of the new size
-        const maxNbDecimals = 3;
-        const tenPowerNbDecimals = 10 ** maxNbDecimals;
-        const newSizeAsString =
-            ((Math.round(newRelativeSize * tenPowerNbDecimals)) / tenPowerNbDecimals)
-                .toString();
-
-        // If the value has been changed since the current AST was generated,
-        // use the last value to compute the end of the range to edit
-        // Note: we assume the beginning and the end of the range are located on the same line!
-        const editRangeEndLine = this.lastModifiedCellSize === null
-                               ? cellSizeParameterNode.range.to.line - 1
-                               : cellSizeParameterNode.range.from.line - 1;
-        const editRangeEndColumn = this.lastModifiedCellSize === null
-                                 ? cellSizeParameterNode.range.to.column - 1
-                                 : cellSizeParameterNode.range.from.column - 1 + this.lastModifiedCellSize.length;
-
-        const rangeToEdit = new vscode.Range(
-            cellSizeParameterNode.range.from.line - 1, cellSizeParameterNode.range.from.column - 1,
-            editRangeEndLine, editRangeEndColumn
-        );
-
-        // Update the copy of the last modified size
-        this.lastModifiedCellSize = newSizeAsString;
-
-        // Actually perform the edit
-        await editor.edit(editBuilder => {
-            editBuilder.replace(rangeToEdit, newSizeAsString);
-        });
-    }
-
-    private async resizeRow(row: Row, newHeight: number): Promise<void> {
-        const editor = await this.codeMapping.sourceFile.getOrDisplayInEditor();
-        const rowHeightParameterNode = row.astNode.value.parameters[0][0] as ASTParameterNode;
-
-        // Round the new height and append the right suffix
-        const newHeightAsString = `${Math.round(newHeight)}px`;
-
-        // If the value has been changed since the current AST was generated,
-        // use the last value to compute the end of the range to edit
-        // Note: in this case, we know that the beginning and the end of the range are on the same line!
-        const editRangeEndLine = this.lastModifiedRowHeight === null
-                               ? rowHeightParameterNode.range.to.line - 1
-                               : rowHeightParameterNode.range.from.line - 1;
-        const editRangeEndColumn = this.lastModifiedRowHeight === null
-                                 ? rowHeightParameterNode.range.to.column - 1
-                                 : rowHeightParameterNode.range.from.column - 1 + this.lastModifiedRowHeight.length;
-
-        const rangeToEdit = new vscode.Range(
-            rowHeightParameterNode.range.from.line - 1, rowHeightParameterNode.range.from.column - 1,
-            editRangeEndLine, editRangeEndColumn
-        );
-
-        // Update the copy of the last modified size
-        this.lastModifiedRowHeight = newHeightAsString;
-
-        // Actually perform the edit
-        await editor.edit(editBuilder => {
-            editBuilder.replace(rangeToEdit, newHeightAsString);
-        });
-    }
-
-    protected createNotificationHandlerSpecifications(): NotificationHandlerSpecification[] {
+    protected get viewMessageHandlerSpecifications(): ViewMessageHandlerSpecification[] {
         return [
-            ...super.createNotificationHandlerSpecifications(),
+            ...super.viewMessageHandlerSpecifications,
 
-            {
-                title: "select-cell-content",
-                handler: async payload => {
-                    const { rowIndex, cellIndex } = payload;
-                    const cell = this.getCellAt(rowIndex, cellIndex);
-                    
-                    await this.selectCell(cell);
-                }
-            },
             {
                 title: "resize-cell",
                 handler: async payload => {
@@ -138,13 +36,6 @@ class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
                     const cell = this.getCellAt(rowIndex, cellIndex);
 
                     await this.resizeCell(cell, newRelativeSize);
-
-                    // If this was the final size of this cell (i.e. if the resize handle was dropped),
-                    // A new parsing of the document must be requested
-                    // to generate new visualisations from the modified code
-                    if (isFinalSize) {
-                        this.requestNewParsing();
-                    }
                 }
             },
             {
@@ -154,27 +45,55 @@ class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
                     const row = this.getRowAt(rowIndex);
 
                     await this.resizeRow(row, newHeight);
-
-                    // If this was the final size of this row (i.e. if the resize handle was dropped),
-                    // A new parsing of the document must be requested
-                    // to generate new visualisations from the modified code
-                    if (isFinalSize) {
-                        this.requestNewParsing();
-                    }
                 }
             }
         ];
     }
 
-    protected renderContentAsHTML(): string {
-        return `
-            <div class="layout">
-                ${this.layout.rows.map(GridLayoutModel.renderRowAsHTML).join("\n")}
-            </div>
-        `;
+    private getRowAt(rowIndex: number): Row {
+        if (!this.layout) {
+            throw new NoLayoutError();
+        }
+
+        return this.layout.rows[rowIndex];
     }
 
-    private static renderCellAsHTML(cell: Cell): string {
+    private getCellAt(rowIndex: number, cellIndex: number): Cell {
+        return this.getRowAt(rowIndex)
+            .cells[cellIndex];
+    }
+
+    private async resizeCell(cell: Cell, newRelativeSize: number): Promise<void> {
+        // Round the number of decimals of the new size
+        const maxNbDecimals = 3;
+        const tenPowerNbDecimals = 10 ** maxNbDecimals;
+        const newSizeAsString =
+            ((Math.round(newRelativeSize * tenPowerNbDecimals)) / tenPowerNbDecimals)
+                .toString();
+
+        await cell.options.relativeSizeParameterNode.setTextContent(newSizeAsString);
+    }
+
+    private async resizeRow(row: Row, newHeight: number): Promise<void> {
+        // Round the new height and append the right suffix
+        const newHeightAsString = `${Math.round(newHeight)}px`;
+
+        await row.options.heightParameterNode.setTextContent(newHeightAsString);
+    }
+
+    protected async updateContentData(): Promise<void> {
+        try {
+            this.layout = await Layout.from(this.astNode, this.codeMapping);
+            this.contentUpdateEndEventEmitter.fire(true);
+        }
+        catch (error) {
+            console.log(`The content data update of the visualisation with UID ${this.uid} (${this.name}) failed.`);
+            this.contentUpdateEndEventEmitter.fire(false);
+
+        }
+    }
+
+    private static renderCellAsHtml(cell: Cell): string {
         const attributes = HtmlUtils.makeAttributesFromKeysOf({
             "class": "cell",
             "data-row": cell.rowIndex.toString(),
@@ -185,7 +104,7 @@ class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
         return `<div ${attributes}>${cell.textContent}</div>`;
     }
 
-    private static renderRowAsHTML(row: Row): string {
+    private static renderRowAsHtml(row: Row): string {
         const attributes = HtmlUtils.makeAttributesFromKeysOf({
             "class": "row",
             "data-row": row.rowIndex.toString(),
@@ -195,22 +114,10 @@ class GridLayoutModel extends AbstractVisualisationModel<ASTEnvironementNode> {
         return `
             <div ${attributes}>
                 ${row.cells
-                    .map(cell => GridLayoutModel.renderCellAsHTML(cell))
+                    .map(cell => GridLayoutModel.renderCellAsHtml(cell))
                     .join("\n")
                 }
             </div>
         `;
-    }
-}
-
-export class GridLayoutModelFactory implements VisualisationModelFactory {
-    readonly visualisationName = GridLayoutModel.visualisationName;
-    readonly astMatchingRule = (node: ASTNode) => {
-        return node.type === ASTNodeType.Environement
-            && node.name === "gridlayout";
-    };
-
-    createModel(node: ASTNode, mapping: CodeMapping, utilities: VisualisationModelUtilities): VisualisationModel {
-        return new GridLayoutModel(node as ASTEnvironementNode, mapping, utilities);
     }
 }
