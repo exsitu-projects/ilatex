@@ -8,7 +8,7 @@ import { MathematicsModel } from "./model";
 
 export class MathematicsVisualisationModelProvider implements VisualisationModelProvider {
     canProvideForCodeMapping(mapping: CodeMapping): boolean {
-        return mapping.type === "imaths";
+        return mapping.type === "mathematics";
     }
 
     canProvideForASTNode(node: ASTNode): boolean {

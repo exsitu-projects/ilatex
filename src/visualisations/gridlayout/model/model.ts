@@ -9,7 +9,7 @@ import { HtmlUtils } from "../../../shared/utils/HtmlUtils";
 class NoLayoutError {}
 
 export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode> {
-    readonly name = "Grid layout";
+    readonly name = "grid layout";
     private layout: Layout | null;
 
     constructor(context: VisualisableCodeContext<EnvironmentNode>, utilities: VisualisationModelUtilities) {

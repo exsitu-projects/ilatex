@@ -33,6 +33,8 @@ export interface VisualisationModel {
     readonly status: VisualisationStatus;
     readonly content: VisualisationContent;
 
+    init(): Promise<void>;
+
     processViewMessage(message: NotifyVisualisationModelMessage): Promise<void>;
     dispose(): void;
 }

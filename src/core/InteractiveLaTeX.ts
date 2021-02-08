@@ -86,8 +86,8 @@ export class InteractiveLatex {
         await this.sourceFileManager.updateSourceFilesFromCodeMappings();
 
         // 4. Update the visualisations (models + views in the webview)
-        this.visualisationModelManager.extractNewModels();
-        this.webviewManager.sendNewContentForAllVisualisations();
+        await this.visualisationModelManager.extractNewModels();
+        // this.webviewManager.sendNewContentForAllVisualisations();
 
         // 5. Update the decorations in the editor
         this.decorationManager.redecorateVisibleEditorsWithCurrentVisualisations();

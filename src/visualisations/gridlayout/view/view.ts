@@ -32,7 +32,7 @@ type ResizeContext = {
 };
 
 class GridLayoutView extends AbstractVisualisationView {
-    static readonly visualisationName = "gridlayout";
+    static readonly visualisationName = "grid layout";
     private static readonly DELAY_BETWEEN_RESIZES = 50; // ms
 
     readonly visualisationName = GridLayoutView.visualisationName;

@@ -94,11 +94,15 @@ export class VisualisationModelManager {
         }
     }
 
-    extractNewModels(): void {
+    async extractNewModels(): Promise<void> {
         this.disposeOfAllModels();
-
         this.visualisationModels = this.visualisationModelsExtractor.extractModelsForAllSourceFiles();
         this.startObservingModels();
+
+        // Finish initialising every new model
+        for (let model of this.visualisationModels) {
+            await model.init();
+        }
 
         this.modelChangeEventEmitter.fire(this.models);
 

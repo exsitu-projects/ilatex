@@ -91,7 +91,11 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
                 this.astNodeHasBeenDetached = true;
                 this.statusChangeEventEmitter.fire(this);
             });
-    }     
+    }
+
+    async init(): Promise<void> {
+        this.updateContentData();
+    };
 
     get sourceFile(): SourceFile {
         return this.context.sourceFile;
@@ -117,7 +121,7 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
 
     protected get contentAsHtml(): string {
         const attributes = HtmlUtils.makeAttributesFromKeysOf(this.contentHtmlAttributes);
-        return `<div ${attributes}>${this.contentAsHtml}</div>`;
+        return `<div ${attributes}>${this.contentDataAsHtml}</div>`;
     }
 
     protected get contentHtmlAttributes(): Record<string, string> {
