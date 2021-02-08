@@ -34,7 +34,7 @@ export class ArrayMap<K, V> {
         }
 
         const currentValues = this.map.get(key);
-        values?.push(...values);
+        currentValues!.push(...values);
     }
 
     getValuesOf(key: K): V[] {
