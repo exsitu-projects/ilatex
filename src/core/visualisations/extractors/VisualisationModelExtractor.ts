@@ -1,5 +1,7 @@
 import { range } from "parsimmon";
 import { ArrayMap } from "../../../shared/utils/ArrayMap";
+import { GridLayoutVisualisationModelProvider } from "../../../visualisations/gridlayout/model/provider";
+import { MathematicsVisualisationModelProvider } from "../../../visualisations/mathematics/model/provider";
 import { ASTNode } from "../../ast/nodes/ASTNode";
 import { CodeMapping, CodeMappingID } from "../../code-mappings/CodeMapping";
 import { InteractiveLatex } from "../../InteractiveLaTeX";
@@ -13,11 +15,10 @@ import { ASTNodeCandidatesExtractor } from "./ASTNodeCandidateExtractor";
 
 export class VisualisationModelExtractor {
     private static readonly MODEL_PROVIDERS: VisualisationModelProvider[] = [
-        // TODO: update visualisations to use the new provider interface
-        // new MathematicsModelFactory(),
+        new MathematicsVisualisationModelProvider(),
         // new IncludegraphicsModelFactory(),
         // new TabularModelFactory(),
-        // new GridLayoutModelFactory(),
+        new GridLayoutVisualisationModelProvider(),
     ];
 
     private ilatex: InteractiveLatex;
