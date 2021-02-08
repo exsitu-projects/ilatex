@@ -4,6 +4,7 @@ import { SourceFileChange } from "../source-files/SourceFileChange";
 import { ASTParser, ASTParsingError } from "./ASTParser";
 import { ASTNode } from "./nodes/ASTNode";
 import { LatexNode } from "./nodes/LatexNode";
+import { ASTFormatter } from "./visitors/ASTFormatter";
 import { ASTNodeCollecter } from "./visitors/ASTNodeCollecter";
 import { ASTVisitor } from "./visitors/ASTVisitor";
 
@@ -67,6 +68,11 @@ export class LatexAST {
         try {
             const newRootNode = await this.parser.parse();
             this.changeRootNode(newRootNode);
+
+            // console.info(`Root AST node of ${this.sourceFile.name} changed:`);
+            // const astFormatter = new ASTFormatter();
+            // await this.visitWith(astFormatter);
+            // console.log(astFormatter.formattedAST);
         }
         catch (parsingError) {
             console.error("The parsing of the entire AST failed:", parsingError);
@@ -78,8 +84,7 @@ export class LatexAST {
         // Observe reparsing completions (both for successes and failures)
         this.rootNodeObserverDisposable = this.root.reparsingEndEventEmitter.event(async ({node, result}) => {
             if (result.status) {
-                // TODO: Update the node
-                console.info("The reparsing of root node of the AST suceeded: the root node must be changed!", result);
+                console.info("The reparsing of root node of the AST suceeded: the root node should be changed.");
             }
             else {
                 await this.tryToParseNewRootNode();
@@ -97,7 +102,7 @@ export class LatexAST {
         }
     }
 
-    visitWith(visitor: ASTVisitor, maxDepth: number = Number.MAX_SAFE_INTEGER): void {
-        this.root.visitWith(visitor, 0, maxDepth);
+    async visitWith(visitor: ASTVisitor, maxDepth: number = Number.MAX_SAFE_INTEGER): Promise<void> {
+        await this.root.visitWith(visitor, 0, maxDepth);
     }
 }

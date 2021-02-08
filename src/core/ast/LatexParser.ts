@@ -26,7 +26,7 @@ import { WhitespaceNode } from "./nodes/WhitespaceNode";
 
 // General sets of characters
 const alphanum = P.regexp(/[a-z0-9]+/i);
-const alphastar = P.regexp(/[a-z]+\*?/i);
+const alphastar = P.regexp(/[a-z]+\**/i);
 
 // Words written with regular characters and spaced by at most one whitespace char (\input)
 const regularSentences = P.regexp(/([^\\\$&_%{}#\s]+(\s[^\\\$&_%{}#\s])?)+/i);
@@ -170,13 +170,12 @@ export class LatexParser {
             // Otherwise, it must appear exactly one time
             const minNbTimes = parameter.optional ? 0 : 1;
             parametersParsers.push(
-                // The cast seems required to make TypeScript understand that P.Parser<A> | P.Parser<B>
-                // is, here, equivalent to P.Parser<A | B>
-                (parameterParser
-                    .times(minNbTimes, 1) as P.Parser<CurlyBracesParameterBlockNode[] | SquareBracesParameterBlockNode[]>)
+                // The cast seems required to make TypeScript understand that here,
+                // P.Parser<A> | P.Parser<B> is equivalent to P.Parser<A | B>
+                (parameterParser.times(minNbTimes, 1) as P.Parser<CurlyBracesParameterBlockNode[] | SquareBracesParameterBlockNode[]>)
                     .map(optionalASTNodeAsArray =>
                         optionalASTNodeAsArray.length === 1
-                            ? optionalASTNodeAsArray[1]
+                            ? optionalASTNodeAsArray[0]
                             : EMPTY_AST_VALUE
                     )
             );
@@ -194,10 +193,15 @@ export class LatexParser {
     
         // Return a parser which expects the command followed by all its parameters
         // (though optional ones may of course be absent)
-        return P.seq(P.string("\\"), nameParser, ...parametersParsers)
+        return P.seq(P.string("\\"), nameParser, P.seq(...parametersParsers))
             .thru(this.contextualiseParserOutput(
                 this.reparsers.anyCommand, // TODO: fix
-                (value, context, reparser) => new CommandNode(value[1], value[2], context, reparser)
+                (value, context, reparser) => new CommandNode(
+                    value[1],
+                    value[2],
+                    context,
+                    reparser
+                )
             ));
     }
 
