@@ -1,8 +1,9 @@
-import { ASTVisitorAdapter } from "./ASTVisitorAdapter";
+
 import { ASTNode } from "../nodes/ASTNode";
+import { ASTSyncVisitorAdapter } from "./adapters";
 
 
-export class ASTFormatter extends ASTVisitorAdapter {
+export class ASTFormatter extends ASTSyncVisitorAdapter {
     prefix: string ;
     indent: number;
 
@@ -29,7 +30,7 @@ export class ASTFormatter extends ASTVisitorAdapter {
         return " ".repeat(this.indent * depth);
     }
 
-    protected async visitNode(node: ASTNode, depth: number): Promise<void> {
+    protected visitNode(node: ASTNode, depth: number): void {
         const padding = this.createPadding(depth);
         this.formattedStrings.push(
             `${padding}${this.prefix}${node.toString()}`

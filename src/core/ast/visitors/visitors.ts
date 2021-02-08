@@ -17,7 +17,28 @@ import { SquareBracesParameterBlockNode } from "../nodes/SquareBracesParameterBl
 import { TextNode } from "../nodes/TextNode";
 import { WhitespaceNode } from "../nodes/WhitespaceNode";
 
-export interface ASTVisitor {
+export interface ASTSyncVisitor {
+    visitBlockNode(node: BlockNode, depth: number): void;
+    visitCommandNode(node: CommandNode, depth: number): void;
+    visitCommentNode(node: CommentNode, depth: number): void;
+    visitCurlyBracesParameterBlockNode(node: CurlyBracesParameterBlockNode, depth: number): void;
+    visitDisplayMathNode(node: DisplayMathNode, depth: number): void;
+    visitEnvironmentNode(node: EnvironmentNode, depth: number): void;
+    visitInlineMathNode(node: InlineMathNode, depth: number): void;
+    visitLatexNode(node: LatexNode, depth: number): void;
+    visitMathNode(node: MathNode, depth: number): void;
+    visitParameterAssignmentNode(node: ParameterAssignmentNode, depth: number): void;
+    visitParameterKeyNode(node: ParameterKeyNode, depth: number): void;
+    visitParameterListNode(node: ParameterListNode, depth: number): void;
+    visitParameterNode(node: ParameterNode, depth: number): void;
+    visitParameterValueNode(node: ParameterValueNode, depth: number): void;
+    visitSpecialSymbolNode(node: SpecialSymbolNode, depth: number): void;
+    visitSquareBracesParameterBlockNode(node: SquareBracesParameterBlockNode, depth: number): void;
+    visitTextNode(node: TextNode, depth: number): void;
+    visitWhitespaceNode(node: WhitespaceNode, depth: number): void;
+}
+
+export interface ASTAsyncVisitor {
     visitBlockNode(node: BlockNode, depth: number): Promise<void>;
     visitCommandNode(node: CommandNode, depth: number): Promise<void>;
     visitCommentNode(node: CommentNode, depth: number): Promise<void>;

@@ -1,5 +1,5 @@
+import { ASTSyncVisitor, ASTAsyncVisitor } from "../visitors/visitors";
 import { ASTNode, ASTNodeContext, ASTNodeParser } from "./ASTNode";
-import { ASTVisitor } from "../visitors/ASTVisitor";
 
 export class MathNode extends ASTNode {
     static readonly type = "math" as const;
@@ -31,15 +31,11 @@ export class MathNode extends ASTNode {
         // Since this node does not have any child node, there is nothing to do
     };
 
-    async visitWith(
-        visitor: ASTVisitor,
-        depth: number = 0,
-        maxDepth: number = Number.MAX_SAFE_INTEGER
-    ) {
-        if (depth > maxDepth) {
-            return;
-        }
-        
+    protected syncSelfVisitWith(visitor: ASTSyncVisitor, depth: number = 0): void {
+        visitor.visitMathNode(this, depth);
+    }
+
+    protected async asyncSelfVisitWith(visitor: ASTAsyncVisitor, depth: number = 0): Promise<void> {
         await visitor.visitMathNode(this, depth);
     }
 }

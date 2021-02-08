@@ -1,5 +1,5 @@
+import { ASTSyncVisitor, ASTAsyncVisitor } from "../visitors/visitors";
 import { ASTNode, ASTNodeContext, ASTNodeParser } from "./ASTNode";
-import { ASTVisitor } from "../visitors/ASTVisitor";
 import { ParameterListNode } from "./ParameterListNode";
 import { ParameterNode } from "./ParameterNode";
 
@@ -42,18 +42,12 @@ export class CurlyBracesParameterBlockNode extends ASTNode {
             console.error(`AST node replacement failed (in node ${this.toString()}): the current child node was not found.`);
         }
     };
-    
-    async visitWith(
-        visitor: ASTVisitor,
-        depth: number = 0,
-        maxDepth: number = Number.MAX_SAFE_INTEGER
-    ) {
-        if (depth > maxDepth) {
-            return;
-        }
-        
-        await visitor.visitCurlyBracesParameterBlockNode(this, depth);
 
-        await this.content.visitWith(visitor, depth + 1, maxDepth);
-    };
+    protected syncSelfVisitWith(visitor: ASTSyncVisitor, depth: number = 0): void {
+        visitor.visitCurlyBracesParameterBlockNode(this, depth);
+    }
+
+    protected async asyncSelfVisitWith(visitor: ASTAsyncVisitor, depth: number = 0): Promise<void> {
+        await visitor.visitCurlyBracesParameterBlockNode(this, depth);
+    }
 }

@@ -1,10 +1,10 @@
 import { ArrayMap } from "../../../shared/utils/ArrayMap";
 import { ASTNode } from "../../ast/nodes/ASTNode";
-import { ASTVisitorAdapter } from "../../ast/visitors/ASTVisitorAdapter";
+import { ASTSyncVisitorAdapter } from "../../ast/visitors/adapters";
 import { SourceFile } from "../../source-files/SourceFile";
 import { VisualisationModelProvider } from "../VisualisationModelProvider";
 
-export class ASTNodeCandidatesExtractor extends ASTVisitorAdapter {
+export class ASTNodeCandidatesExtractor extends ASTSyncVisitorAdapter {
     private readonly modelProviders: VisualisationModelProvider[];
     private modelProvidersToCandidateNodes: ArrayMap<VisualisationModelProvider, ASTNode>;
 
@@ -21,7 +21,7 @@ export class ASTNodeCandidatesExtractor extends ASTVisitorAdapter {
         // Since this extractor uses an AST visitor, it requires that the given source file has a valid AST
         // Otherwise, there is nothing to extract
         if (sourceFile.ast.hasRoot) {
-            sourceFile.ast.visitWith(this);
+            sourceFile.ast.syncVisitWith(this);
         }
         else {
             console.warn(`No AST node candidate can be extracted from the given source file (${sourceFile.name}): the AST has no root.`);

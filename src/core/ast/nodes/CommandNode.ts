@@ -1,8 +1,8 @@
 import { ASTNode, ASTNodeContext, ASTNodeParser } from "./ASTNode";
-import { ASTVisitor } from "../visitors/ASTVisitor";
 import { CurlyBracesParameterBlockNode } from "./CurlyBracesParameterBlockNode";
 import { SquareBracesParameterBlockNode } from "./SquareBracesParameterBlockNode";
 import { EmptyASTValue, EMPTY_AST_VALUE } from "../LatexParser";
+import { ASTSyncVisitor, ASTAsyncVisitor } from "../visitors/visitors";
 
 type NonEmptyCommandNodeParameters = (
     | CurlyBracesParameterBlockNode
@@ -58,23 +58,11 @@ export class CommandNode extends ASTNode {
         }
     };
 
-    async visitWith(
-        visitor: ASTVisitor,
-        depth: number = 0,
-        maxDepth: number = Number.MAX_SAFE_INTEGER
-    ) {
-        if (depth > maxDepth) {
-            return;
-        }
-        
+    protected syncSelfVisitWith(visitor: ASTSyncVisitor, depth: number = 0): void {
+        visitor.visitCommandNode(this, depth);
+    }
+
+    protected async asyncSelfVisitWith(visitor: ASTAsyncVisitor, depth: number = 0): Promise<void> {
         await visitor.visitCommandNode(this, depth);
-
-        for (let parameterNode of this.parameters) {
-            if (parameterNode === EMPTY_AST_VALUE) {
-                continue;
-            }
-
-            await parameterNode.visitWith(visitor, depth + 1, maxDepth);
-        }
-    };
+    }
 }

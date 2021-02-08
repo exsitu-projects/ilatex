@@ -1,7 +1,7 @@
 import { ASTNode, ASTNodeContext, ASTNodeParser } from "./ASTNode";
-import { ASTVisitor } from "../visitors/ASTVisitor";
 import { ParameterNode } from "./ParameterNode";
 import { ParameterListNode } from "./ParameterListNode";
+import { ASTSyncVisitor, ASTAsyncVisitor } from "../visitors/visitors";
 
 export class SquareBracesParameterBlockNode extends ASTNode {
     static readonly type = "square-braces-parameter-block" as const;
@@ -42,17 +42,11 @@ export class SquareBracesParameterBlockNode extends ASTNode {
         }
     };
 
-    async visitWith(
-        visitor: ASTVisitor,
-        depth: number = 0,
-        maxDepth: number = Number.MAX_SAFE_INTEGER
-    ) {
-        if (depth > maxDepth) {
-            return;
-        }
-        
-        await visitor.visitSquareBracesParameterBlockNode(this, depth);
+    protected syncSelfVisitWith(visitor: ASTSyncVisitor, depth: number = 0): void {
+        visitor.visitSquareBracesParameterBlockNode(this, depth);
+    }
 
-        await this.content.visitWith(visitor, depth + 1, maxDepth);
-    };
+    protected async asyncSelfVisitWith(visitor: ASTAsyncVisitor, depth: number = 0): Promise<void> {
+        await visitor.visitSquareBracesParameterBlockNode(this, depth);
+    }
 }

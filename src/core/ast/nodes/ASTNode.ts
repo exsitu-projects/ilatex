@@ -1,10 +1,10 @@
 import * as vscode from "vscode";
 import * as P from "parsimmon";
-import { ASTVisitor } from "../visitors/ASTVisitor";
 import { RangeInFile } from "../../utils/RangeInFile";
 import { SourceFileChange } from "../../source-files/SourceFileChange";
 import { SourceFile } from "../../source-files/SourceFile";
 import { ArrayMap } from "../../../shared/utils/ArrayMap";
+import { ASTAsyncVisitor, ASTSyncVisitor } from "../visitors/visitors";
 
 
 export type ASTNodeParser<T extends ASTNode> = (input: string, context: ASTNodeContext) => P.Result<T>;
@@ -252,5 +252,36 @@ export abstract class ASTNode {
         }
     }
 
-    abstract visitWith(visitor: ASTVisitor, depth: number, maxDepth: number): Promise<void>;
+    protected abstract syncSelfVisitWith(visitor: ASTSyncVisitor, depth: number): void;
+    protected abstract asyncSelfVisitWith(visitor: ASTAsyncVisitor, depth: number): Promise<void>;
+
+    syncVisitWith(
+        visitor: ASTSyncVisitor,
+        depth: number = 0,
+        maxDepth: number = Number.MAX_SAFE_INTEGER
+    ): void {
+        if (depth > maxDepth) {
+            return;
+        }
+        
+        this.syncSelfVisitWith(visitor, depth);
+        for (let node of this.childNodes) {
+            node.syncVisitWith(visitor, depth + 1, maxDepth);
+        }
+    }
+
+    async asyncVisitWith(
+        visitor: ASTAsyncVisitor,
+        depth: number = 0,
+        maxDepth: number = Number.MAX_SAFE_INTEGER
+    ): Promise<void> {
+        if (depth > maxDepth) {
+            return;
+        }
+        
+        await this.asyncSelfVisitWith(visitor, depth);
+        for (let node of this.childNodes) {
+            await node.asyncVisitWith(visitor, depth + 1, maxDepth);
+        }
+    }
 }

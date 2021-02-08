@@ -6,7 +6,7 @@ import { ASTNode } from "./nodes/ASTNode";
 import { LatexNode } from "./nodes/LatexNode";
 import { ASTFormatter } from "./visitors/ASTFormatter";
 import { ASTNodeCollecter } from "./visitors/ASTNodeCollecter";
-import { ASTVisitor } from "./visitors/ASTVisitor";
+import { ASTSyncVisitor, ASTAsyncVisitor } from "./visitors/visitors";
 
 
 /** Type of the root node of an AST. */
@@ -54,7 +54,7 @@ export class LatexAST {
 
     get nodes(): ASTNode[] {
         const nodeCollecter = new ASTNodeCollecter();
-        this.root.visitWith(nodeCollecter);
+        this.root.syncVisitWith(nodeCollecter);
         return nodeCollecter.nodes;
     }
 
@@ -71,7 +71,7 @@ export class LatexAST {
 
             // console.info(`Root AST node of ${this.sourceFile.name} changed:`);
             // const astFormatter = new ASTFormatter();
-            // await this.visitWith(astFormatter);
+            // await this.syncVisitWith(astFormatter);
             // console.log(astFormatter.formattedAST);
         }
         catch (parsingError) {
@@ -102,7 +102,11 @@ export class LatexAST {
         }
     }
 
-    async visitWith(visitor: ASTVisitor, maxDepth: number = Number.MAX_SAFE_INTEGER): Promise<void> {
-        await this.root.visitWith(visitor, 0, maxDepth);
+    async syncVisitWith(visitor: ASTSyncVisitor, maxDepth: number = Number.MAX_SAFE_INTEGER): Promise<void> {
+        this.root.syncVisitWith(visitor, 0, maxDepth);
+    }
+
+    async asyncVisitWith(visitor: ASTAsyncVisitor, maxDepth: number = Number.MAX_SAFE_INTEGER): Promise<void> {
+        await this.root.asyncVisitWith(visitor, 0, maxDepth);
     }
 }
