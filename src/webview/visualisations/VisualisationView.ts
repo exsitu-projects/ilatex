@@ -28,7 +28,6 @@ export interface VisualisationView {
     render(): HTMLElement;
     updateWith(newContentNode: HTMLElement): void;
 
-    saveSourceDocument(): void;
     revealInSourceDocument(): void;
 
     onBeforeVisualisationDisplay(): void;

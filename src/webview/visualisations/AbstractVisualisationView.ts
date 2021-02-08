@@ -47,20 +47,11 @@ export abstract class AbstractVisualisationView implements VisualisationView {
         return this.lastKnownSourceCodeRange;
     }
 
-    saveSourceDocument(): void {
-        this.messenger.sendMessage({
-            type: WebviewToCoreMessageType.NotifyVisualisationModel,
-            visualisationUid: this.visualisationUid,
-            title: "save-source-document",
-            notification: {}
-        });
-    }
-
     revealInSourceDocument(): void {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
             visualisationUid: this.visualisationUid,
-            title: "reveal-code",
+            title: "reveal-code-in-editor",
             notification: {}
         });
     }
@@ -70,7 +61,12 @@ export abstract class AbstractVisualisationView implements VisualisationView {
     }
 
     onAfterVisualisationDisplay(): void {
-        // Do nothing by default
+        this.messenger.sendMessage({
+            type: WebviewToCoreMessageType.NotifyVisualisationModel,
+            visualisationUid: this.visualisationUid,
+            title: "view-popup-did-open",
+            notification: {}
+        });
     }
 
     onBeforeVisualisationUpdate(): void {
@@ -86,7 +82,12 @@ export abstract class AbstractVisualisationView implements VisualisationView {
     }
 
     onAfterVisualisationDisappearance(): void {
-        // Do nothing by default
+        this.messenger.sendMessage({
+            type: WebviewToCoreMessageType.NotifyVisualisationModel,
+            visualisationUid: this.visualisationUid,
+            title: "view-popup-did-close",
+            notification: {}
+        });
     }
 
     abstract render(): HTMLElement;

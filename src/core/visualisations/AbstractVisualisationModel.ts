@@ -141,15 +141,21 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
                 }
             },
             {
-                title: "view-did-open",
+                title: "view-popup-did-open",
                 handler: async notifiction => {
                     this.viewDidOpenEventEmitter.fire(this);
                 }
             },
             {
-                title: "view-did-close",
+                title: "view-popup-did-close",
                 handler: async notifiction => {
                     this.viewDidCloseEventEmitter.fire(this);
+
+                    // If the visualisation is available, save the source file of this visualisation
+                    // TODO: only save the document if it was modified
+                    if (this.status.available) {
+                        await this.sourceFile.save();
+                    }
                 }
             }
         ];
