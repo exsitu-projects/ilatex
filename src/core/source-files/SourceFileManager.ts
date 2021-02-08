@@ -67,14 +67,32 @@ export class SourceFileManager {
     // should they be kept or deleted?
     // For the moment, no source file is ever removed...
     async updateSourceFilesFromCodeMappings(): Promise<void> {
-        const codeMappingPathsWithoutSourceFile = this.ilatex.codeMappingManager.codeMappings
-            .filter(codeMapping => !this.hasSourceFileWithPath(codeMapping.absolutePath))
-            .map(codeMapping => codeMapping.absolutePath);
+        const absolutePathsOfCurrentSourceFiles = this.files.map(file => file.uri.path);
+        const absolutePathsOfCodeMappings = new Set(
+            this.ilatex.codeMappingManager.codeMappings.map(codeMapping => codeMapping.absolutePath)
+        );
 
-        for (let absolutePath of codeMappingPathsWithoutSourceFile) {
-            const newSourceFile = await SourceFile.fromAbsolutePath(absolutePath);
+        // Remove source files whose paths do not appear in the new set of code mappings' paths 
+        this.files = this.files.filter(sourceFile => absolutePathsOfCodeMappings.has(sourceFile.uri.path));
+
+        // Update source files whose path appear in both the new set of code mappings' paths
+        // and in the paths of the current source files, i.e. those that have not been deleted just above
+        for (let sourceFile of this.sourceFiles) {
+            await sourceFile.parseNewAST();
+        }
+        
+        // Create new source files from paths that appear in the new set of code mappings' paths
+        // but not in the paths of the current source files
+        for (let path of absolutePathsOfCodeMappings) {
+            if (absolutePathsOfCurrentSourceFiles.includes(path)) {
+                continue;
+            }
+
+            const newSourceFile = await SourceFile.fromAbsolutePath(path);
             this.files.push(newSourceFile);
         }
+
+        // console.log("New list of source files: ", this.files);
     }
 
 

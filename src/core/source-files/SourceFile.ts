@@ -25,8 +25,7 @@ export class SourceFile {
         await vscode.workspace.openTextDocument(this.uri.path);
 
         // Create and initialise the AST
-        this.latexAst = new LatexAST(this);
-        await this.latexAst.init();
+        await this.parseNewAST();
     }
 
     get isDirty(): boolean {
@@ -74,6 +73,11 @@ export class SourceFile {
     async getContent(range?: RangeInFile): Promise<string> {
         const document = await this.document;
         return document.getText(range?.asVscodeRange);
+    }
+
+    async parseNewAST(): Promise<void> {
+        this.latexAst = new LatexAST(this);
+        await this.latexAst.init();
     }
 
     async save(): Promise<void> {
