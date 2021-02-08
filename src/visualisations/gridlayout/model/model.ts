@@ -30,6 +30,13 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
             ...super.viewMessageHandlerSpecifications,
 
             {
+                title: "select-cell-content",
+                handler: async payload => {
+                    const { rowIndex, cellIndex } = payload;
+                    const row = this.getCellAt(rowIndex, cellIndex);
+                }
+            },
+            {
                 title: "resize-cell",
                 handler: async payload => {
                     const { rowIndex, cellIndex, newRelativeSize, isFinalSize } = payload;
@@ -101,7 +108,7 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
             "data-relative-size": cell.options.relativeSize.toString()
         });
 
-        return `<div ${attributes}>${cell.textContent}</div>`;
+        return `<div ${attributes}>${cell.contentText}</div>`;
     }
 
     private static renderRowAsHtml(row: Row): string {

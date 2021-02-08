@@ -38,7 +38,7 @@ export class Cell {
     readonly range: RangeInFile;
     readonly contentRange: RangeInFile;
 
-    readonly textContent: string;
+    readonly contentText: string;
     readonly options: CellOptions;
 
     private constructor(
@@ -55,7 +55,7 @@ export class Cell {
         this.range = astNode.range;
         this.contentRange = astNode.body.range;
 
-        this.textContent = textContent;
+        this.contentText = textContent;
         this.options = options;
     }
 
@@ -64,10 +64,10 @@ export class Cell {
         cellIndex: number,
         node: EnvironmentNode
     ): Promise<Cell> {
-        const textContent = await node.textContent;
+        const contentText = await node.body.textContent;
         const options = await CellOptions.fromCellNode(node);
 
-        return new Cell(rowIndex, cellIndex, node, textContent, options);
+        return new Cell(rowIndex, cellIndex, node, contentText, options);
     }
 }
 
