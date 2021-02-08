@@ -31,7 +31,7 @@ export class DecorationManager {
         return vscode.languages.registerCodeLensProvider(
             {
                 scheme: "file",
-                language:"latex"
+                language: "latex"
             },
             {
                 provideCodeLenses: (document) => this.computeCodeLensesForDocument(document),
@@ -42,9 +42,9 @@ export class DecorationManager {
 
     private computeCodeLensesForDocument(document: vscode.TextDocument): vscode.CodeLens[] {
         return this.ilatex.visualisationModelManager.models
-            .filter(model => model.sourceFile.absolutePath === document.uri.path && model.hasBeenManuallyEdited)
-            .map(model =>  new vscode.CodeLens(model.codeRange, {
-                title: "iLaTeX is out-of-sync with this piece of code. Click to recompile the document and fix the problem.",
+            .filter(model => model.sourceFile.isRepresentedByDocument(document) && !model.status.available)
+            .map(model =>  new vscode.CodeLens(model.astNode.range.asVscodeRange, {
+                title: "iLaTeX is out-of-sync with this piece of code. Click to recompile the document and recompute code visualisations.",
                 command: "ilatex.recompile"
             }));
     }
@@ -71,8 +71,8 @@ export class DecorationManager {
 
     private redecorateEditorWithVisualisations(editor: vscode.TextEditor, models: VisualisationModel[]): void {
         const manuallyEditedVisualisableCodeRanges: vscode.Range[] = models
-            .filter(model => model.hasBeenManuallyEdited)
-            .map(model => model.codeRange);
+            .filter(model => !model.status.available)
+            .map(model => model.astNode.range.asVscodeRange);
         editor.setDecorations(textDecorations.manuallyEditedVisualisableCode, manuallyEditedVisualisableCodeRanges);
     }
 
