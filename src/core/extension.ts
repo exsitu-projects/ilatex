@@ -25,7 +25,7 @@ function createIlatexInstanceForRootDocument(document: vscode.TextDocument): Pro
 
 	// Create and return a new instance of iLaTeX
 	// The editor is mapped to the instance of iLateX until it is destroyed
-	return InteractiveLatex.createFromMainLatexDocument(document, webviewPanel)
+	return InteractiveLatex.fromMainLatexDocument(document, webviewPanel)
 		.then(ilatex => {
 			webviewPanel.onDidDispose(() => {
 				ilatex.webviewManager.dispose();
@@ -90,12 +90,12 @@ export function activate(context: vscode.ExtensionContext): void {
 		}
 		
 		for (let ilatexInstance of rootLatexDocumentPathsToIlatexInstances.values()) {
-			const activeEditorContainsFileFromCurrentInstance = ilatexInstance.codeMappingManager.allSourceFiles.some(file => {
-				return file.absolutePath === activeEditor.document.uri.path;
+			const activeEditorContainsFileFromCurrentInstance = ilatexInstance.sourceFileManager.sourceFiles.some(file => {
+				return file.isRepresentedByDocument(activeEditor.document);
 			});
 
 			if (activeEditorContainsFileFromCurrentInstance) {
-				await ilatexInstance.updatePDFAndVisualisations();
+				await ilatexInstance.recompileAndUpdate();
 			}
 		}
 	});
