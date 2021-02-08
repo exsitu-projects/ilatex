@@ -150,7 +150,7 @@ export class WebviewManager {
         console.info("About to send a new visualisation status to the webview...");
 
         this.messenger.sendMessage({
-            type: CoreToWebviewMessageType.UpdateVisualisationStatusMessage,
+            type: CoreToWebviewMessageType.UpdateOneVisualisationStatusMessage,
             visualisationUid: visualisationModel.uid,
             visualisationIsAvailable: visualisationModel.status.available
         });        
@@ -160,7 +160,7 @@ export class WebviewManager {
         console.info("About to send a new visualisation status to the webview...");
 
         this.messenger.sendMessage({
-            type: CoreToWebviewMessageType.UpdateVisualisationStatusMessage,
+            type: CoreToWebviewMessageType.UpdateAllVisualisationsStatusMessage,
             enableAllVisualisations: enableAllVisualisations
         });        
     }

@@ -2,12 +2,9 @@ import { AnnotationMaskCoordinates } from "../pdf/PDFPageRenderer";
 import { Messenger } from "../Messenger";
 import { VisualisationView, VisualisationViewFactory } from "./VisualisationView";
 import { VisualisationPopup } from "./VisualisationPopup";
-import { WebviewToCoreMessageType, CoreToWebviewMessageType, UpdateOneVisualisationMessage, UpdateAllVisualisationsMessage, UpdateVisualisationStatusMessage } from "../../shared/messenger/messages";
-import { IncludegraphicsViewFactory } from "../../visualisations/includegraphics/view/view";
-import { TabularViewFactory } from "../../visualisations/tabular/view/view";
+import {  CoreToWebviewMessageType, UpdateOneVisualisationMessage, UpdateAllVisualisationsMessage, UpdateOneVisualisationStatusMessage, UpdateAllVisualisationsStatusMessage } from "../../shared/messenger/messages";
 import { GridLayoutViewFactory } from "../../visualisations/gridlayout/view/view";
 import { MathematicsViewFactory } from "../../visualisations/mathematics/view/view";
-import { createSecureContext } from "tls";
 
 export interface VisualisationDisplayRequest {
     codeMappingId: number;
@@ -24,8 +21,8 @@ export class VisualisationViewManager {
     static readonly REQUEST_VISUALISATION_DISPLAY_EVENT = "request-visualisation-display";
     static readonly VISUALISATIONS_ARE_UNAVAILABLE_BODY_CLASS = "visualisations-unavailable";
     private static readonly AVAILABLE_VISUALISATION_FACTORIES: VisualisationViewFactory[] = [
-        new IncludegraphicsViewFactory(),
-        new TabularViewFactory(),
+        // new IncludegraphicsViewFactory(),
+        // new TabularViewFactory(),
         new GridLayoutViewFactory(),
         new MathematicsViewFactory()
     ];
@@ -203,8 +200,12 @@ export class VisualisationViewManager {
         );
     }
 
-    private handleVisualisationStatusUpdate(message: UpdateVisualisationStatusMessage): void {
-        this.enableVisualisations = message.enableVisualisations;
+    private handleOneVisualisationStatusUpdate(message: UpdateOneVisualisationStatusMessage): void {
+        // TODO
+    }
+
+    private handleAllVisualisationsStatusUpdate(message: UpdateAllVisualisationsStatusMessage): void {
+        this.enableVisualisations = message.enableAllVisualisations;
         document.body.classList.toggle(
             VisualisationViewManager.VISUALISATIONS_ARE_UNAVAILABLE_BODY_CLASS,
             !this.enableVisualisations
@@ -219,9 +220,16 @@ export class VisualisationViewManager {
 
     private startHandlingVisualisationStatusUpdate(): void {
         this.messenger.setHandlerFor(
-            CoreToWebviewMessageType.UpdateVisualisationStatusMessage,
-            (message: UpdateVisualisationStatusMessage) => {
-                this.handleVisualisationStatusUpdate(message);
+            CoreToWebviewMessageType.UpdateOneVisualisationStatusMessage,
+            (message: UpdateOneVisualisationStatusMessage) => {
+                this.handleOneVisualisationStatusUpdate(message);
+            }
+        );
+
+        this.messenger.setHandlerFor(
+            CoreToWebviewMessageType.UpdateAllVisualisationsStatusMessage,
+            (message: UpdateAllVisualisationsStatusMessage) => {
+                this.handleAllVisualisationsStatusUpdate(message);
             }
         );
     }
