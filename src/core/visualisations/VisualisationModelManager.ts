@@ -101,5 +101,10 @@ export class VisualisationModelManager {
         this.startObservingModels();
 
         this.modelChangeEventEmitter.fire(this.models);
+
+        console.log("New visualisation models have been extracted:");
+        for (let model of this.models) {
+            console.log(`${model.uid}\t${model.name}\t\t(in L${model.codeMapping.lineNumber} of }${model.sourceFile.name})`);
+        }
     }
 }
