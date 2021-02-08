@@ -43,7 +43,7 @@ export class DecorationManager {
     private computeCodeLensesForDocument(document: vscode.TextDocument): vscode.CodeLens[] {
         return this.ilatex.visualisationModelManager.models
             .filter(model => model.sourceFile.isRepresentedByDocument(document) && !model.status.available)
-            .map(model =>  new vscode.CodeLens(model.astNode.range.asVscodeRange, {
+            .map(model => new vscode.CodeLens(model.astNode.range.asVscodeRange, {
                 title: "iLaTeX is out-of-sync with this piece of code. Click to recompile the document and recompute code visualisations.",
                 command: "ilatex.recompile"
             }));
@@ -70,10 +70,16 @@ export class DecorationManager {
     }
 
     private redecorateEditorWithVisualisations(editor: vscode.TextEditor, models: VisualisationModel[]): void {
-        const manuallyEditedVisualisableCodeRanges: vscode.Range[] = models
+        // Available visualisations should be displayed for debug purposes only
+        const codeRangesOfAvailableVisualisations: vscode.Range[] = models
+            .filter(model => model.status.available)
+            .map(model => model.astNode.range.asVscodeRange);
+        editor.setDecorations(textDecorations.availableVisualisableCode, codeRangesOfAvailableVisualisations);
+
+        const codeRangesOfUnavailableVisualisations: vscode.Range[] = models
             .filter(model => !model.status.available)
             .map(model => model.astNode.range.asVscodeRange);
-        editor.setDecorations(textDecorations.manuallyEditedVisualisableCode, manuallyEditedVisualisableCodeRanges);
+        editor.setDecorations(textDecorations.unavailableVisualisableCode, codeRangesOfUnavailableVisualisations);
     }
 
     private redecorateVisibleEditorsWithVisualisations(models: VisualisationModel[]): void {
