@@ -1,12 +1,12 @@
 import { EnvironmentNode } from "../../../core/ast/nodes/EnvironmentNode";
-import { ASTVisitorAdapter } from "../../../core/ast/visitors/ASTVisitorAdapter";
+import { ASTAsyncVisitorAdapter } from "../../../core/ast/visitors/adapters";
 import { CodeMapping } from "../../../core/code-mappings/CodeMapping";
 import { Cell, Layout, Row } from "./Layout";
 
 
 export class LayoutExtractionError {}
 
-export class LayoutContentExtractor extends ASTVisitorAdapter {
+export class LayoutContentExtractor extends ASTAsyncVisitorAdapter {
     private readonly codeMapping: CodeMapping;
     private readonly layout: Layout;
 
@@ -51,6 +51,6 @@ export class LayoutContentExtractor extends ASTVisitorAdapter {
     ): Promise<void> {
         // Fill the layout by visiting the AST subtree of the environment
         const gridExtractor = new LayoutContentExtractor(emptyLayout, codeMapping);
-        await emptyLayout.astNode.visitWith(gridExtractor, 0);
+        await emptyLayout.astNode.asyncVisitWith(gridExtractor, 0);
     }
 }
