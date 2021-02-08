@@ -87,7 +87,7 @@ export class PDFManager {
     }
 
     updateWebviewPDF(): void {
-        this.ilatex.webviewManager.sendNewPDF(this.pdfUri);
+        this.ilatex.webviewManager.sendNewPDF();
     }
 
     recompilePDFAndUpdateWebview(): Promise<void> {
