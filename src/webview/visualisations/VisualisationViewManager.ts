@@ -5,6 +5,7 @@ import { VisualisationPopup } from "./VisualisationPopup";
 import {  CoreToWebviewMessageType, UpdateOneVisualisationMessage, UpdateAllVisualisationsMessage, UpdateOneVisualisationStatusMessage, UpdateAllVisualisationsStatusMessage } from "../../shared/messenger/messages";
 import { GridLayoutViewFactory } from "../../visualisations/gridlayout/view/view";
 import { MathematicsViewFactory } from "../../visualisations/mathematics/view/view";
+import { TabularViewFactory } from "../../visualisations/tabular/view/view";
 
 export interface VisualisationDisplayRequest {
     codeMappingId: number;
@@ -22,7 +23,7 @@ export class VisualisationViewManager {
     static readonly VISUALISATIONS_ARE_UNAVAILABLE_BODY_CLASS = "visualisations-unavailable";
     private static readonly AVAILABLE_VISUALISATION_FACTORIES: VisualisationViewFactory[] = [
         // new IncludegraphicsViewFactory(),
-        // new TabularViewFactory(),
+        new TabularViewFactory(),
         new GridLayoutViewFactory(),
         new MathematicsViewFactory()
     ];

@@ -2,6 +2,7 @@ import { range } from "parsimmon";
 import { ArrayMap } from "../../../shared/utils/ArrayMap";
 import { GridLayoutVisualisationModelProvider } from "../../../visualisations/gridlayout/model/provider";
 import { MathematicsVisualisationModelProvider } from "../../../visualisations/mathematics/model/provider";
+import { TabularVisualisationModelProvider } from "../../../visualisations/tabular/model/provider";
 import { ASTNode } from "../../ast/nodes/ASTNode";
 import { CodeMapping, CodeMappingID } from "../../code-mappings/CodeMapping";
 import { InteractiveLatex } from "../../InteractiveLaTeX";
@@ -16,9 +17,8 @@ import { ASTNodeCandidatesExtractor } from "./ASTNodeCandidateExtractor";
 export class VisualisationModelExtractor {
     private static readonly MODEL_PROVIDERS: VisualisationModelProvider[] = [
         new MathematicsVisualisationModelProvider(),
-        // new IncludegraphicsModelFactory(),
-        // new TabularModelFactory(),
         new GridLayoutVisualisationModelProvider(),
+        new TabularVisualisationModelProvider()
     ];
 
     private ilatex: InteractiveLatex;

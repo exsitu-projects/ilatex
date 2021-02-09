@@ -1,26 +1,25 @@
+import "./HandsontableApi";
 import { AbstractVisualisationView } from "../../../webview/visualisations/AbstractVisualisationView";
 import { VisualisationViewFactory, VisualisationView, VisualisationViewInstantiationContext } from "../../../webview/visualisations/VisualisationView";
 import { WebviewToCoreMessageType } from "../../../shared/messenger/messages";
 
-// Since Rollup + the TypeScript plugin seem to require ES6/ESNext to load modules
-// from the node_modules directory (even though it's just for types),
-// types are not available for Handsontable
-declare var Handsontable: any;
-type Handsontable = any;
 
 interface HandsontableCellCoords {
     row: number,
     col: number
 };
 
+
 interface ColumnDetail {
     type: string;
 }
+
 
 interface CellLocation {
     rowIndex: number;
     columnIndex: number;
 }
+
 
 class TabularView extends AbstractVisualisationView {
     static readonly visualisationName = "tabular";
@@ -188,7 +187,7 @@ class TabularView extends AbstractVisualisationView {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
             visualisationUid: this.visualisationUid,
-            title: "select-cell-code",
+            title: "select-cell-content",
             notification: {
                 columnIndex: cellLocation.columnIndex,
                 rowIndex: cellLocation.rowIndex
