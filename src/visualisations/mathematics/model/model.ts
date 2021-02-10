@@ -4,6 +4,7 @@ import { EnvironmentNode } from "../../../core/ast/nodes/EnvironmentNode";
 import { VisualisableCodeContext } from "../../../core/visualisations/VisualisationModelProvider";
 import { VisualisationModelUtilities } from "../../../core/visualisations/VisualisationModelUtilities";
 import { WhitespaceNode } from "../../../core/ast/nodes/WhitespaceNode";
+import { ArrayUtils } from "../../../shared/utils/ArrayUtils";
 
 export class MathematicsModel extends AbstractVisualisationModel<EnvironmentNode> {
     readonly name = "mathematics";
@@ -45,30 +46,25 @@ export class MathematicsModel extends AbstractVisualisationModel<EnvironmentNode
     }
 
     private async setNewMathCode(trimmedMathCode: string): Promise<void> {
-        const editor = await this.sourceFile.getOrOpenInEditor();
-
         // Find the first and the last non-whitespace AST nodes in the environement
         // and replace the code between the start of the first node and the end of the second one
         // If there is non (i.e. only whitespace or nothing), simply replace the whole content
         const environementBodyNodes = [...this.astNode.body.childNodes];
-        const firstNonWhitespaceNode = environementBodyNodes
-            .find(node => !(node instanceof WhitespaceNode));
-        const lastNonWhitespaceNode = environementBodyNodes
-            .reverse()
-            .find(node => !(node instanceof WhitespaceNode));
+        const firstNonWhitespaceNode = ArrayUtils.firstMatch(environementBodyNodes, node => !(node instanceof WhitespaceNode));
+        const lastNonWhitespaceNode = ArrayUtils.lastMatch(environementBodyNodes, node => !(node instanceof WhitespaceNode));
 
-        const rangeToEdit = (firstNonWhitespaceNode !== undefined && lastNonWhitespaceNode !== undefined)
+        const rangeToEdit = (firstNonWhitespaceNode.success && lastNonWhitespaceNode.success)
             ? new vscode.Range(
-                firstNonWhitespaceNode.range.from.asVscodePosition,
-                lastNonWhitespaceNode.range.to.asVscodePosition
+                firstNonWhitespaceNode.element.range.from.asVscodePosition,
+                lastNonWhitespaceNode.element.range.to.asVscodePosition
             )
             : new vscode.Range(
                 this.astNode.body.range.from.asVscodePosition,
                 this.astNode.body.range.to.asVscodePosition
             );
 
-        await editor.edit(editBuilder => {
-            editBuilder.replace(rangeToEdit, trimmedMathCode);
-        });
+        await this.astNode.makeAtomicChangeWithinNode(
+            editBuilder => editBuilder.replace(rangeToEdit, trimmedMathCode)
+        );
     }
 }
