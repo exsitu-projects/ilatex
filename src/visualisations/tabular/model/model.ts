@@ -5,6 +5,7 @@ import { VisualisableCodeContext } from "../../../core/visualisations/Visualisat
 import { VisualisationModelUtilities } from "../../../core/visualisations/VisualisationModelUtilities";
 import { Cell, Grid, Row } from "./Grid";
 import { HtmlUtils } from "../../../shared/utils/HtmlUtils";
+import { RangeInFile } from "../../../core/utils/RangeInFile";
 
 
 export class NoGridError {}
@@ -77,41 +78,235 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
     }
 
     private async selectCellContent(cell: Cell): Promise<void> {
-        const editor = await this.sourceFile.getOrOpenInEditor();
-
-        // Select the code
-        // If the selected range is not visible, scroll to the selection
-        const rangeToSelect = new vscode.Range(
-            cell.contentStart.asVscodePosition,
-            cell.contentEnd.asVscodePosition
-        );
-        
-        editor.selections = [new vscode.Selection(rangeToSelect.start, rangeToSelect.end)];
-        editor.revealRange(
-            rangeToSelect,
-            vscode.TextEditorRevealType.InCenterIfOutsideViewport
-        );
+        await this.sourceFile.selectRangeInEditor(cell.contentRange);
     }
 
     private async replaceCellContent(cell: Cell, newContent: string): Promise<void> {
-        const editor = await this.sourceFile.getOrOpenInEditor();
-        
-        const rangeToEdit = new vscode.Range(
-            cell.contentStart.asVscodePosition,
-            cell.contentEnd.asVscodePosition
-        );
-
-        await editor.edit(editBuilder => {
-            editBuilder.replace(rangeToEdit, newContent);
-        });
+        await this.astNode.makeAtomicChangeWithinNode([
+            editBuilder => editBuilder.replace(cell.contentRange.asVscodeRange, newContent)
+        ]);
     }
 
     private async moveColumn(oldColumnIndex: number, newColumnIndex: number): Promise<void> {
-        // TODO: implement
+        if (!this.grid) {
+            return;
+        }
+        
+        const rows = this.grid.rows;
+        const textReplacements: {range: RangeInFile, newContent: string}[] = [];
+
+        // Copy the content of the cells of the origin and target columns
+        const originColumnCellsContent = rows
+            .map(row => row.cells[oldColumnIndex]?.textContent);
+
+        let updateCellContentAt;
+        if (oldColumnIndex > newColumnIndex) {
+            // Case 1: the column is moved from right to left (<--)
+            updateCellContentAt = async (rowIndex: number, columnIndex: number) => {
+                if (columnIndex <= oldColumnIndex && columnIndex > newColumnIndex) {
+                    const cellToEdit = this.getCellAt(rowIndex, columnIndex);
+                    const cellToCopy = this.getCellAt(rowIndex, columnIndex - 1);
+
+                    // console.log(`About to replace ${cellToEdit.textContent} by ${cellToCopy.textContent}`);
+                    // await this.replaceCellContent(cellToEdit, cellToCopy.textContent);
+                    textReplacements.push({
+                        range: cellToEdit.contentRange,
+                        newContent: cellToCopy.textContent
+                    });
+                }
+            };
+        }
+        else if (newColumnIndex > oldColumnIndex) {
+            // Case 2: the column is moved from left to right (-->)
+            // In this case, the content of the target column is also updated by this function
+            // (for each line, it must be done first since the target cell is the rightmost edited cell)
+            updateCellContentAt = async (rowIndex: number, columnIndex: number) => {
+                let lastEditedCellContent = null;
+                if (columnIndex <= newColumnIndex && columnIndex >= oldColumnIndex) {
+                    const cellToEdit = this.getCellAt(rowIndex, columnIndex);
+                    const cellToCopy = this.getCellAt(rowIndex, columnIndex + 1);
+
+                    const currentContent = cellToEdit.textContent;
+                    const newContent = columnIndex === newColumnIndex
+                                    ? originColumnCellsContent[rowIndex]
+                                    : (lastEditedCellContent ?? cellToCopy.textContent);
+
+                    // console.log(`About to replace ${cellToEdit.textContent} by ${newContent}`);
+                    // await this.replaceCellContent(cellToEdit, newContent);
+                    textReplacements.push({
+                        range: cellToEdit.contentRange,
+                        newContent: newContent
+                    });
+
+                    // Update the copy of the last replaced content
+                    // If the last replacement in this row is done,
+                    // reset the content of the last edited cell (for next row, if any)
+                    lastEditedCellContent = currentContent;
+                    if (columnIndex === oldColumnIndex) {
+                        lastEditedCellContent = null;
+                    }
+                }
+            };
+        }
+        else {
+            // Case 3: the column is not moved (no cell content has to be updated)
+            return;
+        }
+
+        // Shift the columns between the two indices
+        for (let rowIndex = rows.length - 1; rowIndex >= 0; rowIndex--) {
+            const row = rows[rowIndex];
+
+            // Skip rows which do not "syntaxically" span to
+            // the origin/target column (the one with the highest index)
+            if (row.nbCells - 1 < Math.max(oldColumnIndex, newColumnIndex)) {
+                continue;
+            }
+
+            for (let columnIndex = row.nbCells - 1; columnIndex >= 0; columnIndex--) {
+                // console.log(`Update cell at [row ${rowIndex}, column ${columnIndex}]`);
+                await updateCellContentAt(rowIndex, columnIndex);
+            }
+        }
+
+        // If the column is moved from right to left (<--),
+        // the content of the target column must be finally replaced
+        // (positions will still be correct since all the cells to edit
+        // are located before all the shifted cells — provided two cells of
+        // different rows are never located in the same line!)
+        if (oldColumnIndex > newColumnIndex) {
+            for (let rowIndex = rows.length - 1; rowIndex >= 0; rowIndex--) {
+                const row = rows[rowIndex];
+                
+                // Skip rows which do not "syntactically" span to
+                // the origin/target column (the one with the highest index)
+                if (row.nbCells - 1 < Math.max(oldColumnIndex, newColumnIndex)) {
+                    continue;
+                }
+                
+                // await this.replaceCellContent(
+                //     row.cells[newColumnIndex],
+                //     originColumnCellsContent[rowIndex]
+                // );
+                textReplacements.push({
+                    range: row.cells[newColumnIndex].contentRange,
+                    newContent: originColumnCellsContent[rowIndex]
+                });
+            }
+        }
+
+        await this.sourceFile.makeAtomicChange([
+            editBuilder => textReplacements.forEach(({range, newContent}) => {
+                editBuilder.replace(range.asVscodeRange, newContent);
+            })
+        ]);
     }
 
     private async moveRow(oldRowIndex: number, newRowIndex: number): Promise<void> {
-        // TODO: implement
+        if (!this.grid) {
+            return;
+        }
+
+        const rows = this.grid.rows;
+        const textReplacements: {range: RangeInFile, newContent: string}[] = [];
+
+        // Copy the content of the cells of the origin row (before any move)
+        const originRowCellsContent = rows[oldRowIndex].cells
+            .map(cell => cell.textContent);
+
+        let updateCellContentAt;
+        // Case 1: the row is moved from bottom to top (^^^)
+        if (newRowIndex < oldRowIndex) {
+            updateCellContentAt = async (rowIndex: number, columnIndex: number) => {
+                if (rowIndex > newRowIndex && rowIndex <= oldRowIndex) {
+                    const cellToEdit = this.getCellAt(rowIndex, columnIndex);
+                    const cellToCopy = this.getCellAt(rowIndex - 1, columnIndex);
+
+                    // console.log(`About to replace ${cellToEdit.textContent} by ${cellToCopy.textContent}`);
+                    // await this.replaceCellContent(cellToEdit, cellToCopy.textContent);
+                    textReplacements.push({
+                        range: cellToEdit.contentRange,
+                        newContent: cellToCopy.textContent
+                    });
+                }
+            };
+        }
+        // Case 2: the row is moved from top to bottom (vvv)
+        // In this case, the content of the target row is also updated by this function
+        else if (newRowIndex > oldRowIndex) {
+            let lastEditedRowCellContent: string[] = [];
+            let currentEditedRowCellContent: string[] = [];
+
+            updateCellContentAt = async (rowIndex: number, columnIndex: number) => {
+                if (rowIndex >= oldRowIndex && rowIndex <= newRowIndex) {
+                    // Before starting to edit a new row, make a copy of its content
+                    // and of the content of the previously edited row (if any)
+                    if (columnIndex === rows[rowIndex].nbCells - 1) {
+                        lastEditedRowCellContent = currentEditedRowCellContent;
+                        currentEditedRowCellContent = rows[rowIndex].cells
+                            .map(cell => cell.textContent);
+                    }
+
+                    // Edit the content of the cell
+                    // If this is the last row to edit (i.e. the target row),
+                    // use the content of the origin row (instead of the content of the row below)
+                    const cellToEdit = this.getCellAt(rowIndex, columnIndex);
+                    const newContent = rowIndex === newRowIndex
+                                        ? originRowCellsContent[columnIndex]
+                                        : lastEditedRowCellContent[columnIndex];
+
+                    // console.log(`About to replace ${cellToEdit.textContent} by ${newContent}`);
+                    // await this.replaceCellContent(cellToEdit, newContent);
+                    textReplacements.push({
+                        range: cellToEdit.contentRange,
+                        newContent: newContent
+                    });
+                }
+            };
+        }
+        // Case 3: the row is not moved (no cell content has to be updated)
+        else {
+            return;
+        }
+
+        // Shift the rows between the two indices
+        const highestRowIndex = Math.max(oldRowIndex, newRowIndex);
+        const minRowIndex = Math.min(oldRowIndex, newRowIndex);
+        for (let rowIndex = highestRowIndex; rowIndex >= minRowIndex; rowIndex--) {
+            const row = rows[rowIndex];
+
+            for (let columnIndex = row.nbCells - 1; columnIndex >= 0; columnIndex--) {
+                // console.log(`Update cell at [row ${rowIndex}, column ${columnIndex}]`);
+                await updateCellContentAt(rowIndex, columnIndex);
+            }
+        }
+
+        // If the row is moved from bottom to top (^^^),
+        // the content of the target row must be finally replaced
+        // (positions will still be correct since all the cells to edit
+        // are located before all the shifted cells — provided two cells of
+        // different rows are never located in the same line!)
+        if (newRowIndex < oldRowIndex) {
+            // Assume the origin and the target rows have the same number of cells
+            // (as it is assumed everywhere else)
+            for (let columnIndex = originRowCellsContent.length - 1; columnIndex >= 0; columnIndex--) {
+                const row = rows[newRowIndex];
+                // await this.replaceCellContent(
+                //     row.cells[columnIndex],
+                //     originRowCellsContent[columnIndex]
+                // );
+                textReplacements.push({
+                    range: row.cells[columnIndex].contentRange,
+                    newContent: originRowCellsContent[columnIndex]
+                });
+            }
+        }
+
+        await this.astNode.makeAtomicChangeWithinNode([
+            editBuilder => textReplacements.forEach(({range, newContent}) => {
+                editBuilder.replace(range.asVscodeRange, newContent);
+            })
+        ]);
     }
     
     protected async updateContentData(): Promise<void> {
