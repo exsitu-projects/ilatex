@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import * as P from "parsimmon";
 import { RangeInFile } from "../../utils/RangeInFile";
 import { SourceFileChange } from "../../source-files/SourceFileChange";
-import { SourceFile } from "../../source-files/SourceFile";
+import { SourceFile, SourceFileEdit } from "../../source-files/SourceFile";
 import { ArrayMap } from "../../../shared/utils/ArrayMap";
 import { ASTAsyncVisitor, ASTSyncVisitor } from "../visitors/visitors";
 
@@ -24,6 +24,8 @@ export abstract class ASTNode {
     
     // protected hasBeenEditedWithinItsRange: boolean;
     // protected hasBeenEditedAcrossItsRange: boolean;
+
+    private isPartOfAtomicChange: boolean;
 
     private reparsingError: P.Failure | null;
 
@@ -48,6 +50,8 @@ export abstract class ASTNode {
         
         // this.hasBeenEditedWithinItsRange = false;
         // this.hasBeenEditedAcrossItsRange = false;
+
+        this.isPartOfAtomicChange = false;
 
         this.reparsingError = null;
 
@@ -77,23 +81,53 @@ export abstract class ASTNode {
         return this.sourceFile.getContent(this.range);
     }
 
-    async setTextContent(newContent: string): Promise<void> {
-        const editor = await this.sourceFile.getOrOpenInEditor();
-        await editor.edit(editBuilder => {
-            editBuilder.replace(this.range.asVscodeRange, newContent);
-        });
-    }
-
     abstract get childNodes(): ASTNode[];
 
-    async revealInEditor(): Promise<void> {
-        const editor = await this.sourceFile.getOrOpenInEditor();
+    private emitTextContentChangeEvent(): void {
+        if (!this.isPartOfAtomicChange) {
+            this.textContentChangeEventEmitter.fire(this);
+        }
+    }
 
-        // If the selected range is not visible, scroll to the selection
-        editor.revealRange(
-            this.range.asVscodeRange,
-            vscode.TextEditorRevealType.InCenterIfOutsideViewport
-        );
+    async selectRangeInEditor(): Promise<void> {
+        await this.sourceFile.selectRangeInEditor(this.range);
+    }
+
+    protected beginAtomicChange(): void {
+        this.isPartOfAtomicChange = true;
+        for (let node of this.childNodes) {
+            node.beginAtomicChange();
+        }
+    }
+
+    protected endAtomicChange(emitChangeEvent: boolean = false): void {
+        this.isPartOfAtomicChange = false;
+        for (let node of this.childNodes) {
+            node.endAtomicChange();
+        }
+
+        if (emitChangeEvent) {
+            this.textContentChangeEventEmitter.fire(this);
+        }
+
+        // TODO: reparse now?
+    }
+
+    async makeAtomicChangeWithinNode(edit: SourceFileEdit): Promise<void>;
+    async makeAtomicChangeWithinNode(edits: SourceFileEdit[]): Promise<void>;
+    async makeAtomicChangeWithinNode(editOrEdits: SourceFileEdit | SourceFileEdit[]): Promise<void> {
+        // TODO: possibly check that all the given edits are indeed located within this node
+        this.beginAtomicChange();
+        this.sourceFile.makeAtomicChange(editOrEdits);
+        this.endAtomicChange(true);
+    }
+
+    async setTextContent(newContent: string): Promise<void> {
+        await this.makeAtomicChangeWithinNode(editBuilder => {
+            editBuilder.replace(this.range.asVscodeRange, newContent);
+        });
+
+        
     }
 
     // Dispatch a source file change to this node + every of its children in the AST
@@ -168,13 +202,17 @@ export abstract class ASTNode {
             this.range.to.shift.columns += change.shift.columns;
         }
 
+        // TODO: handle re-parsing somehow
+
         this.withinNodeUserEditEventEmitter.fire(change);
-        this.textContentChangeEventEmitter.fire(this);
+        this.emitTextContentChangeEvent();
     }
 
     private processSourceFileChangeAcrossNode(change: SourceFileChange): void {
+        // TODO: handle re-parsing somehow
+
         this.acrossNodeUserEditEventEmitter.fire(change);
-        this.textContentChangeEventEmitter.fire(this);
+        this.emitTextContentChangeEvent();
     }
 
     protected signalNodeWillBeDetached(): void {
@@ -203,15 +241,17 @@ export abstract class ASTNode {
 
     private async reparse(): Promise<void> {
         console.info("About to re-parse AST node:", this);
-
         const result = this.parser(await this.textContent, {
             sourceFile: this.sourceFile,
             range: this.range
         });
 
         console.log("Re-parsing result:", result);
-
         this.reparsingError = result.status ? null : result;
+        this.reparsingEndEventEmitter.fire({
+            node: this,
+            result: result
+        });
     }
 
     protected startObservingChildNode(node: ASTNode): void {
