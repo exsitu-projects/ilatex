@@ -108,7 +108,7 @@ export class VisualisationModelManager {
 
         console.log("New visualisation models have been extracted:");
         for (let model of this.models) {
-            console.log(`${model.uid}\t${model.name}\t\t\t${model.sourceFile.name} (line ${model.codeMapping.lineNumber})`);
+            console.log(`${model.uid}\t${(model.codeMapping.id + ") " + model.name).padEnd(16)}\t${model.sourceFile.name} (line ${model.codeMapping.lineNumber})`);
         }
     }
 }
