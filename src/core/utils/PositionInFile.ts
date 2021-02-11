@@ -69,6 +69,10 @@ export class PositionInFile {
         return this.initialOffset + this.shift.offset;
     }
 
+    get hasOffset(): boolean {
+        return this.initialOffset !== UNSPECIFIED_OFFSET;
+    }
+
     get asVscodePosition(): vscode.Position {
         return new vscode.Position(this.line, this.column);
     }
@@ -79,6 +83,20 @@ export class PositionInFile {
             column: this.column + 1,
             offset: this.offset
         };
+    }
+
+    with(partialPosition: Partial<Record<"line" | "column" | "offset", number>>): PositionInFile {
+        return new PositionInFile(
+            this.line + (partialPosition["line"] ?? 0),
+            this.column + (partialPosition["column"] ?? 0),
+            this.offset + (partialPosition["offset"] ?? 0)
+        );
+    }
+
+    toString(): string {
+        return this.hasOffset
+            ? `[line ${this.line}, column ${this.column}, offset ${this.offset}]`
+            : `[line ${this.line}, column ${this.column}]`;
     }
 
     isBefore(otherPosition: PositionInFile): boolean {

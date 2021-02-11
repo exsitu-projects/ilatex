@@ -27,4 +27,8 @@ export class RangeInFile {
             this.to.asVscodePosition
         );
     }
+
+    toString(): string {
+        return `${this.from} –> ${this.to}`;
+    }
 }
