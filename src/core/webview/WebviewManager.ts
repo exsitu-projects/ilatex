@@ -102,11 +102,11 @@ export class WebviewManager {
         visualisationModel: VisualisationModel,
         updateOpenVisualisation: boolean = true
     ): void {
-        console.info("About to send new content for all visualisations to the webview...");
+        console.info("About to send new content for one visualisation to the webview...");
 
         this.messenger.sendMessage({
             type: CoreToWebviewMessageType.UpdateOneVisualisation,
-            visualisationUid: visualisationModel.uid,
+            codeMappingId: visualisationModel.codeMapping.id,
             visualisationContentAsHtml: visualisationModel.content,
             updateOpenVisualisation: updateOpenVisualisation
         });
@@ -147,17 +147,17 @@ export class WebviewManager {
     }
 
     sendNewStatusForOneVisualisation(visualisationModel: VisualisationModel): void {
-        console.info("About to send a new visualisation status to the webview...");
+        console.info("About to send a new status for one visualisation to the webview...");
 
         this.messenger.sendMessage({
             type: CoreToWebviewMessageType.UpdateOneVisualisationStatusMessage,
-            visualisationUid: visualisationModel.uid,
+            codeMappingId: visualisationModel.codeMapping.id,
             visualisationIsAvailable: visualisationModel.status.available
         });        
     }
 
     sendNewStatusForAllVisualisations(enableAllVisualisations: boolean): void {
-        console.info("About to send a new visualisation status to the webview...");
+        console.info("About to send new statuses for all visualisations to the webview...");
 
         this.messenger.sendMessage({
             type: CoreToWebviewMessageType.UpdateAllVisualisationsStatusMessage,

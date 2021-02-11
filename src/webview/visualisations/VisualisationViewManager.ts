@@ -136,23 +136,23 @@ export class VisualisationViewManager {
     }
 
     private handleOneVisualisationContentUpdate(message: UpdateOneVisualisationMessage): void {
-        const uid = message.visualisationUid;
+        const codeMappingId = message.codeMappingId;
 
         // Update the content of the visualisation using the HTML provided by the core
-        const currentContentNode = this.visualisationContentContainerNode.querySelector(`.visualisation[data-uid="${uid}"]`);
+        const currentContentNode = this.visualisationContentContainerNode.querySelector(`.visualisation[data-code-mapping-id="${codeMappingId}"]`);
         if (currentContentNode) {
             currentContentNode.outerHTML = message.visualisationContentAsHtml;
         }
         else {
             this.visualisationContentContainerNode.innerHTML += message.visualisationContentAsHtml;
-            console.warn(`The content of the updated visualisation (UID ${message.visualisationUid}) has been appended instead of being replaced: it did not exist before.`);
+            console.warn(`The content of the updated visualisation (code mapping ID ${message.codeMappingId}) has been appended instead of being replaced: it did not exist before.`);
         }
         
         // If the update allows to safely update any visualisation currently on display,
         // check if one is displayed and forward it the message so that it can update itself
         if (message.updateOpenVisualisation && this.currentlyDisplayedVisualisationView) {
             const newContentNode = this.visualisationContentContainerNode
-                .querySelector(`.visualisation[data-uid="${uid}"]`) as HTMLElement;
+                .querySelector(`.visualisation[data-code-mappping-id="${codeMappingId}"]`) as HTMLElement;
 
             if (newContentNode) {
                 this.currentlyDisplayedVisualisationView.updateWith(newContentNode);

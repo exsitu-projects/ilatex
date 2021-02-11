@@ -20,7 +20,7 @@ export type MessageType =
 // Specification of each type of message which can be sent by the core to the webview
 export interface UpdateOneVisualisationMessage {
     type: CoreToWebviewMessageType.UpdateOneVisualisation;
-    visualisationUid: number;
+    codeMappingId: number;
     visualisationContentAsHtml: string;
     updateOpenVisualisation: boolean;
 }
@@ -44,7 +44,7 @@ export interface UpdateCompilationStatusMessage {
 
 export interface UpdateOneVisualisationStatusMessage {
     type: CoreToWebviewMessageType.UpdateOneVisualisationStatusMessage;
-    visualisationUid: number;
+    codeMappingId: number;
     visualisationIsAvailable: boolean;
 }
 
