@@ -454,7 +454,7 @@ class IncludegraphicsView extends AbstractVisualisationView {
     updateWith(newContentNode: HTMLElement): void {
         super.updateWith(newContentNode);
 
-        // TODO
+        // TODO: implement
     }
 
     onBeforeVisualisationDisappearance(): void {
