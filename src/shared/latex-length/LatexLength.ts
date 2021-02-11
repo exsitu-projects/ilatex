@@ -197,7 +197,7 @@ export class LatexLength {
         // do not display any value before the unit (a common LaTeX pattern)
         return (!LatexLength.isStandardUnit(this.unit) && valueToPrint === 1)
              ? `${this.unit}${this.suffix}`
-             : `${valueToPrint}${this.unit}${this.suffix}`;
+             : `${valueToPrint}${this.unit}${spacedSuffixOrEmptyString}`;
     }
 
     private round(value: number, unit: string): number {
