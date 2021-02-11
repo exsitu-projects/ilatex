@@ -118,7 +118,7 @@ export abstract class ASTNode {
     async makeAtomicChangeWithinNode(editOrEdits: SourceFileEdit | SourceFileEdit[]): Promise<void> {
         // TODO: possibly check that all the given edits are indeed located within this node
         this.beginAtomicChange();
-        this.sourceFile.makeAtomicChange(editOrEdits);
+        await this.sourceFile.makeAtomicChange(editOrEdits);
         this.endAtomicChange(true);
     }
 
