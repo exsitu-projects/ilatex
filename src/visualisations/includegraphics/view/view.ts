@@ -245,15 +245,15 @@ class IncludegraphicsView extends AbstractVisualisationView {
         };
 
         const options = this.initialIncludegraphicsOptions;
-        setValueFromAttributeIfItExists(options, "width", "data-opt-width", parseFloat);
-        setValueFromAttributeIfItExists(options, "height", "data-opt-height", parseFloat);
-        setValueFromAttributeIfItExists(options, "scale", "data-opt-scale", parseFloat);
+        setValueFromAttributeIfItExists(options, "width", "data-option-width", parseFloat);
+        setValueFromAttributeIfItExists(options, "height", "data-option-height", parseFloat);
+        setValueFromAttributeIfItExists(options, "scale", "data-option-scale", parseFloat);
 
         // Try to read trim values (one for each side of the image)
         const trimValues = {} as Exclude<typeof options.trim, undefined>;
         const sides: ["left", "bottom", "right", "top"] = ["left", "bottom", "right", "top"];
         for (let side of sides) {
-            setValueFromAttributeIfItExists(trimValues, side, `data-opt-trim-${side}`, parseFloat);
+            setValueFromAttributeIfItExists(trimValues, side, `data-option-trim-${side}`, parseFloat);
         }
 
         // If at least one trim value has been set, the three other trim values should be set as well
@@ -262,7 +262,9 @@ class IncludegraphicsView extends AbstractVisualisationView {
             options.trim = trimValues;
         }
 
-        setValueFromAttributeIfItExists(options, "clip", "data-opt-clip", value => !!value);
+        setValueFromAttributeIfItExists(options, "clip", "data-option-clip", value => !!value);
+
+        debugger;
     }
 
     onImageDrag(event: MouseEvent): void {

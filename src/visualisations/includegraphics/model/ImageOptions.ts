@@ -87,11 +87,11 @@ export class ImageOptions implements SupportedImageOptions {
 
     get raw(): RawImageOptions {
         return ImageOptions.optionKeysOf(this)
-            .reduce((accumulatedOptions, key) => {
+            .reduce((accumulatedRawOptions, key) => {
                 const option = this[key]!;
                 return {
-                    ...accumulatedOptions,
-                    key: option.rawValue
+                    ...accumulatedRawOptions,
+                    [key]: option.rawValue
                 };
             }, {});
     }
