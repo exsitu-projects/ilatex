@@ -76,13 +76,6 @@ export class ImageOptions implements SupportedImageOptions {
         for (let key of ImageOptions.optionKeysOf(options)) {
             writeableSelf[key] = options[key] as any;
         }
-
-        // if (options.width) { this.width = options.width; }
-        // if (options.height) { this.height = options.height; }
-        // if (options.scale) { this.scale = options.scale; }
-        // if (options.trim) { this.trim = options.trim; }
-        // if (options.clip) { this.clip = options.clip; }
-        // if (options.keepAspectRatio) { this.keepAspectRatio = options.keepAspectRatio; }
     }
 
     get raw(): RawImageOptions {
