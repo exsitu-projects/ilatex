@@ -72,26 +72,27 @@ export class DecorationManager {
 
     private redecorateEditorWithVisualisations(editor: vscode.TextEditor, models: VisualisationModel[]): void {
         // Individual AST of visualisations should be decorated for debug purposes only
-        const astNodeCollecter = new ASTNodeCollecter();
-        models.forEach(model => model.astNode.syncVisitWith(astNodeCollecter));
-        
-        editor.setDecorations(textDecorations.visualisationAstNode, astNodeCollecter.nodes.map(node => {
-            const start = node.range.from;
-            const end = node.range.to;
+        // const astNodeCollecter = new ASTNodeCollecter();
+        // models.forEach(model => model.astNode.syncVisitWith(astNodeCollecter));
 
-            let renderOptions = start.initialColumn + start.shift.columns < 0 || end.initialColumn + end.shift.columns < 0
-                ? {
-                    before: { contentText: `(L ${start.line} C ${start.initialColumn + start.shift.columns})` },
-                    after: { contentText: `(L ${end.line} C${end.initialColumn + end.shift.columns})|` }
-                }
-                : { after: { contentText: `|` } };
+        // editor.setDecorations(textDecorations.visualisationAstNode, astNodeCollecter.nodes.map(node => {
+        //     const start = node.range.from;
+        //     const end = node.range.to;
 
-            return {
-                range: node.range.asVscodeRange,
-                renderOptions: renderOptions,
-                hoverMessage: `${node.type} — ${node.range}`
-            };
-        }));        
+        //     const defaultOptions = { color: "rgba(255, 20, 20, 0.75)" };
+        //     let renderOptions = start.initialColumn + start.shift.columns < 0 || end.initialColumn + end.shift.columns < 0
+        //         ? {
+        //             before: { ...defaultOptions, contentText: `(L ${start.line} C ${start.initialColumn + start.shift.columns})` },
+        //             after: { ...defaultOptions, contentText: `(L ${end.line} C${end.initialColumn + end.shift.columns})|` }
+        //         }
+        //         : { after: { ...defaultOptions, contentText: `|` } };
+
+        //     return {
+        //         range: node.range.asVscodeRange,
+        //         renderOptions: renderOptions,
+        //         hoverMessage: `${node.type} — ${node.range}`
+        //     };
+        // }));        
 
         // Available visualisations should be decorated for debug purposes only
         const codeRangesOfAvailableVisualisations = models
