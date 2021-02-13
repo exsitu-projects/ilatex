@@ -24,6 +24,7 @@ export class CommandNode extends ASTNode {
     readonly name: string;
     readonly parameters: CommandNodeParameters;
     protected parser: ASTNodeParser<CommandNode>;
+    protected readonly isLeaf = false;
 
     constructor(
         name: string,
@@ -51,17 +52,13 @@ export class CommandNode extends ASTNode {
         return `Command [\\${this.name}]`;
     }
 
-    protected replaceChildNode<T extends ASTNode>(currentChildNode: T, newChildNode: T): void {
-        const indexOfCurrentChildNode = this.parameters.indexOf(currentChildNode as any);
-        if (indexOfCurrentChildNode >= 0) {
-            this.stopObservingChildNode(currentChildNode);
-            this.parameters.splice(indexOfCurrentChildNode, 1, newChildNode as any);
-            this.startObservingChildNode(newChildNode);
-        }
-        else {
-            console.error(`AST node replacement failed (in node ${this.toString()}): the current child node was not found.`);
-        }
-    };
+    protected async updateWith(reparsedNode: CommandNode): Promise<void> {
+        super.updateWith(reparsedNode);
+
+        const writeableSelf = this as Writeable<this>;
+        writeableSelf.name = reparsedNode.name;
+        writeableSelf.parameters = reparsedNode.parameters;
+    }
 
     protected syncSelfVisitWith(visitor: ASTSyncVisitor, depth: number = 0): void {
         visitor.visitCommandNode(this, depth);

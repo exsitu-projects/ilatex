@@ -7,6 +7,7 @@ export class ParameterValueNode extends ASTNode {
     readonly type = ParameterValueNode.type;
     readonly value: string;
     protected parser: ASTNodeParser<ParameterValueNode>;
+    protected readonly isLeaf = true;
 
     constructor(
         value: string,
@@ -27,9 +28,12 @@ export class ParameterValueNode extends ASTNode {
         return `Parameter value [${this.value}]`;
     }
 
-    protected replaceChildNode<T extends ASTNode>(currentChildNode: T, newChildNode: T): void {
-        // Since this node does not have any child node, there is nothing to do
-    };
+    protected async updateWith(reparsedNode: ParameterValueNode): Promise<void> {
+        super.updateWith(reparsedNode);
+
+        const writeableSelf = this as Writeable<this>;
+        writeableSelf.value = reparsedNode.value;
+    }
 
     protected syncSelfVisitWith(visitor: ASTSyncVisitor, depth: number = 0): void {
         visitor.visitParameterValueNode(this, depth);

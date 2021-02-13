@@ -28,6 +28,7 @@ export class EnvironmentNode extends ASTNode {
     readonly body: ASTNode;
     readonly endCommand: CommandNode;
     protected parser: ASTNodeParser<EnvironmentNode>;
+    protected readonly isLeaf = false;
 
     constructor(
         name: string,
@@ -64,34 +65,16 @@ export class EnvironmentNode extends ASTNode {
         return `Environment [${this.name}]`;
     }
 
-    protected replaceChildNode<T extends ASTNode>(currentChildNode: T, newChildNode: T): void {
-        const writeableThis = this as Writeable<this>;
-        const indexOfCurrentChildNodeInParameters = this.parameters.indexOf(currentChildNode as any);
+    protected async updateWith(reparsedNode: EnvironmentNode): Promise<void> {
+        super.updateWith(reparsedNode);
 
-        if (this.beginCommand === currentChildNode as any) {
-            this.stopObservingChildNode(currentChildNode);
-            writeableThis.beginCommand = newChildNode as any;
-            this.startObservingChildNode(newChildNode);
-        }
-        else if (indexOfCurrentChildNodeInParameters >= 0) {
-            this.stopObservingChildNode(currentChildNode);
-            this.parameters.splice(indexOfCurrentChildNodeInParameters, 1, newChildNode as any);
-            this.startObservingChildNode(newChildNode);
-        }
-        else if (this.body === currentChildNode as any) {
-            this.stopObservingChildNode(currentChildNode);
-            writeableThis.body = newChildNode as any;
-            this.startObservingChildNode(newChildNode);
-        }
-        else if (this.endCommand === currentChildNode as any) {
-            this.stopObservingChildNode(currentChildNode);
-            writeableThis.endCommand = newChildNode as any;
-            this.startObservingChildNode(newChildNode);
-        }
-        else {
-            console.error(`AST node replacement failed (in node ${this.toString()}): the current child node was not found.`);
-        }
-    };
+        const writeableSelf = this as Writeable<this>;
+        writeableSelf.name = reparsedNode.name;
+        writeableSelf.beginCommand = reparsedNode.beginCommand;
+        writeableSelf.parameters = reparsedNode.parameters;
+        writeableSelf.body = reparsedNode.body;
+        writeableSelf.endCommand = reparsedNode.endCommand;
+    }
 
     protected syncSelfVisitWith(visitor: ASTSyncVisitor, depth: number = 0): void {
         visitor.visitEnvironmentNode(this, depth);

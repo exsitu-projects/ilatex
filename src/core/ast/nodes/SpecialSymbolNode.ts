@@ -7,6 +7,7 @@ export class SpecialSymbolNode extends ASTNode {
     readonly type = SpecialSymbolNode.type;
     readonly symbol: string;
     protected parser: ASTNodeParser<SpecialSymbolNode>;
+    protected readonly isLeaf = true;
 
     constructor(
         symbol: string,
@@ -27,9 +28,12 @@ export class SpecialSymbolNode extends ASTNode {
         return `Special symbol [${this.symbol}]`;
     }
 
-    protected replaceChildNode<T extends ASTNode>(currentChildNode: T, newChildNode: T): void {
-        // Since this node does not have any child node, there is nothing to do
-    };
+    protected async updateWith(reparsedNode: SpecialSymbolNode): Promise<void> {
+        super.updateWith(reparsedNode);
+
+        const writeableSelf = this as Writeable<this>;
+        writeableSelf.symbol = reparsedNode.symbol;
+    }
 
     protected syncSelfVisitWith(visitor: ASTSyncVisitor, depth: number = 0): void {
         visitor.visitSpecialSymbolNode(this, depth);

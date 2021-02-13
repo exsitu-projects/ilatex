@@ -7,6 +7,7 @@ export class TextNode extends ASTNode {
     readonly type = TextNode.type;
     readonly content: string;
     protected parser: ASTNodeParser<TextNode>;
+    protected readonly isLeaf = true;
 
     constructor(
         content: string,
@@ -27,9 +28,13 @@ export class TextNode extends ASTNode {
         return `Text`;
     }
 
-    protected replaceChildNode<T extends ASTNode>(currentChildNode: T, newChildNode: T): void {
-        // Since this node does not have any child node, there is nothing to do
-    };
+    protected async updateWith(reparsedNode: TextNode): Promise<void> {
+        super.updateWith(reparsedNode);
+
+        const writeableSelf = this as Writeable<this>;
+        writeableSelf.content = reparsedNode.content;
+    }
+
 
     protected syncSelfVisitWith(visitor: ASTSyncVisitor, depth: number = 0): void {
         visitor.visitTextNode(this, depth);

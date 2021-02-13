@@ -135,11 +135,12 @@ export class SourceFile {
         this.hasUnsavedChanges = true;
         
         if (this.latexAst) {
-            this.latexAst.processSourceFileChange(change);
+            await this.latexAst.processSourceFileChange(change);
         }
     }
 
     async processSave(): Promise<void> {
+        await this.parseNewAST();
         this.hasUnsavedChanges = false;
     }
 

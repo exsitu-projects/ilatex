@@ -9,6 +9,7 @@ export class CurlyBracesParameterBlockNode extends ASTNode {
     readonly type = CurlyBracesParameterBlockNode.type;
     readonly content: ParameterNode | ParameterListNode;
     protected parser: ASTNodeParser<CurlyBracesParameterBlockNode>;
+    protected readonly isLeaf = false;
 
     constructor(
         content: ParameterNode | ParameterListNode,
@@ -29,19 +30,13 @@ export class CurlyBracesParameterBlockNode extends ASTNode {
         return `{} parameter`;
     }
 
-    protected replaceChildNode<T extends ASTNode>(currentChildNode: T, newChildNode: T): void {
-        const writeableThis = this as Writeable<this>;
 
-        if (this.content === currentChildNode as any) {
-            this.stopObservingChildNode(currentChildNode);
-            writeableThis.content = newChildNode as any;
-            this.startObservingChildNode(newChildNode);
+    protected async updateWith(reparsedNode: CurlyBracesParameterBlockNode): Promise<void> {
+        super.updateWith(reparsedNode);
 
-        }
-        else {
-            console.error(`AST node replacement failed (in node ${this.toString()}): the current child node was not found.`);
-        }
-    };
+        const writeableSelf = this as Writeable<this>;
+        writeableSelf.content = reparsedNode.content;
+    }
 
     protected syncSelfVisitWith(visitor: ASTSyncVisitor, depth: number = 0): void {
         visitor.visitCurlyBracesParameterBlockNode(this, depth);

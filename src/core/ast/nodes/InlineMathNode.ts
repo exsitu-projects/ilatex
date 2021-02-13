@@ -8,6 +8,7 @@ export class InlineMathNode extends ASTNode {
     readonly type = InlineMathNode.type;
     readonly content: MathNode;
     protected parser: ASTNodeParser<InlineMathNode>;
+    protected readonly isLeaf = false;
 
     constructor(
         content: MathNode,
@@ -28,18 +29,12 @@ export class InlineMathNode extends ASTNode {
         return `Inline math`;
     }
 
-    protected replaceChildNode<T extends ASTNode>(currentChildNode: T, newChildNode: T): void {
-        const writeableThis = this as Writeable<this>;
+    protected async updateWith(reparsedNode: InlineMathNode): Promise<void> {
+        super.updateWith(reparsedNode);
 
-        if (this.content === currentChildNode as any) {
-            this.stopObservingChildNode(currentChildNode);
-            writeableThis.content = newChildNode as any;
-            this.startObservingChildNode(newChildNode);
-        }
-        else {
-            console.error(`AST node replacement failed (in node ${this.toString()}): the current child node was not found.`);
-        }
-    };
+        const writeableSelf = this as Writeable<this>;
+        writeableSelf.content = reparsedNode.content;
+    }
 
     protected syncSelfVisitWith(visitor: ASTSyncVisitor, depth: number = 0): void {
         visitor.visitInlineMathNode(this, depth);

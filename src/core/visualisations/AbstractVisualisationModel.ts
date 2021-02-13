@@ -32,10 +32,9 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
     readonly uid: VisualisationModelUID;
     private readonly context: VisualisableCodeContext<T>;
     protected readonly utilities: VisualisationModelUtilities;
+    private updatedAstNode: T | null;
     
     protected abstract contentDataAsHtml: string;
-
-    private astNodeHasBeenDetached: boolean;
     private lastContentUpdateFailed: boolean;
 
     readonly viewDidOpenEventEmitter: vscode.EventEmitter<VisualisationModel>;
@@ -46,16 +45,15 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
     
     private viewMessageTitlesToHandlers: Map<string, ViewMessageHandler>;
 
-    private contentUpdateEndObserverDisposable: vscode.Disposable;
-    private astNodeChangeObserverDisposable: vscode.Disposable;
-    private astNodeDetachmentObserverDisposable: vscode.Disposable;
+    private contentUpdateObserverDisposable: vscode.Disposable;
+    private astNodeObserversDisposables: vscode.Disposable[];
 
     constructor(context: VisualisableCodeContext<T>, utilities: VisualisationModelUtilities) {
         this.uid = VisualisationModelUIDGenerator.getUniqueId();
         this.context = context;
         this.utilities = utilities;
+        this.updatedAstNode = null;
 
-        this.astNodeHasBeenDetached = false;
         this.lastContentUpdateFailed = false;
 
         this.viewDidOpenEventEmitter = new vscode.EventEmitter();
@@ -68,7 +66,7 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
             this.viewMessageHandlerSpecifications.map(specification => [specification.title, specification.handler])
         );
 
-        this.contentUpdateEndObserverDisposable =
+        this.contentUpdateObserverDisposable =
             this.contentUpdateEndEventEmitter.event(async updateSuccess => {
                 if (updateSuccess) {
                     this.lastContentUpdateFailed = false;
@@ -81,19 +79,13 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
                 }
             });
 
-        this.astNodeChangeObserverDisposable =
-            this.astNode.textContentChangeEventEmitter.event(async node => {
-                this.updateContentData();
-            });
-
-        this.astNodeDetachmentObserverDisposable =
-            this.astNode.beforeNodeDetachmentEventEmitter.event(async node => {
-                this.astNodeHasBeenDetached = true;
-                this.statusChangeEventEmitter.fire(this);
-            });
+        this.astNodeObserversDisposables = [];
+        this.startObservingAstNode();
     }
 
     async init(): Promise<void> {
+        this.astNode.mustReparseChildNodesOutOfSyncAfterChange = true;
+
         this.updateContentData();
     };
 
@@ -106,12 +98,12 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
     }
 
     get astNode(): T {
-        return this.context.astNode;
+        return this.updatedAstNode ?? this.context.astNode;
     }
 
     get status(): VisualisationStatus {
         return {
-            available: !this.lastContentUpdateFailed && !this.astNodeHasBeenDetached
+            available: !this.astNode.isOutOfSync && !this.lastContentUpdateFailed
         };
     }
 
@@ -165,11 +157,37 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
         ];
     }
 
-    dispose(): void {
-        this.contentUpdateEndObserverDisposable.dispose();
-        this.astNodeChangeObserverDisposable.dispose();
-        this.astNodeDetachmentObserverDisposable.dispose();
+    protected startObservingAstNode(): void {
+        this.astNodeObserversDisposables.push(
+            this.astNode.contentChangeEventEmitter.event(async node => {
+                await this.updateContentData();
+            }),
+
+            this.astNode.contentChangeEventEmitter.event(async node => {
+                await this.updateContentData();
+            }),
+        
+            this.astNode.beforeNodeUpdateEventEmitter.event(async ({ newNode }) => {
+                this.stopObservingAstNode();
+                this.updatedAstNode = newNode as T;
+                this.startObservingAstNode();
+                
+                await this.updateContentData();
+            })
+        );
     }
+
+    protected stopObservingAstNode(): void {
+        for (let disposable of this.astNodeObserversDisposables) {
+            disposable.dispose();
+        }
+    }
+
+    dispose(): void {
+        this.contentUpdateObserverDisposable.dispose();
+        this.stopObservingAstNode();
+    }
+
 
     protected abstract updateContentData(): Promise<void>;
 

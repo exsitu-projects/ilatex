@@ -1,5 +1,5 @@
 import { ASTSyncVisitor, ASTAsyncVisitor } from "../visitors/visitors";
-import { ASTNode, ASTNodeContext, ASTNodeParser } from "./ASTNode";
+import { ASTNode, ASTNodeContext, ASTNodeParser, ASTNodeSyncStatus } from "./ASTNode";
 
 export class BlockNode extends ASTNode {
     static readonly type = "block" as const;
@@ -7,6 +7,7 @@ export class BlockNode extends ASTNode {
     readonly type = BlockNode.type;
     readonly content: ASTNode[];
     protected parser: ASTNodeParser<BlockNode>;
+    protected readonly isLeaf = false;
 
     constructor(
         content: ASTNode[],
@@ -27,17 +28,12 @@ export class BlockNode extends ASTNode {
         return `Block`;
     }
 
-    protected replaceChildNode<T extends ASTNode>(currentChildNode: T, newChildNode: T): void {
-        const indexOfCurrentChildNode = this.content.indexOf(currentChildNode);
-        if (indexOfCurrentChildNode >= 0) {
-            this.stopObservingChildNode(currentChildNode);
-            this.content.splice(indexOfCurrentChildNode, 1, newChildNode);
-            this.startObservingChildNode(newChildNode);
-        }
-        else {
-            console.error(`AST node replacement failed (in node ${this.toString()}): the current child node was not found.`);
-        }
-    };
+    protected async updateWith(reparsedNode: BlockNode): Promise<void> {
+        super.updateWith(reparsedNode);
+
+        const writeableSelf = this as Writeable<this>;
+        writeableSelf.content = reparsedNode.content;
+    }
 
     protected syncSelfVisitWith(visitor: ASTSyncVisitor, depth: number = 0): void {
         visitor.visitBlockNode(this, depth);

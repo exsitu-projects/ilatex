@@ -9,6 +9,7 @@ export class ParameterListNode extends ASTNode {
     readonly type = ParameterListNode.type;
     readonly parameters: (ParameterValueNode | ParameterAssignmentNode)[];
     protected parser: ASTNodeParser<ParameterListNode>;
+    protected readonly isLeaf = false;
 
     constructor(
         parameters: (ParameterValueNode | ParameterAssignmentNode)[],
@@ -29,17 +30,12 @@ export class ParameterListNode extends ASTNode {
         return `Parameter list`;
     }
 
-    protected replaceChildNode<T extends ASTNode>(currentChildNode: T, newChildNode: T): void {
-        const indexOfCurrentChildNode = this.parameters.indexOf(currentChildNode as any);
-        if (indexOfCurrentChildNode >= 0) {
-            this.stopObservingChildNode(currentChildNode);
-            this.parameters.splice(indexOfCurrentChildNode, 1, newChildNode as any);
-            this.startObservingChildNode(newChildNode);
-        }
-        else {
-            console.error(`AST node replacement failed (in node ${this.toString()}): the current child node was not found.`);
-        }
-    };
+    protected async updateWith(reparsedNode: ParameterListNode): Promise<void> {
+        super.updateWith(reparsedNode);
+
+        const writeableSelf = this as Writeable<this>;
+        writeableSelf.parameters = reparsedNode.parameters;
+    }
 
     protected syncSelfVisitWith(visitor: ASTSyncVisitor, depth: number = 0): void {
         visitor.visitParameterListNode(this, depth);

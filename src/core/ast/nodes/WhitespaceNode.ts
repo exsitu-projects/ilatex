@@ -6,6 +6,7 @@ export class WhitespaceNode extends ASTNode {
 
     readonly type = WhitespaceNode.type;
     protected parser: ASTNodeParser<WhitespaceNode>;
+    protected readonly isLeaf = true;
 
     constructor(
         context: ASTNodeContext,
@@ -24,9 +25,10 @@ export class WhitespaceNode extends ASTNode {
         return `Whitespace`;
     }
 
-    protected replaceChildNode<T extends ASTNode>(currentChildNode: T, newChildNode: T): void {
-        // Since this node does not have any child node, there is nothing to do
-    };
+    protected async updateWith(reparsedNode: WhitespaceNode): Promise<void> {
+        super.updateWith(reparsedNode);
+        // Nothing else to do
+    }
 
     protected syncSelfVisitWith(visitor: ASTSyncVisitor, depth: number = 0): void {
         visitor.visitWhitespaceNode(this, depth);

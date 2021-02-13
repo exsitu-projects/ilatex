@@ -22,7 +22,7 @@ export class LatexAST {
     private readonly sourceFile: SourceFile;
     private rootNode: ASTRootNode | null;
 
-    readonly parsingErrorEventEmitter: vscode.EventEmitter<ASTParsingError>;
+    // readonly parsingErrorEventEmitter: vscode.EventEmitter<ASTParsingError>;
 
     private rootNodeObserverDisposable: vscode.Disposable | null;
     
@@ -31,13 +31,13 @@ export class LatexAST {
         this.sourceFile = sourceFile;
         this.rootNode = null;
 
-        this.parsingErrorEventEmitter = new vscode.EventEmitter();
+        // this.parsingErrorEventEmitter = new vscode.EventEmitter();
 
         this.rootNodeObserverDisposable = null;
     }
 
     async init(): Promise<void> {
-        await this.tryToParseNewRootNode();
+        await this.parseNewRoot();
     }
 
     get hasRoot(): boolean {
@@ -64,7 +64,7 @@ export class LatexAST {
         this.startObservingRootNode();
     }
 
-    private async tryToParseNewRootNode(): Promise<void> {
+    async parseNewRoot(): Promise<boolean> {
         try {
             const newRootNode = await this.parser.parse();
             this.changeRootNode(newRootNode);
@@ -73,32 +73,36 @@ export class LatexAST {
             // const astFormatter = new ASTFormatter();
             // await this.syncVisitWith(astFormatter);
             // console.log(astFormatter.formattedAST);
+
+            return true;
         }
         catch (parsingError) {
-            console.error("The parsing of the entire AST failed:", parsingError);
-            this.parsingErrorEventEmitter.fire(parsingError);
+            console.warn(`The parsing of the AST of ${this.sourceFile.name} failed:`, parsingError);
+            // this.parsingErrorEventEmitter.fire(parsingError);
+
+            return false;
         }
     }
 
     protected startObservingRootNode(): void {
-        // Observe reparsing completions (both for successes and failures)
-        this.rootNodeObserverDisposable = this.root.reparsingEndEventEmitter.event(async ({node, result}) => {
-            if (result.status) {
-                console.info("The reparsing of root node of the AST suceeded: the root node should be changed.");
-            }
-            else {
-                await this.tryToParseNewRootNode();
-            }
-        });
+        // // Observe reparsing completions (both for successes and failures)
+        // this.rootNodeObserverDisposable = this.root.reparsingEndEventEmitter.event(async ({node, result}) => {
+        //     if (result.status) {
+        //         console.info("The reparsing of root node of the AST suceeded: the root node should be changed.");
+        //     }
+        //     else {
+        //         await this.tryToParseNewRootNode();
+        //     }
+        // });
     }
 
     protected stopObservingRootNode(): void {
-        this.rootNodeObserverDisposable?.dispose();
+        // this.rootNodeObserverDisposable?.dispose();
     }
 
-    processSourceFileChange(change: SourceFileChange): void {
+    async processSourceFileChange(change: SourceFileChange): Promise<void> {
         if (this.hasRoot) {
-            this.root.dispatchSourceFileChange(change);
+            await this.root.dispatchAndProcessChange(change);
         }
     }
 

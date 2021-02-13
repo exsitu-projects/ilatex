@@ -10,6 +10,7 @@ export class ParameterAssignmentNode extends ASTNode {
     readonly key: ParameterKeyNode;
     readonly value: ParameterValueNode;
     protected parser: ASTNodeParser<ParameterAssignmentNode>;
+    protected readonly isLeaf = false;
 
     constructor(
         key: ParameterKeyNode,
@@ -32,23 +33,13 @@ export class ParameterAssignmentNode extends ASTNode {
         return `Parameter assignment [${this.key.name} = ${this.value.value}]`;
     }
 
-    protected replaceChildNode<T extends ASTNode>(currentChildNode: T, newChildNode: T): void {
-        const writeableThis = this as Writeable<this>;
+    protected async updateWith(reparsedNode: ParameterAssignmentNode): Promise<void> {
+        super.updateWith(reparsedNode);
 
-        if (this.key === currentChildNode as any) {
-            this.stopObservingChildNode(currentChildNode);
-            writeableThis.key = newChildNode as any;
-            this.startObservingChildNode(newChildNode);
-        }
-        else if (this.value === currentChildNode as any) {
-            this.stopObservingChildNode(currentChildNode);
-            writeableThis.value = newChildNode as any;
-            this.startObservingChildNode(newChildNode);
-        }
-        else {
-            console.error(`AST node replacement failed (in node ${this.toString()}): the current child node was not found.`);
-        }
-    };
+        const writeableSelf = this as Writeable<this>;
+        writeableSelf.key = reparsedNode.key;
+        writeableSelf.value = reparsedNode.value;
+    }
 
     protected syncSelfVisitWith(visitor: ASTSyncVisitor, depth: number = 0): void {
         visitor.visitParameterAssignmentNode(this, depth);
