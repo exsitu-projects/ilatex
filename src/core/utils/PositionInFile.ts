@@ -94,9 +94,7 @@ export class PositionInFile {
     }
 
     toString(): string {
-        return this.hasOffset
-            ? `[line ${this.line}, column ${this.column}, offset ${this.offset}]`
-            : `[line ${this.line}, column ${this.column}]`;
+        return `[Ln ${this.line} Col ${this.column}]`;
     }
 
     isBefore(otherPosition: PositionInFile): boolean {
