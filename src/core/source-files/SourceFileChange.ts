@@ -80,7 +80,6 @@ export class SourceFileChange {
 
     // The offset shift is given by the length of the new text minus the length of the edited range.
     private static computeOffsetShiftOf(event: vscode.TextDocumentContentChangeEvent): number {
-        // TODO: ensure this value is correct in every case
         return event.text.length - event.rangeLength;
     }
 

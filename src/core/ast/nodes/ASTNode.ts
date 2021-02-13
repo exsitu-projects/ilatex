@@ -17,14 +17,6 @@ export interface ASTNodeContext {
 };
 
 
-export const enum ASTNodeSyncStatus {
-    InSync = "InSync",
-    OutOfSync = "OutOfSync",
-    ChildOutOfSync = "ChildOutOfSync",
-    ReparsingFailed = "ReparsingFailed",
-}
-
-
 export abstract class ASTNode {
     readonly abstract type: string;
     protected abstract parser: ASTNodeParser<ASTNode>;
@@ -32,25 +24,14 @@ export abstract class ASTNode {
     readonly range: RangeInFile;
     protected readonly abstract isLeaf: boolean;
 
-    mustReparseChildNodesOutOfSyncAfterChange: boolean;
-    private mayBeSyntacticallyIncorrect: boolean;
-
     private isPartOfAtomicChange: boolean;
+    mustReparseChildNodesOutOfSyncAfterChange: boolean;
+    protected requiresReparsing: boolean;
     private reparsingError: P.Failure | null;
 
-    protected syncStatus: ASTNodeSyncStatus;
-
-    // readonly reparsingRequestEventEmitter: vscode.EventEmitter<ASTNode>;
-
     readonly rangeChangeEventEmitter: vscode.EventEmitter<void>;
-    readonly contentChangeEventEmitter: vscode.EventEmitter<void>;
+    readonly contentChangeEventEmitter: vscode.EventEmitter<void>; // TODO: remove?
     readonly beforeNodeUpdateEventEmitter: vscode.EventEmitter<{ newNode: ASTNode }>;
-
-
-    // readonly beforeNodeDetachmentEventEmitter: vscode.EventEmitter<ASTNode>;
-    // readonly afterNodeDetachmentEventEmitter: vscode.EventEmitter<ASTNode>;
-
-    // private childNodesToObserverDisposables: ArrayMap<ASTNode, vscode.Disposable>;
 
     constructor(
         context: ASTNodeContext
@@ -58,45 +39,15 @@ export abstract class ASTNode {
         this.sourceFile = context.sourceFile;
         this.range = context.range;
 
-        this.mustReparseChildNodesOutOfSyncAfterChange = false;
-        this.mayBeSyntacticallyIncorrect = false;
-
         this.isPartOfAtomicChange = false;
+        this.mustReparseChildNodesOutOfSyncAfterChange = false;
+        this.requiresReparsing = false;
         this.reparsingError = null;
-
-        this.syncStatus = ASTNodeSyncStatus.InSync;
-
-        // this.reparsingRequestEventEmitter = new vscode.EventEmitter();
 
         this.rangeChangeEventEmitter = new vscode.EventEmitter();
         this.contentChangeEventEmitter = new vscode.EventEmitter();
         this.beforeNodeUpdateEventEmitter = new vscode.EventEmitter();
-        // this.reparsingEndEventEmitter = new vscode.EventEmitter();
-        // this.updateEndEventEmitter = new vscode.EventEmitter();
-
-        // this.beforeNodeDetachmentEventEmitter = new vscode.EventEmitter();
-        // this.afterNodeDetachmentEventEmitter = new vscode.EventEmitter();
-
-        // this.childNodesToObserverDisposables = new ArrayMap();
     }
-
-    // get hasReparsingError(): boolean {
-    //     return !!this.reparsingError;
-    // }
-
-    // get needsToBeReparsed(): boolean {
-    //     return this.mayBeSyntacticallyIncorrect;
-    // }
-
-    get isOutOfSync(): boolean {
-        return this.syncStatus === ASTNodeSyncStatus.OutOfSync
-            || this.syncStatus === ASTNodeSyncStatus.ChildOutOfSync
-            || this.syncStatus === ASTNodeSyncStatus.ReparsingFailed;
-    }
-
-    // get hasChildNodeOutOfSync(): boolean {
-    //     return this.childNodes.some(node => node.isOutOfSync);
-    // }
 
     get textContent(): Promise<string> {
         return this.sourceFile.getContent(this.range);
@@ -145,18 +96,14 @@ export abstract class ASTNode {
     async dispatchAndProcessChange(change: SourceFileChange): Promise<void> {
         this.processChange(change);
 
-        let someChildNodeIsOutOfSync = false;
+        let someChildNodeRequiresReparsing = false;
         for (let node of this.childNodes) {
             node.dispatchAndProcessChange(change);
-            someChildNodeIsOutOfSync = someChildNodeIsOutOfSync || node.isOutOfSync;
+            someChildNodeRequiresReparsing = someChildNodeRequiresReparsing || node.requiresReparsing;
         }
 
-        if (this.syncStatus === ASTNodeSyncStatus.InSync && someChildNodeIsOutOfSync) {
-            this.syncStatus = ASTNodeSyncStatus.ChildOutOfSync;
-        }
-
-        if (this.isOutOfSync && this.mustReparseChildNodesOutOfSyncAfterChange) {
-            // console.log("Out of sync after processing change", this);
+        if (this.mustReparseChildNodesOutOfSyncAfterChange
+        && (this.requiresReparsing || someChildNodeRequiresReparsing)) {
             await this.reparseAndUpdate();
         }
     }
@@ -164,99 +111,11 @@ export abstract class ASTNode {
     private processChange(change: SourceFileChange): void {
         const relativePositionToModifiedRange = this.range.processChange(change);
 
-        if (relativePositionToModifiedRange === RelativeRangePosition.Across) {
-            this.syncStatus = ASTNodeSyncStatus.OutOfSync;
+        if (relativePositionToModifiedRange === RelativeRangePosition.Across
+        || (this.isLeaf && relativePositionToModifiedRange === RelativeRangePosition.Within)) {
+            this.requiresReparsing = true;
         }
-        else if (this.isLeaf && relativePositionToModifiedRange === RelativeRangePosition.Within) {
-            this.syncStatus = ASTNodeSyncStatus.OutOfSync;
-        }  
-        
-        
-
-        // switch (nodeRangeRelativeToModifiedRange) {
-        //     case RelativeRangePosition.Before:
-        //         // Nothing else to do
-        //         break;
-
-        //     case RelativeRangePosition.Within:
-        //         if (this.isLeaf) {
-        //             this.mayBeSyntacticallyIncorrect = true;
-        //         }
-        //         break;
-
-        //     case RelativeRangePosition.Across:
-        //         this.mayBeSyntacticallyIncorrect = true;
-        //         // Emit an event to signal this node has been modified across its range
-
-        //         break;
-
-        //     case RelativeRangePosition.After:
-        //         // Nothing else to do
-        //         break;
-        // }
-
-        // if (nodeRangeRelativeToModifiedRange === RelativeRangePosition.Across) {
-        //     this.reparse();
-        // }
-
-        // else if (nodeRangeRelativeToModifiedRange === RelativeRangePosition.Within
-        //         ) {
-        //     this.reparse();
-        // }
-        // if (!this.isPartOfAtomicChange) {
-        //     this.contentChangeEventEmitter.fire(this);
-        // }
     }
-
-    // protected abstract tryToReplaceChildNodesOutOfSync(): Promise<boolean>;/* {
-    //     await Promise.all(this.childNodes.map(node => {
-    //         if (node.needsToBeReparsed) {
-    //             node.reparse()
-    //                 .then(
-
-    //                 );
-    //         }
-    //     }));
-    // }*/
-
-    // protected signalNodeWillBeDetached(): void {
-    //     // Signal all the current child nodes of this node that they will be detached from the AST
-    //     const childNodes = this.childNodes;
-    //     for (let node of childNodes) {
-    //         node.signalNodeWillBeDetached();
-    //     }
-
-    //     // this.beforeNodeDetachmentEventEmitter.fire(this);
-    // }
-
-    // protected signalNodeHasBeenDetached(): void {
-    //     // this.afterNodeDetachmentEventEmitter.fire(this);
-
-    //     // Signal all the current child nodes of this node that they have been detached from the AST
-    //     const childNodes = this.childNodes;
-    //     for (let node of childNodes) {
-    //         node.signalNodeHasBeenDetached();
-    //     }
-
-    //     // this.stopObservingAllChildNodes();
-    // }
-
-    // protected abstract replaceChildNode<T extends ASTNode>(currentChildNode: T, newChildNode: T): void;
-
-    // private async reparse(): Promise<void> {
-    //     console.info("About to re-parse AST node:", this);
-    //     const result = this.parser(await this.textContent, {
-    //         sourceFile: this.sourceFile,
-    //         range: this.range
-    //     });
-
-    //     console.log("Re-parsing result:", result);
-    //     this.reparsingError = result.status ? null : result;
-    //     this.reparsingEndEventEmitter.fire({
-    //         node: this,
-    //         result: result
-    //     });
-    // }
 
     protected async reparse(): Promise<P.Result<ASTNode>> {
         console.info("About to re-parse AST node:", this);
@@ -279,57 +138,17 @@ export abstract class ASTNode {
 
         if (result.status) {
             const newNode = result.value;
+            this.requiresReparsing = false;
 
-            // this.signalNodeWillBeDetached();
             this.beforeNodeUpdateEventEmitter.fire({ newNode: newNode });
             this.updateWith(newNode);
-            // this.signalNodeHasBeenDetached();
-
-            this.syncStatus = ASTNodeSyncStatus.InSync;
+            
             console.log("AST node update finished", this);
         }
         else {
-            this.syncStatus = ASTNodeSyncStatus.ReparsingFailed;
+            this.requiresReparsing = true;
         }
     }
-
-    // protected startObservingChildNode(node: ASTNode): void {
-    //     this.childNodesToObserverDisposables.add(node,
-    //         // Observe reparsing completions (both for successes and failures)
-    //         node.reparsingEndEventEmitter.event(async ({node, result}) => {
-    //             // If the reparsing was successful, replace the child node with the newly parsed one
-    //             if (result.status) {
-    //                 node.signalNodeWillBeDetached();
-    //                 this.replaceChildNode(node, result.value);
-    //                 node.signalNodeHasBeenDetached();
-    //             }
-    //             // Otherwise, try to reparse this node
-    //             else {
-    //                 await this.reparse();
-    //             }
-    //         })
-    //     ); 
-    // }
-
-    // protected startObservingAllChildNodes(): void {
-    //     const childNodes = this.childNodes;
-    //     for (let node of childNodes) {
-    //         this.startObservingChildNode(node);
-    //     }
-    // }
-
-    // protected stopObservingChildNode(node: ASTNode): void {
-    //     const disposables = this.childNodesToObserverDisposables.getValuesOf(node);
-    //     for (let disposable of disposables) {
-    //         disposable.dispose();
-    //     }
-    // }
-
-    // protected stopObservingAllChildNodes(): void {
-    //     for (let node of this.childNodes) {
-    //         this.stopObservingChildNode(node);
-    //     }
-    // }
 
     protected abstract syncSelfVisitWith(visitor: ASTSyncVisitor, depth: number): void;
     protected abstract asyncSelfVisitWith(visitor: ASTAsyncVisitor, depth: number): Promise<void>;

@@ -19,17 +19,9 @@ export class RangeInFile {
     readonly from: PositionInFile;
     readonly to: PositionInFile;
 
-    private hasProcessedChangeAcrossThisRange: boolean;
-
-    // readonly changeBeforeRangeEventEmitter: vscode.EventEmitter<SourceFileChange>;
-    // readonly changeWithinRangeEventEmitter: vscode.EventEmitter<SourceFileChange>;
-    // readonly changeAcrossRangeEventEmitter: vscode.EventEmitter<SourceFileChange>;
-
     constructor(from: PositionInFile, to: PositionInFile) {
         this.from = from;
         this.to = to;
-
-        this.hasProcessedChangeAcrossThisRange = false;
 
         // this.changeBeforeRangeEventEmitter = new vscode.EventEmitter();
         // this.changeWithinRangeEventEmitter = new vscode.EventEmitter();
@@ -38,14 +30,6 @@ export class RangeInFile {
 
     get isSingleLine(): boolean {
         return this.from.line === this.to.line;
-    }
-
-    /**
-     * A range is said to be "out-of-sync" with a source file
-     * as soon as it cannot process a change in its source file.
-     */
-    get isOutOfSync(): boolean {
-        return this.hasProcessedChangeAcrossThisRange;
     }
 
     get asVscodeRange(): vscode.Range {
@@ -91,7 +75,9 @@ export class RangeInFile {
 
             // Case 3.2: a part of the modified range is outside the range of this range
             else {
-                this.processChangeAcrossRange(change);
+                // If the change occurs across this range, we suppose there is too little information
+                // to safely shift the start or the end position of this range, and do not shift anything.
+                // Owners of ranges that care about this situation are responsible for reacting accordingly.
                 return RelativeRangePosition.Across;
             }
         }
@@ -125,7 +111,6 @@ export class RangeInFile {
 
     private processChangeBeforeRange(change: SourceFileChange): void {
         this.shiftAfterChangeBeforeRange(change);
-        // this.changeBeforeRangeEventEmitter.fire(change);
     }
 
     private shiftAfterChangeWithinRange(change: SourceFileChange): void {
@@ -139,18 +124,8 @@ export class RangeInFile {
         }
     }
 
-    private processChangeWithinRange(change: SourceFileChange): void {
-        // console.log("Before modif range within:", this.toString());
-        this.shiftAfterChangeWithinRange(change);
-        // console.log("After modif range within:", this.toString());
-        // this.changeWithinRangeEventEmitter.fire(change);
-    }
 
-    // If the change occurs across this range, we suppose there is too little information
-    // to safely shift the start or the end position of this range, and do not shift anything.
-    // Owners of ranges that care about this situation are responsible for reacting accordingly.
-    private processChangeAcrossRange(change: SourceFileChange): void {
-        this.hasProcessedChangeAcrossThisRange = true;
-        // this.changeAcrossRangeEventEmitter.fire(change);
+    private processChangeWithinRange(change: SourceFileChange): void {
+        this.shiftAfterChangeWithinRange(change);
     }
 }
