@@ -5,15 +5,6 @@ import { AnnotationMaskCoordinates } from "../pdf/PDFPageRenderer";
 import { VisualisationMetadata, VisualisationModelUID } from "../../shared/visualisations/types";
 import { RawSourceFileRange } from "../../shared/source-files/types";
 
-// Helper function to extract a location (in the LaTeX document) from a HTML attribute
-function parseLocationFromAttribute(attributeValue: string) {
-    const [_, line, column] = /(\d+);(\d+)/.exec(attributeValue)!;
-    return {
-        line: Number(line),
-        column: Number(column)
-    };
-}
-
 export abstract class AbstractVisualisationView implements VisualisationView {
     protected instanciationContext: VisualisationViewInstantiationContext;
     protected messenger: Messenger;

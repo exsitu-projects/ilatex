@@ -38,8 +38,6 @@ export class VisualisationViewManager {
 
     private messenger: Messenger;
 
-    // private visualisationContentContainerNode: HTMLElement;
-    // private visualisationViews: VisualisationView[];
     private visualisationNamesToViewFactories: Map<string, VisualisationViewFactory>;
     private codeMappingIdsToVisualisationData: Map<number, VisualisationData>;
     private visualisationDataUpdateTaskQueuer: TaskQueuer;
@@ -49,8 +47,6 @@ export class VisualisationViewManager {
     constructor(messenger: Messenger) {
         this.messenger = messenger;
 
-        // this.visualisationContentContainerNode = document.createElement("div");
-        // this.visualisationViews = [];
         this.visualisationNamesToViewFactories = new Map(
             VisualisationViewManager.AVAILABLE_VISUALISATION_FACTORIES
                 .map(factory => [factory.visualisationName, factory])
@@ -147,50 +143,6 @@ export class VisualisationViewManager {
             }
         );
     }
-
-    // private handleOneVisualisationContentUpdate(message: UpdateOneVisualisationMessage): void {
-    //     const codeMappingId = message.codeMappingId;
-
-    //     // Update the content of the visualisation using the HTML provided by the core
-    //     const currentContentNode = this.visualisationContentContainerNode.querySelector(`.visualisation[data-code-mapping-id="${codeMappingId}"]`);
-    //     if (currentContentNode) {
-    //         currentContentNode.outerHTML = message.visualisationContentAsHtml;
-    //     }
-    //     else {
-    //         this.visualisationContentContainerNode.innerHTML += message.visualisationContentAsHtml;
-    //         console.warn(`The content of the updated visualisation (code mapping ID ${message.codeMappingId}) has been appended instead of being replaced: it did not exist before.`);
-    //     }
-        
-    //     // If the update allows to safely update any visualisation currently on display,
-    //     // check if one is displayed and forward it the message so that it can update itself
-    //     if (message.updateOpenVisualisation && this.currentlyDisplayedVisualisationView) {
-    //         const newContentNode = this.visualisationContentContainerNode
-    //             .querySelector(`.visualisation[data-code-mappping-id="${codeMappingId}"]`) as HTMLElement;
-
-    //         if (newContentNode) {
-    //             this.currentlyDisplayedVisualisationView.updateWith(newContentNode);
-    //             this.currentlyDisplayedVisualisationPopup!.onAfterDisplayedVisualationContentUpdate();
-    //         }
-    //     }
-    // }
-
-    // private handleAllVisualisationsContentUpdate(message: UpdateAllVisualisationsMessage): void {
-    //     // Update the content of the visualisations using the HTML provided by the core
-    //     this.visualisationContentContainerNode.innerHTML = message.allVisualisationsContentAsHtml;
-        
-    //     // If the update allows to safely update any visualisation currently on display,
-    //     // check if one is displayed and forward it the message so that it can update itself
-    //     if (message.updateOpenVisualisation && this.currentlyDisplayedVisualisationView) {
-    //         const codeMappingId = this.currentlyDisplayedVisualisationView.codeMappingId;
-    //         const newContentNode = this.visualisationContentContainerNode
-    //             .querySelector(`.visualisation[data-code-mapping-id="${codeMappingId}"]`) as HTMLElement;
-
-    //         if (newContentNode) {
-    //             this.currentlyDisplayedVisualisationView.updateWith(newContentNode);
-    //             this.currentlyDisplayedVisualisationPopup!.onAfterDisplayedVisualationContentUpdate();
-    //         }
-    //     }
-    // }
 
     private updateCurrentlyDisplayedVisualisationContent(): void {
         if (!this.hasCurrentlyDisplayedVisualisationView) {
