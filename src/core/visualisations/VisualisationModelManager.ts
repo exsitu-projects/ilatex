@@ -73,7 +73,7 @@ export class VisualisationModelManager {
 
             this.modelObserverDisposables.push(
                 model.contentChangeEventEmitter.event(model => {
-                    this.modelStatusChangeEventEmitter.fire(model);
+                    this.modelContentChangeEventEmitter.fire(model);
                     this.ilatex.webviewManager.sendNewContentForOneVisualisation(model);
                 }
             ));

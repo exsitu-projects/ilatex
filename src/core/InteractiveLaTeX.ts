@@ -19,7 +19,6 @@ export class InteractiveLatex {
     readonly visualisationModelManager: VisualisationModelManager;
     readonly decorationManager: DecorationManager;
 
-    private sourceFileChangeObserverDisposable: vscode.Disposable;
     private sourceFileSaveObserverDisposable: vscode.Disposable;
 
     private constructor(mainSourceFileUri: vscode.Uri, webviewPanel: vscode.WebviewPanel) {
@@ -32,11 +31,6 @@ export class InteractiveLatex {
         this.webviewManager = new WebviewManager(this, webviewPanel);
         this.visualisationModelManager = new VisualisationModelManager(this);
         this.decorationManager = new DecorationManager(this);
-
-        this.sourceFileChangeObserverDisposable =
-            this.sourceFileManager.sourceFileChangeEventEmitter.event(
-                async sourceFile => await this.onSourceFileChange(sourceFile)
-            );
         
         this.sourceFileSaveObserverDisposable =
             this.sourceFileManager.sourceFileSaveEventEmitter.event(
@@ -48,7 +42,7 @@ export class InteractiveLatex {
         await this.recompileAndUpdate();
 
         // Once visualisations have been created, start to decorate editors
-        this.decorationManager.redecorateVisibleEditorsWithCurrentVisualisations();
+        this.decorationManager.redecorateVisibleEditors();
     }
 
     dispose(): void {
@@ -60,12 +54,7 @@ export class InteractiveLatex {
         this.visualisationModelManager.dispose();
         this.decorationManager.dispose();
 
-        this.sourceFileChangeObserverDisposable.dispose();
         this.sourceFileSaveObserverDisposable.dispose();
-    }
-
-    private async onSourceFileChange(sourceFile: SourceFile): Promise<void> {
-        this.decorationManager.redecorateVisibleEditorsWithCurrentVisualisations();
     }
 
     private async onSourceFileSave(sourceFile: SourceFile): Promise<void> {
@@ -90,7 +79,7 @@ export class InteractiveLatex {
         // this.webviewManager.sendNewContentForAllVisualisations();
 
         // 5. Update the decorations in the editor
-        this.decorationManager.redecorateVisibleEditorsWithCurrentVisualisations();
+        this.decorationManager.redecorateVisibleEditors();
     }
 
     static fromMainLatexDocument(mainLatexDocument: vscode.TextDocument, webviewPanel: vscode.WebviewPanel): Promise<InteractiveLatex> {

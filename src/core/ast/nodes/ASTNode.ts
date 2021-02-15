@@ -10,6 +10,9 @@ import { BlockNode } from "./BlockNode";
 
 export type ASTNodeParser<T extends ASTNode> = (input: string, context: ASTNodeContext) => P.Result<T>;
 
+export type ASTNodeUpdateResult = 
+    | { success: true, newAstNode: ASTNode }
+    | { success: false, error: P.Failure };
 
 export interface ASTNodeContext {
     range: RangeInFile,
@@ -24,14 +27,12 @@ export abstract class ASTNode {
     readonly range: RangeInFile;
     protected readonly abstract isLeaf: boolean;
 
+    enableReparsing: boolean;
+    protected hasUnreparsedContentChanges: boolean;
     private isPartOfAtomicChange: boolean;
-    mustReparseChildNodesOutOfSyncAfterChange: boolean;
-    protected requiresReparsing: boolean;
-    private reparsingError: P.Failure | null;
 
     readonly rangeChangeEventEmitter: vscode.EventEmitter<void>;
-    readonly contentChangeEventEmitter: vscode.EventEmitter<void>; // TODO: remove?
-    readonly beforeNodeUpdateEventEmitter: vscode.EventEmitter<{ newNode: ASTNode }>;
+    readonly contentChangeEventEmitter: vscode.EventEmitter<ASTNodeUpdateResult>;
 
     constructor(
         context: ASTNodeContext
@@ -39,18 +40,24 @@ export abstract class ASTNode {
         this.sourceFile = context.sourceFile;
         this.range = context.range;
 
+        this.enableReparsing = false;
+        this.hasUnreparsedContentChanges = false;
         this.isPartOfAtomicChange = false;
-        this.mustReparseChildNodesOutOfSyncAfterChange = false;
-        this.requiresReparsing = false;
-        this.reparsingError = null;
 
         this.rangeChangeEventEmitter = new vscode.EventEmitter();
         this.contentChangeEventEmitter = new vscode.EventEmitter();
-        this.beforeNodeUpdateEventEmitter = new vscode.EventEmitter();
     }
 
     get textContent(): Promise<string> {
         return this.sourceFile.getContent(this.range);
+    }
+
+    get canBeReparsed(): boolean {
+        return this.enableReparsing;
+    }
+
+    get requiresReparsing(): boolean {
+        return this.hasUnreparsedContentChanges;
     }
 
     abstract get childNodes(): ASTNode[];
@@ -59,21 +66,21 @@ export abstract class ASTNode {
         await this.sourceFile.selectRangeInEditor(this.range);
     }
 
-    protected beginAtomicChange(): void {
+    protected async beginAtomicChange(): Promise<void> {
         this.isPartOfAtomicChange = true;
         for (let node of this.childNodes) {
             node.beginAtomicChange();
         }
     }
 
-    protected endAtomicChange(emitChangeEvent: boolean = false): void {
+    protected async endAtomicChange(): Promise<void> {
         this.isPartOfAtomicChange = false;
         for (let node of this.childNodes) {
             node.endAtomicChange();
         }
 
-        if (emitChangeEvent) {
-            this.contentChangeEventEmitter.fire();
+        if (this.canBeReparsed) {
+            await this.reparseAndUpdate();
         }
     }
 
@@ -83,7 +90,7 @@ export abstract class ASTNode {
         // TODO: possibly check that all the given edits are indeed located within this node
         this.beginAtomicChange();
         await this.sourceFile.makeAtomicChange(editOrEdits);
-        this.endAtomicChange(true);
+        this.endAtomicChange();
     }
 
     async setTextContent(newContent: string): Promise<void> {
@@ -93,19 +100,25 @@ export abstract class ASTNode {
     }
 
     // Dispatch a source file change to this node + every of its children in the AST
-    async dispatchAndProcessChange(change: SourceFileChange): Promise<void> {
+    // Return a promiseresolving to a boolean indicating whether the node requires reparsing or not
+    async dispatchAndProcessChange(change: SourceFileChange): Promise<boolean> {
         this.processChange(change);
 
         let someChildNodeRequiresReparsing = false;
         for (let node of this.childNodes) {
-            node.dispatchAndProcessChange(change);
-            someChildNodeRequiresReparsing = someChildNodeRequiresReparsing || node.requiresReparsing;
+            someChildNodeRequiresReparsing = await node.dispatchAndProcessChange(change) || someChildNodeRequiresReparsing;
         }
 
-        if (this.mustReparseChildNodesOutOfSyncAfterChange
-        && (this.requiresReparsing || someChildNodeRequiresReparsing)) {
-            await this.reparseAndUpdate();
+        if (this.hasUnreparsedContentChanges || someChildNodeRequiresReparsing) {
+            if (!this.isPartOfAtomicChange && this.canBeReparsed) {
+                await this.reparseAndUpdate();
+                return this.hasUnreparsedContentChanges;
+            }
+
+            return true;
         }
+        
+        return false;
     }
 
     private processChange(change: SourceFileChange): void {
@@ -113,24 +126,25 @@ export abstract class ASTNode {
 
         if (relativePositionToModifiedRange === RelativeRangePosition.Across
         || (this.isLeaf && relativePositionToModifiedRange === RelativeRangePosition.Within)) {
-            this.requiresReparsing = true;
+            // console.log(`${this.toString()} requires reparsing`);
+            this.hasUnreparsedContentChanges = true;
         }
     }
 
     protected async reparse(): Promise<P.Result<ASTNode>> {
-        console.info("About to re-parse AST node:", this);
+        // console.info("About to re-parse AST node:", this);
         const result = this.parser(await this.textContent, {
             sourceFile: this.sourceFile,
             range: this.range
         });
 
-        console.log("Re-parsing result:", result);
-        this.reparsingError = result.status ? null : result;
+        // console.log("Re-parsing result:", result);
         return result;
     }
 
     protected async updateWith(reparsedNode: ASTNode): Promise<void> {
-        this.mustReparseChildNodesOutOfSyncAfterChange = reparsedNode.mustReparseChildNodesOutOfSyncAfterChange;
+        // This method must be overriden by every AST node
+        // that contains content (text, child nodes...)
     };
 
     protected async reparseAndUpdate(): Promise<void> {
@@ -138,15 +152,19 @@ export abstract class ASTNode {
 
         if (result.status) {
             const newNode = result.value;
-            this.requiresReparsing = false;
 
-            this.beforeNodeUpdateEventEmitter.fire({ newNode: newNode });
-            this.updateWith(newNode);
-            
-            console.log("AST node update finished", this);
+            await this.updateWith(newNode);
+            this.hasUnreparsedContentChanges = false;
+
+            this.contentChangeEventEmitter.fire({ success: true, newAstNode: newNode });
+            console.info(`✅ Reparsing of "${this.toString()}" node was successful.`);
         }
         else {
-            this.requiresReparsing = true;
+            this.hasUnreparsedContentChanges = true;
+
+            this.contentChangeEventEmitter.fire({ success: false, error: result });
+            console.warn(`❌ Reparsing of "${this.toString()}" node was a failure.`);
+            console.warn("The reparser reported an error:", result);
         }
     }
 

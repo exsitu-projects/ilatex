@@ -32,7 +32,6 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
     readonly uid: VisualisationModelUID;
     private readonly context: VisualisableCodeContext<T>;
     protected readonly utilities: VisualisationModelUtilities;
-    private updatedAstNode: T | null;
     
     protected abstract contentDataAsHtml: string;
     private lastContentUpdateFailed: boolean;
@@ -52,7 +51,6 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
         this.uid = VisualisationModelUIDGenerator.getUniqueId();
         this.context = context;
         this.utilities = utilities;
-        this.updatedAstNode = null;
 
         this.lastContentUpdateFailed = false;
 
@@ -70,10 +68,12 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
             this.contentUpdateEndEventEmitter.event(async updateSuccess => {
                 if (updateSuccess) {
                     this.lastContentUpdateFailed = false;
+
                     this.contentChangeEventEmitter.fire(this);
                 }
                 else {
                     this.lastContentUpdateFailed = true;
+
                     this.contentChangeEventEmitter.fire(this);
                     this.statusChangeEventEmitter.fire(this);
                 }
@@ -84,7 +84,7 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
     }
 
     async init(): Promise<void> {
-        this.astNode.mustReparseChildNodesOutOfSyncAfterChange = true;
+        this.astNode.enableReparsing = true;
 
         this.updateContentData();
     };
@@ -98,12 +98,12 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
     }
 
     get astNode(): T {
-        return this.updatedAstNode ?? this.context.astNode;
+        return this.context.astNode;
     }
 
     get status(): VisualisationStatus {
         return {
-            available: !this.astNode.isOutOfSync && !this.lastContentUpdateFailed
+            available: !this.astNode.requiresReparsing && !this.lastContentUpdateFailed
         };
     }
 
@@ -159,20 +159,17 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
 
     protected startObservingAstNode(): void {
         this.astNodeObserversDisposables.push(
-            this.astNode.contentChangeEventEmitter.event(async node => {
+            this.astNode.rangeChangeEventEmitter.event(async node => {
                 await this.updateContentData();
             }),
 
-            this.astNode.contentChangeEventEmitter.event(async node => {
-                await this.updateContentData();
-            }),
-        
-            this.astNode.beforeNodeUpdateEventEmitter.event(async ({ newNode }) => {
-                this.stopObservingAstNode();
-                this.updatedAstNode = newNode as T;
-                this.startObservingAstNode();
-                
-                await this.updateContentData();
+            this.astNode.contentChangeEventEmitter.event(async nodeUpdateResult => {
+                if (nodeUpdateResult.success) {
+                    await this.updateContentData();
+                }
+                else {
+                    this.statusChangeEventEmitter.fire(this);
+                }
             })
         );
     }

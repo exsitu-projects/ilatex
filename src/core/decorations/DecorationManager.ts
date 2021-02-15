@@ -14,18 +14,24 @@ export class DecorationManager {
     private ilatex: InteractiveLatex;
 
     private onRedecorateEditorsEventEmitter: vscode.EventEmitter<void>;
+
     private codeLensProviderDisposable: vscode.Disposable;
+    private redecorationTriggerEventsObserverDisposables: vscode.Disposable[];
 
     constructor(ilatex: InteractiveLatex) {
         this.ilatex = ilatex;
 
         this.onRedecorateEditorsEventEmitter = new vscode.EventEmitter<void>();
+
         this.codeLensProviderDisposable = this.createCodeLensesProvider();
+        this.redecorationTriggerEventsObserverDisposables = [];
         
+        this.startObservingEventsThatTriggerRedecoration();
     }
 
     dispose(): void {
         this.codeLensProviderDisposable.dispose();
+        this.stopObservingEventsThatTriggerRedecoration();
     }
 
     private createCodeLensesProvider(): vscode.Disposable {
@@ -117,7 +123,29 @@ export class DecorationManager {
         this.onRedecorateEditorsEventEmitter.fire();
     }
 
-    redecorateVisibleEditorsWithCurrentVisualisations(): void {
+    redecorateVisibleEditors(): void {
         this.redecorateVisibleEditorsWithVisualisations(this.ilatex.visualisationModelManager.models);
+    }
+
+    private startObservingEventsThatTriggerRedecoration(): void {
+        this.redecorationTriggerEventsObserverDisposables.push(
+            this.ilatex.visualisationModelManager.modelStatusChangeEventEmitter.event(
+                async model => this.redecorateVisibleEditors()
+            ),
+
+            this.ilatex.visualisationModelManager.modelContentChangeEventEmitter.event(
+                async model => this.redecorateVisibleEditors()
+            ),
+
+            this.ilatex.visualisationModelManager.modelChangeEventEmitter.event(
+                async model => this.redecorateVisibleEditors()
+            ),
+        );
+    }
+
+    private stopObservingEventsThatTriggerRedecoration(): void {
+        for (let disposable of this.redecorationTriggerEventsObserverDisposables) {
+            disposable.dispose();
+        }
     }
 }

@@ -1,5 +1,5 @@
 import { ASTSyncVisitor, ASTAsyncVisitor } from "../visitors/visitors";
-import { ASTNode, ASTNodeContext, ASTNodeParser, ASTNodeSyncStatus } from "./ASTNode";
+import { ASTNode, ASTNodeContext, ASTNodeParser } from "./ASTNode";
 
 export class BlockNode extends ASTNode {
     static readonly type = "block" as const;

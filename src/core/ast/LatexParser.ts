@@ -90,7 +90,7 @@ interface EnvironementSpecification {
 
 // Language of a simplified subset of LaTeX
 // It can be parsed by using the 'latex' rule as the axiom of the grammar
-type LatexParsersSpecification = {
+type LatexParsers = {
     latex: LatexNode,
     text: TextNode,
     whitespace: WhitespaceNode,
@@ -98,6 +98,8 @@ type LatexParsersSpecification = {
     anyEnvironement: EnvironmentNode,
     specificCommand: CommandNode,
     anyCommand: CommandNode,
+    command: CommandNode,
+    environment: EnvironmentNode,
     commandOrEnvironment: CommandNode | EnvironmentNode,
     math: MathNode,
     inlineMath: InlineMathNode,
@@ -115,11 +117,11 @@ type LatexParsersSpecification = {
     comment: CommentNode
 };
 
-type LatexReparsers = {[K in keyof LatexParsersSpecification]: ASTNodeParser<LatexParsersSpecification[K]> };
+type LatexReparsers = { [K in keyof LatexParsers]: ASTNodeParser<LatexParsers[K]> };
 
 export class LatexParser {
     private readonly sourceFile: SourceFile;
-    private readonly parsers: P.TypedLanguage<LatexParsersSpecification>;
+    private readonly parsers: P.TypedLanguage<LatexParsers>;
     private readonly reparsers: LatexReparsers;
 
     constructor(sourceFile: SourceFile) {
@@ -157,11 +159,11 @@ export class LatexParser {
         const parametersParsers = [];
         for (let parameter of parameters) {
             const parameterParser = (parameter.type === "curly")
-                ? wrapInCurlyBracesBlockParser(parameter.parser) // TODO: fix
+                ? wrapInCurlyBracesBlockParser(parameter.parser)
                     .thru(this.contextualiseParserOutput(this.reparsers.curlyBracesParameterBlock, (value, context, reparser) =>
                         new CurlyBracesParameterBlockNode(value[1], context, reparser)
                     ))
-                : wrapInSquareBracesBlockParser(parameter.parser) // TODO: fix
+                : wrapInSquareBracesBlockParser(parameter.parser)
                     .thru(this.contextualiseParserOutput(this.reparsers.squareBracesParameterBlock, (value, context, reparser) =>
                         new SquareBracesParameterBlockNode(value[1], context, reparser)
                     ));
@@ -186,7 +188,6 @@ export class LatexParser {
 
     private createCommandParser(command: CommandSpecification): P.Parser<CommandNode> {
         const nameParser = command.nameParser ?? P.string(command.name);
-        // const nameParserWithPositions = P.seq(P.index, nameParser, P.index);
     
         // Create an array of parsers for all the parameters
         const parametersParsers = this.createParameterParsers(command.parameters);
@@ -195,7 +196,7 @@ export class LatexParser {
         // (though optional ones may of course be absent)
         return P.seq(P.string("\\"), nameParser, P.seq(...parametersParsers))
             .thru(this.contextualiseParserOutput(
-                this.reparsers.anyCommand, // TODO: fix
+                this.reparsers.command,
                 (value, context, reparser) => new CommandNode(
                     value[1],
                     value[2],
@@ -208,7 +209,7 @@ export class LatexParser {
     private createEnvironementParser(environement: EnvironementSpecification): P.Parser<EnvironmentNode> {
         const nameParser = (environement.nameParser ?? P.string(environement.name))
             .thru(this.contextualiseParserOutput(
-                this.reparsers.parameter, // TODO: fix
+                this.reparsers.parameter, // TODO: improve?
                 (value, context, reparser) => new ParameterNode(value, context, reparser)
             ));
         
@@ -241,7 +242,7 @@ export class LatexParser {
             environement.contentParser,
             endParser
         )
-            .thru(this.contextualiseParserOutput(this.reparsers.anyEnvironement, (value, context, reparser) => {
+            .thru(this.contextualiseParserOutput(this.reparsers.environment, (value, context, reparser) => {
                 // If a name parser is specified, use the value it output as the environement name
                 // Otherwise, use the given name
                 const name = (environement.nameParser
@@ -261,7 +262,7 @@ export class LatexParser {
     }
 
     private createLanguageParsers() {
-        return P.createLanguage<LatexParsersSpecification>({
+        return P.createLanguage<LatexParsers>({
             text: lang => {
                 return regularSentences
                     .thru(this.contextualiseParserOutput(this.reparsers.text, (value, context, reparser) => new TextNode(value, context, reparser)));
@@ -361,20 +362,29 @@ export class LatexParser {
                         reparser
                     )));
             },
+
+            command: lang => {
+                return lang.specificCommand.or(lang.anyCommand);
+            },
+
+            environment: lang => {
+                return lang.specificEnvironement.or(lang.anyEnvironement);
+            },
         
             commandOrEnvironment: lang => {
                 const specificEnvironementNames = ["itabular", "itemize", "gridlayout", "row", "cell", "imaths"];
                 function isStartingWithSpecificEnvironementBeginning(input: string): boolean {
                     return specificEnvironementNames.some(name => input.startsWith(`begin{${name}}`));
                 }
-        
+
+                // TODO: check if names are equal, not only prefixes
                 const specificCommandNames = ["iincludegraphics", "\\"];
                 function isStartingWithSpecificCommandName(input: string): boolean {
                     return specificCommandNames.some(name => input.startsWith(name));
                 }
         
                 // Define a custom Parsimmon parser which expects something starting with a backslash,
-                // and either return a more-or-less specific command/emvironement parser
+                // and either return a more-or-less specific command/environment parser
                 // or fail if what follows the backslash was not expected here.
                 // It does not consume any character, as it delegates the parsing to the parser it returns
                 function selectCommandParser(): P.Parser<P.Parser<CommandNode>> {
@@ -452,7 +462,6 @@ export class LatexParser {
             },
         
             block: lang => {
-                // TODO: attempt to remove the cast
                 const emptyStringParser = P.string("")
                     .map(_ => EMPTY_AST_VALUE) as P.Parser<EmptyASTValue>;
         
@@ -492,10 +501,6 @@ export class LatexParser {
                         (value, context, reparser) => new ParameterNode(value, context, reparser)
                     ));
             },
-        
-            // environementNameParameter: lang => {
-            //     return alphastar;
-            // },
         
             squareBracesParameterBlock: lang => {
                 return wrapInSquareBracesBlockParser(lang.parameterList)
@@ -641,6 +646,8 @@ export class LatexParser {
             anyEnvironement: createASTNodeReparserFor(this.parsers.anyEnvironement),
             specificCommand: createASTNodeReparserFor(this.parsers.specificCommand),
             anyCommand: createASTNodeReparserFor(this.parsers.anyCommand),
+            command: createASTNodeReparserFor(this.parsers.command),
+            environment: createASTNodeReparserFor(this.parsers.environment),
             commandOrEnvironment: createASTNodeReparserFor(this.parsers.commandOrEnvironment),
             math: createASTNodeReparserFor(this.parsers.math),
             inlineMath: createASTNodeReparserFor(this.parsers.inlineMath),
