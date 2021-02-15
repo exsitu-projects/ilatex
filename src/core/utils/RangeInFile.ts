@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { RawSourceFileRange } from "../../shared/source-files/types";
 import { SourceFileChange } from "../source-files/SourceFileChange";
 import { PositionInFile } from "./PositionInFile";
 
@@ -37,6 +38,13 @@ export class RangeInFile {
             this.from.asVscodePosition,
             this.to.asVscodePosition
         );
+    }
+
+    get raw(): RawSourceFileRange {
+        return {
+            from: this.from.raw,
+            to: this.to.raw
+        };
     }
 
     toString(): string {

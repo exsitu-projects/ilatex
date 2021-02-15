@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import * as P from "parsimmon";
+import { RawSourceFilePosition } from "../../shared/source-files/types";
 
 
 /** Value representing an unspecified offset for a position in code. */
@@ -82,6 +83,13 @@ export class PositionInFile {
             line: this.line + 1,
             column: this.column + 1,
             offset: this.offset
+        };
+    }
+
+    get raw(): RawSourceFilePosition {
+        return {
+            line: this.line,
+            column: this.column
         };
     }
 
