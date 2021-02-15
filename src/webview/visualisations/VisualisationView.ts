@@ -1,3 +1,5 @@
+import { RawSourceFileRange } from "../../shared/source-files/types";
+import { VisualisationMetadata, VisualisationModelUID } from "../../shared/visualisations/types";
 import { Messenger } from "../Messenger";
 import { AnnotationMaskCoordinates } from "../pdf/PDFPageRenderer";
 
@@ -18,15 +20,17 @@ export interface VisualisationViewInstantiationContext {
 }
 
 export interface VisualisationView {
-    readonly visualisationName: string;
-    readonly visualisationUid: number;
+    readonly name: string;
+    readonly title: string;
+    readonly modelUid: VisualisationModelUID;
     readonly codeMappingId: number;
-    readonly contentTitle: string;
     readonly sourceFileName: string;
-    readonly sourceCodeRange: CodeRange;
+    readonly sourceFileCodeRange: RawSourceFileRange;
 
     render(): HTMLElement;
-    updateWith(newContentNode: HTMLElement): void;
+
+    updateContentWith(newContentNode: HTMLElement): void;
+    updateMetadataWith(newMetadata: VisualisationMetadata): void;
 
     revealInSourceDocument(): void;
 
@@ -41,5 +45,5 @@ export interface VisualisationView {
 
 export interface VisualisationViewFactory {
     readonly visualisationName: string;
-    createView(contentNode: HTMLElement, context: VisualisationViewInstantiationContext): VisualisationView;
+    createView(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewInstantiationContext): VisualisationView;
 }

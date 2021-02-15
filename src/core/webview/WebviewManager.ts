@@ -32,7 +32,7 @@ export class WebviewManager {
             // (see retainContextWhenHidden in https://code.visualstudio.com/api/references/vscode-api#WebviewPanelOptions).
             if (event.webviewPanel.visible) {
                 this.sendNewPDF();
-                this.sendNewContentForAllVisualisations();
+                this.sendNewVisualisationDataForAllModels();
             };
         });
         
@@ -98,35 +98,48 @@ export class WebviewManager {
         return this.webview.asWebviewUri(uri);
     }
 
-    sendNewContentForOneVisualisation(
-        visualisationModel: VisualisationModel,
-        updateOpenVisualisation: boolean = true
-    ): void {
-        console.info("About to send new content for one visualisation to the webview...");
+    sendNewVisualisationContentFor(model: VisualisationModel): void {
+        console.info("📦 Sending new content for one visualisation to the webview.");
 
         this.messenger.sendMessage({
-            type: CoreToWebviewMessageType.UpdateOneVisualisation,
-            codeMappingId: visualisationModel.codeMapping.id,
-            visualisationContentAsHtml: visualisationModel.content,
-            updateOpenVisualisation: updateOpenVisualisation
+            type: CoreToWebviewMessageType.UpdateVisualisationContent,
+            codeMappingId: model.codeMapping.id,
+            contentAsHtml: model.content
         });
     }
 
-    sendNewContentForAllVisualisations(
-        updateOpenVisualisation: boolean = false
-    ): void {
-        console.info("About to send new content for all visualisations to the webview...");
+    sendNewVisualisationMetadataForAllModels(): void {
+        for (let model of this.ilatex.visualisationModelManager.models) {
+            this.sendNewVisualisationMetadataFor(model);
+        }
+    }
+
+    sendNewVisualisationMetadataFor(model: VisualisationModel): void {
+        console.info("📦 Sending new metadata for one visualisation to the webview.");
         const newContent = this.ilatex.visualisationModelManager.contentOfAllModels;
 
         this.messenger.sendMessage({
-            type: CoreToWebviewMessageType.UpdateAllVisualisations,
-            allVisualisationsContentAsHtml: newContent,
-            updateOpenVisualisation: updateOpenVisualisation
+            type: CoreToWebviewMessageType.UpdateVisualisationMetadata,
+            codeMappingId: model.codeMapping.id,
+            metadata: model.metadata
         });
     }
 
+    sendNewVisualisationContentForAllModels(): void {
+        for (let model of this.ilatex.visualisationModelManager.models) {
+            this.sendNewVisualisationContentFor(model);
+        }
+    }
+
+    sendNewVisualisationDataForAllModels(): void {
+        for (let model of this.ilatex.visualisationModelManager.models) {
+            this.sendNewVisualisationContentFor(model);
+            this.sendNewVisualisationMetadataFor(model);
+        }        
+    }
+
     sendNewPDF(): void {
-        console.info("About to send a new PDF to the webview...");
+        console.info("📦 Sending a new PDF to the webview.");
         const pdfUri = this.ilatex.pdfManager.pdfUri;
 
         this.messenger.sendMessage({
@@ -135,33 +148,13 @@ export class WebviewManager {
         });
     }
 
-    // TODO: hook into the PDF manager for this?
     sendNewPDFCompilationStatus(pdfIsCurrentylCompiled: boolean, lastCompilationFailed: boolean = false): void {
-        console.info("About to send a new PDF compilation status to the webview...");
+        console.info("📦 Sending a new PDF compilation status to the webview.");
 
         this.messenger.sendMessage({
             type: CoreToWebviewMessageType.UpdateCompilationStatus,
             pdfIsCurrentlyCompiled: pdfIsCurrentylCompiled,
             lastCompilationFailed: lastCompilationFailed
-        });        
-    }
-
-    sendNewStatusForOneVisualisation(visualisationModel: VisualisationModel): void {
-        console.info("About to send a new status for one visualisation to the webview...");
-
-        this.messenger.sendMessage({
-            type: CoreToWebviewMessageType.UpdateOneVisualisationStatusMessage,
-            codeMappingId: visualisationModel.codeMapping.id,
-            visualisationIsAvailable: visualisationModel.status.available
-        });        
-    }
-
-    sendNewStatusForAllVisualisations(enableAllVisualisations: boolean): void {
-        console.info("About to send new statuses for all visualisations to the webview...");
-
-        this.messenger.sendMessage({
-            type: CoreToWebviewMessageType.UpdateAllVisualisationsStatusMessage,
-            enableAllVisualisations: enableAllVisualisations
         });        
     }
 }

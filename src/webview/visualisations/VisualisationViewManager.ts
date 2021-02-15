@@ -2,11 +2,13 @@ import { AnnotationMaskCoordinates } from "../pdf/PDFPageRenderer";
 import { Messenger } from "../Messenger";
 import { VisualisationView, VisualisationViewFactory } from "./VisualisationView";
 import { VisualisationPopup } from "./VisualisationPopup";
-import {  CoreToWebviewMessageType, UpdateOneVisualisationMessage, UpdateAllVisualisationsMessage, UpdateOneVisualisationStatusMessage, UpdateAllVisualisationsStatusMessage } from "../../shared/messenger/messages";
+import {  CoreToWebviewMessageType, UpdateVisualisationContentMessage, UpdateVisualisationMetadataMessage } from "../../shared/messenger/messages";
 import { GridLayoutViewFactory } from "../../visualisations/gridlayout/view/view";
 import { MathematicsViewFactory } from "../../visualisations/mathematics/view/view";
 import { TabularViewFactory } from "../../visualisations/tabular/view/view";
 import { IncludegraphicsViewFactory } from "../../visualisations/includegraphics/view/view";
+import { VisualisationMetadata } from "../../shared/visualisations/types";
+import { TaskQueuer } from "../../shared/tasks/TaskQueuer";
 
 export interface VisualisationDisplayRequest {
     codeMappingId: number;
@@ -17,6 +19,11 @@ export interface VisualisationDisplayRequest {
         height: number;
         scale: number;
     }
+}
+
+interface VisualisationData {
+    contentNode?: HTMLElement;
+    metadata?: VisualisationMetadata;
 }
 
 export class VisualisationViewManager {
@@ -31,202 +38,247 @@ export class VisualisationViewManager {
 
     private messenger: Messenger;
 
-    private visualisationContentContainerNode: HTMLElement;
-    private visualisationViews: VisualisationView[];
+    // private visualisationContentContainerNode: HTMLElement;
+    // private visualisationViews: VisualisationView[];
     private visualisationNamesToViewFactories: Map<string, VisualisationViewFactory>;
+    private codeMappingIdsToVisualisationData: Map<number, VisualisationData>;
+    private visualisationDataUpdateTaskQueuer: TaskQueuer;
 
-    private currentlyDisplayedVisualisationView: VisualisationView | null;
     private currentlyDisplayedVisualisationPopup: VisualisationPopup | null;
-
-    private enableVisualisations: boolean;
 
     constructor(messenger: Messenger) {
         this.messenger = messenger;
 
-        this.visualisationContentContainerNode = document.createElement("div");
-        this.visualisationViews = [];
+        // this.visualisationContentContainerNode = document.createElement("div");
+        // this.visualisationViews = [];
         this.visualisationNamesToViewFactories = new Map(
             VisualisationViewManager.AVAILABLE_VISUALISATION_FACTORIES
                 .map(factory => [factory.visualisationName, factory])
         );
 
-        this.currentlyDisplayedVisualisationView = null;
+        this.codeMappingIdsToVisualisationData = new Map();
+        this.visualisationDataUpdateTaskQueuer = new TaskQueuer();
+
         this.currentlyDisplayedVisualisationPopup = null;
 
-        this.enableVisualisations = true;
-
         this.startHandlingVisualisationDisplayRequests();
-        this.startHandlingVisualisationContentUpdates();
-        this.startHandlingVisualisationStatusUpdate();
+        this.startHandlingWebviewMessages();
     }
 
-    private getVisualisationContentNodeWith(codeMappingId: number): HTMLElement | null {
-        return this.visualisationContentContainerNode
-                .querySelector(`.visualisation[data-code-mapping-id="${codeMappingId}"]`);
+    get currentlyDisplayedVisualisationView(): VisualisationView | null {
+        return this.currentlyDisplayedVisualisationPopup?.visualisationView ?? null;
     }
 
-    private displayVisualisation(request: VisualisationDisplayRequest): void {
-        // Get the name and the content of the visualisation with the given code mapping ID
-        const contentNode = this.getVisualisationContentNodeWith(request.codeMappingId);
-        if (!contentNode) {
-            console.error(`There is no visualisation content for the given code mapping ID (${request.codeMappingId}).`);
+    get hasCurrentlyDisplayedVisualisationView(): boolean {
+        return this.currentlyDisplayedVisualisationPopup !== null;
+    }
+
+    private ensureVisualisationDataExistsForCodeMappingId(codeMappingId: number): void {
+        if (!this.codeMappingIdsToVisualisationData.has(codeMappingId)) {
+            this.codeMappingIdsToVisualisationData.set(codeMappingId, {});
+        }
+    }
+
+    private getVisualisationDataWithCodeMappingId(codeMappingId: number): VisualisationData | null {
+        return this.codeMappingIdsToVisualisationData.get(codeMappingId) ?? null;
+    }
+
+    private processVisualisationDisplayRequest(request: VisualisationDisplayRequest): void {
+        // Get the visualisation data for the requeted code mapping ID and ensure that
+        // 1. both the content and the metadata exist in this manager;
+        // 1. the visualisation is currently available;
+        // 2. there is a view factory for this type of visualisation.
+        const data = this.getVisualisationDataWithCodeMappingId(request.codeMappingId);
+        if (!data || !data.contentNode || !data.metadata) {
+            console.warn(`Visualisation data (content or metadata) is missing for code mapping ID "${request.codeMappingId}".`);
             return;
         }
 
-        const name = contentNode.getAttribute("data-name")!;
-
-        // Make a copy of the content node
-        const contentNodeCopy = contentNode.cloneNode(true) as HTMLElement;
-
-        // Create a new view and display it in a popup
-        if (!contentNode) {
-            console.error(`There is no view factory for the requested visualisation (${name}).`);
+        if (!data.metadata.available) {
+            console.warn(`Visualisation with code mapping ID "${request.codeMappingId}" is not available: it cannot be displayed.`);
             return;
         }
 
-        const factory = this.visualisationNamesToViewFactories.get(name)!;
-        const view = factory?.createView(contentNodeCopy, {
+        const visualisationName = data.metadata.name;
+        if (!this.visualisationNamesToViewFactories.has(visualisationName)) {
+            console.warn(`There is no view factory for visualisations named "${visualisationName}": it cannot be displayed.`);
+            return;           
+        }
+
+        // Clone the content node and display a new view in a visualisation popup
+        const clonedContentNode = VisualisationViewManager.cloneVisualisationContentNode(data.contentNode);
+        
+        const factory = this.visualisationNamesToViewFactories.get(visualisationName)!;
+        const view = factory.createView(clonedContentNode, data.metadata, {
             messenger: this.messenger,
             annotationMaskCoordinates: request.annotationMaskCoordinates,
             pdfPageDetail: request.pdfPageDetail
         });
 
         const popup = new VisualisationPopup(view, request.annotationMaskCoordinates, () => {
-            // Reset all the references to the now hidden visualisation
-            this.currentlyDisplayedVisualisationView = null;
             this.currentlyDisplayedVisualisationPopup = null;
         });
 
-        this.currentlyDisplayedVisualisationView = view;
         this.currentlyDisplayedVisualisationPopup = popup;
     }
 
     private hideCurrentlyDisplayedVisualisation(): void {
-        if (!this.currentlyDisplayedVisualisationView) {
+        if (!this.hasCurrentlyDisplayedVisualisationView) {
             return;
         }
         
         this.currentlyDisplayedVisualisationPopup!.close();
-
-        this.currentlyDisplayedVisualisationPopup = null;
-        this.currentlyDisplayedVisualisationView = null;
     }
 
     private handleVisualisationDisplayRequest(request: VisualisationDisplayRequest): void {
-        // If visualisations are currently disabled, do not fulfil this request
-        if (!this.enableVisualisations) {
-            return;
-        }
-
         // Ensure no visualisation is displayed
         this.hideCurrentlyDisplayedVisualisation();
 
-        // Display the view of the visualisation targeted by the request
-        this.displayVisualisation(request);
+        // Process the display request
+        this.processVisualisationDisplayRequest(request);
     }  
 
     private startHandlingVisualisationDisplayRequests(): void {
         window.addEventListener(
             VisualisationViewManager.REQUEST_VISUALISATION_DISPLAY_EVENT,
             (event: Event) => {
-                // The event must actually be a custom event
                 const customEvent = event as CustomEvent<VisualisationDisplayRequest>;
                 this.handleVisualisationDisplayRequest(customEvent.detail);
             }
         );
     }
 
-    private handleOneVisualisationContentUpdate(message: UpdateOneVisualisationMessage): void {
-        const codeMappingId = message.codeMappingId;
+    // private handleOneVisualisationContentUpdate(message: UpdateOneVisualisationMessage): void {
+    //     const codeMappingId = message.codeMappingId;
 
-        // Update the content of the visualisation using the HTML provided by the core
-        const currentContentNode = this.visualisationContentContainerNode.querySelector(`.visualisation[data-code-mapping-id="${codeMappingId}"]`);
-        if (currentContentNode) {
-            currentContentNode.outerHTML = message.visualisationContentAsHtml;
-        }
-        else {
-            this.visualisationContentContainerNode.innerHTML += message.visualisationContentAsHtml;
-            console.warn(`The content of the updated visualisation (code mapping ID ${message.codeMappingId}) has been appended instead of being replaced: it did not exist before.`);
-        }
+    //     // Update the content of the visualisation using the HTML provided by the core
+    //     const currentContentNode = this.visualisationContentContainerNode.querySelector(`.visualisation[data-code-mapping-id="${codeMappingId}"]`);
+    //     if (currentContentNode) {
+    //         currentContentNode.outerHTML = message.visualisationContentAsHtml;
+    //     }
+    //     else {
+    //         this.visualisationContentContainerNode.innerHTML += message.visualisationContentAsHtml;
+    //         console.warn(`The content of the updated visualisation (code mapping ID ${message.codeMappingId}) has been appended instead of being replaced: it did not exist before.`);
+    //     }
         
-        // If the update allows to safely update any visualisation currently on display,
-        // check if one is displayed and forward it the message so that it can update itself
-        if (message.updateOpenVisualisation && this.currentlyDisplayedVisualisationView) {
-            const newContentNode = this.visualisationContentContainerNode
-                .querySelector(`.visualisation[data-code-mappping-id="${codeMappingId}"]`) as HTMLElement;
+    //     // If the update allows to safely update any visualisation currently on display,
+    //     // check if one is displayed and forward it the message so that it can update itself
+    //     if (message.updateOpenVisualisation && this.currentlyDisplayedVisualisationView) {
+    //         const newContentNode = this.visualisationContentContainerNode
+    //             .querySelector(`.visualisation[data-code-mappping-id="${codeMappingId}"]`) as HTMLElement;
 
-            if (newContentNode) {
-                this.currentlyDisplayedVisualisationView.updateWith(newContentNode);
-                this.currentlyDisplayedVisualisationPopup!.onAfterDisplayedVisualationContentUpdate();
-            }
-        }
-    }
+    //         if (newContentNode) {
+    //             this.currentlyDisplayedVisualisationView.updateWith(newContentNode);
+    //             this.currentlyDisplayedVisualisationPopup!.onAfterDisplayedVisualationContentUpdate();
+    //         }
+    //     }
+    // }
 
-    private handleAllVisualisationsContentUpdate(message: UpdateAllVisualisationsMessage): void {
-        // Update the content of the visualisations using the HTML provided by the core
-        this.visualisationContentContainerNode.innerHTML = message.allVisualisationsContentAsHtml;
+    // private handleAllVisualisationsContentUpdate(message: UpdateAllVisualisationsMessage): void {
+    //     // Update the content of the visualisations using the HTML provided by the core
+    //     this.visualisationContentContainerNode.innerHTML = message.allVisualisationsContentAsHtml;
         
-        // If the update allows to safely update any visualisation currently on display,
-        // check if one is displayed and forward it the message so that it can update itself
-        if (message.updateOpenVisualisation && this.currentlyDisplayedVisualisationView) {
-            const codeMappingId = this.currentlyDisplayedVisualisationView.codeMappingId;
-            const newContentNode = this.visualisationContentContainerNode
-                .querySelector(`.visualisation[data-code-mapping-id="${codeMappingId}"]`) as HTMLElement;
+    //     // If the update allows to safely update any visualisation currently on display,
+    //     // check if one is displayed and forward it the message so that it can update itself
+    //     if (message.updateOpenVisualisation && this.currentlyDisplayedVisualisationView) {
+    //         const codeMappingId = this.currentlyDisplayedVisualisationView.codeMappingId;
+    //         const newContentNode = this.visualisationContentContainerNode
+    //             .querySelector(`.visualisation[data-code-mapping-id="${codeMappingId}"]`) as HTMLElement;
 
-            if (newContentNode) {
-                this.currentlyDisplayedVisualisationView.updateWith(newContentNode);
-                this.currentlyDisplayedVisualisationPopup!.onAfterDisplayedVisualationContentUpdate();
-            }
+    //         if (newContentNode) {
+    //             this.currentlyDisplayedVisualisationView.updateWith(newContentNode);
+    //             this.currentlyDisplayedVisualisationPopup!.onAfterDisplayedVisualationContentUpdate();
+    //         }
+    //     }
+    // }
+
+    private updateCurrentlyDisplayedVisualisationContent(): void {
+        if (!this.hasCurrentlyDisplayedVisualisationView) {
+            return;
         }
-    }
 
-    private startHandlingVisualisationContentUpdates(): void {
-        this.messenger.setHandlerFor(
-            CoreToWebviewMessageType.UpdateOneVisualisation,
-            (message: UpdateOneVisualisationMessage) => {
-                this.handleOneVisualisationContentUpdate(message);
-            }
-        );
+        const visualisationPopup = this.currentlyDisplayedVisualisationPopup!;
+        const visualisationView = this.currentlyDisplayedVisualisationView!;
 
-        this.messenger.setHandlerFor(
-            CoreToWebviewMessageType.UpdateAllVisualisations,
-            (message: UpdateAllVisualisationsMessage) => {
-                this.handleAllVisualisationsContentUpdate(message);
-            }
-        );
-    }
-
-    private handleOneVisualisationStatusUpdate(message: UpdateOneVisualisationStatusMessage): void {
-        // TODO
-    }
-
-    private handleAllVisualisationsStatusUpdate(message: UpdateAllVisualisationsStatusMessage): void {
-        this.enableVisualisations = message.enableAllVisualisations;
-        document.body.classList.toggle(
-            VisualisationViewManager.VISUALISATIONS_ARE_UNAVAILABLE_BODY_CLASS,
-            !this.enableVisualisations
-        );
-
-        // If the visualisations just became unavailable,
-        // make sure to close the one currently in display (if any)
-        if (!this.enableVisualisations) {
-            this.currentlyDisplayedVisualisationPopup?.close();
+        const codeMappingId = visualisationView.codeMappingId;
+        const data = this.getVisualisationDataWithCodeMappingId(codeMappingId);
+        if (!data || !data.contentNode) {
+            console.warn(`Visualisation content is missing for the currently displayed visualisation (with code mapping ID "${codeMappingId}"): the view cannot be updated.`);
+            return;
         }
+
+        const clonedContentNode = VisualisationViewManager.cloneVisualisationContentNode(data.contentNode);
+        visualisationView.updateContentWith(clonedContentNode);
+        visualisationPopup.onAfterVisualationContentUpdate();        
     }
 
-    private startHandlingVisualisationStatusUpdate(): void {
+    private updateCurrentlyDisplayedVisualisationMetadata(): void {
+        if (!this.hasCurrentlyDisplayedVisualisationView) {
+            return;
+        }
+
+        const visualisationPopup = this.currentlyDisplayedVisualisationPopup!;
+        const visualisationView = this.currentlyDisplayedVisualisationView!;
+
+        const codeMappingId = visualisationView.codeMappingId;
+        const data = this.getVisualisationDataWithCodeMappingId(codeMappingId);
+        if (!data || !data.metadata) {
+            console.warn(`Visualisation metadata is missing for the currently displayed visualisation (with code mapping ID "${codeMappingId}"): the view cannot be updated.`);
+            return;
+        }
+
+        visualisationView.updateMetadataWith(data.metadata);
+        visualisationPopup.onAfterVisualisationMetadataUpdate();        
+    }
+
+    private updateVisualisationContent(codeMappingId: number, newContentAsHtml: string): void {
+        // Get the current data for the given code mapping ID, or create it if needed
+        this.ensureVisualisationDataExistsForCodeMappingId(codeMappingId);
+        const data = this.getVisualisationDataWithCodeMappingId(codeMappingId)!;
+
+        // Create an HTML element from the given content string and update the data with it
+        const temporaryContainerNode = document.createElement("template");
+        temporaryContainerNode.innerHTML = newContentAsHtml;
+
+        data.contentNode = temporaryContainerNode.content.firstElementChild as HTMLElement;
+
+        // Possibly update the currently displayed visualisation (if there is one)
+        this.updateCurrentlyDisplayedVisualisationContent();
+    }
+
+    private updateVisualisationMetadata(codeMappingId: number, newMetadata: VisualisationMetadata): void {
+        // Get the current data for the given code mapping ID, or create it if needed
+        this.ensureVisualisationDataExistsForCodeMappingId(codeMappingId);
+        const data = this.getVisualisationDataWithCodeMappingId(codeMappingId)!;
+
+        // Update the data with the new metadata
+        data.metadata = newMetadata;
+
+        // Possibly update the currently displayed visualisation (if there is one)
+        this.updateCurrentlyDisplayedVisualisationMetadata();
+    }
+
+    private startHandlingWebviewMessages(): void {
         this.messenger.setHandlerFor(
-            CoreToWebviewMessageType.UpdateOneVisualisationStatusMessage,
-            (message: UpdateOneVisualisationStatusMessage) => {
-                this.handleOneVisualisationStatusUpdate(message);
+            CoreToWebviewMessageType.UpdateVisualisationContent,
+            async (message: UpdateVisualisationContentMessage) => {
+                this.visualisationDataUpdateTaskQueuer.add(async () => {
+                    this.updateVisualisationContent(message.codeMappingId, message.contentAsHtml);
+                });
             }
         );
 
         this.messenger.setHandlerFor(
-            CoreToWebviewMessageType.UpdateAllVisualisationsStatusMessage,
-            (message: UpdateAllVisualisationsStatusMessage) => {
-                this.handleAllVisualisationsStatusUpdate(message);
+            CoreToWebviewMessageType.UpdateVisualisationMetadata,
+            async (message: UpdateVisualisationMetadataMessage) => {
+                this.visualisationDataUpdateTaskQueuer.add(async () => {
+                    this.updateVisualisationMetadata(message.codeMappingId, message.metadata);
+                });
             }
         );
+    }
+
+    private static cloneVisualisationContentNode(node: HTMLElement): HTMLElement {
+        return node.cloneNode(true) as HTMLElement;
     }
 }

@@ -1,10 +1,11 @@
 import * as vscode from "vscode";
 import { NotifyVisualisationModelMessage } from "../../shared/messenger/messages";
 import { HtmlUtils } from "../../shared/utils/HtmlUtils";
+import { VisualisationModelUID, VisualisationContent, VisualisationMetadata } from "../../shared/visualisations/types";
 import { ASTNode } from "../ast/nodes/ASTNode";
 import { CodeMapping } from "../code-mappings/CodeMapping";
 import { SourceFile } from "../source-files/SourceFile";
-import { VisualisationContent, VisualisationModel, VisualisationModelUID, VisualisationStatus } from "./VisualisationModel";
+import { VisualisationModel } from "./VisualisationModel";
 import { VisualisableCodeContext } from "./VisualisationModelProvider";
 import { VisualisationModelUtilities } from "./VisualisationModelUtilities";
 
@@ -38,7 +39,7 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
 
     readonly viewDidOpenEventEmitter: vscode.EventEmitter<VisualisationModel>;
     readonly viewDidCloseEventEmitter: vscode.EventEmitter<VisualisationModel>;
-    readonly statusChangeEventEmitter: vscode.EventEmitter<VisualisationModel>;
+    readonly metadataChangeEventEmitter: vscode.EventEmitter<VisualisationModel>;
     readonly contentChangeEventEmitter: vscode.EventEmitter<VisualisationModel>;
     protected contentUpdateEndEventEmitter: vscode.EventEmitter<VisualisationModelContentUpdateResult>;
     
@@ -56,7 +57,7 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
 
         this.viewDidOpenEventEmitter = new vscode.EventEmitter();
         this.viewDidCloseEventEmitter = new vscode.EventEmitter();
-        this.statusChangeEventEmitter = new vscode.EventEmitter();
+        this.metadataChangeEventEmitter = new vscode.EventEmitter();
         this.contentChangeEventEmitter = new vscode.EventEmitter();
         this.contentUpdateEndEventEmitter = new vscode.EventEmitter();
 
@@ -68,14 +69,12 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
             this.contentUpdateEndEventEmitter.event(async updateSuccess => {
                 if (updateSuccess) {
                     this.lastContentUpdateFailed = false;
-
                     this.contentChangeEventEmitter.fire(this);
+                    this.metadataChangeEventEmitter.fire(this);
                 }
                 else {
                     this.lastContentUpdateFailed = true;
-
-                    this.contentChangeEventEmitter.fire(this);
-                    this.statusChangeEventEmitter.fire(this);
+                    this.metadataChangeEventEmitter.fire(this);
                 }
             });
 
@@ -101,9 +100,21 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
         return this.context.astNode;
     }
 
-    get status(): VisualisationStatus {
+    get metadata(): VisualisationMetadata {
         return {
-            available: !this.astNode.requiresReparsing && !this.lastContentUpdateFailed
+            // General data about this visualisation
+            name: this.name,
+            uid: this.uid,
+            codeMappingId: this.codeMapping.id,
+
+            available: !this.astNode.requiresReparsing && !this.lastContentUpdateFailed,
+
+            // Data about the source file that contains the visualisable code
+            absoluteFilePath: this.sourceFile.uri.path,
+            fileName: this.sourceFile.name,
+
+            // Data about the location of the visualisable code within the source file
+            codeRange: this.astNode.range.raw,
         };
     }
 
@@ -117,6 +128,7 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
     }
 
     protected get contentHtmlAttributes(): Record<string, string> {
+        // TODO: remove the useless attributes
         return {
             "class": "visualisation",
             "data-name": this.name,
@@ -149,7 +161,7 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
 
                     // If the visualisation is available, save the source file of this visualisation
                     // TODO: only save the document if it was modified
-                    if (this.status.available) {
+                    if (this.metadata.available) {
                         await this.sourceFile.save();
                     }
                 }
@@ -168,7 +180,7 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
                     await this.updateContentData();
                 }
                 else {
-                    this.statusChangeEventEmitter.fire(this);
+                    this.metadataChangeEventEmitter.fire(this);
                 }
             })
         );

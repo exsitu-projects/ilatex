@@ -2,6 +2,8 @@ import { VisualisationView, CodeRange, VisualisationViewInstantiationContext } f
 import { Messenger } from "../Messenger";
 import { WebviewToCoreMessageType } from "../../shared/messenger/messages";
 import { AnnotationMaskCoordinates } from "../pdf/PDFPageRenderer";
+import { VisualisationMetadata, VisualisationModelUID } from "../../shared/visualisations/types";
+import { RawSourceFileRange } from "../../shared/source-files/types";
 
 // Helper function to extract a location (in the LaTeX document) from a HTML attribute
 function parseLocationFromAttribute(attributeValue: string) {
@@ -17,40 +19,50 @@ export abstract class AbstractVisualisationView implements VisualisationView {
     protected messenger: Messenger;
 
     abstract readonly visualisationName: string;
-    private lastKnownUid: number;
-    readonly codeMappingId: number;
 
+    protected metadata: VisualisationMetadata;
     protected contentNode: HTMLElement;
-    readonly contentTitle: string;
-    readonly sourceFileName: string;
-    private lastKnownSourceCodeRange: CodeRange;
 
-    constructor(contentNode: HTMLElement, context: VisualisationViewInstantiationContext) {
+    constructor(
+        contentNode: HTMLElement,
+        metadata: VisualisationMetadata,
+        context: VisualisationViewInstantiationContext
+    ) {
         this.instanciationContext = context;
         this.messenger = context.messenger;
 
-        this.lastKnownUid = AbstractVisualisationView.extractVisualisationUidFrom(contentNode);
-        this.codeMappingId = AbstractVisualisationView.extractCodeMappingIdFrom(contentNode);
-
         this.contentNode = contentNode;
-        this.contentTitle = contentNode.getAttribute("data-name")!;
-        this.sourceFileName = contentNode.getAttribute("data-source-file-name")!;
-        this.lastKnownSourceCodeRange =
-            AbstractVisualisationView.extractSourceCodeRangeFromContentNode(contentNode);
+        this.metadata = metadata;
     }
 
-    get visualisationUid(): number {
-        return this.lastKnownUid;
+    get name(): string {
+        return this.metadata.name;
     }
 
-    get sourceCodeRange(): CodeRange {
-        return this.lastKnownSourceCodeRange;
+    get title(): string {
+        return this.metadata.name;
+    }
+
+    get modelUid(): VisualisationModelUID {
+        return this.metadata.uid;
+    }
+
+    get codeMappingId(): number {
+        return this.metadata.codeMappingId;
+    }
+
+    get sourceFileName(): string {
+        return this.metadata.fileName;
+    }
+
+    get sourceFileCodeRange(): RawSourceFileRange {
+        return this.metadata.codeRange;
     }
 
     revealInSourceDocument(): void {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
-            visualisationUid: this.visualisationUid,
+            visualisationUid: this.metadata.uid,
             title: "reveal-code-in-editor",
             notification: {}
         });
@@ -63,7 +75,7 @@ export abstract class AbstractVisualisationView implements VisualisationView {
     onAfterVisualisationDisplay(): void {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
-            visualisationUid: this.visualisationUid,
+            visualisationUid: this.metadata.uid,
             title: "view-popup-did-open",
             notification: {}
         });
@@ -84,7 +96,7 @@ export abstract class AbstractVisualisationView implements VisualisationView {
     onAfterVisualisationDisappearance(): void {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
-            visualisationUid: this.visualisationUid,
+            visualisationUid: this.metadata.uid,
             title: "view-popup-did-close",
             notification: {}
         });
@@ -92,29 +104,9 @@ export abstract class AbstractVisualisationView implements VisualisationView {
 
     abstract render(): HTMLElement;
     
-    updateWith(newContentNode: HTMLElement): void {
-        // Update the UID of the visualisation (which changes which each update from the model)
-        this.lastKnownUid = AbstractVisualisationView.extractVisualisationUidFrom(newContentNode);
+    abstract updateContentWith(newContentNode: HTMLElement): void;
 
-        // Update the location in the source code (which may change if the code has been edited)
-        this.lastKnownSourceCodeRange =
-            AbstractVisualisationView.extractSourceCodeRangeFromContentNode(newContentNode);
-
+    updateMetadataWith(newMetadata: VisualisationMetadata): void {
+        this.metadata = newMetadata;
     };
-
-
-    static extractVisualisationUidFrom(contentNode: HTMLElement): number {
-        return parseInt(contentNode.getAttribute("data-uid")!);
-    }
-
-    static extractCodeMappingIdFrom(contentNode: HTMLElement): number {
-        return parseInt(contentNode.getAttribute("data-code-mapping-id")!);
-    }
-
-    static extractSourceCodeRangeFromContentNode(contentNode: HTMLElement): CodeRange {
-        return {
-            start: parseLocationFromAttribute(contentNode.getAttribute("data-code-start-position")!),
-            end: parseLocationFromAttribute(contentNode.getAttribute("data-code-end-position")!)
-        };
-    }
 }

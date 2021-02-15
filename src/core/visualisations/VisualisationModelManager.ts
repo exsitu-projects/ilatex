@@ -1,9 +1,10 @@
 import * as vscode from "vscode";
 import { NotifyVisualisationModelMessage } from "../../shared/messenger/messages";
+import { VisualisationModelUID } from "../../shared/visualisations/types";
 import { CodeMappingID } from "../code-mappings/CodeMapping";
 import { InteractiveLatex } from "../InteractiveLaTeX";
 import { VisualisationModelExtractor } from "./extractors/VisualisationModelExtractor";
-import { VisualisationModel, VisualisationModelUID } from "./VisualisationModel";
+import { VisualisationModel } from "./VisualisationModel";
 
 export class VisualisationModelManager {
     private ilatex: InteractiveLatex;
@@ -11,7 +12,7 @@ export class VisualisationModelManager {
     private visualisationModels: VisualisationModel[];
     private visualisationModelsExtractor: VisualisationModelExtractor;
 
-    readonly modelStatusChangeEventEmitter: vscode.EventEmitter<VisualisationModel>;
+    readonly modelMetadataChangeEventEmitter: vscode.EventEmitter<VisualisationModel>;
     readonly modelContentChangeEventEmitter: vscode.EventEmitter<VisualisationModel>;
     readonly modelChangeEventEmitter: vscode.EventEmitter<VisualisationModel[]>;
 
@@ -23,7 +24,7 @@ export class VisualisationModelManager {
         this.visualisationModels = [];
         this.visualisationModelsExtractor = new VisualisationModelExtractor(ilatex);
 
-        this.modelStatusChangeEventEmitter = new vscode.EventEmitter();
+        this.modelMetadataChangeEventEmitter = new vscode.EventEmitter();
         this.modelContentChangeEventEmitter = new vscode.EventEmitter();
         this.modelChangeEventEmitter = new vscode.EventEmitter();
 
@@ -65,16 +66,16 @@ export class VisualisationModelManager {
     private startObservingModels(): void {
         for (let model of this.models) {
             this.modelObserverDisposables.push(
-                model.statusChangeEventEmitter.event(model => {
-                    this.modelStatusChangeEventEmitter.fire(model);
-                    this.ilatex.webviewManager.sendNewStatusForOneVisualisation(model);
+                model.metadataChangeEventEmitter.event(model => {
+                    this.modelMetadataChangeEventEmitter.fire(model);
+                    this.ilatex.webviewManager.sendNewVisualisationMetadataFor(model);
                 }
             ));
 
             this.modelObserverDisposables.push(
                 model.contentChangeEventEmitter.event(model => {
                     this.modelContentChangeEventEmitter.fire(model);
-                    this.ilatex.webviewManager.sendNewContentForOneVisualisation(model);
+                    this.ilatex.webviewManager.sendNewVisualisationContentFor(model);
                 }
             ));
         }

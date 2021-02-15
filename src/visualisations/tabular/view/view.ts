@@ -2,6 +2,7 @@ import "./HandsontableApi";
 import { AbstractVisualisationView } from "../../../webview/visualisations/AbstractVisualisationView";
 import { VisualisationViewFactory, VisualisationView, VisualisationViewInstantiationContext } from "../../../webview/visualisations/VisualisationView";
 import { WebviewToCoreMessageType } from "../../../shared/messenger/messages";
+import { VisualisationMetadata } from "../../../shared/visualisations/types";
 
 
 interface HandsontableCellCoords {
@@ -33,8 +34,8 @@ class TabularView extends AbstractVisualisationView {
     private handsontableInstance: Handsontable | null;
     private handsontableMutationObserver: MutationObserver | null;
     
-    constructor(contentNode: HTMLElement, context: VisualisationViewInstantiationContext) {
-        super(contentNode, context);
+    constructor(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewInstantiationContext) {
+        super(contentNode, metadata, context);
 
         this.columnDetails = this.extractColumnDetails();
         this.tableContent = this.extractTableContent();
@@ -186,7 +187,7 @@ class TabularView extends AbstractVisualisationView {
     private selectDocumentCellContent(cellLocation: CellLocation): void {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
-            visualisationUid: this.visualisationUid,
+            visualisationUid: this.modelUid,
             title: "select-cell-content",
             notification: {
                 columnIndex: cellLocation.columnIndex,
@@ -198,7 +199,7 @@ class TabularView extends AbstractVisualisationView {
     private setDocumentCellContent(cellLocation: CellLocation, newContent: string): void {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
-            visualisationUid: this.visualisationUid,
+            visualisationUid: this.modelUid,
             title: "set-cell-content",
             notification: {
                 columnIndex: cellLocation.columnIndex,
@@ -211,7 +212,7 @@ class TabularView extends AbstractVisualisationView {
     private moveDocumentRow(oldRowIndex: number, newRowIndex: number): void {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
-            visualisationUid: this.visualisationUid,
+            visualisationUid: this.modelUid,
             title: "move-row",
             notification: {
                 oldRowIndex: oldRowIndex,
@@ -223,7 +224,7 @@ class TabularView extends AbstractVisualisationView {
     private moveDocumentColumn(oldColumnIndex: number, newColumnIndex: number): void {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
-            visualisationUid: this.visualisationUid,
+            visualisationUid: this.modelUid,
             title: "move-column",
             notification: {
                 oldColumnIndex: oldColumnIndex,
@@ -286,9 +287,7 @@ class TabularView extends AbstractVisualisationView {
         return this.viewNode;
     }
 
-    updateWith(newContentNode: HTMLElement): void {
-        super.updateWith(newContentNode);
-        
+    updateContentWith(newContentNode: HTMLElement): void {
         this.contentNode = newContentNode;
 
         // Extract fresh data fron the new content node
@@ -315,7 +314,7 @@ class TabularView extends AbstractVisualisationView {
 export class TabularViewFactory implements VisualisationViewFactory {
     readonly visualisationName = TabularView.visualisationName;
     
-    createView(contentNode: HTMLElement, context: VisualisationViewInstantiationContext): VisualisationView {
-        return new TabularView(contentNode, context);
+    createView(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewInstantiationContext): VisualisationView {
+        return new TabularView(contentNode, metadata, context);
     }
 }

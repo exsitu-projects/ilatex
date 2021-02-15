@@ -1,6 +1,7 @@
 import { AbstractVisualisationView } from "../../../webview/visualisations/AbstractVisualisationView";
 import { VisualisationViewFactory, VisualisationView, VisualisationViewInstantiationContext } from "../../../webview/visualisations/VisualisationView";
 import { WebviewToCoreMessageType } from "../../../shared/messenger/messages";
+import { VisualisationMetadata } from "../../../shared/visualisations/types";
 
 // 2D dimensions of an element (in pixels)
 interface Dimensions {
@@ -75,8 +76,8 @@ class IncludegraphicsView extends AbstractVisualisationView {
     private wheelCallback =
         (event: WheelEvent) => { this.onScroll(event); };
 
-    constructor(contentNode: HTMLElement, context: VisualisationViewInstantiationContext) {
-        super(contentNode, context);
+    constructor(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewInstantiationContext) {
+        super(contentNode, metadata, context);
 
         this.viewNode = document.createElement("div");
         this.viewNode.innerHTML = contentNode.innerHTML;
@@ -441,7 +442,7 @@ class IncludegraphicsView extends AbstractVisualisationView {
     updateCommandOptions(newOptions: IncludegraphicsOptions): void {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
-            visualisationUid: this.visualisationUid,
+            visualisationUid: this.modelUid,
             title: "set-options",
             notification: {
                 newOptions: newOptions
@@ -453,9 +454,7 @@ class IncludegraphicsView extends AbstractVisualisationView {
         return this.viewNode;
     }
 
-    updateWith(newContentNode: HTMLElement): void {
-        super.updateWith(newContentNode);
-
+    updateContentWith(newContentNode: HTMLElement): void {
         // TODO: implement
     }
 
@@ -467,7 +466,7 @@ class IncludegraphicsView extends AbstractVisualisationView {
 export class IncludegraphicsViewFactory implements VisualisationViewFactory {
     readonly visualisationName = IncludegraphicsView.visualisationName;
     
-    createView(contentNode: HTMLElement, context: VisualisationViewInstantiationContext): VisualisationView {
-        return new IncludegraphicsView(contentNode, context);
+    createView(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewInstantiationContext): VisualisationView {
+        return new IncludegraphicsView(contentNode, metadata, context);
     }
 }

@@ -2,7 +2,7 @@ import { AnnotationMaskCoordinates } from "../pdf/PDFPageRenderer";
 import { VisualisationView } from "./VisualisationView";
 
 export class VisualisationPopup {
-    private visualisationView: VisualisationView;
+    readonly visualisationView: VisualisationView;
     private maskCoordinates: AnnotationMaskCoordinates;
 
     private onClose: (() => void) | null;
@@ -83,7 +83,7 @@ export class VisualisationPopup {
         nameNode.classList.add("name");
         titleNode.append(nameNode);
 
-        nameNode.textContent = this.visualisationView.contentTitle;
+        nameNode.textContent = this.visualisationView.title;
 
         // Add the location (in the code) to the title
         const locationNode = document.createElement("span");
@@ -116,7 +116,7 @@ export class VisualisationPopup {
     createContent() {
         this.contentNode = document.createElement("div");
         this.contentNode.classList.add("popup-content");
-        this.contentNode.setAttribute("data-visualisation-name", this.visualisationView.visualisationName);
+        this.contentNode.setAttribute("data-visualisation-name", this.visualisationView.name);
 
         this.frameNode!.append(this.contentNode);
 
@@ -132,11 +132,11 @@ export class VisualisationPopup {
 
     getVisualisationLocationInSourceCode() {
         const fileName = this.visualisationView.sourceFileName;
-        const range = this.visualisationView.sourceCodeRange;
+        const range = this.visualisationView.sourceFileCodeRange;
 
-        return range.start.line === range.end.line
-             ? `(${fileName} &middot; line ${range.start.line + 1})`
-             : `(${fileName} &middot; lines ${range.start.line + 1}&#8198;–&#8198;${range.end.line + 1})`;         
+        return range.from.line === range.to.line
+             ? `(${fileName} &middot; line ${range.from.line + 1})`
+             : `(${fileName} &middot; lines ${range.from.line + 1}&#8198;–&#8198;${range.to.line + 1})`;         
     }
 
     startHandlingBackgroundClicks() {
@@ -149,10 +149,12 @@ export class VisualisationPopup {
         });
     }
 
-    onAfterDisplayedVisualationContentUpdate() {
-        // Update the content and other parts of the popup which may depend on the view
-        this.updateTitleBar();
+    onAfterVisualationContentUpdate(): void {
         this.updateContent();
+    }
+
+    onAfterVisualisationMetadataUpdate(): void {
+        this.updateTitleBar();
     }
 
     open() {

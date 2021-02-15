@@ -3,6 +3,7 @@ import "./katexApi";
 import { AbstractVisualisationView } from "../../../webview/visualisations/AbstractVisualisationView";
 import { VisualisationViewFactory, VisualisationView, VisualisationViewInstantiationContext } from "../../../webview/visualisations/VisualisationView";
 import { WebviewToCoreMessageType } from "../../../shared/messenger/messages";
+import { VisualisationMetadata } from "../../../shared/visualisations/types";
 
 interface MathCodeSplitByRange {
     code: string;
@@ -38,8 +39,8 @@ class MathematicsView extends AbstractVisualisationView {
     private completeMathCodeInputCallback =
         (event: Event) => { this.onCompleteMathCodeEdit(event as InputEvent); };  // Casted to bypass the overly-limited type of addEventListener?
 
-    constructor(contentNode: HTMLElement, context: VisualisationViewInstantiationContext) {
-        super(contentNode, context);
+    constructor(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewInstantiationContext) {
+        super(contentNode, metadata, context);
 
         this.mathCode = this.contentNode.innerText;
 
@@ -287,7 +288,7 @@ class MathematicsView extends AbstractVisualisationView {
         // Tell the model the code has been updated
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
-            visualisationUid: this.visualisationUid,
+            visualisationUid: this.modelUid,
             title: "set-math-code",
             notification: {
                 trimmedMathCode: this.trimmedMathCode
@@ -317,8 +318,7 @@ class MathematicsView extends AbstractVisualisationView {
         return this.viewNode;
     }
 
-    updateWith(newContentNode: HTMLElement): void {
-        super.updateWith(newContentNode);
+    updateContentWith(newContentNode: HTMLElement): void {
         this.contentNode = newContentNode;
         this.mathCode = this.contentNode.innerText;
 
@@ -363,7 +363,7 @@ class MathematicsView extends AbstractVisualisationView {
 export class MathematicsViewFactory implements VisualisationViewFactory {
     readonly visualisationName = MathematicsView.visualisationName;
     
-    createView(contentNode: HTMLElement, context: VisualisationViewInstantiationContext): VisualisationView {
-        return new MathematicsView(contentNode, context);
+    createView(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewInstantiationContext): VisualisationView {
+        return new MathematicsView(contentNode, metadata, context);
     }
 }

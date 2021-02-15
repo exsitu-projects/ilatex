@@ -1,11 +1,11 @@
+import { VisualisationMetadata } from "../visualisations/types";
+
 // Types of messages which can be exchanged between the core and the webview
 export const enum CoreToWebviewMessageType {
-    UpdateOneVisualisation = "UpdateOneVisualisation",
-    UpdateAllVisualisations = "UpdateAllVisualisations",
+    UpdateVisualisationContent = "UpdateVisualisationContent",
+    UpdateVisualisationMetadata = "UpdateVisualisationMetadata",
     UpdatePDF = "UpdatePDF",
     UpdateCompilationStatus = "UpdateCompilationStatus",
-    UpdateOneVisualisationStatusMessage = "UpdateOneVisualisationStatusMessage",
-    UpdateAllVisualisationsStatusMessage = "UpdateAllVisualisationsStatusMessage"
 }
 
 export const enum WebviewToCoreMessageType {
@@ -18,17 +18,16 @@ export type MessageType =
 
 
 // Specification of each type of message which can be sent by the core to the webview
-export interface UpdateOneVisualisationMessage {
-    type: CoreToWebviewMessageType.UpdateOneVisualisation;
+export interface UpdateVisualisationContentMessage {
+    type: CoreToWebviewMessageType.UpdateVisualisationContent;
     codeMappingId: number;
-    visualisationContentAsHtml: string;
-    updateOpenVisualisation: boolean;
+    contentAsHtml: string;
 }
 
-export interface UpdateAllVisualisationsMessage {
-    type: CoreToWebviewMessageType.UpdateAllVisualisations;
-    allVisualisationsContentAsHtml: string;
-    updateOpenVisualisation: boolean;
+export interface UpdateVisualisationMetadataMessage {
+    type: CoreToWebviewMessageType.UpdateVisualisationMetadata;
+    codeMappingId: number;
+    metadata: VisualisationMetadata;
 }
 
 export interface UpdatePDFMessage {
@@ -42,24 +41,11 @@ export interface UpdateCompilationStatusMessage {
     lastCompilationFailed: boolean;
 }
 
-export interface UpdateOneVisualisationStatusMessage {
-    type: CoreToWebviewMessageType.UpdateOneVisualisationStatusMessage;
-    codeMappingId: number;
-    visualisationIsAvailable: boolean;
-}
-
-export interface UpdateAllVisualisationsStatusMessage {
-    type: CoreToWebviewMessageType.UpdateAllVisualisationsStatusMessage;
-    enableAllVisualisations: boolean;
-}
-
 export type CoreToWebviewMessage =
-    | UpdateOneVisualisationMessage
-    | UpdateAllVisualisationsMessage
+    | UpdateVisualisationContentMessage
+    | UpdateVisualisationMetadataMessage
     | UpdatePDFMessage
-    | UpdateCompilationStatusMessage
-    | UpdateOneVisualisationStatusMessage
-    | UpdateAllVisualisationsStatusMessage;
+    | UpdateCompilationStatusMessage;
 
 
 // Specification of each type of message which can be sent by the webview to the core

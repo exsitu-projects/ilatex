@@ -49,7 +49,7 @@ export class DecorationManager {
 
     private computeCodeLensesForDocument(document: vscode.TextDocument): vscode.CodeLens[] {
         return this.ilatex.visualisationModelManager.models
-            .filter(model => model.sourceFile.isRepresentedByDocument(document) && !model.status.available)
+            .filter(model => model.sourceFile.isRepresentedByDocument(document) && !model.metadata.available)
             .map(model => new vscode.CodeLens(model.astNode.range.asVscodeRange, {
                 title: "iLaTeX is out-of-sync with this piece of code. Click to recompile the document and recompute code visualisations.",
                 command: "ilatex.recompile"
@@ -102,12 +102,12 @@ export class DecorationManager {
 
         // Available visualisations should be decorated for debug purposes only
         const codeRangesOfAvailableVisualisations = models
-            .filter(model => model.status.available)
+            .filter(model => model.metadata.available)
             .map(model => model.astNode.range.asVscodeRange);
         editor.setDecorations(textDecorations.availableVisualisableCode, codeRangesOfAvailableVisualisations);
 
         const codeRangesOfUnavailableVisualisations = models
-            .filter(model => !model.status.available)
+            .filter(model => !model.metadata.available)
             .map(model => model.astNode.range.asVscodeRange);
         editor.setDecorations(textDecorations.unavailableVisualisableCode, codeRangesOfUnavailableVisualisations);
     }
@@ -129,7 +129,7 @@ export class DecorationManager {
 
     private startObservingEventsThatTriggerRedecoration(): void {
         this.redecorationTriggerEventsObserverDisposables.push(
-            this.ilatex.visualisationModelManager.modelStatusChangeEventEmitter.event(
+            this.ilatex.visualisationModelManager.modelMetadataChangeEventEmitter.event(
                 async model => this.redecorateVisibleEditors()
             ),
 

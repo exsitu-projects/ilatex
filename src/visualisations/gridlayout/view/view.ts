@@ -3,6 +3,7 @@ import { VisualisationViewFactory, VisualisationView, VisualisationViewInstantia
 import { Messenger } from "../../../webview/Messenger";
 import { WebviewToCoreMessageType } from "../../../shared/messenger/messages";
 import { TaskDebouncer } from "../../../shared/tasks/TaskDebouncer";
+import { VisualisationMetadata } from "../../../shared/visualisations/types";
 
 const enum ResizeType {
     None = "None",
@@ -50,8 +51,8 @@ class GridLayoutView extends AbstractVisualisationView {
     private mouseUpDuringResizeCallback =
         (event: MouseEvent) => { this.onMouseUpDuringResize(event); };
 
-    constructor(contentNode: HTMLElement, context: VisualisationViewInstantiationContext) {
-        super(contentNode, context);
+    constructor(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewInstantiationContext) {
+        super(contentNode, metadata, context);
 
         this.contentRowNodes = Array.from(this.contentNode.querySelectorAll(".row"));
         this.contentCellNodes = Array.from(this.contentNode.querySelectorAll(".cell"));
@@ -220,7 +221,7 @@ class GridLayoutView extends AbstractVisualisationView {
     private selectCellContentOf(cellNode: HTMLElement) {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
-            visualisationUid: this.visualisationUid,
+            visualisationUid: this.modelUid,
             title: "select-cell-content",
             notification: this.getCellPositionInGridFromNode(cellNode)
         });
@@ -234,7 +235,7 @@ class GridLayoutView extends AbstractVisualisationView {
         const { rowIndex, cellIndex } = this.getCellPositionInGridFromNode(cellNode);
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
-            visualisationUid: this.visualisationUid,
+            visualisationUid: this.modelUid,
             title: "resize-cell",
             notification: {
                 rowIndex: rowIndex,
@@ -253,7 +254,7 @@ class GridLayoutView extends AbstractVisualisationView {
         const { rowIndex } = this.getRowPositionInGridFromNode(rowNode);
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
-            visualisationUid: this.visualisationUid,
+            visualisationUid: this.modelUid,
             title: "resize-row",
             notification: {
                 rowIndex: rowIndex,
@@ -350,9 +351,7 @@ class GridLayoutView extends AbstractVisualisationView {
         return this.viewNode;
     }
 
-    updateWith(newContentNode: HTMLElement): void {
-        super.updateWith(newContentNode);
-
+    updateContentWith(newContentNode: HTMLElement): void {
         this.contentNode = newContentNode;
         this.contentRowNodes = Array.from(this.contentNode.querySelectorAll(".row"));
         this.contentCellNodes = Array.from(this.contentNode.querySelectorAll(".cell"));
@@ -366,7 +365,7 @@ class GridLayoutView extends AbstractVisualisationView {
 export class GridLayoutViewFactory implements VisualisationViewFactory {
     readonly visualisationName = GridLayoutView.visualisationName;
     
-    createView(contentNode: HTMLElement, context: VisualisationViewInstantiationContext): VisualisationView {
-        return new GridLayoutView(contentNode, context);
+    createView(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewInstantiationContext): VisualisationView {
+        return new GridLayoutView(contentNode, metadata, context);
     }
 }
