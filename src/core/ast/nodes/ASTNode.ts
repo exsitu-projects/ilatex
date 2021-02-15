@@ -129,6 +129,10 @@ export abstract class ASTNode {
             // console.log(`${this.toString()} requires reparsing`);
             this.hasUnreparsedContentChanges = true;
         }
+
+        else if (relativePositionToModifiedRange === RelativeRangePosition.Before) {
+            this.rangeChangeEventEmitter.fire();
+        }
     }
 
     protected async reparse(): Promise<P.Result<ASTNode>> {

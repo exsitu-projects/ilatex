@@ -171,8 +171,8 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
 
     protected startObservingAstNode(): void {
         this.astNodeObserversDisposables.push(
-            this.astNode.rangeChangeEventEmitter.event(async node => {
-                await this.updateContentData();
+            this.astNode.rangeChangeEventEmitter.event(async () => {
+                this.metadataChangeEventEmitter.fire(this);
             }),
 
             this.astNode.contentChangeEventEmitter.event(async nodeUpdateResult => {
