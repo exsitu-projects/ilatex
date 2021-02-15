@@ -91,3 +91,53 @@
     overflow-x: hidden;
     z-index: 1000;
 }
+
+
+
+/* Errors */
+
+.visualisation-popup .popup-error {
+    display: none;
+}
+
+.visualisation-popup.unavailable .popup-content {
+    display: none;
+}
+
+.visualisation-popup.unavailable .popup-error {
+    display: block;
+    height: 100%;
+    padding: 10px;
+    background-color: #f7d999;
+    color: #000;
+    text-align: center;
+    user-select: none;
+}
+
+.popup-error .error-title {
+    display: inline-block;
+    max-width: 600px;
+    margin: 0 0 1ex 0;
+    font-size: 1.15rem;
+    font-weight: bold;
+    text-align: center;
+}
+
+.popup-error .error-message {
+    max-width: 600px;
+    margin: 0 auto;
+    text-align: justify;
+}
+
+.popup-error .error-suggestions {
+    max-width: 600px;
+    margin: 1em auto 0;
+    list-style-type: "– ";
+    text-align: left;
+}
+
+.popup-error .red-highlight {
+    padding: 2px;
+    background-color: #e46f6f7a;
+    border-radius: 2px;
+}

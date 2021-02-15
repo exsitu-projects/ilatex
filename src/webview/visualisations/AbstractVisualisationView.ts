@@ -50,6 +50,10 @@ export abstract class AbstractVisualisationView implements VisualisationView {
         return this.metadata.codeRange;
     }
 
+    get isAvailable(): boolean {
+        return this.metadata.available;
+    }
+
     revealInSourceDocument(): void {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,

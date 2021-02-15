@@ -26,6 +26,7 @@ export interface VisualisationView {
     readonly codeMappingId: number;
     readonly sourceFileName: string;
     readonly sourceFileCodeRange: RawSourceFileRange;
+    readonly isAvailable: boolean;
 
     render(): HTMLElement;
 

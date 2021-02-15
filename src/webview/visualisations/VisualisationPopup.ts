@@ -13,6 +13,9 @@ export class VisualisationPopup {
     private titleBarNode: HTMLElement | null;
     private contentNode: HTMLElement | null;
 
+    private errorContainer: HTMLElement | null;
+    private unavailabilityErrorNode: HTMLElement | null;
+
     constructor(view: VisualisationView, maskCoordinates: AnnotationMaskCoordinates, onClose?: () => void) {
         this.visualisationView = view;
         this.maskCoordinates = maskCoordinates;
@@ -28,6 +31,9 @@ export class VisualisationPopup {
         this.titleBarNode = null;
         this.contentNode = null;
 
+        this.errorContainer = null;
+        this.unavailabilityErrorNode = null;
+
         this.init();
     }
 
@@ -36,6 +42,7 @@ export class VisualisationPopup {
         this.createFrame();
         this.createTitleBar();
         this.createContent();
+        this.createErrors();
 
         this.startHandlingBackgroundClicks();
 
@@ -130,6 +137,28 @@ export class VisualisationPopup {
         this.contentNode!.append(this.visualisationView.render());
     }
 
+    createErrors(): void {
+        this.errorContainer = document.createElement("div");
+        this.frameNode!.append(this.errorContainer);        
+
+        // Error message in case the visualisation becomes unavailable (while its view is displayed)
+        this.unavailabilityErrorNode = document.createElement("div");
+        this.unavailabilityErrorNode.classList.add("popup-error", "unavailability-error");
+        this.unavailabilityErrorNode.innerHTML = `
+            <span class="error-title">This visualisation is currently not available :(</span>
+            <p class="error-message">
+                This is often caused by a syntax error or an edit iLaTeX could not understand.
+                You can try to:
+            </p>
+            <ul class="error-suggestions">
+                <li><strong>check the syntax</strong> of the code <span class="red-highlight">highlighted in red</span></li>
+                <li><strong>recompile the document</strong> if it persists (to refresh all the visualisations)</li>
+            </ul>
+        `;
+
+        this.errorContainer!.append(this.unavailabilityErrorNode);        
+    }
+
     getVisualisationLocationInSourceCode() {
         const fileName = this.visualisationView.sourceFileName;
         const range = this.visualisationView.sourceFileCodeRange;
@@ -155,6 +184,12 @@ export class VisualisationPopup {
 
     onAfterVisualisationMetadataUpdate(): void {
         this.updateTitleBar();
+        
+        this.popupNode.classList.toggle("unavailable", !this.visualisationView.isAvailable);
+        if (this.visualisationView.isAvailable) {
+            // TODO: fix the issue with the tabular visualisation
+            this.updateContent();
+        }
     }
 
     open() {
