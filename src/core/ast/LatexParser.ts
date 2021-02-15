@@ -268,7 +268,7 @@ export class LatexParser {
             },
         
             whitespace: lang => {
-                return P.whitespace
+                return P.alt(P.whitespace, P.newline)
                     .thru(this.contextualiseParserOutput(this.reparsers.whitespace, (value, context, reparser) => new WhitespaceNode(context, reparser)));
             },
             
