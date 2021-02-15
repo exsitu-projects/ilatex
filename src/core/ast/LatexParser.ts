@@ -353,7 +353,7 @@ export class LatexParser {
             },
         
             anyCommand: lang => {
-                return P.regexp(/\\(([^a-z])|(([a-z]+\*?)))/i)
+                return P.regexp(/\\(([^a-z])|(([a-z]+\**)))/i)
                     .thru(this.contextualiseParserOutput(this.reparsers.anyCommand, (value, context, reparser) => new CommandNode(
                         value.substr(1), // Ignore the the leading backslash
                         [], // An unspecified command always has no parameter
