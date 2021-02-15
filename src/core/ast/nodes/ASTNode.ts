@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import * as P from "parsimmon";
-import { RangeInFile, RelativeRangePosition } from "../../utils/RangeInFile";
+import { SourceFileRange, RelativeRangePosition } from "../../source-files/SourceFileRange";
 import { SourceFileChange } from "../../source-files/SourceFileChange";
 import { SourceFile, SourceFileEdit } from "../../source-files/SourceFile";
 import { ArrayMap } from "../../../shared/utils/ArrayMap";
@@ -15,7 +15,7 @@ export type ASTNodeUpdateResult =
     | { success: false, error: P.Failure };
 
 export interface ASTNodeContext {
-    range: RangeInFile,
+    range: SourceFileRange,
     sourceFile: SourceFile
 };
 
@@ -24,7 +24,7 @@ export abstract class ASTNode {
     readonly abstract type: string;
     protected abstract parser: ASTNodeParser<ASTNode>;
     readonly sourceFile: SourceFile;
-    readonly range: RangeInFile;
+    readonly range: SourceFileRange;
     protected readonly abstract isLeaf: boolean;
 
     enableReparsing: boolean;

@@ -3,7 +3,7 @@ import { CurlyBracesParameterBlockNode } from "./CurlyBracesParameterBlockNode";
 import { SquareBracesParameterBlockNode } from "./SquareBracesParameterBlockNode";
 import { EmptyASTValue, EMPTY_AST_VALUE } from "../LatexParser";
 import { ASTSyncVisitor, ASTAsyncVisitor } from "../visitors/visitors";
-import { PositionInFile } from "../../utils/PositionInFile";
+import { SourceFilePosition } from "../../source-files/SourceFilePosition";
 
 type NonEmptyCommandNodeParameters = (
     | CurlyBracesParameterBlockNode
@@ -39,7 +39,7 @@ export class CommandNode extends ASTNode {
         this.parser = parser;
     }
 
-    get nameEnd(): PositionInFile {
+    get nameEnd(): SourceFilePosition {
         return this.range.from.with({ column: this.name.length + 1 });
     }
 

@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { PositionShift } from "../utils/PositionInFile";
+import { SourceFilePositionShift } from "../source-files/SourceFilePosition";
 
 
 export const enum SourceFileChangeKind {
@@ -17,7 +17,7 @@ export class SourceFileChange {
 
     // Note: be careful, the shift values may not make sense for every node!
     // In particular, the column shift is only meaningful in a few particular cases.
-    readonly shift: PositionShift;
+    readonly shift: SourceFilePositionShift;
 
     constructor(event: vscode.TextDocumentContentChangeEvent) {
         this.event = event;
@@ -86,7 +86,7 @@ export class SourceFileChange {
     private static computeShiftOf(
         event: vscode.TextDocumentContentChangeEvent,
         kind: SourceFileChangeKind
-    ): PositionShift {
+    ): SourceFilePositionShift {
         return {
             lines: SourceFileChange.computeLineShiftOf(event),
             columns: SourceFileChange.computeColumnShiftOf(event, kind),

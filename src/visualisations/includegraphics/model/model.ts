@@ -6,7 +6,7 @@ import { VisualisationModelUtilities } from "../../../core/visualisations/Visual
 import { Image } from "./Image";
 import { ImageOptions, RawImageOptions, SupportedImageOptions } from "./ImageOptions";
 import { LatexLength } from "../../../shared/latex-length/LatexLength";
-import { RangeInFile } from "../../../core/utils/RangeInFile";
+import { SourceFileRange } from "../../../core/source-files/SourceFileRange";
 import { CurlyBracesParameterBlockNode } from "../../../core/ast/nodes/CurlyBracesParameterBlockNode";
 import { SquareBracesParameterBlockNode } from "../../../core/ast/nodes/SquareBracesParameterBlockNode";
 
@@ -109,7 +109,7 @@ export class IncludegraphicsVisualisationModel extends AbstractVisualisationMode
             // TODO: ensure this works fine?
 
             // Insert the string built just above (as the first parameter of the command)
-            const editRange = new RangeInFile(
+            const editRange = new SourceFileRange(
                 this.astNode.nameEnd,
                 (this.astNode.parameters[1] as CurlyBracesParameterBlockNode).range.from
             );

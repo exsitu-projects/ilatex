@@ -8,7 +8,7 @@ import { ASTNode } from "../../ast/nodes/ASTNode";
 import { CodeMapping, CodeMappingID } from "../../code-mappings/CodeMapping";
 import { InteractiveLatex } from "../../InteractiveLaTeX";
 import { SourceFile } from "../../source-files/SourceFile";
-import { PositionInFile } from "../../utils/PositionInFile";
+import { SourceFilePosition } from "../../source-files/SourceFilePosition";
 import { VisualisationModel } from "../VisualisationModel";
 import { VisualisationModelProvider } from "../VisualisationModelProvider";
 import { VisualisationModelUtilities } from "../VisualisationModelUtilities";
@@ -117,7 +117,7 @@ export class VisualisationModelExtractor {
                     const remainingCodeMappingsSortedByLineNumber = [...unusedCodeMappings]
                         .sort((cm1, cm2) => cm1.lineNumber - cm2.lineNumber);
                     const remainingAstNodesSortedByStartPosition = [...unusedAstNodes]
-                        .sort((node1, node2) => PositionInFile.compareInAscendingOrder(node1.range.from, node2.range.from));
+                        .sort((node1, node2) => SourceFilePosition.compareInAscendingOrder(node1.range.from, node2.range.from));
                     const nbApproximateMappingsToMake = Math.min(
                         remainingCodeMappingsSortedByLineNumber.length,
                         remainingAstNodesSortedByStartPosition.length

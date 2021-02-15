@@ -1,8 +1,8 @@
 import * as P from "parsimmon";
 import Parsimmon = require("parsimmon");
 import { SourceFile } from "../source-files/SourceFile";
-import { PositionInFile } from "../utils/PositionInFile";
-import { RangeInFile } from "../utils/RangeInFile";
+import { SourceFilePosition } from "../source-files/SourceFilePosition";
+import { SourceFileRange } from "../source-files/SourceFileRange";
 import { ASTNode, ASTNodeContext, ASTNodeParser } from "./nodes/ASTNode";
 import { BlockNode } from "./nodes/BlockNode";
 import { CommandNode } from "./nodes/CommandNode";
@@ -142,9 +142,9 @@ export class LatexParser {
                     value,
                     {
                         sourceFile: sourceFile,
-                        range: new RangeInFile(
-                            PositionInFile.fromParsimmonIndex(start),
-                            PositionInFile.fromParsimmonIndex(end),
+                        range: new SourceFileRange(
+                            SourceFilePosition.fromParsimmonIndex(start),
+                            SourceFilePosition.fromParsimmonIndex(end),
                         )
                     },
                     reparser

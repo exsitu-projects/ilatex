@@ -13,7 +13,7 @@ type Offset = number | UnspecifiedOffset;
 export class UnspecifiedOffsetError {}
 
 /** The amount of shift of a position in a file. */
-export interface PositionShift {
+export interface SourceFilePositionShift {
     lines: number;
     columns: number;
     offset: number;
@@ -24,7 +24,7 @@ export interface PositionShift {
  * An position in a file with a line, a column, an optional offset, and a possibly non-null shift.
  * The shift is meant to be used to track a position in a file with unsaved edits.
  */
-export class PositionInFile {
+export class SourceFilePosition {
     // Line, column and offset are all 0-based
     readonly initialLine: number;
     readonly initialColumn: number;
@@ -34,7 +34,7 @@ export class PositionInFile {
      * Editable shift whose values must be relative to the initial position
      * (in terms of positive or negative additions to the line, column and offset.)
      */
-    readonly shift: PositionShift;
+    readonly shift: SourceFilePositionShift;
 
     constructor(line: number, column: number, offset: Offset = UNSPECIFIED_OFFSET) {
         this.initialLine = line;
@@ -93,8 +93,8 @@ export class PositionInFile {
         };
     }
 
-    with(partialPosition: Partial<Record<"line" | "column" | "offset", number>>): PositionInFile {
-        return new PositionInFile(
+    with(partialPosition: Partial<Record<"line" | "column" | "offset", number>>): SourceFilePosition {
+        return new SourceFilePosition(
             this.line + (partialPosition["line"] ?? 0),
             this.column + (partialPosition["column"] ?? 0),
             this.offset + (partialPosition["offset"] ?? 0)
@@ -105,36 +105,36 @@ export class PositionInFile {
         return `[Ln ${this.line} Col ${this.column}]`;
     }
 
-    isBefore(otherPosition: PositionInFile): boolean {
+    isBefore(otherPosition: SourceFilePosition): boolean {
         return this.asVscodePosition.isBefore(otherPosition.asVscodePosition);
     }
 
-    isBeforeOrEqual(otherPosition: PositionInFile): boolean {
+    isBeforeOrEqual(otherPosition: SourceFilePosition): boolean {
         return this.asVscodePosition.isBeforeOrEqual(otherPosition.asVscodePosition);
     }
 
-    isEqual(otherPosition: PositionInFile): boolean {
+    isEqual(otherPosition: SourceFilePosition): boolean {
         return this.asVscodePosition.isEqual(otherPosition.asVscodePosition);
     }
 
-    isAfterOrEqual(otherPosition: PositionInFile): boolean {
+    isAfterOrEqual(otherPosition: SourceFilePosition): boolean {
         return this.asVscodePosition.isAfterOrEqual(otherPosition.asVscodePosition);
     }
 
-    isAfter(otherPosition: PositionInFile): boolean {
+    isAfter(otherPosition: SourceFilePosition): boolean {
         return this.asVscodePosition.isAfter(otherPosition.asVscodePosition);
     }
 
-    static fromVscodePosition(position: vscode.Position): PositionInFile {
-        return new PositionInFile(position.line, position.character);
+    static fromVscodePosition(position: vscode.Position): SourceFilePosition {
+        return new SourceFilePosition(position.line, position.character);
     }
 
-    static fromParsimmonIndex(index: P.Index): PositionInFile {
-        return new PositionInFile(index.line - 1, index.column - 1, index.offset);
+    static fromParsimmonIndex(index: P.Index): SourceFilePosition {
+        return new SourceFilePosition(index.line - 1, index.column - 1, index.offset);
     }
 
     /** Standard comparison function that can be used for sorting positions in ascending order (e.g. with Array.sort). */
-    static compareInAscendingOrder(position1: PositionInFile, position2: PositionInFile): number {
+    static compareInAscendingOrder(position1: SourceFilePosition, position2: SourceFilePosition): number {
         return position1.isBefore(position2) ? -1
             :  position1.isAfter(position2) ? +1
             :  0;

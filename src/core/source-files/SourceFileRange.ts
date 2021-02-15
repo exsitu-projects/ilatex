@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { RawSourceFileRange } from "../../shared/source-files/types";
 import { SourceFileChange } from "../source-files/SourceFileChange";
-import { PositionInFile } from "./PositionInFile";
+import { SourceFilePosition } from "./SourceFilePosition";
 
 export const enum RelativeRangePosition {
     Before = "Before",
@@ -16,11 +16,11 @@ export const enum RelativeRangePosition {
  * Note: this class does no guarantee that the first position is before the second one (with or without shifts),
  * i.e. the range is not guaranted to be valid at all times.
  */
-export class RangeInFile {
-    readonly from: PositionInFile;
-    readonly to: PositionInFile;
+export class SourceFileRange {
+    readonly from: SourceFilePosition;
+    readonly to: SourceFilePosition;
 
-    constructor(from: PositionInFile, to: PositionInFile) {
+    constructor(from: SourceFilePosition, to: SourceFilePosition) {
         this.from = from;
         this.to = to;
 

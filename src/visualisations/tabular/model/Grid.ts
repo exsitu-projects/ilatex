@@ -4,8 +4,8 @@ import { GridExtractor } from "./GridExtractor";
 import { ASTNode } from "../../../core/ast/nodes/ASTNode";
 import { CommandNode } from "../../../core/ast/nodes/CommandNode";
 import { WhitespaceNode } from "../../../core/ast/nodes/WhitespaceNode";
-import { PositionInFile } from "../../../core/utils/PositionInFile";
-import { RangeInFile } from "../../../core/utils/RangeInFile";
+import { SourceFilePosition } from "../../../core/source-files/SourceFilePosition";
+import { SourceFileRange } from "../../../core/source-files/SourceFileRange";
 import { ArrayUtils } from "../../../shared/utils/ArrayUtils";
 import { EnvironmentNode } from "../../../core/ast/nodes/EnvironmentNode";
 import { GridOptions } from "./GridOptions";
@@ -55,7 +55,7 @@ export class Cell {
         return this.astNodes.some(Cell.isContentNode);
     }
 
-    get start(): PositionInFile {
+    get start(): SourceFilePosition {
         const firstNode = this.astNodes[0];
         if (firstNode) {
             return firstNode.range.from;
@@ -73,7 +73,7 @@ export class Cell {
         }
     }
 
-    get end(): PositionInFile {
+    get end(): SourceFilePosition {
         const lastNode = this.astNodes[this.astNodes.length - 1];
         if (lastNode) {
             return lastNode.range.to;
@@ -91,8 +91,8 @@ export class Cell {
         }
     }
 
-    get range(): RangeInFile {
-        return new RangeInFile(
+    get range(): SourceFileRange {
+        return new SourceFileRange(
             this.start,
             this.end
         );
@@ -118,7 +118,7 @@ export class Cell {
 
     // The content starts where the first content node starts
     // If there is no content node in the cell, it starts at the end of the cell
-    get contentStart(): PositionInFile {
+    get contentStart(): SourceFilePosition {
         if (!this.containsContentNodes) {
             return this.end;
         }
@@ -128,7 +128,7 @@ export class Cell {
 
     // The content ends where the last content node ends
     // If there is no content node in the cell, it ends at the end of the cell
-    get contentEnd(): PositionInFile {
+    get contentEnd(): SourceFilePosition {
         if (!this.containsContentNodes) {
             return this.end;
         }
@@ -136,8 +136,8 @@ export class Cell {
         return this.lastContentNode.range.to;
     }
 
-    get contentRange(): RangeInFile {
-        return new RangeInFile(
+    get contentRange(): SourceFileRange {
+        return new SourceFileRange(
             this.contentStart,
             this.contentEnd
         );
@@ -175,7 +175,7 @@ export class Cell {
 
         let textContent = "";
         if (firstContentNode && lastContentNode) {
-            textContent = await firstContentNode.sourceFile.getContent(new RangeInFile(
+            textContent = await firstContentNode.sourceFile.getContent(new SourceFileRange(
                 firstContentNode.range.from,
                 lastContentNode.range.to
             ));

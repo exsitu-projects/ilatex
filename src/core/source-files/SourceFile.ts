@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import { LatexAST } from "../ast/LatexAST";
 import { SourceFileChange } from "./SourceFileChange";
-import { RangeInFile } from "../utils/RangeInFile";
+import { SourceFileRange } from "../source-files/SourceFileRange";
 
 export type SourceFileEdit = (editBuilder: vscode.TextEditorEdit) => void;
 
@@ -71,7 +71,7 @@ export class SourceFile {
         return this.editor ?? await this.openInEditor();
     }
 
-    async selectRangeInEditor(range: RangeInFile, scrollIfNotVisible: boolean = true): Promise<void> {
+    async selectRangeInEditor(range: SourceFileRange, scrollIfNotVisible: boolean = true): Promise<void> {
         const editor = await this.getOrOpenInEditor();
 
         // If the selected range is not visible, possibly scroll to the selection
@@ -83,7 +83,7 @@ export class SourceFile {
         }
     }
 
-    async getContent(range?: RangeInFile): Promise<string> {
+    async getContent(range?: SourceFileRange): Promise<string> {
         const document = await this.document;
         return document.getText(range?.asVscodeRange);
     }

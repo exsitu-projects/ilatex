@@ -1,5 +1,5 @@
 import { LatexLength } from "../../../shared/latex-length/LatexLength";
-import { RangeInFile } from "../../../core/utils/RangeInFile";
+import { SourceFileRange } from "../../../core/source-files/SourceFileRange";
 import { EnvironmentNode } from "../../../core/ast/nodes/EnvironmentNode";
 import { CurlyBracesParameterBlockNode } from "../../../core/ast/nodes/CurlyBracesParameterBlockNode";
 import { CodeMapping } from "../../../core/code-mappings/CodeMapping";
@@ -35,8 +35,8 @@ export class Cell {
     readonly cellIndex: number;
 
     readonly astNode: EnvironmentNode;
-    readonly range: RangeInFile;
-    readonly contentRange: RangeInFile;
+    readonly range: SourceFileRange;
+    readonly contentRange: SourceFileRange;
 
     readonly contentText: string;
     readonly options: CellOptions;

@@ -5,7 +5,7 @@ import { VisualisableCodeContext } from "../../../core/visualisations/Visualisat
 import { VisualisationModelUtilities } from "../../../core/visualisations/VisualisationModelUtilities";
 import { Cell, Grid, Row } from "./Grid";
 import { HtmlUtils } from "../../../shared/utils/HtmlUtils";
-import { RangeInFile } from "../../../core/utils/RangeInFile";
+import { SourceFileRange } from "../../../core/source-files/SourceFileRange";
 
 
 export class NoGridError {}
@@ -93,7 +93,7 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
         }
         
         const rows = this.grid.rows;
-        const textReplacements: {range: RangeInFile, newContent: string}[] = [];
+        const textReplacements: {range: SourceFileRange, newContent: string}[] = [];
 
         // Copy the content of the cells of the origin and target columns
         const originColumnCellsContent = rows
@@ -208,7 +208,7 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
         }
 
         const rows = this.grid.rows;
-        const textReplacements: {range: RangeInFile, newContent: string}[] = [];
+        const textReplacements: {range: SourceFileRange, newContent: string}[] = [];
 
         // Copy the content of the cells of the origin row (before any move)
         const originRowCellsContent = rows[oldRowIndex].cells
