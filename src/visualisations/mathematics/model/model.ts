@@ -28,6 +28,7 @@ export class MathematicsModel extends AbstractVisualisationModel<EnvironmentNode
                 handler: async payload => {
                     const { trimmedMathCode } = payload;
                     await this.setNewMathCode(trimmedMathCode);
+                    this.registerChangeRequestedByTheView();
                 }
             }
         ];

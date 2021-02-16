@@ -43,6 +43,7 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
                     const cell = this.getCellAt(rowIndex, cellIndex);
 
                     await this.resizeCell(cell, newRelativeSize);
+                    this.registerChangeRequestedByTheView();
                 }
             },
             {
@@ -52,6 +53,7 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
                     const row = this.getRowAt(rowIndex);
 
                     await this.resizeRow(row, newHeight);
+                    this.registerChangeRequestedByTheView();
                 }
             }
         ];

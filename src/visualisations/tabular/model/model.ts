@@ -46,6 +46,7 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
                     const cell = this.getCellAt(rowIndex, columnIndex);
 
                     await this.replaceCellContent(cell, newContent);
+                    this.registerChangeRequestedByTheView();
                 }
             },
             {
@@ -55,6 +56,7 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
                     // console.info(`column ${oldColumnIndex} => column ${newColumnIndex}`);
 
                     await this.moveColumn(oldColumnIndex, newColumnIndex);
+                    this.registerChangeRequestedByTheView();
                 }
             },
             {
@@ -64,6 +66,7 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
                     // console.info(`row ${oldRowIndex} => row ${newRowIndex}`);
 
                     await this.moveRow(oldRowIndex, newRowIndex);
+                    this.registerChangeRequestedByTheView();
                 }
             }
         ];

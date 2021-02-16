@@ -35,6 +35,8 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
     protected readonly utilities: VisualisationModelUtilities;
     
     protected abstract contentDataAsHtml: string;
+
+    private viewPerformedUnsavedChanges: boolean;
     private lastContentUpdateFailed: boolean;
 
     readonly viewDidOpenEventEmitter: vscode.EventEmitter<VisualisationModel>;
@@ -53,6 +55,7 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
         this.context = context;
         this.utilities = utilities;
 
+        this.viewPerformedUnsavedChanges = false;
         this.lastContentUpdateFailed = false;
 
         this.viewDidOpenEventEmitter = new vscode.EventEmitter();
@@ -159,14 +162,18 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
                 handler: async notifiction => {
                     this.viewDidCloseEventEmitter.fire(this);
 
-                    // If the visualisation is available, save the source file of this visualisation
-                    // TODO: only save the document if it was modified
-                    if (this.metadata.available) {
+                    // Only save the document if the view performed at least one change
+                    if (this.viewPerformedUnsavedChanges) {
                         await this.sourceFile.save();
                     }
                 }
             }
         ];
+    }
+
+    // This method must be called everytime a model performs a change requested by the view
+    protected registerChangeRequestedByTheView(): void {
+        this.viewPerformedUnsavedChanges = true;
     }
 
     protected startObservingAstNode(): void {

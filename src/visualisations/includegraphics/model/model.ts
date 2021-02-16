@@ -51,6 +51,7 @@ export class IncludegraphicsVisualisationModel extends AbstractVisualisationMode
                 handler: async payload => {
                     const newRawOptions = payload.newOptions as RawImageOptions;
                     await this.updateImageOptionParameterUsing(newRawOptions);
+                    this.registerChangeRequestedByTheView();
                 }
             }
         ];
