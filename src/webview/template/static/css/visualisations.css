@@ -8,11 +8,15 @@
     z-index: 200;
 }
 
+.visualisation-popup .popup-frame {
+    background-color: #FFFFFF;
+}
+
 .visualisation-popup .popup-title-bar {
     display: flex;
     height: 25px;
-    background-color: #DDDDDD;
-    color: #111111;
+    background-color: #00000022;
+    color: #000000EE;
     z-index: 2000;
     line-height: 25px;
     vertical-align: middle;
@@ -22,11 +26,12 @@
     position: relative;
     flex-grow: 1;
     padding: 0 10px;
+    cursor: pointer;
 }
 
 .visualisation-popup .popup-title-bar .title:hover,
 .visualisation-popup .popup-title-bar .title:active {
-    background-color: #BBBBBB;
+    background-color: #00000033;
 }
 
 .visualisation-popup .popup-title-bar .title:hover::after {
@@ -36,7 +41,7 @@
     top: 0;
     right: 0;
     padding: 0 10px;
-    color: #666666;
+    color: #00000066;
     line-height: 25px;
     vertical-align: middle;
 }
@@ -47,7 +52,7 @@
 
 .visualisation-popup .popup-title-bar .location {
     padding: 0 5px;
-    color: #666666;
+    color: #00000066;
     font-size: 0.85em;
 }
 
@@ -62,6 +67,7 @@
     background-repeat: no-repeat;
     background-position: center;
     border: none;
+    cursor: pointer;
 }
 
 .visualisation-popup .popup-title-bar .close-button:hover,
@@ -97,8 +103,8 @@
 /* Errors */
 
 
-.visualisation-popup.error .popup-title-bar {
-    background-color: #e2c588;
+.visualisation-popup.error .popup-frame {
+    background-color: #f7d999;
 }
 
 .visualisation-popup.error .popup-content {
