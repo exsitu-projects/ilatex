@@ -100,12 +100,12 @@
     display: none;
 }
 
-.visualisation-popup.unavailable .popup-content {
+.visualisation-popup.error .popup-content {
     display: none;
 }
 
-.visualisation-popup.unavailable .popup-error {
-    display: block;
+.visualisation-popup .popup-error {
+    display: none;
     height: 100%;
     padding: 10px;
     background-color: #f7d999;
@@ -140,4 +140,8 @@
     padding: 2px;
     background-color: #e46f6f7a;
     border-radius: 2px;
+}
+
+.visualisation-popup.error .popup-error.unavailable-visualisation-error {
+    display: block;
 }

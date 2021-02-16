@@ -15,6 +15,7 @@ export class VisualisationPopup {
 
     private errorContainer: HTMLElement | null;
     private unavailabilityErrorNode: HTMLElement | null;
+    private isDisplayingAnError: boolean;
 
     constructor(view: VisualisationView, maskCoordinates: AnnotationMaskCoordinates, onClose?: () => void) {
         this.visualisationView = view;
@@ -33,6 +34,7 @@ export class VisualisationPopup {
 
         this.errorContainer = null;
         this.unavailabilityErrorNode = null;
+        this.isDisplayingAnError = false;
 
         this.init();
     }
@@ -143,7 +145,7 @@ export class VisualisationPopup {
 
         // Error message in case the visualisation becomes unavailable (while its view is displayed)
         this.unavailabilityErrorNode = document.createElement("div");
-        this.unavailabilityErrorNode.classList.add("popup-error", "unavailability-error");
+        this.unavailabilityErrorNode.classList.add("popup-error", "unavailable-visualisation-error");
         this.unavailabilityErrorNode.innerHTML = `
             <span class="error-title">This visualisation is currently not available :(</span>
             <p class="error-message">
@@ -157,6 +159,25 @@ export class VisualisationPopup {
         `;
 
         this.errorContainer!.append(this.unavailabilityErrorNode);        
+    }
+
+    updateErrors(): void {
+        // Display an error if the visualisation is unavailable
+        if (!this.visualisationView.isAvailable) {
+            this.visualisationView.onBeforeVisualisationErrorDisplay();
+            this.popupNode.classList.add("error", "error-unavailable");
+            this.visualisationView.onAfterVisualisationErrorDisplay();
+
+            this.isDisplayingAnError = true;
+        }
+        // Otherwise, hide any displayed error and restore the content of the popup
+        else if (this.isDisplayingAnError) {
+            this.visualisationView.onBeforeVisualisationErrorRemoval();
+            this.popupNode.classList.remove("error", "error-unavailable");
+            this.visualisationView.onAfterVisualisationErrorRemoval();
+
+            this.isDisplayingAnError = false;
+        }
     }
 
     getVisualisationLocationInSourceCode() {
@@ -184,12 +205,7 @@ export class VisualisationPopup {
 
     onAfterVisualisationMetadataUpdate(): void {
         this.updateTitleBar();
-        
-        this.popupNode.classList.toggle("unavailable", !this.visualisationView.isAvailable);
-        if (this.visualisationView.isAvailable) {
-            // TODO: fix the issue with the tabular visualisation
-            this.updateContent();
-        }
+        this.updateErrors();
     }
 
     open() {
@@ -203,8 +219,8 @@ export class VisualisationPopup {
             this.onClose();
         }
 
-        this.visualisationView.onBeforeVisualisationDisappearance();
+        this.visualisationView.onBeforeVisualisationRemoval();
         this.popupNode.remove();
-        this.visualisationView.onAfterVisualisationDisappearance();
+        this.visualisationView.onAfterVisualisationRemoval();
     }
 }

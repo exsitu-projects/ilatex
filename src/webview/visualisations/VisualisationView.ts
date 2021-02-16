@@ -38,8 +38,14 @@ export interface VisualisationView {
     onBeforeVisualisationDisplay(): void;
     onAfterVisualisationDisplay(): void;
     
-    onBeforeVisualisationDisappearance(): void;
-    onAfterVisualisationDisappearance(): void;
+    onBeforeVisualisationErrorDisplay(): void;
+    onAfterVisualisationErrorDisplay(): void;
+
+    onBeforeVisualisationErrorRemoval(): void;
+    onAfterVisualisationErrorRemoval(): void;
+
+    onBeforeVisualisationRemoval(): void;
+    onAfterVisualisationRemoval(): void;
 
     revealInSourceDocument(): void;
 }

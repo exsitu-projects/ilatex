@@ -236,7 +236,7 @@ class TabularView extends AbstractVisualisationView {
     private startObservingHandsontableMutations() {
         this.handsontableMutationObserver = new MutationObserver((mutations) => {
             for (let mutation of mutations) {
-                // Since we only seek to observe style changesm
+                // Since we only seek to observe style changes,
                 // we only want to react to attribute changes 
                 if (mutation.type === "attributes") {
                     this.resizeHandsontableContainer();
@@ -257,6 +257,13 @@ class TabularView extends AbstractVisualisationView {
         }
 
         this.handsontableMutationObserver.disconnect();
+    }
+
+    onAfterVisualisationErrorRemoval(): void {
+        // When an error is removed, the table will become visible again
+        // In order to ensure it is displayed correctly, this hook is used
+        // to force update the dimensions of the table container
+        this.resizeHandsontableContainer();
     }
 
     // Note: this requires the table to be appended to the DOM

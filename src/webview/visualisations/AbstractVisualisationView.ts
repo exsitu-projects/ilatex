@@ -75,20 +75,28 @@ export abstract class AbstractVisualisationView implements VisualisationView {
             notification: {}
         });
     }
+        
+    onBeforeVisualisationErrorDisplay(): void {
+        // Do nothing by default
+    };
 
-    onBeforeVisualisationUpdate(): void {
+    onAfterVisualisationErrorDisplay(): void {
+        // Do nothing by default
+    };
+
+    onBeforeVisualisationErrorRemoval(): void {
+        // Do nothing by default
+    };
+
+    onAfterVisualisationErrorRemoval(): void {
+        // Do nothing by default
+    };
+
+    onBeforeVisualisationRemoval(): void {
         // Do nothing by default
     }
 
-    onAfterVisualisationUpdate(): void {
-        // Do nothing by default
-    }
-
-    onBeforeVisualisationDisappearance(): void {
-        // Do nothing by default
-    }
-
-    onAfterVisualisationDisappearance(): void {
+    onAfterVisualisationRemoval(): void {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
             visualisationUid: this.metadata.uid,
