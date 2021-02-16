@@ -26,8 +26,14 @@ interface VisualisationData {
     metadata?: VisualisationMetadata;
 }
 
+export interface VisualisationAvailabilityData {
+    codeMappingId: number;
+    isAvailable: boolean;
+}
+
 export class VisualisationViewManager {
     static readonly REQUEST_VISUALISATION_DISPLAY_EVENT = "request-visualisation-display";
+    static readonly VISUALISATION_AVAILABILITY_CHANGE_EVENT = "visualisation-availability-change";
     static readonly VISUALISATIONS_ARE_UNAVAILABLE_BODY_CLASS = "visualisations-unavailable";
     private static readonly AVAILABLE_VISUALISATION_FACTORIES: VisualisationViewFactory[] = [
         new IncludegraphicsViewFactory(),
@@ -208,6 +214,29 @@ export class VisualisationViewManager {
 
         // Possibly update the currently displayed visualisation (if there is one)
         this.updateCurrentlyDisplayedVisualisationMetadata();
+
+        // Signal that the availability of the visualisation may have changed
+        this.emitVisualisationAvailabilityChangeEvent([codeMappingId]);
+    }
+
+    private emitVisualisationAvailabilityChangeEvent(onlyCodeMappingToInclude?: number[]): void {
+        let dataOfAllIncludedVisualisations = [...this.codeMappingIdsToVisualisationData.entries()];
+        if (onlyCodeMappingToInclude) {
+            dataOfAllIncludedVisualisations = dataOfAllIncludedVisualisations
+                .filter(([codeMappingId, data]) => onlyCodeMappingToInclude.includes(codeMappingId));
+        }
+
+        window.dispatchEvent(new CustomEvent<VisualisationAvailabilityData[]>(
+            VisualisationViewManager.VISUALISATION_AVAILABILITY_CHANGE_EVENT,
+            {
+                detail: dataOfAllIncludedVisualisations.map(([codeMappingId, data]) => {
+                    return {
+                        codeMappingId: codeMappingId,
+                        isAvailable: (data.metadata !== undefined && data.metadata.available)
+                    };
+                })
+            }
+        ));
     }
 
     private startHandlingWebviewMessages(): void {

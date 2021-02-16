@@ -28,6 +28,8 @@
     --box-shadow-spread: 10px;
 }
 
+.annotation-mask.unavailable,
+.annotation-mask.unavailable:hover,
 body.pdf-currently-compiled .annotation-mask,
 body.pdf-currently-compiled .annotation-mask:hover,
 body.last-pdf-compilation-failed .annotation-mask,

@@ -7,6 +7,7 @@ import { TaskDebouncer } from "../../shared/tasks/TaskDebouncer";
 import { PDFOverlayManager } from "./overlay/PDFOverlayManager";
 import { PDFOverlayNotification, PDFOverlayNotificationType } from "./overlay/PDFOverlayNotification";
 import { PDFOverlayButton } from "./overlay/PDFOverlayButton";
+import { VisualisationAvailabilityData, VisualisationViewManager } from "../visualisations/VisualisationViewManager";
 
 const pdfIsCurrentlyCompiledNotification = new PDFOverlayNotification(
     PDFOverlayNotificationType.Loading,
@@ -28,6 +29,8 @@ export class PDFManager {
     private currentPdfUri: string | null;
     private currentPdf: pdfjs.PDFDocument | null;
     private pdfIsCurrentlyCompiled: boolean;
+
+    private codeMappingIdsToVisualisationAvailabilities: Map<number, boolean>;
 
     private pdfSyncTaskRunner: TaskQueuer;
     private pdfResizingRequestDebouncer: TaskDebouncer;
@@ -55,12 +58,15 @@ export class PDFManager {
         this.currentPdf = null;
         this.pdfIsCurrentlyCompiled = false;
 
+        this.codeMappingIdsToVisualisationAvailabilities = new Map();
+
         this.pdfSyncTaskRunner = new TaskQueuer();
         this.pdfResizingRequestDebouncer = new TaskDebouncer(PDFManager.DELAY_BETWEEN_PDF_RESIZES);
 
         this.startHandlingPdfUpdates();
         this.startHandlingWindowResizes();
         this.startHandlingCompilationStatusChanges();
+        this.startHandlingVisualisationAvailabilityChange();
 
         this.displayPermanentActionButtons();
     }
@@ -91,6 +97,19 @@ export class PDFManager {
 
             await newRenderer.init();
             await newRenderer.redraw(this.pdfContainerNode);
+
+            this.updateAnnotationMaskNodes();
+        }
+    }
+
+    updateAnnotationMaskNodes(): void {
+        // Update the availability of the visualisations
+        for (let [codeMappingId, visualisationIsAvailable] of this.codeMappingIdsToVisualisationAvailabilities.entries()) {
+            const maskNode = this.pdfContainerNode
+                .querySelector(`.annotation-mask[data-code-mapping-id="${codeMappingId}"]`);
+            maskNode?.classList.toggle("unavailable", !visualisationIsAvailable);
+
+            // console.log(`New availability for the annotation mask with code mapping ID "${codeMappingId}": ${visualisationIsAvailable}.`);
         }
     }
 
@@ -121,6 +140,17 @@ export class PDFManager {
         document.body.classList.toggle(PDFManager.LAST_PDF_COMPILATION_FAILED_BODY_CLASS, lastCompilationFailed);
     }
 
+    updateAnnotationMaskAvailabilities(availabilityData: VisualisationAvailabilityData[]): void {
+        for (let data of availabilityData) {
+            this.codeMappingIdsToVisualisationAvailabilities.set(
+                data.codeMappingId,
+                data.isAvailable
+            );
+        }
+
+        this.updateAnnotationMaskNodes();
+    }
+
     startHandlingPdfUpdates() {
         this.messenger.setHandlerFor(
             CoreToWebviewMessageType.UpdatePDF,
@@ -140,6 +170,16 @@ export class PDFManager {
                 });
             });
         });
+    }
+
+    startHandlingVisualisationAvailabilityChange() {
+        window.addEventListener(
+            VisualisationViewManager.VISUALISATION_AVAILABILITY_CHANGE_EVENT,
+            (event: Event) => {
+                const customEvent = event as CustomEvent<VisualisationAvailabilityData[]>;
+                this.updateAnnotationMaskAvailabilities(customEvent.detail);
+            }
+        );
     }
 
     startHandlingCompilationStatusChanges(): void {
