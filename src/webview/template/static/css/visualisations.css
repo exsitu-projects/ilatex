@@ -96,8 +96,9 @@
 
 /* Errors */
 
-.visualisation-popup .popup-error {
-    display: none;
+
+.visualisation-popup.error .popup-title-bar {
+    background-color: #e2c588;
 }
 
 .visualisation-popup.error .popup-content {
