@@ -9,6 +9,7 @@ import { TabularViewFactory } from "../../visualisations/tabular/view/view";
 import { IncludegraphicsViewFactory } from "../../visualisations/includegraphics/view/view";
 import { VisualisationMetadata } from "../../shared/visualisations/types";
 import { TaskQueuer } from "../../shared/tasks/TaskQueuer";
+import { PDFManager } from "../pdf/PDFManager";
 
 export interface VisualisationDisplayRequest {
     codeMappingId: number;
@@ -64,6 +65,7 @@ export class VisualisationViewManager {
         this.currentlyDisplayedVisualisationPopup = null;
 
         this.startHandlingVisualisationDisplayRequests();
+        this.startHandlingPdfEvents();
         this.startHandlingWebviewMessages();
     }
 
@@ -138,16 +140,6 @@ export class VisualisationViewManager {
 
         // Process the display request
         this.processVisualisationDisplayRequest(request);
-    }  
-
-    private startHandlingVisualisationDisplayRequests(): void {
-        window.addEventListener(
-            VisualisationViewManager.REQUEST_VISUALISATION_DISPLAY_EVENT,
-            (event: Event) => {
-                const customEvent = event as CustomEvent<VisualisationDisplayRequest>;
-                this.handleVisualisationDisplayRequest(customEvent.detail);
-            }
-        );
     }
 
     private updateCurrentlyDisplayedVisualisationContent(): void {
@@ -237,6 +229,25 @@ export class VisualisationViewManager {
                 })
             }
         ));
+    }
+
+    private startHandlingVisualisationDisplayRequests(): void {
+        window.addEventListener(
+            VisualisationViewManager.REQUEST_VISUALISATION_DISPLAY_EVENT,
+            (event: Event) => {
+                const customEvent = event as CustomEvent<VisualisationDisplayRequest>;
+                this.handleVisualisationDisplayRequest(customEvent.detail);
+            }
+        );
+    }
+
+    private startHandlingPdfEvents(): void {
+        window.addEventListener(
+            PDFManager.PDF_COMPILATION_STARTED_EVENT,
+            (event: Event) => {
+                this.hideCurrentlyDisplayedVisualisation();
+            }
+        );
     }
 
     private startHandlingWebviewMessages(): void {

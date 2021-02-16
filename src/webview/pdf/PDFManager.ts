@@ -16,7 +16,7 @@ const pdfIsCurrentlyCompiledNotification = new PDFOverlayNotification(
 
 export class PDFManager {
     private static readonly DELAY_BETWEEN_PDF_RESIZES: number = 50; // ms
-    static readonly UPDATE_PDF_EVENT = "update-pdf";
+    static readonly PDF_COMPILATION_STARTED_EVENT = "pdf-compilation-started";
     static readonly PDF_CURRENTLY_RECOMPILED_BODY_CLASS = "pdf-currently-compiled";
     static readonly LAST_PDF_COMPILATION_FAILED_BODY_CLASS = "last-pdf-compilation-failed";
 
@@ -125,12 +125,14 @@ export class PDFManager {
         }
 
         // Otherwise, update the current status and the classes of the PDF container node,
-        // and display/hide the related notifcation
+        // and display/hide the related notifcation, and signal when a PDF compilation starts
         this.pdfIsCurrentlyCompiled = pdfIsCurrentlyCompiled;
 
         if (pdfIsCurrentlyCompiled) {
             document.body.classList.add(PDFManager.PDF_CURRENTLY_RECOMPILED_BODY_CLASS);
             this.overlayManager.displayNotification(pdfIsCurrentlyCompiledNotification);
+            
+            this.emitPDFCompilationStartedEvent();
         }
         else {
             document.body.classList.remove(PDFManager.PDF_CURRENTLY_RECOMPILED_BODY_CLASS);
@@ -149,6 +151,10 @@ export class PDFManager {
         }
 
         this.updateAnnotationMaskNodes();
+    }
+
+    emitPDFCompilationStartedEvent(): void {
+        window.dispatchEvent(new CustomEvent(PDFManager.PDF_COMPILATION_STARTED_EVENT));
     }
 
     startHandlingPdfUpdates() {
