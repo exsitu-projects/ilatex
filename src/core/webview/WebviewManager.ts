@@ -31,7 +31,7 @@ export class WebviewManager {
             // because VSCode does not enable hidden webviews to handle messages
             // (see retainContextWhenHidden in https://code.visualstudio.com/api/references/vscode-api#WebviewPanelOptions).
             if (event.webviewPanel.visible) {
-                this.sendNewPDF();
+                this.sendNewPDF(); // TODO: not if the last compilation failed
                 this.sendNewVisualisationDataForAllModels();
             };
         });
