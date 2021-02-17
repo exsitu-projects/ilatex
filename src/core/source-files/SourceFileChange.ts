@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { StringUtils } from "../../shared/utils/StringUtils";
 import { SourceFilePositionShift } from "../source-files/SourceFilePosition";
 
 
@@ -57,10 +58,8 @@ export class SourceFileChange {
         const start = event.range.start;
         const end = event.range.end;
 
-        const nbLinesOfAddedText = (event.text.match(/\n/g) || []).length + 1;
-        const lastNewlineIndex = event.text.lastIndexOf("\n");
-        const startIndexOfLastLineOfAddedText = lastNewlineIndex + 1;
-        const lengthOfLastLineOfAddedText = event.text.substring(startIndexOfLastLineOfAddedText).length;
+        const nbLinesOfAddedText = StringUtils.countLinesOf(event.text);
+        const lengthOfLastLineOfAddedText = StringUtils.lastLineOf(event.text).length;
         
         switch (kind) {
             case SourceFileChangeKind.Insertion:
