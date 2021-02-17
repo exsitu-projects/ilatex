@@ -132,8 +132,6 @@ class IncludegraphicsView extends AbstractVisualisationView {
 
         this.nonFinalOptionsUpdateThrottler = new TaskThrottler(IncludegraphicsView.DELAY_BETWEEN_NON_FINAL_OPTIONS_UPDATES);
         this.onScrollFinalOptionsUpdateDebouncer = new TaskDebouncer(IncludegraphicsView.WAITING_TIME_AFTER_LAST_SCROLL_BEFORE_OPTIONS_UPDATE);
-
-        this.startHandlingMouseEvents();
     }
 
     computeImageOffsetAndDimensions(): { offset: Position, dimensions: Dimensions } {
@@ -322,6 +320,10 @@ class IncludegraphicsView extends AbstractVisualisationView {
     }
 
     onDragEnd(event: MouseEvent) {
+        if (!this.somethingIsDragged) {
+            return;
+        }
+
         event.preventDefault();
         this.somethingIsDragged = false;
 
@@ -481,7 +483,11 @@ class IncludegraphicsView extends AbstractVisualisationView {
         // TODO: implement
     }
 
-    onBeforeVisualisationDisappearance(): void {
+    onAfterVisualisationDisplay(): void {
+        this.startHandlingMouseEvents();
+    }
+
+    onBeforeVisualisationRemoval(): void {
         this.stopHandlingMousEvents();
     }
 }
