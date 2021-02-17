@@ -3,6 +3,7 @@ import * as path from "path";
 import { LatexAST } from "../ast/LatexAST";
 import { SourceFileChange } from "./SourceFileChange";
 import { SourceFileRange } from "../source-files/SourceFileRange";
+import { LightweightSourceFileEditor } from "./LightweightSourceFileEditor";
 
 export type SourceFileEdit = (editBuilder: vscode.TextEditorEdit) => void;
 
@@ -14,11 +15,15 @@ export class SourceFile {
     private latexAst: LatexAST | null;
     private hasUnsavedChanges: boolean;
 
+    ignoreChanges: boolean;
+
     private constructor(absolutePath: string) {
         this.uri = vscode.Uri.file(absolutePath);
         this.name = path.basename(absolutePath);
         this.latexAst = null;
         this.hasUnsavedChanges = false;
+
+        this.ignoreChanges = false;
     }
 
     private async init(): Promise<void> {
@@ -114,6 +119,10 @@ export class SourceFile {
         }
     }
 
+    createLightweightEditorFor(range: SourceFileRange): LightweightSourceFileEditor {
+        return new LightweightSourceFileEditor(this, range);
+    }
+
     async parseNewAST(): Promise<void> {
         this.latexAst = new LatexAST(this);
         await this.latexAst.init();
@@ -134,7 +143,7 @@ export class SourceFile {
     async processChange(change: SourceFileChange): Promise<void> {
         this.hasUnsavedChanges = true;
         
-        if (this.latexAst) {
+        if (this.latexAst && !this.ignoreChanges) {
             await this.latexAst.processSourceFileChange(change);
         }
     }
