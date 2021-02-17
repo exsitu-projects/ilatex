@@ -2,6 +2,8 @@ import { AbstractVisualisationView } from "../../../webview/visualisations/Abstr
 import { VisualisationViewFactory, VisualisationView, VisualisationViewInstantiationContext } from "../../../webview/visualisations/VisualisationView";
 import { WebviewToCoreMessageType } from "../../../shared/messenger/messages";
 import { VisualisationMetadata } from "../../../shared/visualisations/types";
+import { TaskThrottler } from "../../../shared/tasks/TaskThrottler";
+import { TaskDebouncer } from "../../../shared/tasks/TaskDebouncer";
 
 // 2D dimensions of an element (in pixels)
 interface Dimensions {
@@ -39,6 +41,8 @@ function nbPx(lengthAsString: string): number {
 }
 
 class IncludegraphicsView extends AbstractVisualisationView {
+    private static readonly DELAY_BETWEEN_NON_FINAL_OPTIONS_UPDATES = 50; // ms
+    private static readonly WAITING_TIME_AFTER_LAST_SCROLL_BEFORE_OPTIONS_UPDATE = 800; // ms
     static readonly visualisationName = "includegraphics";
     readonly visualisationName = IncludegraphicsView.visualisationName;
 
@@ -64,6 +68,9 @@ class IncludegraphicsView extends AbstractVisualisationView {
         dx: number,
         dy: number
     };
+
+    private nonFinalOptionsUpdateThrottler: TaskThrottler;
+    private onScrollFinalOptionsUpdateDebouncer: TaskDebouncer;
 
     private resizeHandleDragStartCallback =
         (event: MouseEvent) => { this.onDragStart(event, this.onResizeHandleDrag.bind(this)); };
@@ -122,6 +129,9 @@ class IncludegraphicsView extends AbstractVisualisationView {
             dx: 0,
             dy: 0
         };
+
+        this.nonFinalOptionsUpdateThrottler = new TaskThrottler(IncludegraphicsView.DELAY_BETWEEN_NON_FINAL_OPTIONS_UPDATES);
+        this.onScrollFinalOptionsUpdateDebouncer = new TaskDebouncer(IncludegraphicsView.WAITING_TIME_AFTER_LAST_SCROLL_BEFORE_OPTIONS_UPDATE);
 
         this.startHandlingMouseEvents();
     }
@@ -305,16 +315,21 @@ class IncludegraphicsView extends AbstractVisualisationView {
 
         this.currentDrag.onDragAction(event);
 
-        const newOptions = this.computeCurrentIncludegraphicsOptions();
-        this.updateCommandOptions(newOptions);
+        this.nonFinalOptionsUpdateThrottler.add(async () => {
+            const newOptions = this.computeCurrentIncludegraphicsOptions();
+            this.updateCommandOptions(newOptions, false);
+        });
     }
 
     onDragEnd(event: MouseEvent) {
         event.preventDefault();
         this.somethingIsDragged = false;
+
+        const newOptions = this.computeCurrentIncludegraphicsOptions();
+        this.updateCommandOptions(newOptions, true);
     }
 
-    onScroll(event: MouseWheelEvent) {
+    onScroll(event: WheelEvent) {
         event.preventDefault();
 
         // Compute the image scaling factor
@@ -338,8 +353,15 @@ class IncludegraphicsView extends AbstractVisualisationView {
 
             this.updateImageNodesDimensions();
             
-            const newOptions = this.computeCurrentIncludegraphicsOptions();
-            this.updateCommandOptions(newOptions);
+            this.nonFinalOptionsUpdateThrottler.add(async () => {
+                const newOptions = this.computeCurrentIncludegraphicsOptions();
+                this.updateCommandOptions(newOptions, false);
+            });
+
+            this.onScrollFinalOptionsUpdateDebouncer.add(async () => {
+                const newOptions = this.computeCurrentIncludegraphicsOptions();
+                this.updateCommandOptions(newOptions, true);
+            });
         }
     }
 
@@ -439,13 +461,14 @@ class IncludegraphicsView extends AbstractVisualisationView {
         return newOptions;
     }
 
-    updateCommandOptions(newOptions: IncludegraphicsOptions): void {
+    updateCommandOptions(newOptions: IncludegraphicsOptions, isFinalUpdate: boolean): void {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
             visualisationUid: this.modelUid,
             title: "set-options",
             notification: {
-                newOptions: newOptions
+                newOptions: newOptions,
+                isFinalUpdate: isFinalUpdate
             }
         });
     }

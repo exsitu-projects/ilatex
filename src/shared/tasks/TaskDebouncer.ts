@@ -2,41 +2,41 @@ import { Task } from "./Task";
 
 export class TaskDebouncer {
     private nextTask: Task | null;
+    private timeout: ReturnType<typeof setTimeout> | null;
     private isRunningTask: boolean;
-    private timeBetweenTasks: number; // milliseconds
+    private waitingTime: number; // milliseconds
     
-    constructor(timeBetweenTasks: number) {
+    constructor(waitingTime: number) {
         this.nextTask = null;
+        this.timeout = null;
         this.isRunningTask = false;
-        this.timeBetweenTasks = timeBetweenTasks;
+        this.waitingTime = waitingTime;
     }
 
     add(task: Task): void {
-        if (this.isRunningTask) {
-            this.nextTask = task;
-            return;
+        if (this.timeout !== null) {
+            clearTimeout(this.timeout);
         }
 
-        (async () => {
-            this.run(task);
-        })();
+        if (this.isRunningTask) {
+            this.nextTask = task;
+        }
+        else {
+            this.runTask(task);
+        }
     }
 
-    private async run(task: Task): Promise<void> {
-        this.isRunningTask = true;
+    private runTask(task: Task): void {
+        this.timeout = setTimeout(async () => {
+            this.isRunningTask = true;
+            await task();
+            this.isRunningTask = false;
 
-        await task();
-
-        setTimeout(async () => {
+            this.timeout = null;
             if (this.nextTask) {
-                const task = this.nextTask;
+                this.runTask(this.nextTask);
                 this.nextTask = null;
-
-                await this.run(task);
             }
-            else {
-                this.isRunningTask = false;
-            }
-        }, this.timeBetweenTasks);
+        }, this.waitingTime);
     }
 }

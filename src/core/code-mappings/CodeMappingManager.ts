@@ -4,7 +4,6 @@ import * as path from "path";
 import { InteractiveLatex } from "../InteractiveLaTeX";
 import { ExtensionFileReader } from "../utils/FileReader";
 import { CodeMapping } from "./CodeMapping";
-import { TaskDebouncer } from "../../shared/tasks/TaskDebouncer";
 
 export class NoLatexGeneratedMappingFileError {}
 

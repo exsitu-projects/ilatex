@@ -15,7 +15,7 @@ const pdfIsCurrentlyCompiledNotification = new PDFOverlayNotification(
 );
 
 export class PDFManager {
-    private static readonly DELAY_BETWEEN_PDF_RESIZES: number = 50; // ms
+    private static readonly WAITING_TIME_BEFORE_PDF_RESIZE: number = 50; // ms
     static readonly PDF_COMPILATION_STARTED_EVENT = "pdf-compilation-started";
     static readonly PDF_CURRENTLY_RECOMPILED_BODY_CLASS = "pdf-currently-compiled";
     static readonly LAST_PDF_COMPILATION_FAILED_BODY_CLASS = "last-pdf-compilation-failed";
@@ -33,7 +33,7 @@ export class PDFManager {
     private codeMappingIdsToVisualisationAvailabilities: Map<number, boolean>;
 
     private pdfSyncTaskRunner: TaskQueuer;
-    private pdfResizingRequestDebouncer: TaskDebouncer;
+    private pdfResizeDebouncer: TaskDebouncer;
 
     private recompilePdfActionButton = new PDFOverlayButton(
         "Recompile",
@@ -61,7 +61,7 @@ export class PDFManager {
         this.codeMappingIdsToVisualisationAvailabilities = new Map();
 
         this.pdfSyncTaskRunner = new TaskQueuer();
-        this.pdfResizingRequestDebouncer = new TaskDebouncer(PDFManager.DELAY_BETWEEN_PDF_RESIZES);
+        this.pdfResizeDebouncer = new TaskDebouncer(PDFManager.WAITING_TIME_BEFORE_PDF_RESIZE);
 
         this.startHandlingPdfUpdates();
         this.startHandlingWindowResizes();
@@ -170,7 +170,7 @@ export class PDFManager {
 
     startHandlingWindowResizes() {
         window.addEventListener("resize", async event => {
-            this.pdfResizingRequestDebouncer.add(async () => {
+            this.pdfResizeDebouncer.add(async () => {
                 this.pdfSyncTaskRunner.add(async () => {
                     this.renderer?.redraw();
                 });

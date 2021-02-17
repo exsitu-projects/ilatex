@@ -58,7 +58,7 @@ export class LightweightSourceFileEditor {
         this.currentContent = newContent;
     }
 
-    async discardAndProcessChanges(): Promise<void> {
+    async applyChange(): Promise<void> {
         // First, replace the current content by the initial content
         // This is required to ensure the change that will be processed by the source file and its AST
         // is performed on the same content than before the very first lightweight edit

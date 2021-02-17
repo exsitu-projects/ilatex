@@ -5,6 +5,7 @@ import { VisualisableCodeContext } from "../../../core/visualisations/Visualisat
 import { VisualisationModelUtilities } from "../../../core/visualisations/VisualisationModelUtilities";
 import { Cell, Layout, Row } from "./Layout";
 import { HtmlUtils } from "../../../shared/utils/HtmlUtils";
+import { LightweightSourceFileEditor } from "../../../core/source-files/LightweightSourceFileEditor";
 
 class NoLayoutError {}
 
@@ -12,9 +13,15 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
     readonly name = "grid layout";
     private layout: Layout | null;
 
+    private lightweightCellSizeEditor: LightweightSourceFileEditor | null;
+    private lightweightRowHeightEditor: LightweightSourceFileEditor | null;
+
     constructor(context: VisualisableCodeContext<EnvironmentNode>, utilities: VisualisationModelUtilities) {
         super(context, utilities);
         this.layout = null;
+
+        this.lightweightCellSizeEditor = null;
+        this.lightweightRowHeightEditor = null;
     }
 
     protected get contentDataAsHtml(): string {
@@ -42,7 +49,7 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
                     const { rowIndex, cellIndex, newRelativeSize, isFinalSize } = payload;
                     const cell = this.getCellAt(rowIndex, cellIndex);
 
-                    await this.resizeCell(cell, newRelativeSize);
+                    await this.resizeCell(cell, newRelativeSize, isFinalSize);
                     this.registerChangeRequestedByTheView();
                 }
             },
@@ -52,7 +59,7 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
                     const { rowIndex, newHeight, isFinalSize } = payload;
                     const row = this.getRowAt(rowIndex);
 
-                    await this.resizeRow(row, newHeight);
+                    await this.resizeRow(row, newHeight, isFinalSize);
                     this.registerChangeRequestedByTheView();
                 }
             }
@@ -72,7 +79,7 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
             .cells[cellIndex];
     }
 
-    private async resizeCell(cell: Cell, newRelativeSize: number): Promise<void> {
+    private async resizeCell(cell: Cell, newRelativeSize: number, isFinalSize: boolean): Promise<void> {
         // Round the number of decimals of the new size
         const maxNbDecimals = 3;
         const tenPowerNbDecimals = 10 ** maxNbDecimals;
@@ -80,14 +87,34 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
             ((Math.round(newRelativeSize * tenPowerNbDecimals)) / tenPowerNbDecimals)
                 .toString();
 
-        await cell.options.relativeSizeParameterNode.setTextContent(newSizeAsString);
+        if (!this.lightweightCellSizeEditor) {
+            const editRange = cell.options.relativeSizeParameterNode.range;
+            this.lightweightCellSizeEditor = this.sourceFile.createLightweightEditorFor(editRange);
+            await this.lightweightCellSizeEditor.init();
+        }
+        
+        await this.lightweightCellSizeEditor.replaceContentWith(newSizeAsString);
+        if (isFinalSize) {
+            await this.lightweightCellSizeEditor.applyChange();
+            this.lightweightCellSizeEditor = null;
+        }
     }
 
-    private async resizeRow(row: Row, newHeight: number): Promise<void> {
+    private async resizeRow(row: Row, newHeight: number, isFinalSize: boolean): Promise<void> {
         // Round the new height and append the right suffix
         const newHeightAsString = `${Math.round(newHeight)}px`;
 
-        await row.options.heightParameterNode.setTextContent(newHeightAsString);
+        if (!this.lightweightRowHeightEditor) {
+            const editRange = row.options.heightParameterNode.range;
+            this.lightweightRowHeightEditor = this.sourceFile.createLightweightEditorFor(editRange);
+            await this.lightweightRowHeightEditor.init();
+        }
+        
+        await this.lightweightRowHeightEditor.replaceContentWith(newHeightAsString);
+        if (isFinalSize) {
+            await this.lightweightRowHeightEditor.applyChange();
+            this.lightweightRowHeightEditor = null;
+        }
     }
 
     protected async updateContentData(): Promise<void> {

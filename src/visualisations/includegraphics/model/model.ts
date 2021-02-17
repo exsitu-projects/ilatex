@@ -9,14 +9,19 @@ import { LatexLength } from "../../../shared/latex-length/LatexLength";
 import { SourceFileRange } from "../../../core/source-files/SourceFileRange";
 import { CurlyBracesParameterBlockNode } from "../../../core/ast/nodes/CurlyBracesParameterBlockNode";
 import { SquareBracesParameterBlockNode } from "../../../core/ast/nodes/SquareBracesParameterBlockNode";
+import { LightweightSourceFileEditor } from "../../../core/source-files/LightweightSourceFileEditor";
 
 export class IncludegraphicsVisualisationModel extends AbstractVisualisationModel<CommandNode> {
     readonly name = "includegraphics";
-    private image: Image | null; 
+    private image: Image | null;
+
+    private lightweightImageOptionsEditor: LightweightSourceFileEditor | null;
 
     constructor(context: VisualisableCodeContext<CommandNode>, utilities: VisualisationModelUtilities) {
         super(context, utilities);
         this.image = null;
+
+        this.lightweightImageOptionsEditor = null;
     }
 
     protected get contentDataAsHtml(): string {
@@ -50,14 +55,15 @@ export class IncludegraphicsVisualisationModel extends AbstractVisualisationMode
                 title: "set-options",
                 handler: async payload => {
                     const newRawOptions = payload.newOptions as RawImageOptions;
-                    await this.updateImageOptionParameterUsing(newRawOptions);
+
+                    await this.updateImageOptionParameterUsing(newRawOptions, payload.isFinalUpdate);
                     this.registerChangeRequestedByTheView();
                 }
             }
         ];
     }
 
-    private async updateImageOptionParameterUsing(newRawOptions: RawImageOptions): Promise<void> {
+    private async updateImageOptionParameterUsing(newRawOptions: RawImageOptions, isFinalUpdate: boolean): Promise<void> {
         if (!this.image) {
             return;
         }
@@ -82,6 +88,8 @@ export class IncludegraphicsVisualisationModel extends AbstractVisualisationMode
         if (newRawOptions.scale) {
             optionsAsStrings.set("scale", newRawOptions.scale.toString());
         }
+
+        // TODO: ignore the trimming if all trim values are 0
         if (newRawOptions.clip) {
             optionsAsStrings.set("clip", true);
         }
@@ -103,21 +111,20 @@ export class IncludegraphicsVisualisationModel extends AbstractVisualisationMode
             .join(", ");
         const newOptionParameterBlock = `[${newOptionParameterBlockContent}]`;
 
-        if (this.image.optionsParameterBlockNode instanceof SquareBracesParameterBlockNode) {
-            await this.image.optionsParameterBlockNode.content.setTextContent(newOptionParameterBlockContent);
-        }
-        else {
-            // TODO: ensure this works fine?
-
-            // Insert the string built just above (as the first parameter of the command)
+        if (!this.lightweightImageOptionsEditor) {
             const editRange = new SourceFileRange(
                 this.astNode.nameEnd,
                 (this.astNode.parameters[1] as CurlyBracesParameterBlockNode).range.from
             );
-
-            await this.astNode.makeAtomicChangeWithinNode(editBuilder => {
-                editBuilder.replace(editRange.asVscodeRange, newOptionParameterBlock);
-            });
+    
+            this.lightweightImageOptionsEditor = this.sourceFile.createLightweightEditorFor(editRange);
+            await this.lightweightImageOptionsEditor.init();
+        }
+        
+        await this.lightweightImageOptionsEditor.replaceContentWith(newOptionParameterBlock);
+        if (isFinalUpdate) {
+            await this.lightweightImageOptionsEditor.applyChange();
+            this.lightweightImageOptionsEditor = null;
         }
     }
 
@@ -129,11 +136,12 @@ export class IncludegraphicsVisualisationModel extends AbstractVisualisationMode
                 this.utilities
             );
             this.contentUpdateEndEventEmitter.fire(true);
+
+            console.log("New image model:", this.image);
         }
         catch (error) {
             console.log(`The content data update of the visualisation with UID ${this.uid} (${this.name}) failed.`);
             this.contentUpdateEndEventEmitter.fire(false);
-
         }
     }
 

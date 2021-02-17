@@ -2,7 +2,7 @@ import { AbstractVisualisationView } from "../../../webview/visualisations/Abstr
 import { VisualisationViewFactory, VisualisationView, VisualisationViewInstantiationContext } from "../../../webview/visualisations/VisualisationView";
 import { Messenger } from "../../../webview/Messenger";
 import { WebviewToCoreMessageType } from "../../../shared/messenger/messages";
-import { TaskDebouncer } from "../../../shared/tasks/TaskDebouncer";
+import { TaskThrottler } from "../../../shared/tasks/TaskThrottler";
 import { VisualisationMetadata } from "../../../shared/visualisations/types";
 
 const enum ResizeType {
@@ -43,7 +43,7 @@ class GridLayoutView extends AbstractVisualisationView {
 
     private viewNode: HTMLElement;
 
-    private resizeDebouncer: TaskDebouncer;
+    private resizeThrottler: TaskThrottler;
     private currentResizeContext: ResizeContext;
 
     private mouseMoveDuringResizeCallback =
@@ -60,7 +60,7 @@ class GridLayoutView extends AbstractVisualisationView {
         this.viewNode = document.createElement("div");
 
         // Internal values used during cell and row resizing
-        this.resizeDebouncer = new TaskDebouncer(GridLayoutView.DELAY_BETWEEN_RESIZES);
+        this.resizeThrottler = new TaskThrottler(GridLayoutView.DELAY_BETWEEN_RESIZES);
         this.currentResizeContext = {
             type: ResizeType.None
         };
@@ -329,7 +329,7 @@ class GridLayoutView extends AbstractVisualisationView {
     private onMouseMoveDuringResize(event: MouseEvent): void {
         // Only trigger a resize if the previous one is old enough
         if (this.isResized) {
-            this.resizeDebouncer.add(async () => {
+            this.resizeThrottler.add(async () => {
                 this.updateDimensionsDuringResize(event);
             });
         }
