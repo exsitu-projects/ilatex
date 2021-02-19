@@ -1,3 +1,4 @@
+import { newline } from "parsimmon";
 import { LatexLengthSettings, LatexLengthCustomSettings, resolveSettings } from "./LatexLengthSettings";
 
 // Type of standard convertible unit (constant and variable)
@@ -35,7 +36,8 @@ const defaultSettings: LatexLengthSettings = {
         "em": 2,
         "ex": 2
     },
-    maxNbDecimalsForLengthMacros: 2
+    maxNbDecimalsForLengthMacros: 2,
+    onlyAcceptConvertibleUnits: false
 };
 
 // Names amd conversions rates of standard units are based on documents such as
@@ -316,17 +318,23 @@ export class LatexLength {
             || LatexLength.isVariableUnit(candidate);
     }
 
-    static from(text: string, settings: LatexLengthCustomSettings = {}) {
+    static from(text: string, settings: LatexLengthCustomSettings = {}): LatexLength {
         const parsingResult = LatexLength.parse(text, settings.defaultUnit);
         if (parsingResult.success === false) {
             throw new LengthParsingError();
         }
 
-        return new LatexLength(
+        const newLength = new LatexLength(
             parsingResult.value,
             parsingResult.unit,
             parsingResult.suffix,
             settings
         );
+
+        if (settings.onlyAcceptConvertibleUnits && !newLength.knowsValueOfUnit(newLength.unit)) {
+            throw new LengthParsingError();
+        }
+
+        return newLength;
     }
 }

@@ -19,6 +19,7 @@ export interface LatexLengthSettings {
     lengthMacroValues: VariableUnitsValues;
     maxNbDecimalsPerStandardUnit: NbDecimalsPerStandardUnit;
     maxNbDecimalsForLengthMacros: number;
+    onlyAcceptConvertibleUnits: boolean;
 }
 
 export type LatexLengthCustomSettings =
@@ -44,5 +45,6 @@ export function resolveSettings(
         lengthMacroValues: { ...defaultSettings.lengthMacroValues, ...customSettings.lengthMacroValues ?? {} },
         maxNbDecimalsPerStandardUnit: { ...defaultSettings.maxNbDecimalsPerStandardUnit, ...customSettings.maxNbDecimalsPerUnit ?? {} },
         maxNbDecimalsForLengthMacros: customSettings.maxNbDecimalsForLengthMacros ?? defaultSettings.maxNbDecimalsForLengthMacros,
+        onlyAcceptConvertibleUnits: customSettings.onlyAcceptConvertibleUnits ?? defaultSettings.onlyAcceptConvertibleUnits,
     };
 }
