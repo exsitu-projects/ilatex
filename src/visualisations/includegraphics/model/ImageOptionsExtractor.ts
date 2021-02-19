@@ -14,7 +14,11 @@ export class InvalidImageOptionError {}
 export class ImageOptionsExtractor extends ASTSyncVisitorAdapter {
     private static readonly DEFAULT_LATEX_LENGTH_SETTINGS = {
         // Big points are the default unit for includegraphics (in graphicx package)
-        defaultUnit: "bp"
+        defaultUnit: "bp",
+
+        // Since the values read by this extractor will have to be converted to standard units (such as pixels),
+        // option values that are set to lengths with non-convertible units must be rejected
+        onlyAcceptConvertibleUnits: true
     };
 
     private latexLengthSettings: LatexLengthCustomSettings;
