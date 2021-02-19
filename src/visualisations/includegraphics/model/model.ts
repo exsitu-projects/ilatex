@@ -35,7 +35,7 @@ export class IncludegraphicsVisualisationModel extends AbstractVisualisationMode
         if (rawImageOptions) {
             if (rawImageOptions.width) { attributes["data-option-width"] = rawImageOptions.width.toString(); }
             if (rawImageOptions.height) { attributes["data-option-height"] = rawImageOptions.height.toString(); }
-            // if (rawImageOptions.scale) { attributes["data-option-scale"] = rawImageOptions.scale.toString(); }
+            if (rawImageOptions.scale) { attributes["data-option-scale"] = rawImageOptions.scale.toString(); }
             if (rawImageOptions.trim) {
                 attributes["data-option-trim-left"] = rawImageOptions.trim.left.toString();
                 attributes["data-option-trim-bottom"] = rawImageOptions.trim.bottom.toString();
