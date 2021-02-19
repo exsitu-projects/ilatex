@@ -1,12 +1,12 @@
-import { VisualisationView, CodeRange, VisualisationViewInstantiationContext } from "./VisualisationView";
+import { VisualisationView } from "./VisualisationView";
 import { Messenger } from "../Messenger";
 import { WebviewToCoreMessageType } from "../../shared/messenger/messages";
-import { AnnotationMaskCoordinates } from "../pdf/PDFPageRenderer";
 import { VisualisationMetadata, VisualisationModelUID } from "../../shared/visualisations/types";
 import { RawSourceFileRange } from "../../shared/source-files/types";
+import { VisualisationViewContext } from "./VisualisationViewContext";
 
 export abstract class AbstractVisualisationView implements VisualisationView {
-    protected instanciationContext: VisualisationViewInstantiationContext;
+    protected instanciationContext: VisualisationViewContext;
     protected messenger: Messenger;
 
     abstract readonly visualisationName: string;
@@ -17,7 +17,7 @@ export abstract class AbstractVisualisationView implements VisualisationView {
     constructor(
         contentNode: HTMLElement,
         metadata: VisualisationMetadata,
-        context: VisualisationViewInstantiationContext
+        context: VisualisationViewContext
     ) {
         this.instanciationContext = context;
         this.messenger = context.messenger;

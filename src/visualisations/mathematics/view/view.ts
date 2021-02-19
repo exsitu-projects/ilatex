@@ -1,9 +1,10 @@
 // import { katex } from "./katexApi";
 import "./katexApi";
 import { AbstractVisualisationView } from "../../../webview/visualisations/AbstractVisualisationView";
-import { VisualisationViewFactory, VisualisationView, VisualisationViewInstantiationContext } from "../../../webview/visualisations/VisualisationView";
+import { VisualisationViewFactory, VisualisationView } from "../../../webview/visualisations/VisualisationView";
 import { WebviewToCoreMessageType } from "../../../shared/messenger/messages";
 import { VisualisationMetadata } from "../../../shared/visualisations/types";
+import { VisualisationViewContext } from "../../../webview/visualisations/VisualisationViewContext";
 
 interface MathCodeSplitByRange {
     code: string;
@@ -39,7 +40,7 @@ class MathematicsView extends AbstractVisualisationView {
     private completeMathCodeInputCallback =
         (event: Event) => { this.onCompleteMathCodeEdit(event as InputEvent); };  // Casted to bypass the overly-limited type of addEventListener?
 
-    constructor(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewInstantiationContext) {
+    constructor(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewContext) {
         super(contentNode, metadata, context);
 
         this.mathCode = this.contentNode.innerText;
@@ -363,7 +364,7 @@ class MathematicsView extends AbstractVisualisationView {
 export class MathematicsViewFactory implements VisualisationViewFactory {
     readonly visualisationName = MathematicsView.visualisationName;
     
-    createView(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewInstantiationContext): VisualisationView {
+    createView(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewContext): VisualisationView {
         return new MathematicsView(contentNode, metadata, context);
     }
 }

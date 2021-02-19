@@ -1,9 +1,9 @@
 import { AbstractVisualisationView } from "../../../webview/visualisations/AbstractVisualisationView";
-import { VisualisationViewFactory, VisualisationView, VisualisationViewInstantiationContext } from "../../../webview/visualisations/VisualisationView";
-import { Messenger } from "../../../webview/Messenger";
+import { VisualisationViewFactory, VisualisationView } from "../../../webview/visualisations/VisualisationView";
 import { WebviewToCoreMessageType } from "../../../shared/messenger/messages";
 import { TaskThrottler } from "../../../shared/tasks/TaskThrottler";
 import { VisualisationMetadata } from "../../../shared/visualisations/types";
+import { VisualisationViewContext } from "../../../webview/visualisations/VisualisationViewContext";
 
 const enum ResizeType {
     None = "None",
@@ -51,7 +51,7 @@ class GridLayoutView extends AbstractVisualisationView {
     private mouseUpDuringResizeCallback =
         (event: MouseEvent) => { this.onMouseUpDuringResize(event); };
 
-    constructor(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewInstantiationContext) {
+    constructor(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewContext) {
         super(contentNode, metadata, context);
 
         this.contentRowNodes = Array.from(this.contentNode.querySelectorAll(".row"));
@@ -365,7 +365,7 @@ class GridLayoutView extends AbstractVisualisationView {
 export class GridLayoutViewFactory implements VisualisationViewFactory {
     readonly visualisationName = GridLayoutView.visualisationName;
     
-    createView(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewInstantiationContext): VisualisationView {
+    createView(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewContext): VisualisationView {
         return new GridLayoutView(contentNode, metadata, context);
     }
 }

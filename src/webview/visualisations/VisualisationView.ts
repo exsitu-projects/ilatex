@@ -1,22 +1,11 @@
 import { RawSourceFileRange } from "../../shared/source-files/types";
 import { VisualisationMetadata, VisualisationModelUID } from "../../shared/visualisations/types";
-import { Messenger } from "../Messenger";
-import { AnnotationMaskCoordinates } from "../pdf/PDFPageRenderer";
+import { VisualisationViewContext } from "./VisualisationViewContext";
+
 
 export interface CodeRange {
     start: {line: number, column: number};
     end: {line: number, column: number};
-}
-
-export interface VisualisationViewInstantiationContext {
-    messenger: Messenger;
-    annotationMaskCoordinates: AnnotationMaskCoordinates;
-    pdfPageDetail: {
-        pageNumber: number;
-        width: number;
-        height: number;
-        scale: number;
-    }
 }
 
 export interface VisualisationView {
@@ -52,5 +41,5 @@ export interface VisualisationView {
 
 export interface VisualisationViewFactory {
     readonly visualisationName: string;
-    createView(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewInstantiationContext): VisualisationView;
+    createView(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewContext): VisualisationView;
 }

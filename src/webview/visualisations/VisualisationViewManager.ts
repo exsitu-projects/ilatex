@@ -10,6 +10,7 @@ import { IncludegraphicsViewFactory } from "../../visualisations/includegraphics
 import { VisualisationMetadata } from "../../shared/visualisations/types";
 import { TaskQueuer } from "../../shared/tasks/TaskQueuer";
 import { PDFManager } from "../pdf/PDFManager";
+import { VisualisationViewContext } from "./VisualisationViewContext";
 
 export interface VisualisationDisplayRequest {
     codeMappingId: number;
@@ -113,11 +114,12 @@ export class VisualisationViewManager {
         const clonedContentNode = VisualisationViewManager.cloneVisualisationContentNode(data.contentNode);
         
         const factory = this.visualisationNamesToViewFactories.get(visualisationName)!;
-        const view = factory.createView(clonedContentNode, data.metadata, {
-            messenger: this.messenger,
-            annotationMaskCoordinates: request.annotationMaskCoordinates,
-            pdfPageDetail: request.pdfPageDetail
-        });
+        const view = factory.createView(clonedContentNode, data.metadata, new VisualisationViewContext(
+            request.codeMappingId,
+            this.messenger,
+            request.annotationMaskCoordinates,
+            request.pdfPageDetail
+        ));
 
         const popup = new VisualisationPopup(view, request.annotationMaskCoordinates, () => {
             this.currentlyDisplayedVisualisationPopup = null;

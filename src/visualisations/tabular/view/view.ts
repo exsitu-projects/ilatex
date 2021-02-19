@@ -1,8 +1,9 @@
 import "./HandsontableApi";
 import { AbstractVisualisationView } from "../../../webview/visualisations/AbstractVisualisationView";
-import { VisualisationViewFactory, VisualisationView, VisualisationViewInstantiationContext } from "../../../webview/visualisations/VisualisationView";
+import { VisualisationViewFactory, VisualisationView } from "../../../webview/visualisations/VisualisationView";
 import { WebviewToCoreMessageType } from "../../../shared/messenger/messages";
 import { VisualisationMetadata } from "../../../shared/visualisations/types";
+import { VisualisationViewContext } from "../../../webview/visualisations/VisualisationViewContext";
 
 
 interface HandsontableCellCoords {
@@ -34,7 +35,7 @@ class TabularView extends AbstractVisualisationView {
     private handsontableInstance: Handsontable | null;
     private handsontableMutationObserver: MutationObserver | null;
     
-    constructor(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewInstantiationContext) {
+    constructor(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewContext) {
         super(contentNode, metadata, context);
 
         this.columnDetails = this.extractColumnDetails();
@@ -321,7 +322,7 @@ class TabularView extends AbstractVisualisationView {
 export class TabularViewFactory implements VisualisationViewFactory {
     readonly visualisationName = TabularView.visualisationName;
     
-    createView(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewInstantiationContext): VisualisationView {
+    createView(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewContext): VisualisationView {
         return new TabularView(contentNode, metadata, context);
     }
 }

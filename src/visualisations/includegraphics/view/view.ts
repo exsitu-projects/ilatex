@@ -1,9 +1,10 @@
 import { AbstractVisualisationView } from "../../../webview/visualisations/AbstractVisualisationView";
-import { VisualisationViewFactory, VisualisationView, VisualisationViewInstantiationContext } from "../../../webview/visualisations/VisualisationView";
+import { VisualisationViewFactory, VisualisationView } from "../../../webview/visualisations/VisualisationView";
 import { WebviewToCoreMessageType } from "../../../shared/messenger/messages";
 import { VisualisationMetadata } from "../../../shared/visualisations/types";
 import { TaskThrottler } from "../../../shared/tasks/TaskThrottler";
 import { TaskDebouncer } from "../../../shared/tasks/TaskDebouncer";
+import { VisualisationViewContext } from "../../../webview/visualisations/VisualisationViewContext";
 
 // 2D dimensions of an element (in pixels)
 interface Dimensions {
@@ -83,7 +84,7 @@ class IncludegraphicsView extends AbstractVisualisationView {
     private wheelCallback =
         (event: WheelEvent) => { this.onScroll(event); };
 
-    constructor(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewInstantiationContext) {
+    constructor(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewContext) {
         super(contentNode, metadata, context);
 
         this.viewNode = document.createElement("div");
@@ -495,7 +496,7 @@ class IncludegraphicsView extends AbstractVisualisationView {
 export class IncludegraphicsViewFactory implements VisualisationViewFactory {
     readonly visualisationName = IncludegraphicsView.visualisationName;
     
-    createView(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewInstantiationContext): VisualisationView {
+    createView(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewContext): VisualisationView {
         return new IncludegraphicsView(contentNode, metadata, context);
     }
 }
