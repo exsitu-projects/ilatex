@@ -10,42 +10,16 @@
     max-height: none;
 }
 
-/* Interactive image frame (adapted from Michel Beadouin-Lafon's) */
-[data-visualisation-name="includegraphics"] .frame {
-    position: absolute;
-    left: 50%;
-    border: solid 1px grey;
+/* Mandatory rule to use Cropper library */
+[data-visualisation-name="includegraphics"] .image {
+    display: block;
+    max-width: 100%;
 }
 
-[data-visualisation-name="includegraphics"] .frame > .ghost {
-    position: absolute;
-    overflow: visible;
-    opacity: 0.3;
-}
-
-[data-visualisation-name="includegraphics"] .frame > .ghost.hidden {
-    visibility: hidden;
-}
-
-[data-visualisation-name="includegraphics"] .frame > .inner {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-}
-
-[data-visualisation-name="includegraphics"] .frame > .inner > .image {
-    position: absolute;
-}
-
-[data-visualisation-name="includegraphics"] .frame > .resize {
-    position: absolute;
-    right: -4px;
-    bottom: -4px;
-    width: 9px;
-    height: 9px;
-    border: solid 1px grey;
-    background-color: white;
-}
+/*
+ * Make all the handles of the Cropper's cropboes the same size, no matter the size of the screen.
+ * The media quesries below have been adapted from the CSS file of Cropper's library (v1.5.11).
+ */
+@media (min-width:768px)  { .cropper-point.point-se { height: 5px !important; width: 5px !important; }}
+@media (min-width:992px)  { .cropper-point.point-se { height: 5px !important; width: 5px !important; }}
+@media (min-width:1200px) { .cropper-point.point-se { height: 5px !important; width: 5px !important; }}
