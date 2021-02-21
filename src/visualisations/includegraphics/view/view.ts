@@ -4,46 +4,11 @@ import { VisualisationViewFactory, VisualisationView } from "../../../webview/vi
 import { WebviewToCoreMessageType } from "../../../shared/messenger/messages";
 import { VisualisationMetadata } from "../../../shared/visualisations/types";
 import { TaskThrottler } from "../../../shared/tasks/TaskThrottler";
-import { TaskDebouncer } from "../../../shared/tasks/TaskDebouncer";
 import { VisualisationViewContext } from "../../../webview/visualisations/VisualisationViewContext";
+import { ImageCropper } from "./ImageCropper";
+import { ImageResizer } from "./ImageResizer";
 
-// 2D dimensions of an element (in pixels)
-
-
-// interface TrimValues {
-//     top: number;
-//     bottom: number;
-//     left: number;
-//     right: number;
-// }
-
-// // 2D position of an element (in pixerls)
-// interface Position {
-//     x: number;
-//     y: number;
-// }
-
-interface Dimensions {
-    width: number;
-    height: number;
-}
-
-interface BoundingBox {
-    left: number;
-    top: number;
-    width: number;
-    height: number;
-}
-
-interface ImageDimensionData {
-    bb: BoundingBox,
-    widthInPdf: number;
-    heightInPdf: number;
-    scaleX: number;
-    scaleY: number;
-}
-
-interface IncludegraphicsOptions {
+export interface IncludegraphicsOptions {
     width?: number;
     height?: number;
     scale?: number;
@@ -58,295 +23,94 @@ interface IncludegraphicsOptions {
 
 class IncludegraphicsView extends AbstractVisualisationView {
     private static readonly DELAY_BETWEEN_NON_FINAL_OPTIONS_UPDATES = 50; // ms
-    private static readonly WAITING_TIME_AFTER_LAST_SCROLL_BEFORE_OPTIONS_UPDATE = 500; // ms
     static readonly visualisationName = "includegraphics";
     readonly visualisationName = IncludegraphicsView.visualisationName;
 
     private viewNode: HTMLElement;
-    private imageUri: string | null;
-    private cropper: Cropper | null;
-    // private imageNode: HTMLImageElement;
-
+    private preloadedImageNode: HTMLImageElement;
+    private resizerContainerNode: HTMLElement;
+    private cropperContainerNode: HTMLElement;
     
-    // private initialIncludegraphicsOptions: IncludegraphicsOptions;
-    // private frameDimensions: Dimensions;
-    // private imageDimensions: Dimensions;
-    // private imageOffset: Position;
+    private resizer: ImageResizer;
+    private cropper: ImageCropper;
 
     private nonFinalOptionsUpdateThrottler: TaskThrottler;
-    private onScrollFinalOptionsUpdateDebouncer: TaskDebouncer;
 
 
     constructor(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewContext) {
         super(contentNode, metadata, context);
 
         this.viewNode = document.createElement("div");
-        this.imageUri = null;
-        this.cropper = null;
-        
 
-        // Make the dimensions of the frame match those of the annotation mask
-        // (since the mask should represent the smallest visible area of the image, by definition)
-        // const maskCoordinates = this.instanciationContext.annotationMaskCoordinates;
-        // this.frameDimensions = {
-        //     width: maskCoordinates[2] - maskCoordinates[0],
-        //     height: maskCoordinates[3] - maskCoordinates[1]
-        // };
+        this.preloadedImageNode = document.createElement("img");
+        this.preloadedImageNode.classList.add("preloaded-image");
+        this.preloadedImageNode.src = this.imageUri;
+        this.viewNode.append(this.preloadedImageNode);
+
+        this.preloadedImageNode.decode(); // Start loading/decoding the image as early as possible
+
+        this.resizerContainerNode = document.createElement("div");
+        this.resizerContainerNode.classList.add("image-resizer-container");
+        this.viewNode.append(this.resizerContainerNode);
+
+        this.cropperContainerNode = document.createElement("div");
+        this.cropperContainerNode.classList.add("image-cropper-container");
+        this.viewNode.append(this.cropperContainerNode);
+
+        this.resizer = this.createResizer();
+        this.cropper = this.createCropper();
 
         this.nonFinalOptionsUpdateThrottler = new TaskThrottler(IncludegraphicsView.DELAY_BETWEEN_NON_FINAL_OPTIONS_UPDATES);
-        this.onScrollFinalOptionsUpdateDebouncer = new TaskDebouncer(IncludegraphicsView.WAITING_TIME_AFTER_LAST_SCROLL_BEFORE_OPTIONS_UPDATE);
+    }
+    
+    private get imageNode(): HTMLImageElement {
+        return IncludegraphicsView.extractImageFrom(this.contentNode);
     }
 
-    private computeImageBoundingBoxFrom(
-        imageNode: HTMLImageElement,
-        options: IncludegraphicsOptions
-    ): ImageDimensionData {
-        // Shorthands for some details about the PDF page where the image is displayed
-        const pdfPageDetail = this.instanciationContext.pdfPageDetail!;
-        const pdfPageScale = pdfPageDetail.scale;
-
-        // Shorthands for (possibly undefined) options of the includegraphics command
-        const width = options.width;
-        const height = options.height;
-        const scale = options.scale;
-        const trim = options.trim ?? {
-            top: 0, bottom: 0, left: 0, right: 0
-        };
-
-        // Natural width, height and ratio
-        const naturalWidth = imageNode.naturalWidth;
-        const naturalHeight = imageNode.naturalHeight;
-        // const naturalRatio = naturalWidth / naturalHeight;
-
-        // Dimensions of the image once it has been trimmed
-        const trimmedNaturalWidth = naturalWidth - trim.left - trim.right;
-        const trimmedNaturalHeight = naturalHeight - trim.top - trim.bottom;
-        const trimmedNaturalRatio = trimmedNaturalWidth / trimmedNaturalHeight;
-
-        // Horizontal and vertical scaling of the trim values
-        // i.e. scaling factor between the trim values specified in the command parameters
-        // and the actual amount of pixels trimmed in the PDF viewport
-        let horizontalTrimScale = 1;
-        let verticalTrimScale = 1;
-
-        // Actual width and height of the image in the PDF (with current scaling)
-        let imageWidthInPdf = 0;
-        let imageHeightInPdf = 0;
-
-        let scaleX = 1;
-        let scaleY = 1;
-
-        debugger;
-
-        if (width && !height) {
-            const scaleToFitSizeParameter = width / trimmedNaturalWidth;
-            horizontalTrimScale = scaleToFitSizeParameter;
-            verticalTrimScale = scaleToFitSizeParameter;
-
-            imageWidthInPdf = width * pdfPageScale;
-            imageHeightInPdf = imageWidthInPdf / trimmedNaturalRatio;
-        }
-        else if (!width && height) {
-            const scaleToFitSizeParameter = height / trimmedNaturalHeight;
-            horizontalTrimScale = scaleToFitSizeParameter;
-            verticalTrimScale = scaleToFitSizeParameter;
-
-            imageHeightInPdf = height * pdfPageScale;
-            imageWidthInPdf = imageHeightInPdf * trimmedNaturalRatio;
-        }
-        else if (width && height) {
-            horizontalTrimScale = width / trimmedNaturalWidth;
-            verticalTrimScale = height / trimmedNaturalHeight;
-
-            imageWidthInPdf = width * pdfPageScale;
-            imageHeightInPdf = height * pdfPageScale;
-
-            const ratio = imageWidthInPdf / imageHeightInPdf;
-            const ratioDifference = ratio - trimmedNaturalRatio;
-            if (Math.abs(ratioDifference) > 0.005) {
-                if (ratioDifference > 0) {
-                    scaleX = 1 + Math.abs(ratioDifference); // expand horizontally
-                }
-                else {
-                    scaleY = 1 + Math.abs(ratioDifference); // expand vertically
-                }
-            }
-        }
-        else {
-            const optionOrDefaultScale = scale ?? 1;
-
-            horizontalTrimScale = (naturalWidth * optionOrDefaultScale) / trimmedNaturalWidth;
-            verticalTrimScale = (naturalHeight * optionOrDefaultScale) / trimmedNaturalHeight;
-
-            // TODO: check whether trim values should be substracted from the inagw width/height in the PDF
-            // (as when either the width or the height options is lacking, cf. above)
-            imageWidthInPdf = naturalWidth * optionOrDefaultScale * pdfPageScale;
-            imageHeightInPdf = naturalHeight * optionOrDefaultScale * pdfPageScale;
-        }
-
-        debugger;
-
-        // Trim values are given in px (possibly converted from the source code)
-        // and must therefore be scaled to match the size of the pixels of the rendered PDF
-        // (since the PDF is scaled to fit in the canvas, they may be of different sizes)
-        const scaledTrim = {
-            top: trim.top * verticalTrimScale,
-            bottom: trim.bottom * verticalTrimScale,
-            left: trim.left * horizontalTrimScale,
-            right: trim.right * horizontalTrimScale
-        };
-
-        // Finally compute the initial dimensions and position of the image
-        // using the scaled trim values and the scale of the rendered PDF
-        return {
-            bb: {
-                left: -scaledTrim.left * pdfPageScale,
-                top: -scaledTrim.top * pdfPageScale,
-                width: (((scaledTrim.left + scaledTrim.right) * pdfPageScale) + imageWidthInPdf) / scaleX,
-                height: (((scaledTrim.top + scaledTrim.bottom) * pdfPageScale) + imageHeightInPdf) / scaleY
-            },
-            widthInPdf: imageWidthInPdf,
-            heightInPdf: imageHeightInPdf,
-            scaleX: scaleX,
-            scaleY: scaleY
-        };
+    private get imageUri(): string {
+        return this.imageNode.src;
     }
 
-    private createCropper(imageNode: HTMLImageElement, imageBoundingBox: ImageDimensionData): Cropper {
-        return new Cropper(imageNode, {
-            guides: false,
-            center: false,
-            highlight: false,
-            rotatable: false,
-            viewMode: 1,
-            dragMode: "move",
-            autoCropArea: 0.5,
-            toggleDragModeOnDblclick: false,
-
-            // crop: event => {
-            //     if (event.detail.)
-            // },
-
-            zoom: event => {
-                // console.log("Zoom event", event);
-                this.onScrollFinalOptionsUpdateDebouncer.add(async () => {
-                    this.computeAndSendIncludegraphicsOptions(true);
-                });
-            },
-
-            cropmove: event => {
-                // console.log("Crop move event", event);
-                this.onCropboxChange(event);
-            },
-
-            cropend: event => {
-                // console.warn("Crop end event", event);
-                this.onCropboxChangeEnd(event);
-            },
-
-            ready: event => {
-                this.updateCropperImageAndCropbox(imageBoundingBox);
-            }
-        });
+    private get options(): IncludegraphicsOptions {
+        return IncludegraphicsView.extractOptionsFrom(this.contentNode);
     }
 
-    private updateCropperImageAndCropbox(imageBoundingBox: ImageDimensionData): void {
-        const cropper = this.cropper;
-        if (!cropper) {
-            console.warn("The image/cropbox of the cropper cannot be updated: there is no cropper.");
-            return;
-        }
-        
-        const viewNodeBox = this.viewNode.getBoundingClientRect();
-        const centeredCropboxLeft = (viewNodeBox.width - imageBoundingBox.widthInPdf) / 2;
-        const centeredCropboxTop = (viewNodeBox.height - imageBoundingBox.heightInPdf) / 2;
-
-        cropper.setCanvasData({
-            width: imageBoundingBox.bb.width,
-            height: imageBoundingBox.bb.height,
-
-            left: centeredCropboxLeft + imageBoundingBox.bb.left,
-            top: centeredCropboxTop + imageBoundingBox.bb.top
-        });
-
-        cropper.setCropBoxData({
-            // Make the cropbox as big as the image in the PDF
-            width: imageBoundingBox.widthInPdf,
-            height: imageBoundingBox.heightInPdf,
-
-            // Center the cropbox
-            left: centeredCropboxLeft,
-            top: centeredCropboxTop
-        });
-
-        cropper.scale(imageBoundingBox.scaleX, imageBoundingBox.scaleY);
-
-        // debugger;
-    }
-
-    private destroyCropper(): void {
-        this.cropper?.destroy();
-        this.cropper = null;
-    }
-
-    private onCropboxChange(event: Cropper.CropMoveEvent): void {
-        this.computeAndSendIncludegraphicsOptions(false);
-
-        // If the user is dragging one of the bottom cropbox handles,
-        // update the height of the view node to ensure the user
-        // has always enough space to increase the size of the cropbox
-        const isResizingBottomOfCropbox = ["se", "s", "sw"].includes(event.detail.action);
-        if (isResizingBottomOfCropbox) {
-            const margin = 10; // px
-            const cropboxData = this.cropper!.getCropBoxData();
-
-            const newHeightInPx = `${cropboxData.top + cropboxData.height + margin}px`;
-            this.viewNode.style.height = newHeightInPx;
-
-            // Use a method of the Cropper instance that is normally not exposed to the user
-            // in order to force it to update itself to process the change of the size of the view node
-            (this.cropper as any).onResize();
-        }
-    }
-
-    private onCropboxChangeEnd(event: Cropper.CropEndEvent): void {
-        this.computeAndSendIncludegraphicsOptions(true);
-    }
-
-    private updateViewNodeFrom(contentNode: HTMLElement): void {
-        const newImageNode = contentNode.querySelector(".image")?.cloneNode() as HTMLImageElement;
-        if (!newImageNode) {
-            console.warn("The cropper cannot be created/updated: no image was found in the content node.");
-            return;
-        }
-
-        // Despite the very purpose of the decode() method used below,
-        // it seems that the webview of VS Code requires the image
-        // to be attached to the DOM to work properly
-        // (otherwise, the promise is rejected...)
-        this.viewNode.append(newImageNode);
-
-        newImageNode.decode().then(
-            () => {
-                const options = IncludegraphicsView.extractOptionsFrom(contentNode);
-                const imageBoundingBox = this.computeImageBoundingBoxFrom(newImageNode, options);
-
-                if (this.cropper) {
-                    this.destroyCropper();
-                }
-
-                this.viewNode.innerHTML = "";
-                this.viewNode.append(newImageNode);
-
-                this.cropper = this.createCropper(newImageNode, imageBoundingBox);
-                this.imageUri = newImageNode.src;
-
-                console.info("created!", newImageNode, this.cropper)
-            },
-            () => {
-                console.warn("The cropper cannot be created/updated: the image could not be pre-loaded.");
-            },
+    private createResizer(): ImageResizer {
+        return new ImageResizer(
+            this.preloadedImageNode,
+            this.resizerContainerNode,
+            this.options,
+            this.instanciationContext,
+            isFinalChange => this.processResizerChange(isFinalChange)
         );
+    }
+
+    private createCropper(): ImageCropper {
+        return new ImageCropper(
+            this.preloadedImageNode,
+            this.cropperContainerNode,
+            this.options,
+            this.instanciationContext,
+            () => { this.updateResizerImage(); },
+            isFinalChange => this.processCropperChange(isFinalChange)
+        );
+    }
+
+    private updateResizerImage(): void {
+        // Display the (possibly cropped) image given by the cropper in the resizer
+        const croppedImage = this.cropper.getCropperImageInCanvasOfSize(this.resizer.imageSize);
+        if (croppedImage) {
+            this.resizer.replaceImageWith(croppedImage);
+        }
+    }
+
+    private processResizerChange(isFinalChange: boolean): void {
+        this.computeAndSendIncludegraphicsOptions(isFinalChange);
+    }
+
+    private processCropperChange(isFinalChange: boolean): void {
+        this.computeAndSendIncludegraphicsOptions(isFinalChange);
+        this.updateResizerImage();
     }
 
     private computeIncludegraphicsOptions(): IncludegraphicsOptions {
@@ -362,18 +126,27 @@ class IncludegraphicsView extends AbstractVisualisationView {
         const pdfPageDetail = this.instanciationContext.pdfPageDetail!;
         const pdfPageScale = pdfPageDetail.scale;
 
-        const imageData = cropper.getCanvasData();
-        const cropboxData = cropper.getCropBoxData();
+        // const imageData = cropper.getCanvasData();
+        // const cropboxData = cropper.getCropBoxData();
 
-        const width = cropboxData.width / pdfPageScale;
-        const height = cropboxData.height / pdfPageScale;
-
-        const trim = {
-            left: Math.max(0, cropboxData.left - imageData.left),
-            bottom: Math.max(0, (imageData.top + imageData.height) - (cropboxData.top + cropboxData.height)),
-            right: Math.max(0, (imageData.left + imageData.width) - (cropboxData.left + cropboxData.width)),
-            top: Math.max(0, cropboxData.top - imageData.top),
+        const imageNode = this.imageNode;
+        const naturalImageSize = {
+            width: imageNode.naturalWidth,
+            height: imageNode.naturalHeight
         };
+
+        const { width, height } = this.resizer.imageSize;
+        const trim = this.cropper.imageCropValues;
+
+        // const width = cropboxData.width / pdfPageScale;
+        // const height = cropboxData.height / pdfPageScale;
+
+        // const trim = {
+        //     left: Math.max(0, cropboxData.left - imageData.left),
+        //     bottom: Math.max(0, (imageData.top + imageData.height) - (cropboxData.top + cropboxData.height)),
+        //     right: Math.max(0, (imageData.left + imageData.width) - (cropboxData.left + cropboxData.width)),
+        //     top: Math.max(0, cropboxData.top - imageData.top),
+        // };
 
         // Compute the new values of the width, height and trim options of the command
         // let width = this.frameDimensions.width;
@@ -414,27 +187,28 @@ class IncludegraphicsView extends AbstractVisualisationView {
         // }
 
         // Set the options which must be set and return the new options object
-        newOptions.width = width;
+        newOptions.width = width / pdfPageScale;
         
-        const imageRatio = imageData.naturalWidth / imageData.naturalHeight;
-        if (Math.abs(imageRatio - (width / height)) > 0.005) {
-            newOptions.height = height;
+        const imageRatio = naturalImageSize.width / naturalImageSize.height;
+        if (Math.abs(imageRatio - (width / height)) > 0.002) {
+            newOptions.height = height / pdfPageScale;
         }
 
         const imageAreaIsNotZero = (width > 0) && (height > 0); // To test whether the cropbox is entirely outside of the image
         if (imageAreaIsNotZero
         &&  (trim.left !== 0 || trim.bottom !== 0 || trim.right !== 0 || trim.top !== 0)) {
             newOptions.trim = trim;
+            newOptions.height = height / pdfPageScale;
 
-            // Scale the trim values to make them independant from the scale of the visualised image
-            // (which depends on the scale of the PDF page in which it is displayed)
-            const horizontalTrimScale = imageData.naturalWidth / imageData.width;
-            const verticalTrimScale = imageData.naturalHeight / imageData.height;
+            // // Scale the trim values to make them independant from the scale of the visualised image
+            // // (which depends on the scale of the PDF page in which it is displayed)
+            // const horizontalTrimScale = imageData.naturalWidth / imageData.width / this.scale.x;
+            // const verticalTrimScale = imageData.naturalHeight / imageData.height / this.scale.y;
 
-            trim.left *= horizontalTrimScale;
-            trim.right *= horizontalTrimScale;
-            trim.bottom *= verticalTrimScale;
-            trim.top *= verticalTrimScale;
+            // trim.left *= horizontalTrimScale;
+            // trim.right *= horizontalTrimScale;
+            // trim.bottom *= verticalTrimScale;
+            // trim.top *= verticalTrimScale;
 
             // If the trim option is set, the clip option is automatically set as well
             // (required by includegraphics to hide the trimmed area of the image) 
@@ -475,16 +249,45 @@ class IncludegraphicsView extends AbstractVisualisationView {
     }
 
     updateContentWith(newContentNode: HTMLElement): void {
+        const oldImageUri = this.imageUri;
         this.contentNode = newContentNode;
-        this.updateViewNodeFrom(this.contentNode);
+
+        if (oldImageUri === this.imageUri) {
+            this.resizer.processIncludegraphicsOptionsUpdate(this.options);
+            this.cropper.processIncludegraphicsOptionsUpdate(this.options);
+        }
+        else {
+            // Start loading/decoding the new image
+            this.preloadedImageNode.src = this.imageUri;
+            this.preloadedImageNode.decode();
+
+            this.resizer.destroy();
+            this.cropper.destroy();
+
+            this.resizer = this.createResizer();
+            this.cropper = this.createCropper();
+
+            this.preloadedImageNode.onload = () => {
+                this.resizer.display();
+                this.cropper.display();
+            };
+        }
     }
 
     onAfterVisualisationDisplay(): void {
-        this.updateViewNodeFrom(this.contentNode);
+        this.preloadedImageNode.onload = () => {
+            this.resizer.display();
+            this.cropper.display();
+        };
     }
 
     onBeforeVisualisationRemoval(): void {
-        this.destroyCropper();
+        this.resizer.destroy();
+        this.cropper.destroy();
+    }
+
+    private static extractImageFrom(contentNode: HTMLElement): HTMLImageElement {
+        return contentNode.querySelector(".image")! as HTMLImageElement;
     }
 
     private static extractOptionsFrom(contentNode: HTMLElement): IncludegraphicsOptions {
@@ -512,7 +315,7 @@ class IncludegraphicsView extends AbstractVisualisationView {
 
         // Try to read trim values (one for each side of the image)
         const trimValues = {} as Exclude<typeof options.trim, undefined>;
-        const sides: ["left", "bottom", "right", "top"] = ["left", "bottom", "right", "top"];
+        const sides = ["left", "bottom", "right", "top"] as const;
         for (let side of sides) {
             setValueFromAttributeIfItExists(trimValues, side, `data-option-trim-${side}`, parseFloat);
         }
@@ -525,7 +328,6 @@ class IncludegraphicsView extends AbstractVisualisationView {
 
         setValueFromAttributeIfItExists(options, "clip", "data-option-clip", value => !!value);
 
-        console.log("extracted options", options)
         return options;
     }
 }

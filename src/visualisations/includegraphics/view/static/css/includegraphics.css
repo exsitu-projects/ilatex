@@ -10,11 +10,101 @@
     max-height: none;
 }
 
-/* Mandatory rule to use Cropper library */
-[data-visualisation-name="includegraphics"] .image {
+[data-visualisation-name="includegraphics"] .preloaded-image {
+    display: none;
+}
+
+[data-visualisation-name="includegraphics"] .image-resizer-container,
+[data-visualisation-name="includegraphics"] .image-cropper-container {
+    display: block;
+    width: 100%;
+}
+
+[data-visualisation-name="includegraphics"] .image-resizer-container {
+    padding: 20px 0;
+    min-height: 50px;
+}
+
+[data-visualisation-name="includegraphics"] .image-cropper-container {
+    margin: 0 20px 20px 20px;
+    max-height: 25vh;
+}
+
+[data-visualisation-name="includegraphics"] .image-cropper-container > .cropper-wrapper {
+    width: calc(100% - 40px);
+}
+
+/* Some rules are required by the Cropper library used in the view */
+[data-visualisation-name="includegraphics"] .image-cropper-container .invisible-image {
     display: block;
     max-width: 100%;
+    visibility: hidden;
 }
+
+[data-visualisation-name="includegraphics"] .image-resizer-container .image-resizer {
+    margin: auto;
+    background-color: #EEE;
+}
+
+[data-visualisation-name="includegraphics"] .image-resizer-container .image-resizer .image {
+    outline: 1px solid #39f;
+}
+
+[data-visualisation-name="includegraphics"] .image-resizer-container .image-resizer-frame {
+    position: relative;
+    margin: auto;
+    padding: 3px;
+    box-sizing: border-box;
+    touch-action: none;
+}
+
+[data-visualisation-name="includegraphics"] .image-resizer-container .image-resizer-frame .handle {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    background-color: #39f;
+}
+
+[data-visualisation-name="includegraphics"] .image-resizer-container .image-resizer-frame .handle.top-left {
+    top: 0;
+    left: 0;
+}
+
+[data-visualisation-name="includegraphics"] .image-resizer-container .image-resizer-frame .handle.top {
+    top: 0;
+    left: 50%;
+}
+
+[data-visualisation-name="includegraphics"] .image-resizer-container .image-resizer-frame .handle.top-right {
+    top: 0;
+    right: 0;
+}
+
+[data-visualisation-name="includegraphics"] .image-resizer-container .image-resizer-frame .handle.left {
+    bottom: 50%;
+    left: 0;
+}
+
+[data-visualisation-name="includegraphics"] .image-resizer-container .image-resizer-frame .handle.right {
+    bottom: 50%;
+    right: 0;
+}
+
+[data-visualisation-name="includegraphics"] .image-resizer-container .image-resizer-frame .handle.bottom-left {
+    bottom: 0;
+    left: 0;
+}
+
+[data-visualisation-name="includegraphics"] .image-resizer-container .image-resizer-frame .handle.bottom {
+    bottom: 0;
+    left: 50%;
+}
+
+[data-visualisation-name="includegraphics"] .image-resizer-container .image-resizer-frame .handle.bottom-right {
+    bottom: 0;
+    right: 0;
+}
+
 
 /*
  * Make all the handles of the Cropper's cropboes the same size, no matter the size of the screen.
@@ -23,3 +113,4 @@
 @media (min-width:768px)  { .cropper-point.point-se { height: 5px !important; width: 5px !important; }}
 @media (min-width:992px)  { .cropper-point.point-se { height: 5px !important; width: 5px !important; }}
 @media (min-width:1200px) { .cropper-point.point-se { height: 5px !important; width: 5px !important; }}
+

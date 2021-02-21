@@ -89,6 +89,8 @@ export class IncludegraphicsVisualisationModel extends AbstractVisualisationMode
             optionsAsStrings.set("scale", newRawOptions.scale.toString());
         }
 
+        // if (newRawOptions.width && newRawOptions.)
+
         // TODO: ignore the trimming if all trim values are 0
         if (newRawOptions.clip) {
             optionsAsStrings.set("clip", true);
