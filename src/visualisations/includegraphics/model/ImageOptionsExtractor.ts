@@ -117,6 +117,14 @@ export class ImageOptionsExtractor extends ASTSyncVisitorAdapter {
         const optionsExtractor = new ImageOptionsExtractor(codeMapping);
         optionsParameterBlockNode.syncVisitWith(optionsExtractor, 0);
 
-        return new ImageOptions(optionsExtractor.options);
+        const options = optionsExtractor.options;
+
+        // Only accept a trim option if both the height and width parameters are specified
+        if (options.trim && (!options.width || !options.height)) {
+            console.warn(`The parameters of an includegraphics command are invalid: the 'trim' key is specified, but the 'width' and/or the 'height' keys are missing.`);
+            throw new InvalidImageOptionError();            
+        }
+
+        return new ImageOptions(options);
     }
 }
