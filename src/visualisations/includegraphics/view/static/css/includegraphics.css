@@ -21,7 +21,7 @@
 }
 
 [data-visualisation-name="includegraphics"] .image-resizer-container {
-    padding: 20px 0;
+    padding: 0 0 20px 0;
     min-height: 50px;
 }
 
@@ -41,13 +41,63 @@
     visibility: hidden;
 }
 
-[data-visualisation-name="includegraphics"] .image-resizer-container .image-resizer {
-    margin: auto;
-    background-color: #EEE;
+[data-visualisation-name="includegraphics"] .image-resizer-container .command-bar {
+    display: flex;
+    margin: 0 0 20px 0;
+    padding: 5px;
+    background-color: #FAFAFA;
+    border-bottom: 1px solid #EEE;
 }
 
-[data-visualisation-name="includegraphics"] .image-resizer-container .image-resizer .image {
-    outline: 1px solid #39f;
+[data-visualisation-name="includegraphics"] .image-resizer-container .command-bar .aspect-ratio-lock-wrapper {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+[data-visualisation-name="includegraphics"] .image-resizer-container .command-bar .aspect-ratio-lock input {
+    margin: 0 0.5ex;
+    vertical-align: middle;;
+}
+
+[data-visualisation-name="includegraphics"] .image-resizer-container .command-bar .aspect-ratio-lock .invert-message {
+    color: #999;
+}
+
+[data-visualisation-name="includegraphics"] .image-resizer-container .command-bar .restore-aspect-ratio-button {
+    flex-grow: 0;
+    padding: 5px 10px;
+    background-color: #00498a;
+    border: none;
+    border-radius: 2px;
+    color: #FFF;
+    cursor: pointer;
+    user-select: none;
+    outline: none;
+    animation: fade-in 250ms ease-in-out;
+}
+
+[data-visualisation-name="includegraphics"] .image-resizer-container .command-bar .restore-aspect-ratio-button::before {
+    content: " ";
+    display: inline-block;
+    width: 1.25em;
+    height: 1.25em;
+    margin: 0 1ex 0 0;
+    background-color: transparent;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="18px" height="18px"><path d="M24 24H0V0h24v24z" fill="none"/><path d="M21 15h2v2h-2v-2zm0-4h2v2h-2v-2zm2 8h-2v2c1 0 2-1 2-2zM13 3h2v2h-2V3zm8 4h2v2h-2V7zm0-4v2h2c0-1-1-2-2-2zM1 7h2v2H1V7zm16-4h2v2h-2V3zm0 16h2v2h-2v-2zM3 3C2 3 1 4 1 5h2V3zm6 0h2v2H9V3zM5 3h2v2H5V3zm-4 8v8c0 1.1.9 2 2 2h12V11H1zm2 8l2.5-3.21 1.79 2.15 2.5-3.22L13 19H3z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 100%;
+    vertical-align: middle;
+}
+
+[data-visualisation-name="includegraphics"] .image-resizer-container .command-bar .restore-aspect-ratio-button:hover {
+    background-color: #0e5ca0;    
+}
+
+[data-visualisation-name="includegraphics"] .image-resizer-container .command-bar .restore-aspect-ratio-button:active {
+    background-color: #043764;    
 }
 
 [data-visualisation-name="includegraphics"] .image-resizer-container .image-resizer-frame {
@@ -58,11 +108,26 @@
     touch-action: none;
 }
 
+[data-visualisation-name="includegraphics"] .image-resizer-container .image-resizer {
+    position: relative;
+    margin: auto;
+    background-color: #EEE;
+    outline: 1px solid #FFF;
+    box-shadow: 0 0 0 1px #000;
+    z-index: 1000;
+}
+
+[data-visualisation-name="includegraphics"] .image-resizer-container .image-resizer .image {
+    position: absolute;
+}
+
 [data-visualisation-name="includegraphics"] .image-resizer-container .image-resizer-frame .handle {
     position: absolute;
     width: 5px;
     height: 5px;
-    background-color: #39f;
+    background-color: #FFF;
+    outline: 1px solid #000;
+    z-index: 1500;
 }
 
 [data-visualisation-name="includegraphics"] .image-resizer-container .image-resizer-frame .handle.top-left {
@@ -72,7 +137,7 @@
 
 [data-visualisation-name="includegraphics"] .image-resizer-container .image-resizer-frame .handle.top {
     top: 0;
-    left: 50%;
+    left: calc(50% - 3px);
 }
 
 [data-visualisation-name="includegraphics"] .image-resizer-container .image-resizer-frame .handle.top-right {
@@ -97,7 +162,7 @@
 
 [data-visualisation-name="includegraphics"] .image-resizer-container .image-resizer-frame .handle.bottom {
     bottom: 0;
-    left: 50%;
+    left: calc(50% - 3px);
 }
 
 [data-visualisation-name="includegraphics"] .image-resizer-container .image-resizer-frame .handle.bottom-right {
@@ -107,10 +172,29 @@
 
 
 /*
- * Make all the handles of the Cropper's cropboes the same size, no matter the size of the screen.
- * The media quesries below have been adapted from the CSS file of Cropper's library (v1.5.11).
+ * Make all the handles of the Cropper's cropbox the same size, no matter the size of the screen.
+ * Therules below have been adapted from the CSS file of Cropper's library (v1.5.11).
  */
+
+.cropper-point.point-se { height: 5px !important; width: 5px !important; }
 @media (min-width:768px)  { .cropper-point.point-se { height: 5px !important; width: 5px !important; }}
 @media (min-width:992px)  { .cropper-point.point-se { height: 5px !important; width: 5px !important; }}
 @media (min-width:1200px) { .cropper-point.point-se { height: 5px !important; width: 5px !important; }}
 
+
+/* Change the style of the cropbox */
+
+.cropper-point {
+    background-color: #FFF !important;
+    outline: 1px solid black !important;
+    opacity: 1 !important;
+}
+
+.cropper-line {
+    background: none !important;
+}
+
+.cropper-view-box {
+    outline: 1px solid #FFF !important;
+    box-shadow: 0 0 0 1px #000 !important;
+}

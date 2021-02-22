@@ -106,5 +106,21 @@ export abstract class ImageEditor {
             width: imageWidthInPdf,
             height: imageHeightInPdf
         };
-    }    
+    }
+    
+    // Adapt one dimension of the given size to match the given aspect ratio
+    // The height is the adapted dimension by default; this can be changed by using the adaptWith flag
+    protected static adaptImageSizeToMatchAspectRatio(size: ImageSize, aspectRatio: number, adaptWidth: boolean = false): ImageSize {
+        if (adaptWidth) {
+            return {
+                width: size.height * aspectRatio,
+                height: size.height
+            };
+        }
+        
+        return {
+            width: size.width,
+            height: size.width / aspectRatio
+        };
+    }
 }

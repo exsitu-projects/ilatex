@@ -91,16 +91,19 @@ class IncludegraphicsView extends AbstractVisualisationView {
             this.cropperContainerNode,
             this.options,
             this.instanciationContext,
-            () => { this.updateResizerImage(); },
+            () => { this.updateResizerImage(false); },
             isFinalChange => this.processCropperChange(isFinalChange)
         );
     }
 
-    private updateResizerImage(): void {
+    private updateResizerImage(matchNewAspectRatio: boolean = true): void {
         // Display the (possibly cropped) image given by the cropper in the resizer
         const croppedImage = this.cropper.getCropperImageInCanvasOfSize(this.resizer.imageSize);
         if (croppedImage) {
-            this.resizer.replaceImageWith(croppedImage);
+            const croppedImageAspectRatio = croppedImage.width / croppedImage.height;
+            this.resizer.replaceImageWith(croppedImage, croppedImageAspectRatio, {
+                matchNewAspectRatio: matchNewAspectRatio
+            });
         }
     }
 

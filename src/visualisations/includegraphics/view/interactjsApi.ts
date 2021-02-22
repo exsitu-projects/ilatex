@@ -1,1 +1,1 @@
-declare const interact: (...args: any) => any;
+declare const interact: any;

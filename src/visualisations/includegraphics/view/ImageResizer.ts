@@ -4,10 +4,19 @@ import { ImageEditor, ImageSize } from "./ImageEditor";
 import { IncludegraphicsOptions } from "./view";
 
 export class ImageResizer extends ImageEditor {
+    private naturalAspectRatio: number;
+    private aspectRatio: number;
+    private lockAspectRatio: boolean;
+    private invertAspectRatioLock: boolean;
+
+    private commandBarNode: HTMLElement;
     private resizerFrameNode: HTMLElement;
     private resizerNode: HTMLElement;
     private resizerImageNode: HTMLElement | null;
 
+    private keyDownCallback = (event: KeyboardEvent) => { this.onKeyDown(event); };
+    private keyUpCallback = (event: KeyboardEvent) => { this.onKeyUp(event); };
+    
     constructor(
         imageNode: HTMLImageElement,
         containerNode: HTMLElement,
@@ -17,6 +26,14 @@ export class ImageResizer extends ImageEditor {
     ) {
         super(imageNode, containerNode, initialOptions, viewContext, changeCallback);
 
+        this.naturalAspectRatio = 1;
+        this.aspectRatio = 1;
+        this.lockAspectRatio = true;
+        this.invertAspectRatioLock = false;
+
+        this.commandBarNode = this.createCommandBarNode();
+        this.containerNode.append(this.commandBarNode);
+
         this.resizerFrameNode = this.createResizerFrameNode();
         this.containerNode.append(this.resizerFrameNode);
 
@@ -24,10 +41,13 @@ export class ImageResizer extends ImageEditor {
         this.resizerFrameNode.append(this.resizerNode);
 
         this.resizerImageNode = null;
+
+        this.updateCommandBarNode();
     }
 
-    private get imageNode(): HTMLImageElement | HTMLCanvasElement | null {
-        return this.containerNode.querySelector("img, canvas");
+    get preserveAspectRatio(): boolean {
+        return (this.lockAspectRatio && !this.invertAspectRatioLock)
+            || (!this.lockAspectRatio && this.invertAspectRatioLock);
     }
 
     get imageSize(): ImageSize {
@@ -42,11 +62,14 @@ export class ImageResizer extends ImageEditor {
         this.naturalImageSize = ImageEditor.extractNaturalImageSizeFrom(this.preloadedImageNode);
         this.resizeFromOptions();
 
-        this.initInteract();
+        this.startHandlingResizeEvents();
+        this.startHandlingKeyboardEvents();
     }
 
     destroy(): void {
-        // TODO
+        this.stopHandlingResizeEvents();
+        this.stopHandlingKeyboardEvents();
+
         this.containerNode.innerHTML = "";
     }
 
@@ -58,11 +81,48 @@ export class ImageResizer extends ImageEditor {
         // TODO
     }
 
-    private createResizerNode(): HTMLElement {
-        const resizerNode = document.createElement("div");
-        resizerNode.classList.add("image-resizer");
+    private createCommandBarNode(): HTMLElement {
+        const commandBarNode = document.createElement("div");
+        commandBarNode.classList.add("command-bar");
 
-        return resizerNode;
+        // Aspect ratio lock
+        const aspectRatioLockWrapperNode = document.createElement("div");
+        aspectRatioLockWrapperNode.classList.add("aspect-ratio-lock-wrapper");
+        commandBarNode.append(aspectRatioLockWrapperNode);
+
+        const aspectRatioLockNode = document.createElement("div");
+        aspectRatioLockNode.classList.add("aspect-ratio-lock");
+        aspectRatioLockWrapperNode.append(aspectRatioLockNode);
+
+        const checkboxNode = document.createElement("input");
+        checkboxNode.setAttribute("type", "checkbox");
+        checkboxNode.setAttribute("id", "aspect-ratio-lock-checkbox");
+        checkboxNode.addEventListener("change", () => { this.lockAspectRatio = checkboxNode.checked; });
+        aspectRatioLockNode.append(checkboxNode);
+
+        const labelNode = document.createElement("label");
+        labelNode.setAttribute("for", "aspect-ratio-lock-checkbox");
+        aspectRatioLockNode.append(labelNode);
+
+        // Aspect ratio restore button
+        const restoreAspectRatioButtonNode = document.createElement("button");
+        restoreAspectRatioButtonNode.classList.add("restore-aspect-ratio-button");
+        restoreAspectRatioButtonNode.textContent = "Restore aspect ratio";
+        restoreAspectRatioButtonNode.addEventListener("click", () => { this.restoreNaturalAspectRatio(); });
+        commandBarNode.append(restoreAspectRatioButtonNode);
+
+        return commandBarNode;
+    }
+
+    private updateCommandBarNode(): void {
+        const aspectRatioLockCheckboxNode = this.commandBarNode.querySelector("#aspect-ratio-lock-checkbox")! as HTMLInputElement;
+        aspectRatioLockCheckboxNode.disabled = this.invertAspectRatioLock;
+        aspectRatioLockCheckboxNode.checked = this.preserveAspectRatio;
+        
+        const aspectRatioLockLabelNode = this.commandBarNode.querySelector(".aspect-ratio-lock label")! as HTMLLabelElement;
+        aspectRatioLockLabelNode.innerHTML = this.invertAspectRatioLock
+            ? `lock aspect ratio <span class="invert-message">(inverted)</span>`
+            : `lock aspect ratio <span class="invert-message">(hold shift to invert)</span>`;
     }
 
     private createResizerFrameNode(): HTMLElement {
@@ -85,36 +145,57 @@ export class ImageResizer extends ImageEditor {
         return resizerFrameNode;
     }
 
-    private initInteract(): void {
-        interact(this.resizerFrameNode)
-        .resizable({
-            edges: { top: true, left: true, bottom: true, right: true },
-            listeners: {
-                move: (event: any) => {
-                    const currentImageSize = this.imageSize;
-                    this.resizeTo({
-                        width: this.imageSize.width + event.deltaRect.width,
-                        height: this.imageSize.height + event.deltaRect.height,
-                    });
-                }
-            }
-        })
-        .on("resizemove", () => { this.notifyChange(false); })
-        .on("resizeend", () => { this.notifyChange(true); });
+    private createResizerNode(): HTMLElement {
+        const resizerNode = document.createElement("div");
+        resizerNode.classList.add("image-resizer");
+
+        return resizerNode;
     }
 
-    replaceImageWith(newImageNode: HTMLImageElement | HTMLCanvasElement): void {
-        const currentImageSize = this.imageSize;
-        newImageNode.style.width = `${currentImageSize.width}px`;
-        newImageNode.style.height = `${currentImageSize.height}px`;
-        newImageNode.classList.add("image");
+    private adaptImageSize(
+        size: ImageSize,
+        options?: { adaptWidth?: boolean, force?: boolean }
+    ): ImageSize {
+        const { adaptWidth, force } = {
+            adaptWidth: false,
+            force: false,
+            ...options
+        };
 
+        return this.preserveAspectRatio || force
+            ? ImageEditor.adaptImageSizeToMatchAspectRatio(size, this.aspectRatio, adaptWidth)
+            : size;
+    }
+
+    replaceImageWith(
+        newImageNode: HTMLImageElement | HTMLCanvasElement,
+        newAspectRatio: number,
+        options?: { matchNewAspectRatio?: boolean }
+    ): void {
+        const { matchNewAspectRatio } = {
+            matchNewAspectRatio: true,
+            ...options
+        };
+
+        // Update aspect ratios
+        this.naturalAspectRatio = newAspectRatio;
+        if (this.preserveAspectRatio && matchNewAspectRatio) {
+            this.aspectRatio = newAspectRatio;
+        }
+
+        // Change the content of the image resizer node
         if (this.resizerImageNode) {
             this.resizerImageNode.remove();
         }
 
+        newImageNode.classList.add("image");
         this.resizerNode.append(newImageNode);
         this.resizerImageNode = newImageNode;
+
+        // Resize everything accordingly
+        // (the new size could differ from the current size to preserve the new aspect ratio)
+        const newAdaptedSize = this.adaptImageSize(this.imageSize);
+        this.resizeTo(newAdaptedSize);
     }
 
     private resizeFromOptions(): void {
@@ -125,12 +206,19 @@ export class ImageResizer extends ImageEditor {
         }
 
         const imageSize = ImageEditor.extractImageSizeFrom(this.options, this.naturalImageSize, pdfPageScale);
+        this.aspectRatio = imageSize.width / imageSize.height;
+
         this.resizeTo(imageSize);
     }
 
+    private restoreNaturalAspectRatio(): void {
+        this.aspectRatio = this.naturalAspectRatio;
+        this.resizeTo(this.adaptImageSize(this.imageSize, { force: true }));
+
+        this.notifyChange(true);
+    }
+
     private resizeTo(newSize: ImageSize): void {
-        // console.info("=== Resize ===");
-        // console.log(newSize);
         const handleSize = 5; // px
 
         // Update the size of the frame
@@ -144,16 +232,62 @@ export class ImageResizer extends ImageEditor {
             this.resizerImageNode.style.width = `${newSize.width}px`;
             this.resizerImageNode.style.height = `${newSize.height}px`;           
         }
-
-        // this.updateResizerFramePosition();
     }
 
-    private updateResizerFramePosition(): void {
-        const resizerNodeBox = this.resizerNode.getBoundingClientRect();
+    private startHandlingResizeEvents(): void {
+        interact(this.resizerFrameNode)
+            .resizable({
+                edges: { top: true, left: true, bottom: true, right: true },
 
+                listeners: {
+                    move: (event: any) => {
+                        const margin = 5; // px
+                        const maxWidth = this.containerNode.clientWidth - (2 * margin);
 
-        // Update the position of the frame
-        // this.resizerFrameNode.style.top = `${resizerNodeBox.top - (handleSize / 2)}px`;
-        // this.resizerFrameNode.style.left = `${resizerNodeBox.left - (handleSize / 2)}px`;
+                        // In case the aspect ratio is locked and the user dgas the top or bottom handle,
+                        // the width must be adapted instead of the height (otherwise nothing will happen)
+                        const adaptWidthInsteadOfHeight =
+                            (event.edges.top || event.edges.bottom) && (!event.edges.left && !event.edges.right);
+                        
+                        const newImageSize = this.adaptImageSize({
+                            width: Math.min(this.imageSize.width + event.deltaRect.width, maxWidth),
+                            height: this.imageSize.height + event.deltaRect.height,
+                        }, { adaptWidth: adaptWidthInsteadOfHeight });
+
+                        this.resizeTo(newImageSize);
+                        this.aspectRatio = newImageSize.width / newImageSize.height;
+                    }
+                },
+            })
+            .on("resizemove", () => { this.notifyChange(false); })
+            .on("resizeend", () => { this.notifyChange(true); });
+    }
+
+    private stopHandlingResizeEvents(): void {
+        interact(this.resizerFrameNode).unset();
+    }
+
+    private onKeyDown(event: KeyboardEvent): void {
+        if (event.key === "Shift") {
+            this.invertAspectRatioLock = true;
+            this.updateCommandBarNode();
+        }
+    }
+
+    private onKeyUp(event: KeyboardEvent): void {
+        if (event.key === "Shift") {
+            this.invertAspectRatioLock = false;
+            this.updateCommandBarNode();
+        }
+    }
+
+    private startHandlingKeyboardEvents(): void {
+        window.addEventListener("keydown", this.keyDownCallback);
+        window.addEventListener("keyup", this.keyUpCallback);
+    }
+
+    private stopHandlingKeyboardEvents(): void {
+        window.removeEventListener("keydown", this.keyDownCallback);
+        window.removeEventListener("keyup", this.keyUpCallback);
     }
 }
