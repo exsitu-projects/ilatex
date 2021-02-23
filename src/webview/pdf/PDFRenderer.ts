@@ -1,4 +1,4 @@
-import * as pdfjs from "./PdfJsApi";
+import * as pdfjs from "../static-library-apis/PdfJsApi";
 import { PDFPageRenderer } from "./PDFPageRenderer";
 
 export class PDFRenderer {

@@ -1,5 +1,4 @@
-// import { katex } from "./katexApi";
-import "./katexApi";
+import "../../../webview/static-library-apis/katexApi";
 import { AbstractVisualisationView } from "../../../webview/visualisations/AbstractVisualisationView";
 import { VisualisationViewFactory, VisualisationView } from "../../../webview/visualisations/VisualisationView";
 import { WebviewToCoreMessageType } from "../../../shared/messenger/messages";

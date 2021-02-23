@@ -1,5 +1,4 @@
 import { VisualisationViewContext } from "../../../webview/visualisations/VisualisationViewContext";
-import { ImageResizer } from "./ImageResizer";
 import { IncludegraphicsOptions } from "./view";
 
 export interface ImageSize {

@@ -1,4 +1,4 @@
-import "./interactjsApi";
+import "../../../webview/static-library-apis/interactjsApi";
 import { VisualisationViewContext } from "../../../webview/visualisations/VisualisationViewContext";
 import { ImageEditor, ImageSize } from "./ImageEditor";
 import { IncludegraphicsOptions } from "./view";

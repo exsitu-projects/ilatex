@@ -1,4 +1,4 @@
-import "./CropperjsApi";
+import "../../../webview/static-library-apis/CropperjsApi";
 import { AbstractVisualisationView } from "../../../webview/visualisations/AbstractVisualisationView";
 import { VisualisationViewFactory, VisualisationView } from "../../../webview/visualisations/VisualisationView";
 import { WebviewToCoreMessageType } from "../../../shared/messenger/messages";

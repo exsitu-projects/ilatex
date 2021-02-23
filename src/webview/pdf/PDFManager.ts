@@ -1,4 +1,4 @@
-import * as pdfjs from "./PdfJsApi";
+import * as pdfjs from "../static-library-apis/PdfJsApi";
 import { Messenger } from "../Messenger";
 import { PDFRenderer } from "./PDFRenderer";
 import { CoreToWebviewMessageType, UpdateCompilationStatusMessage, UpdatePDFMessage, WebviewToCoreMessageType } from "../../shared/messenger/messages";

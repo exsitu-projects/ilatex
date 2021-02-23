@@ -1,4 +1,4 @@
-import * as pdfjs from "./PdfJsApi";
+import * as pdfjs from "../static-library-apis/PdfJsApi";
 import { VisualisationViewManager, VisualisationDisplayRequest } from "../visualisations/VisualisationViewManager";
 import { PDFManager } from "./PDFManager";
 
