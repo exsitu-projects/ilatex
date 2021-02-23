@@ -41,7 +41,7 @@ class GridLayoutView extends AbstractVisualisationView {
     private contentRowNodes: HTMLElement[];
     private contentCellNodes: HTMLElement[];
 
-    private viewNode: HTMLElement;
+    private gridNode: HTMLElement;
 
     private resizeThrottler: TaskThrottler;
     private currentResizeContext: ResizeContext;
@@ -57,7 +57,8 @@ class GridLayoutView extends AbstractVisualisationView {
         this.contentRowNodes = Array.from(this.contentNode.querySelectorAll(".row"));
         this.contentCellNodes = Array.from(this.contentNode.querySelectorAll(".cell"));
 
-        this.viewNode = document.createElement("div");
+        this.gridNode = document.createElement("div");
+        this.gridNode.classList.add("grid");
 
         // Internal values used during cell and row resizing
         this.resizeThrottler = new TaskThrottler(GridLayoutView.DELAY_BETWEEN_RESIZES);
@@ -66,7 +67,7 @@ class GridLayoutView extends AbstractVisualisationView {
         };
 
         this.startHandlingResizingMouseEvents();
-        this.populateViewNode();
+        this.populateGrid();
     }
 
     private get isResized(): boolean {
@@ -76,7 +77,7 @@ class GridLayoutView extends AbstractVisualisationView {
     private addCellContentTo(cellNode: HTMLElement, contentCellNode: HTMLElement): void {
         const contentNode = document.createElement("div");
         contentNode.classList.add("cell-content");
-        contentNode.textContent = contentCellNode.textContent;
+        contentNode.textContent = contentCellNode.textContent!.trim();
 
         // Select the content in the code editor on click
         contentNode.addEventListener("click", event => {
@@ -186,10 +187,10 @@ class GridLayoutView extends AbstractVisualisationView {
         return rowNode;        
     }
 
-    private populateViewNode(): void {
+    private populateGrid(): void {
         for (let contentRowNodes of  this.contentRowNodes) {
             const rowNode = this.createRow(contentRowNodes as HTMLElement);
-            this.viewNode.append(rowNode);
+            this.gridNode.append(rowNode);
         }
     }
 
@@ -348,7 +349,7 @@ class GridLayoutView extends AbstractVisualisationView {
     }
 
     render(): HTMLElement {
-        return this.viewNode;
+        return this.gridNode;
     }
 
     updateContentWith(newContentNode: HTMLElement): void {
@@ -356,8 +357,8 @@ class GridLayoutView extends AbstractVisualisationView {
         this.contentRowNodes = Array.from(this.contentNode.querySelectorAll(".row"));
         this.contentCellNodes = Array.from(this.contentNode.querySelectorAll(".cell"));
 
-        this.viewNode.innerHTML = "";
-        this.populateViewNode();
+        this.gridNode.innerHTML = "";
+        this.populateGrid();
     }
     
 }
