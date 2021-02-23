@@ -37,7 +37,7 @@ export class LayoutContentExtractor extends ASTAsyncVisitorAdapter {
         else if (node.name === "cell") {
             this.layout.lastRow.cells.push(
                 await Cell.from(
-                    this.layout.nbRows,
+                    this.layout.lastRow.rowIndex,
                     this.layout.lastRow.nbCells,
                     node
                 )
