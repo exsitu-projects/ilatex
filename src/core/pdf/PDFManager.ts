@@ -3,19 +3,27 @@ import * as fs from "fs";
 import * as path from "path";
 import { InteractiveLatex } from "../InteractiveLaTeX";
 
-
-
 export class PDFManager {
     private ilatex: InteractiveLatex;
+
     private buildTaskIsRunning: boolean;
+    private lastBuildFailed: boolean;
+    private hasAlreadrBuiltPdfOnce: boolean;
 
     constructor(ilatex: InteractiveLatex) {
         this.ilatex = ilatex;
+
         this.buildTaskIsRunning = false;
+        this.lastBuildFailed = false;
+        this.hasAlreadrBuiltPdfOnce = false;
     }
 
     get pdfUri(): vscode.Uri {
         return vscode.Uri.file(this.ilatex.mainSourceFileUri.path.replace(".tex", ".pdf"));
+    }
+
+    get compilationLogUri(): vscode.Uri {
+        return vscode.Uri.file(this.ilatex.mainSourceFileUri.path.replace(".tex", ".log"));
     }
 
     get pdfExists(): boolean {
@@ -56,33 +64,55 @@ export class PDFManager {
                 // Depending on the exit code, either resolve or reject the promise
                 // returned by the buildPDF method
                 if (closedTerminal.exitStatus && closedTerminal.exitStatus.code !== 0) {
+                    this.lastBuildFailed = true;
                     rejectCompilation("LaTeX compilation error");
+
                     if (notifyWebview) {
                         this.ilatex.webviewManager.sendNewPDFCompilationStatus(false, true);
                     }
                 }
                 else {
+                    this.lastBuildFailed = false;
                     resolveCompilation();
+
                     if (notifyWebview) {
                         this.ilatex.webviewManager.sendNewPDFCompilationStatus(false, false);
                     }
                 }
 
                 this.buildTaskIsRunning = false;
+                this.hasAlreadrBuiltPdfOnce = true;
             });
 
-            const terminalSafeFilename = this.ilatex.mainSourceFileUri.path.replace(/ /g, "\\ ");
-            terminal.sendText(`cd ${path.dirname(terminalSafeFilename)}`);
-            terminal.sendText(`latexmk -interaction=nonstopmode ${terminalSafeFilename}`);
-            // terminal.sendText(`latexmk -c`);
+            // Prepare some command arguments
+            const terminalSafeMainFilePath = this.ilatex.mainSourceFileUri.path.replace(/ /g, "\\ ");
+            const extraOptions: string[] = [];
+
+            // If the last build failed, or if this is the first build of this instance, force a full re-compilation
+            if (this.lastBuildFailed || !this.hasAlreadrBuiltPdfOnce) {
+                extraOptions.push(`-g`);
+            }
             
-            // Close the terminal right after running latexmk
-            // Note: if no exit code is specified, the exit command
-            // reuses the exit code output by the last command
+            // Run latexnk to compile the document and close the terminal afterwards
+            // (if no exit code is specified, the exit command reuses the exit code
+            // of the last command ran in the terminal, i.e. in this case, latexmk)
+            terminal.sendText(`cd ${path.dirname(terminalSafeMainFilePath)}`);
+            terminal.sendText(`latexmk -silent -interaction=nonstopmode ${extraOptions.join(" ")} ${terminalSafeMainFilePath}`);
             terminal.sendText(`exit`);
         })
         .catch(() => {
-            vscode.window.showErrorMessage("An error occured during the compilation of the document.");
+            vscode.window.showErrorMessage(
+                "An error occured during the compilation of the document.",
+                { title: "Open log" }
+            ).then(clickedItem => {
+                // If the "Open log" button was clicked, open the compilation log file
+                // Otherwise, if the message was dismissed, do not do anything
+                if (clickedItem) {
+                    vscode.window.showTextDocument(this.compilationLogUri, {
+                        viewColumn: vscode.ViewColumn.Two
+                    });
+                }
+            });
         });
     }
 
