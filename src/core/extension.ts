@@ -75,7 +75,7 @@ export function activate(context: vscode.ExtensionContext): void {
 		// If/when it succeeds, display a success message and map the editor to the new instance
 		createIlatexInstanceForRootDocument(document)
 			.then(ilatex => {
-				vscode.window.showInformationMessage(`A new instance of iLatex has been started from root document ${path.basename(documentPath)}.`);
+				// vscode.window.showInformationMessage(`A new instance of iLatex has been started from root document ${path.basename(documentPath)}.`);
 
 				rootLatexDocumentPathsToIlatexInstances.set(documentPath, ilatex);
 				vscode.commands.executeCommand("setContext", "ilatex:hasActiveInstances", true);
