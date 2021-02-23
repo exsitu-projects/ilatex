@@ -40,7 +40,6 @@ export abstract class ImageEditor {
     abstract destroy(): void;
 
     protected abstract onIncludegraphicsOptionsUpdate(): void;
-    protected abstract onWebviewResize(): void;
 
     processIncludegraphicsOptionsUpdate(newOptions: IncludegraphicsOptions): void {
         this.options = newOptions;
@@ -117,7 +116,7 @@ export abstract class ImageEditor {
                 height: size.height
             };
         }
-        
+
         return {
             width: size.width,
             height: size.width / aspectRatio

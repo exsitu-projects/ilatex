@@ -16,6 +16,7 @@ export class ImageResizer extends ImageEditor {
 
     private keyDownCallback = (event: KeyboardEvent) => { this.onKeyDown(event); };
     private keyUpCallback = (event: KeyboardEvent) => { this.onKeyUp(event); };
+    private webviewResizeCallback = () => { this.onWebviewResize(); };
     
     constructor(
         imageNode: HTMLImageElement,
@@ -64,11 +65,14 @@ export class ImageResizer extends ImageEditor {
 
         this.startHandlingResizeEvents();
         this.startHandlingKeyboardEvents();
+
+        this.startHandlingWindowResizeEvents();
     }
 
     destroy(): void {
         this.stopHandlingResizeEvents();
         this.stopHandlingKeyboardEvents();
+        this.stopHandlingWindowResizeEvents();
 
         this.containerNode.innerHTML = "";
     }
@@ -78,7 +82,12 @@ export class ImageResizer extends ImageEditor {
     }
 
     protected onWebviewResize(): void {
-        // TODO
+        // Obsering window's resize events to update the resizer does not always work well
+        // because the PDF may not have been updated yet but its scale is required
+        // to update the size of the resizer from the options
+
+        // TODO: add a view lifecycle hook for webview resizes
+        this.resizeFromOptions();
     }
 
     private createCommandBarNode(): HTMLElement {
@@ -121,8 +130,8 @@ export class ImageResizer extends ImageEditor {
         
         const aspectRatioLockLabelNode = this.commandBarNode.querySelector(".aspect-ratio-lock label")! as HTMLLabelElement;
         aspectRatioLockLabelNode.innerHTML = this.invertAspectRatioLock
-            ? `lock aspect ratio <span class="invert-message">(inverted)</span>`
-            : `lock aspect ratio <span class="invert-message">(hold shift to invert)</span>`;
+            ? `lock aspect ratio <span class="comment">(inverted)</span>`
+            : `lock aspect ratio <span class="comment">(hold shift to invert)</span>`;
     }
 
     private createResizerFrameNode(): HTMLElement {
@@ -290,4 +299,12 @@ export class ImageResizer extends ImageEditor {
         window.removeEventListener("keydown", this.keyDownCallback);
         window.removeEventListener("keyup", this.keyUpCallback);
     }
+
+    private startHandlingWindowResizeEvents(): void {
+        window.addEventListener("resize", this.webviewResizeCallback);
+    }
+
+    private stopHandlingWindowResizeEvents(): void {
+        window.removeEventListener("resize", this.webviewResizeCallback);
+    }   
 }

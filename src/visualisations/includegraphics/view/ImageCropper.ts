@@ -10,8 +10,10 @@ interface ImageCropValues {
 };
 
 export class ImageCropper extends ImageEditor {
+    private isVisible: boolean;
     private cropper: Cropper | null;
 
+    private headerBarNode: HTMLElement;
     private cropperWrapperNode: HTMLElement;
     private invisibleImageNode: HTMLImageElement;
 
@@ -27,7 +29,11 @@ export class ImageCropper extends ImageEditor {
     ) {
         super(imageNode, containerNode, initialOptions, viewContext, changeCallback);
 
+        this.isVisible = false;
         this.cropper = null;
+
+        this.headerBarNode = this.createHeaderBarNode();
+        this.containerNode.append(this.headerBarNode);
 
         this.cropperWrapperNode = this.createCropperWrapperNode();
         this.containerNode.append(this.cropperWrapperNode);
@@ -36,6 +42,9 @@ export class ImageCropper extends ImageEditor {
         this.cropperWrapperNode.append(this.invisibleImageNode);
 
         this.cropperReadyCallback = cropperReadyCallback;
+
+        // The cropper starts hidden
+        this.toggleVisibility(this.isVisible);
     }
 
     get imageCropValues(): ImageCropValues {
@@ -82,8 +91,29 @@ export class ImageCropper extends ImageEditor {
         this.recropFromOptions();
     }
 
-    protected onWebviewResize(): void {
-        // TODO
+    private toggleVisibility(force?: boolean): void {
+        this.isVisible = force ?? !this.isVisible;
+        
+        // Update classes (the visibility and the animation are controlled by the CSS)
+        this.headerBarNode.classList.toggle("cropper-visible", this.isVisible);
+        this.cropperWrapperNode.classList.toggle("cropper-visible", this.isVisible);
+
+        // Enable and resize or disable the cropper (if any)
+        if (this.cropper) {
+            if (this.isVisible) {
+                this.cropper.enable();
+                requestAnimationFrame(() => {
+                    (this.cropper as any).resize();
+                    (this.cropper as any).reset();
+                    this.recropFromOptions();
+                });
+            }
+            else {
+                this.cropper.disable();
+            }
+        }
+
+        this.updateHeaderBarNode();
     }
 
     getCropperImageInCanvasOfSize(canvasSize: ImageSize): HTMLCanvasElement | null {
@@ -97,6 +127,25 @@ export class ImageCropper extends ImageEditor {
             width: canvasSize.width,
             height: canvasSize.height
         });
+    }
+
+    private createHeaderBarNode(): HTMLElement {
+        const headerBarNode = document.createElement("div");
+        headerBarNode.classList.add("header-bar");
+        headerBarNode.addEventListener("click", event => { this.toggleVisibility(); });
+
+        const headerBarMessageNode = document.createElement("div");
+        headerBarMessageNode.classList.add("header-bar-message");
+        headerBarNode.append(headerBarMessageNode);
+
+        return headerBarNode;        
+    }
+
+    private updateHeaderBarNode(): void {
+        const headerBarMessageNode = this.headerBarNode.querySelector(".header-bar-message")!;
+        headerBarMessageNode.innerHTML = this.isVisible
+            ? `Image cropper <span class="comment">(click here to close)</span>`
+            : `Image cropper <span class="comment">(click to open)</span>`;
     }
 
     private createCropperWrapperNode(): HTMLElement {
@@ -116,6 +165,12 @@ export class ImageCropper extends ImageEditor {
 
     private createCropper(imageSize: ImageSize, imageCrop: ImageCropValues): void {
         this.invisibleImageNode.decode().then(() => {
+            // Ensure the cropper wrapper is visible during the creation of the cropper
+            // This seems to fix a bug that make the cropper instance yield a slightly shifted image
+            // in the cropper ready callback (called in the ready callback below)
+            const isCurrentlyVisible = this.isVisible;
+            this.toggleVisibility(true);
+
             this.cropper = new Cropper(this.invisibleImageNode, {
                 dragMode: "move",
                 viewMode: 3,
@@ -133,6 +188,10 @@ export class ImageCropper extends ImageEditor {
                 ready: event => {
                     this.recropFromOptions();
                     this.cropperReadyCallback();
+
+                    // Once the ready callback has been called, the normal visibility can be restored
+                    // (see more detailed explanations at the beginning of the method)
+                    this.toggleVisibility(isCurrentlyVisible);
                 }
             });
         });
