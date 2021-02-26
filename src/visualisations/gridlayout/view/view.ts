@@ -31,11 +31,11 @@ class GridLayoutView extends AbstractVisualisationView {
             onGridResize: (grid: Grid, isFinalSize: boolean) => {
                 // TODO
             },
-            onRowResize: (row: Row, isFinalSize: boolean) => {
-                // TODO
+            onRowResize: (rowAbove: Row, rowBelow: Row, isFinalSize: boolean) => {
+                this.resizeRows(rowAbove, rowBelow, isFinalSize);
             },
-            onCellResize: (cell: Cell, isFinalSize: boolean) => {
-                // TODO
+            onCellResize: (leftCell: Cell, rightCell: Cell, isFinalSize: boolean) => {
+                this.resizeCells(leftCell, rightCell, isFinalSize);
             },
             onCellContentClick: (cell: Cell) => {
                 this.selectContentOfCell(cell);
@@ -59,6 +59,46 @@ class GridLayoutView extends AbstractVisualisationView {
                 rowIndex: cell.rowIndex
             }
         });
+    }
+
+    private resizeCells(leftCell: Cell, rightCell: Cell, isFinalSize: boolean): void {
+        this.messenger.sendMessage({
+            type: WebviewToCoreMessageType.NotifyVisualisationModel,
+            visualisationUid: this.modelUid,
+            title: "resize-cells",
+            notification: {
+                leftCellChange: {
+                    rowIndex: leftCell.rowIndex,
+                    cellIndex: leftCell.cellIndex,
+                    newRelativeSize: leftCell.relativeSize
+                },
+                rightCellChange: {
+                    rowIndex: rightCell.rowIndex,
+                    cellIndex: rightCell.cellIndex,
+                    newRelativeSize: rightCell.relativeSize
+                },
+                isFinalSize: isFinalSize
+            }
+        });        
+    }
+
+    private resizeRows(rowAbove: Row, rowBelow: Row, isFinalSize: boolean): void {
+        this.messenger.sendMessage({
+            type: WebviewToCoreMessageType.NotifyVisualisationModel,
+            visualisationUid: this.modelUid,
+            title: "resize-rows",
+            notification: {
+                rowAboveChange: {
+                    rowIndex: rowAbove.rowIndex,
+                    newRelativeSize: rowAbove.relativeSize
+                },
+                rowBelowChange: {
+                    rowIndex: rowBelow.rowIndex,
+                    newRelativeSize: rowBelow.relativeSize
+                },
+                isFinalSize: isFinalSize
+            }
+        });        
     }
 
     onAfterVisualisationDisplay(): void {

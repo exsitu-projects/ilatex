@@ -6,6 +6,7 @@ import { VisualisationModelUtilities } from "../../../core/visualisations/Visual
 import { Cell, Layout, Row } from "./Layout";
 import { HtmlUtils } from "../../../shared/utils/HtmlUtils";
 import { LightweightSourceFileEditor } from "../../../core/source-files/LightweightSourceFileEditor";
+import { MathUtils } from "../../../shared/utils/MathUtils";
 
 class NoLayoutError {}
 
@@ -42,22 +43,30 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
                 }
             },
             {
-                title: "resize-cell",
+                title: "resize-cells",
                 handler: async payload => {
-                    const { rowIndex, cellIndex, newRelativeSize, isFinalSize } = payload;
-                    const cell = this.getCellAt(rowIndex, cellIndex);
+                    const { leftCellChange, rightCellChange, isFinalSize } = payload;
+                    const leftCell = this.getCellAt(leftCellChange.rowIndex, leftCellChange.cellIndex);
+                    const rightCell = this.getCellAt(rightCellChange.rowIndex, rightCellChange.cellIndex);
 
-                    await this.resizeCell(cell, newRelativeSize, isFinalSize);
+                    await this.resizeCells([
+                        { cell: leftCell, newRelativeSize: leftCellChange.newRelativeSize },
+                        { cell: rightCell, newRelativeSize: rightCellChange.newRelativeSize },
+                    ], isFinalSize);
                     this.registerChangeRequestedByTheView();
                 }
             },
             {
-                title: "resize-row",
+                title: "resize-rows",
                 handler: async payload => {
-                    const { rowIndex, newHeight, isFinalSize } = payload;
-                    const row = this.getRowAt(rowIndex);
+                    const { rowAboveChange, rowBelowChange, isFinalSize } = payload;
+                    const rowAbove = this.getRowAt(rowAboveChange.rowIndex);
+                    const rowBelow = this.getRowAt(rowBelowChange.rowIndex);
 
-                    await this.resizeRow(row, newHeight, isFinalSize);
+                    await this.resizeRows([
+                        { row: rowAbove, newRelativeSize: rowAboveChange.newRelativeSize },
+                        { row: rowBelow, newRelativeSize: rowBelowChange.newRelativeSize },
+                    ], isFinalSize);
                     this.registerChangeRequestedByTheView();
                 }
             }
@@ -77,42 +86,62 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
             .cells[cellIndex];
     }
 
-    private async resizeCell(cell: Cell, newRelativeSize: number, isFinalSize: boolean): Promise<void> {
-        // Round the number of decimals of the new size
-        const maxNbDecimals = 3;
-        const tenPowerNbDecimals = 10 ** maxNbDecimals;
-        const newSizeAsString =
-            ((Math.round(newRelativeSize * tenPowerNbDecimals)) / tenPowerNbDecimals)
-                .toString();
+    private async resizeCells(sortedChanges: { cell: Cell, newRelativeSize: number}[], isFinalSize: boolean): Promise<void> {
+        // Associate a unique editable section name to each cell
+        const nameSectionAfterCell = (cell: Cell) => `${cell.rowIndex}-${cell.cellIndex}`;
 
-        // if (!this.lightweightCellSizeEditor) {
-        //     const editRange = cell.options.relativeSizeParameterNode.range;
-        //     this.lightweightCellSizeEditor = this.sourceFile.createLightweightEditorFor(editRange);
-        //     await this.lightweightCellSizeEditor.init();
-        // }
+        if (!this.lightweightCellSizeEditor) {
+            const editableSections = sortedChanges.map(change => {
+                return {
+                    name: nameSectionAfterCell(change.cell),
+                    range: change.cell.options.relativeSizeParameterNode.range
+                };
+            });
+
+            this.lightweightCellSizeEditor = this.sourceFile.createLightweightEditorFor(editableSections);
+            await this.lightweightCellSizeEditor.init();
+        }
         
-        // await this.lightweightCellSizeEditor.replaceContentWith(newSizeAsString);
-        // if (isFinalSize) {
-        //     await this.lightweightCellSizeEditor.applyChange();
-        //     this.lightweightCellSizeEditor = null;
-        // }
+        for (let change of sortedChanges) {
+            await this.lightweightCellSizeEditor.replaceSectionContent(
+                nameSectionAfterCell(change.cell),
+                MathUtils.round(change.newRelativeSize, 3).toString()
+            );
+        }
+
+        if (isFinalSize) {
+            await this.lightweightCellSizeEditor.applyChange();
+            this.lightweightCellSizeEditor = null;
+        }
     }
 
-    private async resizeRow(row: Row, newHeight: number, isFinalSize: boolean): Promise<void> {
-        // Round the new height and append the right suffix
-        const newHeightAsString = `${Math.round(newHeight)}px`;
+    private async resizeRows(sortedChanges: { row: Row, newRelativeSize: number}[], isFinalSize: boolean): Promise<void> {
+        // Associate a unique editable section name to each row
+        const nameSectionAfterRow = (row: Row) => `${row.rowIndex}`;
 
-        // if (!this.lightweightRowHeightEditor) {
-        //     const editRange = row.options.relativeSizeParameterNode.range;
-        //     this.lightweightRowHeightEditor = this.sourceFile.createLightweightEditorFor(editRange);
-        //     await this.lightweightRowHeightEditor.init();
-        // }
+        if (!this.lightweightCellSizeEditor) {
+            const editableSections = sortedChanges.map(change => {
+                return {
+                    name: nameSectionAfterRow(change.row),
+                    range: change.row.options.relativeSizeParameterNode.range
+                };
+            });
+
+            this.lightweightCellSizeEditor = this.sourceFile.createLightweightEditorFor(editableSections);
+            await this.lightweightCellSizeEditor.init();
+        }
         
-        // await this.lightweightRowHeightEditor.replaceContentWith(newHeightAsString);
-        // if (isFinalSize) {
-        //     await this.lightweightRowHeightEditor.applyChange();
-        //     this.lightweightRowHeightEditor = null;
-        // }
+        for (let change of sortedChanges) {
+            await this.lightweightCellSizeEditor.replaceSectionContent(
+                nameSectionAfterRow(change.row),
+                MathUtils.round(change.newRelativeSize, 3).toString()
+            );
+        }
+
+        if (isFinalSize) {
+            await this.lightweightCellSizeEditor.applyChange();
+            this.lightweightCellSizeEditor = null;
+        }
     }
 
     protected async updateContentData(): Promise<void> {

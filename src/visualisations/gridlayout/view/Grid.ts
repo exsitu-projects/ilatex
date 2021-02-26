@@ -5,8 +5,8 @@ import { Row, RowResizeHandle } from "./Row";
 
 export interface GridCallbacks {
     onGridResize: (grid: Grid, isFinalSize: boolean) => void;
-    onRowResize: (row: Row, isFinalSize: boolean) => void;
-    onCellResize: (cell: Cell, isFinalSize: boolean) => void;
+    onRowResize: (rowAbove: Row, rowBelow: Row, isFinalSize: boolean) => void;
+    onCellResize: (leftCell: Cell, rightCell: Cell, isFinalSize: boolean) => void;
     onCellContentClick: (cell: Cell) => void;
 }
 
@@ -148,8 +148,10 @@ export class Grid {
     }
 
     private startHandlingRowResizeHandleDrags(): void {
-        debugger;
         for (let rowResizeHandle of this.rowResizeHandles) {
+            const rowAbove = this.rows.find(cell => cell.rowIndex === rowResizeHandle.aboveRowIndex)!;
+            const rowBelow = this.rows.find(cell => cell.rowIndex === rowResizeHandle.belowRowIndex)!;
+
             interact(rowResizeHandle.node)
                 .draggable({
                     startAxis: "y",
@@ -161,8 +163,12 @@ export class Grid {
                         }
                     },
                 })
-                .on("dragmove", () => { })
-                .on("dragend", () => { });
+                .on("dragmove", () => {
+                    this.callbacks.onRowResize(rowAbove, rowBelow, false);
+                })
+                .on("dragend", () => {
+                    this.callbacks.onRowResize(rowAbove, rowBelow, true);
+                });
         }
     }
 

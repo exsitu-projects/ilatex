@@ -214,8 +214,10 @@ export class Row {
     }
 
     private startHandlingCellResizeHandleDrags(): void {
-        debugger;
         for (let cellResizeHandle of this.cellResizeHandles) {
+            const leftCell = this.cells.find(cell => cell.cellIndex === cellResizeHandle.leftCellIndex)!;
+            const rightCell = this.cells.find(cell => cell.cellIndex === cellResizeHandle.rightCellIndex)!;
+
             interact(cellResizeHandle.node)
                 .draggable({
                     startAxis: "x",
@@ -227,8 +229,12 @@ export class Row {
                         }
                     },
                 })
-                .on("dragmove", () => {  })
-                .on("dragend", () => {  });
+                .on("dragmove", () => {
+                    this.callbacks.onCellResize(leftCell, rightCell, false);
+                })
+                .on("dragend", () => {
+                    this.callbacks.onCellResize(leftCell, rightCell, true);
+                });
         }
     }
 
