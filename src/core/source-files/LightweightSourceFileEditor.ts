@@ -1,64 +1,128 @@
+import { Range } from "vscode";
 import { StringUtils } from "../../shared/utils/StringUtils";
 import { SourceFile } from "./SourceFile";
 import { SourceFilePosition, SourceFilePositionShift } from "./SourceFilePosition";
 import { SourceFileRange } from "./SourceFileRange";
 
+export interface EditableSection {
+    name: string;
+    range: SourceFileRange;
+}
+
+interface EditableSectionData {
+    initialRange: SourceFileRange;
+    initialContent: string;    
+
+    currentRange: SourceFileRange;
+    currentContent: string;
+}
+
 export class LightweightSourceFileEditor {
     private sourceFile: SourceFile;
 
-    private initialRange: SourceFileRange;
-    private initialContent: string;    
+    private sortedEditableSections: EditableSection[];
+    private sortedEditableSectionNames: string[];
+    private editableSectionNamesToData: Map<string, EditableSectionData>;
 
-    private currentRange: SourceFileRange;
-    private currentContent: string;
-
-    constructor(sourceFile: SourceFile, range: SourceFileRange) {
+    constructor(sourceFile: SourceFile, sortedEditableSections: EditableSection[]) {
         this.sourceFile = sourceFile;
 
-        this.initialRange = range;
-        this.initialContent = "";
-
-        this.currentRange = range;
-        this.currentContent = "";
+        this.sortedEditableSections = sortedEditableSections;
+        this.sortedEditableSectionNames = sortedEditableSections.map(section => section.name);
+        this.editableSectionNamesToData = new Map();
     }
 
     async init(): Promise<void> {
-        this.currentContent = await this.sourceFile.getContent(this.currentRange);
-        this.initialContent = this.currentContent;
+        for (let editableSection of this.sortedEditableSections) {
+            const content = await this.sourceFile.getContent(editableSection.range);
+            this.editableSectionNamesToData.set(
+                editableSection.name,
+                {
+                    initialRange: editableSection.range,
+                    initialContent: content,    
+                
+                    currentRange: editableSection.range,
+                    currentContent: content
+                }
+            );
+        }
     }
 
-    private getPostReplacementRangeFor(newContent: string): SourceFileRange {
-        const nbLinesOfOldContent = StringUtils.countLinesOf(this.currentContent);
-        const nbLinesOfNewContent = StringUtils.countLinesOf(newContent);
+    async replaceSectionContent(sectionName: string, newContent: string): Promise<void> {
+        const sectionData = this.editableSectionNamesToData.get(sectionName);
+        if (!sectionData) {
+            console.warn(`The content of this lightweight editor cannot be replaced: there is no editable section named "${sectionName}".`);
+            return;
+        }
 
-        const lengthOfOldContentLastLine = StringUtils.lastLineOf(this.currentContent).length;
-        const lengthOfNewContentLastLine = StringUtils.lastLineOf(newContent).length;
-
-        return new SourceFileRange(
-            this.currentRange.from,
-            new SourceFilePosition(
-                this.currentRange.to.line + (nbLinesOfNewContent - nbLinesOfOldContent),
-                this.currentRange.to.column + (lengthOfNewContentLastLine - lengthOfOldContentLastLine),
-            )
-        );
-    }
-
-    async replaceContentWith(newContent: string): Promise<void> {
         this.sourceFile.ignoreChanges = true;
 
         const editor = await this.sourceFile.getOrOpenInEditor();
         await editor.edit(
-            editBuilder => editBuilder.replace(this.currentRange.asVscodeRange, newContent),
+            editBuilder => editBuilder.replace(sectionData.currentRange.asVscodeRange, newContent),
             { undoStopBefore: false, undoStopAfter: false}
         );
 
         this.sourceFile.ignoreChanges = false;
 
-        this.currentRange = this.getPostReplacementRangeFor(newContent);
-        this.currentContent = newContent;
+        this.shiftSectionRangesBeforeReplacementInSection(sectionName, newContent);
+        sectionData.currentContent = newContent;
+    }
+
+    private shiftSectionRangesBeforeReplacementInSection(sectionName: string, newContent: string): void {
+        const editedSectionData = this.editableSectionNamesToData.get(sectionName)!;
+        const editedSectionRange = editedSectionData.currentRange;
+        const oldContent = editedSectionData.currentContent;
+        
+        const nbLinesOfOldContent = StringUtils.countLinesOf(oldContent);
+        const nbLinesOfNewContent = StringUtils.countLinesOf(newContent);
+        const lineDifference = nbLinesOfNewContent - nbLinesOfOldContent;
+
+        const lengthOfOldContentLastLine = StringUtils.lastLineOf(oldContent).length;
+        const lengthOfNewContentLastLine = StringUtils.lastLineOf(newContent).length;
+        const columnDifference = lengthOfNewContentLastLine - lengthOfOldContentLastLine;
+
+        // Shift the ranges of every section whose range comes after the range edited section
+        const indexOfEditedSectionName = this.sortedEditableSectionNames.indexOf(sectionName);
+        const sectionDataAfterEditedSection = this.sortedEditableSectionNames
+            .slice(indexOfEditedSectionName)
+            .map(name => this.editableSectionNamesToData.get(name)!);
+        
+        for (let sectionData of sectionDataAfterEditedSection) {
+            const from = sectionData.currentRange.from;
+            const to = sectionData.currentRange.to;
+
+            sectionData.currentRange = new SourceFileRange(
+                new SourceFilePosition(
+                    from.line + lineDifference,
+                    from.line === editedSectionRange.to.line
+                        ? from.column + columnDifference
+                        : from.column
+                ),
+                new SourceFilePosition(
+                    to.line + lineDifference,
+                    to.line === editedSectionRange.to.line
+                        ? to.column + columnDifference
+                        : to.column
+                )
+            );
+        }
+
+        // Finally, shift the range of the edited section
+        editedSectionData.currentRange = new SourceFileRange(
+            editedSectionRange.from,
+            new SourceFilePosition(
+                editedSectionRange.to.line + (nbLinesOfNewContent - nbLinesOfOldContent),
+                editedSectionRange.to.column + (lengthOfNewContentLastLine - lengthOfOldContentLastLine),
+            )
+        );
     }
 
     async applyChange(): Promise<void> {
+        const reverseSortedSectionData = this.sortedEditableSectionNames
+            .reverse()
+            .map(name => this.editableSectionNamesToData.get(name)!);
+
         // First, replace the current content by the initial content
         // This is required to ensure the change that will be processed by the source file and its AST
         // is performed on the same content than before the very first lightweight edit
@@ -67,7 +131,11 @@ export class LightweightSourceFileEditor {
 
         const editor = await this.sourceFile.getOrOpenInEditor();
         await editor.edit(
-            editBuilder => editBuilder.replace(this.currentRange.asVscodeRange, this.initialContent),
+            editBuilder => {
+                for (let sectionData of reverseSortedSectionData) {
+                    editBuilder.replace(sectionData.currentRange.asVscodeRange, sectionData.initialContent);
+                }
+            },
             { undoStopBefore: false, undoStopAfter: false}
         );
 
@@ -75,7 +143,11 @@ export class LightweightSourceFileEditor {
         this.sourceFile.ignoreChanges = false;
         
         await this.sourceFile.makeAtomicChange(
-            editBuilder => editBuilder.replace(this.initialRange.asVscodeRange, this.currentContent)
+            editBuilder => {
+                for (let sectionData of reverseSortedSectionData) {
+                    editBuilder.replace(sectionData.initialRange.asVscodeRange, sectionData.currentContent);
+                }
+            }
         );
     }
 }

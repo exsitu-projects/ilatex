@@ -85,34 +85,34 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
             ((Math.round(newRelativeSize * tenPowerNbDecimals)) / tenPowerNbDecimals)
                 .toString();
 
-        if (!this.lightweightCellSizeEditor) {
-            const editRange = cell.options.relativeSizeParameterNode.range;
-            this.lightweightCellSizeEditor = this.sourceFile.createLightweightEditorFor(editRange);
-            await this.lightweightCellSizeEditor.init();
-        }
+        // if (!this.lightweightCellSizeEditor) {
+        //     const editRange = cell.options.relativeSizeParameterNode.range;
+        //     this.lightweightCellSizeEditor = this.sourceFile.createLightweightEditorFor(editRange);
+        //     await this.lightweightCellSizeEditor.init();
+        // }
         
-        await this.lightweightCellSizeEditor.replaceContentWith(newSizeAsString);
-        if (isFinalSize) {
-            await this.lightweightCellSizeEditor.applyChange();
-            this.lightweightCellSizeEditor = null;
-        }
+        // await this.lightweightCellSizeEditor.replaceContentWith(newSizeAsString);
+        // if (isFinalSize) {
+        //     await this.lightweightCellSizeEditor.applyChange();
+        //     this.lightweightCellSizeEditor = null;
+        // }
     }
 
     private async resizeRow(row: Row, newHeight: number, isFinalSize: boolean): Promise<void> {
         // Round the new height and append the right suffix
         const newHeightAsString = `${Math.round(newHeight)}px`;
 
-        if (!this.lightweightRowHeightEditor) {
-            const editRange = row.options.relativeSizeParameterNode.range;
-            this.lightweightRowHeightEditor = this.sourceFile.createLightweightEditorFor(editRange);
-            await this.lightweightRowHeightEditor.init();
-        }
+        // if (!this.lightweightRowHeightEditor) {
+        //     const editRange = row.options.relativeSizeParameterNode.range;
+        //     this.lightweightRowHeightEditor = this.sourceFile.createLightweightEditorFor(editRange);
+        //     await this.lightweightRowHeightEditor.init();
+        // }
         
-        await this.lightweightRowHeightEditor.replaceContentWith(newHeightAsString);
-        if (isFinalSize) {
-            await this.lightweightRowHeightEditor.applyChange();
-            this.lightweightRowHeightEditor = null;
-        }
+        // await this.lightweightRowHeightEditor.replaceContentWith(newHeightAsString);
+        // if (isFinalSize) {
+        //     await this.lightweightRowHeightEditor.applyChange();
+        //     this.lightweightRowHeightEditor = null;
+        // }
     }
 
     protected async updateContentData(): Promise<void> {

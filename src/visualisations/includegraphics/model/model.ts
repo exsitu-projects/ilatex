@@ -119,11 +119,14 @@ export class IncludegraphicsVisualisationModel extends AbstractVisualisationMode
                 (this.astNode.parameters[1] as CurlyBracesParameterBlockNode).range.from
             );
     
-            this.lightweightImageOptionsEditor = this.sourceFile.createLightweightEditorFor(editRange);
+            this.lightweightImageOptionsEditor = this.sourceFile.createLightweightEditorFor([{
+                name: "options",
+                range: editRange
+            }]);
             await this.lightweightImageOptionsEditor.init();
         }
         
-        await this.lightweightImageOptionsEditor.replaceContentWith(newOptionParameterBlock);
+        await this.lightweightImageOptionsEditor.replaceSectionContent("options", newOptionParameterBlock);
         if (isFinalUpdate) {
             await this.lightweightImageOptionsEditor.applyChange();
             this.lightweightImageOptionsEditor = null;

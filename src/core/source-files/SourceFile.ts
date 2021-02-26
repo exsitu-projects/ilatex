@@ -3,7 +3,7 @@ import * as path from "path";
 import { LatexAST } from "../ast/LatexAST";
 import { SourceFileChange } from "./SourceFileChange";
 import { SourceFileRange } from "../source-files/SourceFileRange";
-import { LightweightSourceFileEditor } from "./LightweightSourceFileEditor";
+import { EditableSection, LightweightSourceFileEditor } from "./LightweightSourceFileEditor";
 
 export type SourceFileEdit = (editBuilder: vscode.TextEditorEdit) => void;
 
@@ -119,8 +119,8 @@ export class SourceFile {
         }
     }
 
-    createLightweightEditorFor(range: SourceFileRange): LightweightSourceFileEditor {
-        return new LightweightSourceFileEditor(this, range);
+    createLightweightEditorFor(editableSections: EditableSection[]): LightweightSourceFileEditor {
+        return new LightweightSourceFileEditor(this, editableSections);
     }
 
     async parseNewAST(): Promise<void> {
