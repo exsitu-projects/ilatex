@@ -291,7 +291,8 @@ export class LatexParser {
                     {
                         name: "gridlayout",
                         parameters: [
-                            { type: "square", parser: lang.parameter, optional: true }
+                            { type: "curly", parser: lang.parameter },
+                            { type: "curly", parser: lang.parameter }
                         ],
                         contentParser: lang.latex,
                     },

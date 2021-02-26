@@ -4,23 +4,23 @@
 
 
 \newlength{\gridlayout@gridwidth}
-%\newlength{\gridlayout@rowsep}
-\newlength{\gridlayout@rowheight}
-%\newlength{\gridlayout@cellsep}
-\newlength{\gridlayout@cellwidth}
+\newlength{\gridlayout@gridheight}
+\newlength{\rowheight}
+\newlength{\cellwidth}
 
 \newlength{\gridlayout@savedfboxsep}
 \setlength{\gridlayout@savedfboxsep}{\fboxsep}
 
-% The gridlayout environements sees to suffer from the same limitations
+% The gridlayout environements seems to suffer from the same limitations
 % than the itabular environement regarding the usage of the \ilatex command.
 % For this reason, the writing of a new mapping, the PDF annotation
 % and the counter increment are directly performed inside gridlayout's definition.
 % Read the comments about the definition of itabular (in ilatex.sty) for more details.
-\NewEnviron{gridlayout}[1][\textwidth]
+\NewEnviron{gridlayout}[2]
 {%
     \setlength{\fboxsep}{0pt}%
     \setlength{\gridlayout@gridwidth}{#1}%
+    \setlength{\gridlayout@gridheight}{#2}%
     \par
     \pdftooltip{{\begin{minipage}[b]{\gridlayout@gridwidth}%
         \BODY%
@@ -38,8 +38,8 @@
 
 \NewEnviron{row}[1]
 {%
-    \setlength{\gridlayout@rowheight}{#1}%
-    \makebox{\begin{minipage}[b]{\textwidth}%
+    \setlength{\rowheight}{#1\gridlayout@gridheight}%
+    \makebox{\begin{minipage}[b]{\gridlayout@gridwidth}%
         \BODY%
     \end{minipage}}%
     \par
@@ -48,21 +48,12 @@
 
 \NewEnviron{cell}[1]
 {%
-    \setlength{\gridlayout@cellwidth}{#1\textwidth}%
-    \makebox{\begin{minipage}[b][\gridlayout@rowheight][t]{\gridlayout@cellwidth}%
+    \setlength{\cellwidth}{#1\gridlayout@gridwidth}%
+    \makebox{\begin{minipage}[b][\rowheight][t]{\cellwidth}%
         \BODY%
     \end{minipage}}%
 }
 {}
-
-\newcommand{\cellsep}[1]{%
-    \hspace{#1\textwidth}%
-}
-
-\newcommand{\rowsep}[1]{\\[\dimexpr#1-\baselineskip]}
-% \newcommand{\rowsep}[1]{%
-%     \parbox[t][#1][t]{\gridlayout@gridwidth}{}%
-% }
 
 
 \endinput

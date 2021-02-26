@@ -27,8 +27,7 @@ export class LayoutContentExtractor extends ASTAsyncVisitorAdapter {
             this.layout.rows.push(
                 await Row.from(
                     this.layout.nbRows,
-                    node,
-                    this.codeMapping
+                    node
                 )
             );
         }

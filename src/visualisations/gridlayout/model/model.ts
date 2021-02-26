@@ -25,11 +25,9 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
     }
 
     protected get contentDataAsHtml(): string {
-        return `
-            <div class="layout">
-                ${this.layout?.rows.map(GridLayoutModel.renderRowAsHtml).join("\n")}
-            </div>
-        `;
+        return this.layout
+            ? GridLayoutModel.rendeLayoutAsHtml(this.layout)
+            : "";
     }
 
     protected get viewMessageHandlerSpecifications(): ViewMessageHandlerSpecification[] {
@@ -105,7 +103,7 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
         const newHeightAsString = `${Math.round(newHeight)}px`;
 
         if (!this.lightweightRowHeightEditor) {
-            const editRange = row.options.heightParameterNode.range;
+            const editRange = row.options.relativeSizeParameterNode.range;
             this.lightweightRowHeightEditor = this.sourceFile.createLightweightEditorFor(editRange);
             await this.lightweightRowHeightEditor.init();
         }
@@ -132,8 +130,8 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
     private static renderCellAsHtml(cell: Cell): string {
         const attributes = HtmlUtils.makeAttributesFromKeysOf({
             "class": "cell",
-            "data-row": cell.rowIndex.toString(),
-            "data-cell": cell.cellIndex.toString(),
+            "data-row-index": cell.rowIndex.toString(),
+            "data-cell-index": cell.cellIndex.toString(),
             "data-relative-size": cell.options.relativeSize.toString()
         });
 
@@ -143,8 +141,8 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
     private static renderRowAsHtml(row: Row): string {
         const attributes = HtmlUtils.makeAttributesFromKeysOf({
             "class": "row",
-            "data-row": row.rowIndex.toString(),
-            "data-height": row.options.height.px.toString(),
+            "data-row-index": row.rowIndex.toString(),
+            "data-relative-size": row.options.relativeSize.toString(),
         });
 
         return `
@@ -153,6 +151,24 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
                     .map(cell => GridLayoutModel.renderCellAsHtml(cell))
                     .join("\n")
                 }
+            </div>
+        `;
+    }
+
+    private static rendeLayoutAsHtml(layout: Layout): string {
+        const attributes = HtmlUtils.makeAttributesFromKeysOf({
+            "class": "layout",
+            "data-width": layout.options.width.px.toString(),
+            "data-height": layout.options.height.px.toString(),
+        });
+
+        return `
+            <div ${attributes}>
+                ${
+                    layout.rows
+                        .map(GridLayoutModel.renderRowAsHtml)
+                        .join("\n")
+                    }
             </div>
         `;
     }

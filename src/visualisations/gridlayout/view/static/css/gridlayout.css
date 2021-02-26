@@ -3,36 +3,46 @@
 }
 
 [data-visualisation-name="grid layout"] .grid {
-    margin: 8px 0 0 8px;
+    margin: 10px auto;
 }
 
-[data-visualisation-name="grid layout"] .layout {
-    width: 100%;
+[data-visualisation-name="grid layout"] .row-container {
+    /* display: flex; */
+    /* flex-direction: column; */
+    height: 100%;
+    overflow: hidden;
 }
 
 [data-visualisation-name="grid layout"] .row {
-    display: flex;
-    flex-direction: column;
+    width: 100%;
 }
 
 [data-visualisation-name="grid layout"] .cell-container {
     display: flex;
     height: 100%;
-    overflow-y: hidden;
+    overflow: hidden;
+}
+
+[data-visualisation-name="grid layout"] .cell-container > * {
+    display: inline-block;
+    flex-shrink: 0;
+    vertical-align: top;
 }
 
 [data-visualisation-name="grid layout"] .cell {
-    display: flex;
-    height: inherit;
+    /* height: 100%; */
     padding: 0;
-}
-
-[data-visualisation-name="grid layout"] .cell-content {
-    flex-grow: 1;
-    padding: 1em;
     background-color: #f4f4f4;
     border: 2px solid #666;
     color: #999;
+}
+
+[data-visualisation-name="grid layout"] .cell:hover {
+    background-color: #EEE;
+}
+
+[data-visualisation-name="grid layout"] .cell-content {
+    padding: 1em;
     font-size: 0.7rem;
     font-family: monospace;
     overflow: hidden;
@@ -40,10 +50,6 @@
     user-select: none;
     cursor: pointer;
     z-index: 1500;
-}
-
-[data-visualisation-name="grid layout"] .cell-content:hover {
-    background-color: #EEE;
 }
 
 [data-visualisation-name="grid layout"] .row-resize-handle {
@@ -54,7 +60,7 @@
 }
 
 [data-visualisation-name="grid layout"] .cell-resize-handle {
-    height: 100%;
+    /* height: 100%; */
     width: 8px;
     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="rgb(51, 51, 51)" width="18px" height="18px"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>');
     cursor: ew-resize;
@@ -62,24 +68,24 @@
 
 [data-visualisation-name="grid layout"] .row-resize-handle,
 [data-visualisation-name="grid layout"] .cell-resize-handle {
-    flex-shrink: 0;
     background-color: #FFF;
     background-repeat: no-repeat;
     background-position: center;
     /* background-size: contain; */
     z-index: 2000;
+    touch-action: none;
 }
 
-[data-visualisation-name="grid layout"] .cell-resize-handle:hover {
+[data-visualisation-name="grid layout"] .row-resize-handle:hover {
     background-color: #ffefa2;
     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="rgb(0, 0, 0)" width="18px" height="18px"><path d="M0 0h24v24H0z" fill="none"/><path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>');
-    border-left: 2px solid #FFF;
-    border-right: 2px solid #FFF;
+    border-top: 2px solid #FFF;
+    border-bottom: 2px solid #FFF;
 }
 
 [data-visualisation-name="grid layout"] .cell-resize-handle:hover {
     background-color: #ffefa2;
     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="rgb(0, 0, 0)" width="18px" height="18px"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>');
-    border-top: 2px solid #FFF;
-    border-bottom: 2px solid #FFF;
+    border-left: 2px solid #FFF;
+    border-right: 2px solid #FFF;
 }

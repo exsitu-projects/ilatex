@@ -72,28 +72,24 @@ export class Cell {
 }
 
 export class RowOptions {
-    readonly height: LatexLength;
-    readonly heightParameterNode: ParameterNode;
+    readonly relativeSize: number;
+    readonly relativeSizeParameterNode: ParameterNode;
 
-    private constructor(height: LatexLength, heightParameterNode: ParameterNode) {
-        this.height = height;
-        this.heightParameterNode = heightParameterNode;
+    private constructor(relativeSize: number, heightParameterNode: ParameterNode) {
+        this.relativeSize = relativeSize;
+        this.relativeSizeParameterNode = heightParameterNode;
     }
 
-    static async fromRowNode(node: EnvironmentNode, codeMapping: CodeMapping): Promise<RowOptions> {
+    static async fromRowNode(node: EnvironmentNode): Promise<RowOptions> {
         const parameterBlockNode = node.parameters[0] as CurlyBracesParameterBlockNode;
-        const heightParameterNode = parameterBlockNode.content as ParameterNode;
+        const relativeSizeParameterNode = parameterBlockNode.content as ParameterNode;
+        const relativeSize = parseFloat(await parameterBlockNode.content.textContent);
 
-        try {
-            const height = LatexLength.from(
-                await parameterBlockNode.content.textContent,
-                codeMapping.localLatexLengthSettings
-            );
-            return new RowOptions(height, heightParameterNode);
-        }
-        catch (error) {
+        if (Number.isNaN(relativeSize)) {
             throw new LayoutExtractionError();
         }
+
+        return new RowOptions(relativeSize, relativeSizeParameterNode);
     }
 }
 
@@ -120,36 +116,39 @@ export class Row {
 
     static async from(
         rowIndex: number,
-        node: EnvironmentNode,
-        codeMapping: CodeMapping
+        node: EnvironmentNode
     ): Promise<Row> {
-        const options = await RowOptions.fromRowNode(node, codeMapping);
+        const options = await RowOptions.fromRowNode(node);
         return new Row(rowIndex, node, options);
     }
 }
 
 export class LayoutOptions {
-    readonly width?: LatexLength;
+    readonly width: LatexLength;
+    readonly height: LatexLength;
 
-    private constructor(width?: LatexLength) {
+    private constructor(width: LatexLength, height: LatexLength) {
         this.width = width;
+        this.height = height;
     }
 
     static async from(
         node: EnvironmentNode,
         codeMapping: CodeMapping
     ): Promise<LayoutOptions> {
-        const rowHeightParameter = node.parameters[0];
-        if (rowHeightParameter === EMPTY_AST_VALUE) {
-            return new LayoutOptions();
-        }
+        const gridWidthParameter = node.parameters[0] as CurlyBracesParameterBlockNode;
+        const gridHeightParameter = node.parameters[1] as CurlyBracesParameterBlockNode;
         
         try {
-            const width = LatexLength.from(
-                await rowHeightParameter.content.textContent,
+            const createLatexLengthFrom = (text: string) => LatexLength.from(
+                text,
                 codeMapping.localLatexLengthSettings
             );
-            return new LayoutOptions(width);
+
+            const width = createLatexLengthFrom(await gridWidthParameter.content.textContent);
+            const height = createLatexLengthFrom(await gridHeightParameter.content.textContent);
+
+            return new LayoutOptions(width, height);
         }
         catch (error) {
             throw new LayoutExtractionError();
