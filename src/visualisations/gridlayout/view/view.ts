@@ -62,43 +62,47 @@ class GridLayoutView extends AbstractVisualisationView {
     }
 
     private resizeCells(leftCell: Cell, rightCell: Cell, isFinalSize: boolean): void {
-        this.messenger.sendMessage({
-            type: WebviewToCoreMessageType.NotifyVisualisationModel,
-            visualisationUid: this.modelUid,
-            title: "resize-cells",
-            notification: {
-                leftCellChange: {
-                    rowIndex: leftCell.rowIndex,
-                    cellIndex: leftCell.cellIndex,
-                    newRelativeSize: leftCell.relativeSize
-                },
-                rightCellChange: {
-                    rowIndex: rightCell.rowIndex,
-                    cellIndex: rightCell.cellIndex,
-                    newRelativeSize: rightCell.relativeSize
-                },
-                isFinalSize: isFinalSize
-            }
-        });        
+        this.resizeThrottler.add(async () => {
+            this.messenger.sendMessage({
+                type: WebviewToCoreMessageType.NotifyVisualisationModel,
+                visualisationUid: this.modelUid,
+                title: "resize-cells",
+                notification: {
+                    leftCellChange: {
+                        rowIndex: leftCell.rowIndex,
+                        cellIndex: leftCell.cellIndex,
+                        newRelativeSize: leftCell.relativeSize
+                    },
+                    rightCellChange: {
+                        rowIndex: rightCell.rowIndex,
+                        cellIndex: rightCell.cellIndex,
+                        newRelativeSize: rightCell.relativeSize
+                    },
+                    isFinalSize: isFinalSize
+                }
+            });    
+        });
     }
 
     private resizeRows(rowAbove: Row, rowBelow: Row, isFinalSize: boolean): void {
-        this.messenger.sendMessage({
-            type: WebviewToCoreMessageType.NotifyVisualisationModel,
-            visualisationUid: this.modelUid,
-            title: "resize-rows",
-            notification: {
-                rowAboveChange: {
-                    rowIndex: rowAbove.rowIndex,
-                    newRelativeSize: rowAbove.relativeSize
-                },
-                rowBelowChange: {
-                    rowIndex: rowBelow.rowIndex,
-                    newRelativeSize: rowBelow.relativeSize
-                },
-                isFinalSize: isFinalSize
-            }
-        });        
+        this.resizeThrottler.add(async () => {
+            this.messenger.sendMessage({
+                type: WebviewToCoreMessageType.NotifyVisualisationModel,
+                visualisationUid: this.modelUid,
+                title: "resize-rows",
+                notification: {
+                    rowAboveChange: {
+                        rowIndex: rowAbove.rowIndex,
+                        newRelativeSize: rowAbove.relativeSize
+                    },
+                    rowBelowChange: {
+                        rowIndex: rowBelow.rowIndex,
+                        newRelativeSize: rowBelow.relativeSize
+                    },
+                    isFinalSize: isFinalSize
+                }
+            }); 
+        });
     }
 
     onAfterVisualisationDisplay(): void {
