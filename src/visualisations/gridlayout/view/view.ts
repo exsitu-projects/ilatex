@@ -119,7 +119,10 @@ class GridLayoutView extends AbstractVisualisationView {
 
     updateContentWith(newContentNode: HTMLElement): void {
         this.contentNode = newContentNode;
+
+        this.grid.onBeforeVisualisationRemoval();
         this.grid = this.createGrid();
+        this.grid.onAfterVisualisationDisplay();
     }
 }
 

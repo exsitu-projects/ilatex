@@ -104,7 +104,8 @@ export class Cell {
         const totalWidthOfAllCellResizeHandlesInRow = (this.nbCellsInRow - 1) * cellResizeHandleWidth;
         const newAbsoluteSize = Math.max(0, parentNodeBox.width - totalWidthOfAllCellResizeHandlesInRow) * this.currentRelativeSize;
 
-        this.node.style.width = `${newAbsoluteSize}px`;
+        // this.node.style.width = `${newAbsoluteSize}px`;
+        this.node.style.width = `calc((100% - ${totalWidthOfAllCellResizeHandlesInRow}px) * ${this.currentRelativeSize})`;
     }
 
     resizeToRelativeSize(newRelativeSize: number): void {
