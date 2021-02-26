@@ -146,7 +146,6 @@ export class Row {
         const parentNodeBox = parentNode.getBoundingClientRect();
         const rowResizeHandleHeight = 8; // px
         const totalHeightOfAllRowResizeHandles = (this.nbRowsInGrid - 1) * rowResizeHandleHeight;
-        const newAbsoluteSize = Math.max(0, parentNodeBox.height - totalHeightOfAllRowResizeHandles) * this.currentRelativeSize;
 
         this.node.style.height = `calc((100% - ${totalHeightOfAllRowResizeHandles}px) * ${this.currentRelativeSize})`;
     }
@@ -154,37 +153,6 @@ export class Row {
     resizeToRelativeSize(newRelativeSize: number): void {
         this.currentRelativeSize = newRelativeSize;
         this.resize();
-    }
-
-    // TODO: handle minimum size
-    private distributeCellSizeChangeOn(cells: Cell[], differenceInPx: number): void {
-        const widthSum = cells.reduce((sum, cell) => sum + cell.node.clientWidth, 0);
-        // const relativeDifferenceOverAllCells = (sum + differenceInPx) / sum;
-
-        const globalRelativeDifference = (widthSum + differenceInPx) / widthSum;
-
-        const relativeSizeSum = cells.reduce((sum, cell) => sum + cell.relativeSize, 0);
-        const newRelativeSizeSum = relativeSizeSum * globalRelativeDifference;
-
-        // const scaledDifferenceInPX = differenceInPx * (sum / this.node.clientWidth);
-
-        for (let cell of cells) {
-            const cellWidth = cell.node.clientWidth;
-            const widthRatio = cellWidth / widthSum;
-            // const proportio÷n = (cellWidth / sum;
-            // console.log("pro÷÷portion", proportion);
-
-            // const scaledDiff = ((widthSum + differenceInPx) / widthSum) * widthRatio;
-
-            // const newRelativeSize = cell.relativeSize * ((cellWidth + differenceInPx) / cellWidth);
-            // const differenceInPxProportionalToRelativeSize = differenceInPx * cell.relativeSize;
-            const newRelativeSize = newRelativeSizeSum * widthRatio;
-
-            console.log(`${cell.relativeSize.toFixed(2)} => ${newRelativeSize.toFixed(2)}`);
-
-            cell.resizeToRelativeSize(Math.max(0, Math.min(1, newRelativeSize)));
-
-        }
     }
 
     private onCellResizeHandleDrag(handle: CellResizeHandle, dx: number): void {
