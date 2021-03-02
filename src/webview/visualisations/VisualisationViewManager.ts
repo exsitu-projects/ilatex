@@ -195,7 +195,9 @@ export class VisualisationViewManager {
         data.contentNode = temporaryContainerNode.content.firstElementChild as HTMLElement;
 
         // Possibly update the currently displayed visualisation (if there is one)
-        this.updateCurrentlyDisplayedVisualisationContent();
+        if (this.currentlyDisplayedVisualisationView?.codeMappingId === codeMappingId) {
+            this.updateCurrentlyDisplayedVisualisationContent();
+        }
     }
 
     private updateVisualisationMetadata(codeMappingId: number, newMetadata: VisualisationMetadata): void {
@@ -207,8 +209,10 @@ export class VisualisationViewManager {
         data.metadata = newMetadata;
 
         // Possibly update the currently displayed visualisation (if there is one)
-        this.updateCurrentlyDisplayedVisualisationMetadata();
-
+        if (this.currentlyDisplayedVisualisationView?.codeMappingId === codeMappingId) {
+            this.updateCurrentlyDisplayedVisualisationMetadata();
+        }
+        
         // Signal that the availability of the visualisation may have changed
         this.emitVisualisationAvailabilityChangeEvent([codeMappingId]);
     }
