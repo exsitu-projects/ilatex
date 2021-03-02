@@ -283,7 +283,8 @@ function ParseError(message, // The error message
 token) // An object providing position information
 {
   this.position = void 0;
-  var error = "KaTeX parse error: " + message;
+  // var error = "KaTeX parse error: " + message;
+  var error = message;
   var start;
   var loc = token && token.loc;
 
@@ -296,31 +297,31 @@ token) // An object providing position information
     var end = loc.end;
 
     if (start === input.length) {
-      error += " at end of input: ";
+      error += " at end of input";
     } else {
-      error += " at position " + (start + 1) + ": ";
+      error += " at position " + (start + 1);
     } // Underline token in question using combining underscores
 
 
-    var underlined = input.slice(start, end).replace(/[^]/g, "$&\u0332"); // Extract some context from the input and add it to the error
+    // var underlined = input.slice(start, end).replace(/[^]/g, "$&\u0332"); // Extract some context from the input and add it to the error
 
-    var left;
+    // var left;
 
-    if (start > 15) {
-      left = "…" + input.slice(start - 15, start);
-    } else {
-      left = input.slice(0, start);
-    }
+    // if (start > 15) {
+    //   left = "…" + input.slice(start - 15, start);
+    // } else {
+    //   left = input.slice(0, start);
+    // }
 
-    var right;
+    // var right;
 
-    if (end + 15 < input.length) {
-      right = input.slice(end, end + 15) + "…";
-    } else {
-      right = input.slice(end);
-    }
+    // if (end + 15 < input.length) {
+    //   right = input.slice(end, end + 15) + "…";
+    // } else {
+    //   right = input.slice(end);
+    // }
 
-    error += left + underlined + right;
+    // error += left + underlined + right;
   } // Some hackery to make ParseError a prototype of Error
   // See http://stackoverflow.com/a/8460753
 

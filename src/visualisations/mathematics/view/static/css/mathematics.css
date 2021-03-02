@@ -3,6 +3,12 @@
     text-align: center;
 }
 
+[data-visualisation-name="mathematics"] .instructions {
+    margin: 0 0 1ex 0;
+    font-size: 0.8em;
+    text-align: left;
+}
+
 [data-visualisation-name="mathematics"] .complete-math-code {
     padding: 5px;
     background-color: #f7f7f7;
@@ -15,6 +21,12 @@
 
 [data-visualisation-name="mathematics"] .complete-math-code:hover {
     background-color: #e6e6e6;
+}
+
+[data-visualisation-name="mathematics"] .complete-math-code:focus,
+[data-visualisation-name="mathematics"] .complete-math-code:hover:focus {
+    border-color: #FDC34C;
+    background-color: #fff0da;
 }
 
 [data-visualisation-name="mathematics"] .selected-math-region-code {
@@ -47,4 +59,23 @@
 
 [data-visualisation-name="mathematics"] .typeset-math {
     margin: 25px 0 0 0;
+}
+
+[data-visualisation-name="mathematics"] .typeset-math .katex-error {
+    padding: 0 1em;
+    text-align: center;
+}
+
+[data-visualisation-name="mathematics"] .typeset-math .katex-error .error {
+    color: #c71616;
+}
+
+[data-visualisation-name="mathematics"] .typeset-math .katex-error .error pre {
+    display: inline;
+}
+
+[data-visualisation-name="mathematics"] .typeset-math .katex-error .info {
+    margin: 1ex 0 0 0;
+    color: #666;
+    font-size: 0.8em;
 }

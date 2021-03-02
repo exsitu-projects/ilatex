@@ -4,6 +4,7 @@ import { VisualisationViewFactory, VisualisationView } from "../../../webview/vi
 import { WebviewToCoreMessageType } from "../../../shared/messenger/messages";
 import { VisualisationMetadata } from "../../../shared/visualisations/types";
 import { VisualisationViewContext } from "../../../webview/visualisations/VisualisationViewContext";
+import { SelectionRange } from "vscode";
 
 interface MathCodeSplitByRange {
     code: string;
@@ -24,20 +25,26 @@ class MathematicsView extends AbstractVisualisationView {
     private mathCode: string;
     
     private viewNode: HTMLElement;
+    private instructionsNode: HTMLElement;
     private completeMathCodeNode: HTMLElement;
     private typesetMathNode: HTMLElement;
 
-    // References to regions of the typeset maths (or null if there isn't)
     private hoveredMathRegionNode: HTMLElement | null;
-    private selectedMathRegionNode: HTMLElement | null;
+    private mathCodeIsEditable: boolean;
 
     // Unique event callbacks
     private viewClickCallback =
         (event: MouseEvent) => { this.onViewMouseClick(event); };
     private typesetMathMouseMoveCallback =
         (event: MouseEvent) => { this.onTypesetMathMouseMove(event); };
+    private completeMathCodeFocusCallback =
+        (event: FocusEvent) => { this.onCompleteMathCodeFocus(event); };
+    private completeMathCodeBlurCallback =
+        (event: FocusEvent) => { this.onCompleteMathCodeBlur(event); };
     private completeMathCodeInputCallback =
-        (event: Event) => { this.onCompleteMathCodeEdit(event as InputEvent); };  // Casted to bypass the overly-limited type of addEventListener?
+        (event: Event) => { this.onCompleteMathCodeEdit(event as InputEvent); };
+    private completeMathCodeKeydownCallback =
+        (event: KeyboardEvent) => { this.onCompleteMathCodeKeydown(event); };
 
     constructor(contentNode: HTMLElement, metadata: VisualisationMetadata, context: VisualisationViewContext) {
         super(contentNode, metadata, context);
@@ -47,8 +54,13 @@ class MathematicsView extends AbstractVisualisationView {
         this.viewNode = document.createElement("div");
         this.viewNode.classList.add("math-container");
 
+        this.instructionsNode = document.createElement("div");
+        this.instructionsNode.classList.add("instructions");
+        this.viewNode.append(this.instructionsNode);
+
         this.completeMathCodeNode = document.createElement("div");
         this.completeMathCodeNode.classList.add("complete-math-code");
+        this.completeMathCodeNode.setAttribute("contenteditable", "true");
         this.viewNode.append(this.completeMathCodeNode);
 
         this.typesetMathNode = document.createElement("div");
@@ -56,26 +68,21 @@ class MathematicsView extends AbstractVisualisationView {
         this.viewNode.append(this.typesetMathNode);
     
         this.hoveredMathRegionNode = null;
-        this.selectedMathRegionNode = null;
+        this.mathCodeIsEditable = false;
 
+        this.updateInstructionsNode();
         this.updateCompleteMathCodeNode();
         this.updateTypesetMathNode();
 
-        this.startHandlingMouseEvents();
-        this.startHandlingInputEvents();
+        this.startHandlingEvents();
     }
 
     get trimmedMathCode(): string {
-        //return this.contentNode.innerText.trim();
         return this.mathCode.trim();
     }
 
     get someMathRegionIsHovered(): boolean {
         return this.hoveredMathRegionNode !== null;
-    }
-
-    get someMathRegionIsSelected(): boolean {
-        return this.selectedMathRegionNode !== null;
     }
 
     get hoveredMathRegionCodeRange(): [number, number] {
@@ -87,21 +94,8 @@ class MathematicsView extends AbstractVisualisationView {
         return MathematicsView.getMathRegionCodeRangeFrom(this.hoveredMathRegionNode);
     }
 
-    get selectedMathRegionCodeRange(): [number, number] {
-        // If no math region is currently selected, throw an error
-        if (this.selectedMathRegionNode === null) {
-            throw new NoSelectedMathRegionError();
-        }
-
-        return MathematicsView.getMathRegionCodeRangeFrom(this.selectedMathRegionNode);
-    }
-
     get hoveredMathRegionCodeSubset(): string {
         return this.trimmedMathCode.substring(...this.hoveredMathRegionCodeRange);
-    }
-
-    get selectedMathRegionCodeSubset(): string {
-        return this.trimmedMathCode.substring(...this.selectedMathRegionCodeRange);
     }
 
     get mathCodeSplitByHoveredRegion(): MathCodeSplitByRange {
@@ -111,181 +105,65 @@ class MathematicsView extends AbstractVisualisationView {
         );
     }
 
-    get mathCodeSplitBySelectedRegion(): MathCodeSplitByRange {
-        return MathematicsView.splitMathCodeByRange(
-            this.trimmedMathCode,
-            this.selectedMathRegionCodeRange
-        );
+    private updateInstructionsNode(): void {
+        this.instructionsNode.innerHTML = this.mathCodeIsEditable
+            ? `Edit the code and <strong>press 'Enter'</strong> (or click outside the code) to apply the changes.`
+            : `<strong>Click the code</strong> to edit it or <strong>click a symbol</strong> below to select it in the code.`;
     }
 
     private updateCompleteMathCodeNode(): void {
-        // 1. If there are both a selected and a hovered region, highlight each region
-        if (this.someMathRegionIsSelected && this.someMathRegionIsHovered) {
-            // There are five possibilities to consider here...
-            // Note: since the code cannot be edited while a region is being highlighted,
-            // there is no need for conteneditable="true" here!
-            const selectedRegionSplitCode = this.mathCodeSplitBySelectedRegion;
-            const hoveredRegionSplitCode = this.mathCodeSplitByHoveredRegion;
-
-            // 1.1. the hovered region is THE SAME REGION THAN the selected region
-            if (hoveredRegionSplitCode.range[0] === selectedRegionSplitCode.range[0]
-            &&  hoveredRegionSplitCode.range[1] === selectedRegionSplitCode.range[1]) {
-                console.warn("case 1");
-                this.completeMathCodeNode.innerHTML = 
-                    `<span>${selectedRegionSplitCode.codeBefore}</span>` +
-                    `<span class="selected-region-code hovered-region-code">${selectedRegionSplitCode.codeWithin}</span>` +
-                    `<span>${selectedRegionSplitCode.codeAfter}</span>`;
-            }
-            // 1.2. the hovered region is SURROUNDING the selected region
-            else if (hoveredRegionSplitCode.range[0] <= selectedRegionSplitCode.range[0]
-                 &&  hoveredRegionSplitCode.range[1] >= selectedRegionSplitCode.range[1]) {
-                console.warn("case 2");
-                const nonSelectedHoveredRegionCodePrefix = this.trimmedMathCode.substring(
-                    hoveredRegionSplitCode.range[0], selectedRegionSplitCode.range[0]
-                );
-                const nonSelectedHoveredRegionCodeSuffix = this.trimmedMathCode.substring(
-                    selectedRegionSplitCode.range[1], hoveredRegionSplitCode.range[1]
-                );
-
-                this.completeMathCodeNode.innerHTML = 
-                    `<span>${hoveredRegionSplitCode.codeBefore}</span>` +
-                    `<span class="hovered-region-code">${nonSelectedHoveredRegionCodePrefix}` +
-                    `<span class="selected-region-code">${selectedRegionSplitCode.codeWithin}</span>` +
-                    `${nonSelectedHoveredRegionCodeSuffix}</span>` +
-                    `<span>${hoveredRegionSplitCode.codeAfter}</span>`;                
-            }
-            // 1.3. the hovered region is WITHIN the selected region
-            else if (hoveredRegionSplitCode.range[0] >= selectedRegionSplitCode.range[0]
-                 &&  hoveredRegionSplitCode.range[1] <= selectedRegionSplitCode.range[1]) {
-                console.warn("case 3");
-                const nonHoveredSelectedRegionCodePrefix = this.trimmedMathCode.substring(
-                    selectedRegionSplitCode.range[0], hoveredRegionSplitCode.range[0]
-                );
-                const nonHoveredSelectedRegionCodeSuffix = this.trimmedMathCode.substring(
-                    hoveredRegionSplitCode.range[1], selectedRegionSplitCode.range[1]
-                );
-
-                this.completeMathCodeNode.innerHTML = 
-                    `<span>${selectedRegionSplitCode.codeBefore}</span>` +
-                    `<span class="hovered-region-code">${nonHoveredSelectedRegionCodePrefix}` +
-                    `<span class="selected-region-code">${hoveredRegionSplitCode.codeWithin}</span>` +
-                    `${nonHoveredSelectedRegionCodeSuffix}</span>` +
-                    `<span>${selectedRegionSplitCode.codeAfter}</span>`;                   
-            }
-            // 1.4. the hovered region is BEFORE the selected region
-            else if (hoveredRegionSplitCode.range[1] <= selectedRegionSplitCode.range[0]) {
-                console.warn("case 4");
-                const codeBetweenHoveredAndSelectedRegions = this.trimmedMathCode.substring(
-                    hoveredRegionSplitCode.range[1],
-                    selectedRegionSplitCode.range[0]
-                );
-
-                this.completeMathCodeNode.innerHTML = 
-                    `<span>${hoveredRegionSplitCode.codeBefore}</span>` +
-                    `<span class="hovered-region-code">${hoveredRegionSplitCode.codeWithin}</span>` +
-                    `<span>${codeBetweenHoveredAndSelectedRegions}</span>` +
-                    `<span class="selected-region-code">${selectedRegionSplitCode.codeWithin}</span>` +
-                    `<span>${selectedRegionSplitCode.codeAfter}</span>`;    
-            }
-            // 1.5. the hovered region is AFTER the selected region
-            else if (hoveredRegionSplitCode.range[0] >= selectedRegionSplitCode.range[1]) {
-                console.warn("case 5");
-                const codeBetweenSelectedAndHoveredRegions = this.trimmedMathCode.substring(
-                    selectedRegionSplitCode.range[1],
-                    hoveredRegionSplitCode.range[0]
-                );
-
-                this.completeMathCodeNode.innerHTML = 
-                    `<span>${selectedRegionSplitCode.codeBefore}</span>` +
-                    `<span class="selected-region-code">${selectedRegionSplitCode.codeWithin}</span>` +
-                    `<span>${codeBetweenSelectedAndHoveredRegions}</span>` +
-                    `<span class="hovered-region-code">${hoveredRegionSplitCode.codeWithin}</span>` +
-                    `<span>${hoveredRegionSplitCode.codeAfter}</span>`;                    
-            }
-        }
-
-        // 2. If a region is selected but no region is hovered,
-        // highlight the source of the currently SELECTED region AND make the code editable
-        else if (this.someMathRegionIsSelected) {
-            const splitCode = this.mathCodeSplitBySelectedRegion;
-            this.completeMathCodeNode.innerHTML = 
-                `<span contenteditable="true">${splitCode.codeBefore}</span>` +
-                `<span contenteditable="true" class="selected-region-code">${splitCode.codeWithin}</span>` +
-                `<span contenteditable="true">${splitCode.codeAfter}</span>`;
-        }
-
-        // 3. If no region is selected but a region is hovered, highlight the source of the currently HOVERED region
-        else if (this.someMathRegionIsHovered) {
+        // If the math code is not in an editable state and a region is is hovered,
+        // highlight the source of the hovered region
+        if (!this.mathCodeIsEditable && this.someMathRegionIsHovered) {
             const splitCode = this.mathCodeSplitByHoveredRegion;
             this.completeMathCodeNode.innerHTML = 
                 `<span>${splitCode.codeBefore}</span>` +
-                `<span class="selected-region-code">${splitCode.codeWithin}</span>` +
+                `<span class="hovered-region-code">${splitCode.codeWithin}</span>` +
                 `<span>${splitCode.codeAfter}</span>`;
         }
-
-        // 4. Otherwise, if no region is currently hovered nor selected, only display an editable version of the code
+        // Otherwise, simply display the raw code
         else {
-            this.completeMathCodeNode.innerHTML = `<span contenteditable="true">${this.trimmedMathCode}</span>`;
+            this.completeMathCodeNode.innerHTML = `${this.trimmedMathCode}`;
         }
     }
 
     private updateTypesetMathNode(): void {
-        katex.render(this.trimmedMathCode, this.typesetMathNode, {
-            displayMode: true
-        });
-    }
-
-    private deselectMathRegion(): void {
-        if (this.selectedMathRegionNode !== null) {
-            this.selectedMathRegionNode.classList.remove("selected-region");
-            this.selectedMathRegionNode = null;
+        // Try to render the current math code using a custom version of the KaTeX library
+        try {
+            katex.render(this.trimmedMathCode, this.typesetMathNode, {
+                displayMode: true
+            });
+        }
+        // If it fails (i.e. throws an exception), display an appropriate error message instead
+        catch (error) {
+            this.typesetMathNode.innerHTML = `
+                <div class="katex-error">
+                    <div class="error">The math code cannot be parsed by iLaTeX: <pre>${error.message}</pre></div>
+                    <div class="info">Note that iLaTeX may fail at parsing math code that is actually valid (e.g. if you custom math commands).</div>
+                </div>
+            `;
         }
     }
 
-    private onViewMouseClick(event: MouseEvent): void {
-        const targetNode = (event.target as HTMLElement);
-
-        // If the math code node was clicked, ignore this click
-        // (to enable the user to edit code while a region is selected)
-        if (targetNode.closest(".complete-math-code") !== null) {
+    private enterMathCodeEditMode(): void {
+        if (this.mathCodeIsEditable) {
             return;
         }
 
-        // Otherwise, the new selected math region node is the first ancestor
-        // of the clicked element that has source location attributes (if any)
-        this.deselectMathRegion();
-
-        const potentialMathRegionNode = targetNode.closest("[data-source-location-start][data-source-location-end]");
-        if (potentialMathRegionNode !== null) {
-            this.selectedMathRegionNode = potentialMathRegionNode as HTMLElement;
-            this.selectedMathRegionNode.classList.add("selected-region");
-        }
-        
-        // Since the selected math region may have changed, update the view
-        this.updateCompleteMathCodeNode();
+        this.mathCodeIsEditable = true;
+        this.updateInstructionsNode();
     }
 
-    private onTypesetMathMouseMove(event: MouseEvent): void {
-        // The new hovered math region is either the math region below the mouse pointer
-        // (i.e. the first matching ancestor node of the event target exists) or there is none
-        this.hoveredMathRegionNode = null;
-
-        const potentialMathRegionNode = (event.target as HTMLElement)
-            .closest("[data-source-location-start][data-source-location-end]");
-        if (potentialMathRegionNode !== null) {
-            this.hoveredMathRegionNode = potentialMathRegionNode as HTMLElement;
+    private exitMathCodeEditMode(): void {
+        if (!this.mathCodeIsEditable) {
+            return;
         }
-        
-        // In any case, update the view
-        this.updateCompleteMathCodeNode();
-    }
 
-    private onCompleteMathCodeEdit(event: InputEvent): void {
-        // Update the math code and the typeset math
-        this.mathCode = this.completeMathCodeNode.textContent!.trim();
-        this.updateTypesetMathNode();
+        this.mathCodeIsEditable = false;
+        this.updateInstructionsNode();
 
-        // Tell the model the code has been updated
+        // Every time the math code stops being editable,
+        // tell the model to update the code with the last edited version
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
             visualisationUid: this.modelUid,
@@ -296,23 +174,106 @@ class MathematicsView extends AbstractVisualisationView {
         });
     }
 
-    private startHandlingMouseEvents(): void {
+    private onViewMouseClick(event: MouseEvent): void {
+        const targetNode = (event.target as HTMLElement);
+
+        // If the math code node was clicked, ignore this click
+        if (targetNode.closest(".complete-math-code") !== null) {
+            return;
+        }
+
+        // If the clicked node is a part of the display maths
+        // and has an ancestor mapped to a region of the math code,
+        // enter the math code edit mode and select the region of the code
+        // that represents the clicked element
+        const potentialMathRegionNode = targetNode
+            .closest("[data-source-location-start][data-source-location-end]");
+
+        if (potentialMathRegionNode !== null) {
+            const codeRange = MathematicsView.getMathRegionCodeRangeFrom(potentialMathRegionNode as HTMLElement);
+
+            // If the selection fails (e.g. because the indices given by KaTeX are invalid),
+            // enter the edit mode (do nothing if it is already on)
+            try {
+                // Create the range that must be selected in the math code node
+                const rangeOfCodeToSelect = document.createRange();
+                this.completeMathCodeNode.innerHTML = this.completeMathCodeNode.innerText;
+                rangeOfCodeToSelect.setStart(this.completeMathCodeNode.childNodes[0], codeRange[0]);
+                rangeOfCodeToSelect.setEnd(this.completeMathCodeNode.childNodes[0], codeRange[1]);
+
+                // Select the range created above
+                const currentSelection = window.getSelection();
+                currentSelection?.removeAllRanges();
+                currentSelection?.addRange(rangeOfCodeToSelect);
+            }
+            catch (error) {
+                this.enterMathCodeEditMode();
+            }
+        }
+    }
+
+    private onTypesetMathMouseMove(event: MouseEvent): void {
+        // Always reset the hovered region when the mouse moves over the typeset math
+        this.hoveredMathRegionNode = null;
+
+        // If the math code is editable, no hovered region can be highlighted
+        if (this.mathCodeIsEditable) {
+            return;
+        }
+
+        // Update (or remove) the hovered math region
+        const potentialMathRegionNode = (event.target as HTMLElement)
+            .closest("[data-source-location-start][data-source-location-end]");
+
+        if (potentialMathRegionNode !== null) {
+            this.hoveredMathRegionNode = potentialMathRegionNode as HTMLElement;
+        }
+        
+        // Since a region of the code might have started or stopped to be hovered,
+        // update the math code node in any case
+        this.updateCompleteMathCodeNode();
+    }
+
+    private onCompleteMathCodeFocus(event: FocusEvent) {
+        this.enterMathCodeEditMode();
+    }
+
+    private onCompleteMathCodeBlur(event: FocusEvent) {
+        this.exitMathCodeEditMode();
+    }
+
+    private onCompleteMathCodeEdit(event: InputEvent): void {
+        this.mathCode = this.completeMathCodeNode.textContent!.trim();
+        this.updateTypesetMathNode();
+    }
+
+    private onCompleteMathCodeKeydown(event: KeyboardEvent): void {
+        // If the down key is Enter, exit the math code edit mode
+        if (event.key === "Enter") {
+            event.preventDefault();
+            this.exitMathCodeEditMode();
+        }
+    }
+
+    private startHandlingEvents(): void {
         this.viewNode.addEventListener("click", this.viewClickCallback);
         this.typesetMathNode.addEventListener("mousemove", this.typesetMathMouseMoveCallback);
+
+        this.completeMathCodeNode.addEventListener("input", this.completeMathCodeInputCallback);
+        this.completeMathCodeNode.addEventListener("focus", this.completeMathCodeFocusCallback);
+        this.completeMathCodeNode.addEventListener("blur", this.completeMathCodeBlurCallback);
+        this.completeMathCodeNode.addEventListener("keydown", this.completeMathCodeKeydownCallback);
     }
 
-    private stopHandlingMouseEvents(): void {
+    private stopHandlingEvents(): void {
         this.viewNode.removeEventListener("click", this.viewClickCallback);
         this.typesetMathNode.removeEventListener("mousemove", this.typesetMathMouseMoveCallback);
-    }
-
-    private startHandlingInputEvents(): void {
-        this.completeMathCodeNode.addEventListener("input", this.completeMathCodeInputCallback);
-    }
-
-    private stopHandlingInputEvents(): void {
+    
         this.completeMathCodeNode.removeEventListener("input", this.completeMathCodeInputCallback);
-    }
+        this.completeMathCodeNode.removeEventListener("focus", this.completeMathCodeFocusCallback);
+        this.completeMathCodeNode.removeEventListener("blur", this.completeMathCodeBlurCallback);
+        this.completeMathCodeNode.removeEventListener("keydown", this.completeMathCodeKeydownCallback);
+    }        
 
     render(): HTMLElement {
         return this.viewNode;
@@ -322,12 +283,16 @@ class MathematicsView extends AbstractVisualisationView {
         this.contentNode = newContentNode;
         this.mathCode = this.contentNode.innerText;
 
-        // Deselect the currently selected math region (if any) and update related nodes
-        this.selectedMathRegionNode = null;
-
-        this.updateCompleteMathCodeNode();
+        // Reset currently hovered/selected math region (if any) and update various parts od the visualisation
+        this.hoveredMathRegionNode = null;
+        
         this.updateTypesetMathNode();
+        this.updateCompleteMathCodeNode();
     };
+
+    onBeforeVisualisationRemoval(): void {
+        this.stopHandlingEvents();
+    }
 
     // Get a source location offset from a math region node
     // Note: the offsets are actually computed by KaTeX's lexer
