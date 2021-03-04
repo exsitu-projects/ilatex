@@ -29,7 +29,12 @@ export class TaskDebouncer {
     private runTask(task: Task): void {
         this.timeout = setTimeout(async () => {
             this.isRunningTask = true;
-            await task();
+            try {
+                await task();
+            }
+            catch (error) {
+                console.error("An error occured while running a task in a debouncer:", error);
+            }
             this.isRunningTask = false;
 
             this.timeout = null;

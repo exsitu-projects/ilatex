@@ -25,7 +25,12 @@ export class TaskThrottler {
     private async run(task: Task): Promise<void> {
         this.isRunningTask = true;
 
-        await task();
+        try {
+            await task();
+        }
+        catch (error) {
+            console.error("An error occured while running a task in a throttler:", error);
+        }
 
         setTimeout(async () => {
             if (this.nextTask) {

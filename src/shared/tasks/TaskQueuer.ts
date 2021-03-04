@@ -27,7 +27,12 @@ export class TaskQueuer {
         this.isRunningTask = true;
 
         const nextTask = this.queue.shift();
-        await nextTask!();
+        try {
+            await nextTask!();
+        }
+        catch (error) {
+            console.error("An error occured while running a task in a queuer:", error);
+        }
 
         await this.runAllTasks();
 

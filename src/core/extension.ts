@@ -28,12 +28,14 @@ function createIlatexInstanceForRootDocument(document: vscode.TextDocument): Pro
 	return InteractiveLatex.fromMainLatexDocument(document, webviewPanel)
 		.then(ilatex => {
 			webviewPanel.onDidDispose(() => {
-				ilatex.webviewManager.dispose();
+				console.info(`The iLaTeX instance for root document "${path.basename(document.uri.path)}" will be removed...`);
+
+				ilatex.dispose();
 
 				rootLatexDocumentPathsToIlatexInstances.delete(document.uri.path);
 				vscode.commands.executeCommand("setContext", "ilatex:hasActiveInstances", rootLatexDocumentPathsToIlatexInstances.size > 0);
 
-				console.info(`The iLaTeX instance for root LaTeX document ${path.basename(document.uri.path)} has been removed (after its webview panel has been closed).`);
+				console.info(`The iLaTeX instance for root document "${path.basename(document.uri.path)}" has been removed (its webview panel was closed).`);
 			});
 
 			return ilatex;

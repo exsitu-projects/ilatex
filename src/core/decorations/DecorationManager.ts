@@ -32,6 +32,8 @@ export class DecorationManager {
     dispose(): void {
         this.codeLensProviderDisposable.dispose();
         this.stopObservingEventsThatTriggerRedecoration();
+
+        this.removeVisualisationDecorationsFromVisibleEditors();
     }
 
     private createCodeLensesProvider(): vscode.Disposable {
@@ -125,6 +127,14 @@ export class DecorationManager {
 
     redecorateVisibleEditors(): void {
         this.redecorateVisibleEditorsWithVisualisations(this.ilatex.visualisationModelManager.models);
+    }
+
+    private removeVisualisationDecorationsFromVisibleEditors(): void {
+        // Redecorate each visible editor as if there was no model
+        // (to remove every existing visualisable code decorations)
+        for (let editor of vscode.window.visibleTextEditors) {
+            this.redecorateEditorWithVisualisations(editor, []);
+        }
     }
 
     private startObservingEventsThatTriggerRedecoration(): void {

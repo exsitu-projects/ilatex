@@ -40,14 +40,9 @@ export class InteractiveLatex {
 
     private async init(): Promise<void> {
         await this.recompileAndUpdate();
-
-        // Once visualisations have been created, start to decorate editors
-        this.decorationManager.redecorateVisibleEditors();
     }
 
     dispose(): void {
-        console.warn(`iLaTeX instance for root document ${this.mainSourceFileUri.path} is about to be disposed...`);
-
         this.codeMappingManager.dispose();
         this.pdfManager.dispose();
         this.webviewManager.dispose();

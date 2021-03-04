@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { MessageHandler } from "../../shared/messenger/AbstractMessenger";
-import { CoreToWebviewMessageType, NotifyVisualisationModelMessage, WebviewToCoreMessage, WebviewToCoreMessageType } from "../../shared/messenger/messages";
+import { CoreToWebviewMessage, CoreToWebviewMessageType, NotifyVisualisationModelMessage, WebviewToCoreMessage, WebviewToCoreMessageType } from "../../shared/messenger/messages";
 import { TaskQueuer } from "../../shared/tasks/TaskQueuer";
 import { InteractiveLatex } from "../InteractiveLaTeX";
 import { ExtensionFileReader } from "../utils/FileReader";
@@ -15,6 +15,9 @@ export class WebviewManager {
     private webview: vscode.Webview;
     private messenger: WebviewMessenger;
 
+    private webviewPanelHasBeenDisposed: boolean;
+
+    private webviewPanelDidDisposeObserverDisposable: vscode.Disposable;
     private webviewPanelStateChangeObserverDisposable: vscode.Disposable;
 
     constructor(ilatex: InteractiveLatex, webviewPanel: vscode.WebviewPanel) {
@@ -22,8 +25,15 @@ export class WebviewManager {
         this.webviewPanel = webviewPanel;
         this.webview = webviewPanel.webview;
 
-        this.messenger = new WebviewMessenger(this.webview);
+        this.messenger = new WebviewMessenger(webviewPanel);
         this.messenger.startHandlingMessages();
+
+
+        this.webviewPanelHasBeenDisposed = false;
+        this.webviewPanelDidDisposeObserverDisposable = webviewPanel.onDidDispose(() => {
+            this.webviewPanelHasBeenDisposed = true;
+            this.messenger.stopHandlingMessages();
+        });
 
         this.webviewPanelStateChangeObserverDisposable = this.webviewPanel.onDidChangeViewState(event => {
             // If the webview panel becomes visible again, force update the PDF and the visualisations.
@@ -32,7 +42,7 @@ export class WebviewManager {
             // (see retainContextWhenHidden in https://code.visualstudio.com/api/references/vscode-api#WebviewPanelOptions).
             if (event.webviewPanel.visible) {
                 this.sendNewPDF(); // TODO: not if the last compilation failed
-                this.sendNewVisualisationDataForAllModels();
+                this.sendNewVisualisationContentAndMetadataForAllModels();
             };
         });
         
@@ -86,6 +96,7 @@ export class WebviewManager {
 
     dispose(): void {
         this.messenger.stopHandlingMessages();
+        this.webviewPanelDidDisposeObserverDisposable.dispose();
         this.webviewPanelStateChangeObserverDisposable.dispose();
     }
 
@@ -95,16 +106,50 @@ export class WebviewManager {
     }
 
     createWebviewSafeUri(uri: vscode.Uri): vscode.Uri {
+        if (this.webviewPanelHasBeenDisposed) {
+            console.warn(`The webview safe URI cannot be created: the panel of the messenger's webview has been disposed.`);
+            return uri;
+        }
+
         return this.webview.asWebviewUri(uri);
     }
 
-    sendNewVisualisationContentFor(model: VisualisationModel): void {
-        console.info("📦 Sending new content for one visualisation to the webview.");
+    private sendMessageIfWebviewIsAvailable(message: CoreToWebviewMessage): void {
+        if (this.webviewPanelHasBeenDisposed) {
+            console.warn(`The message ("${message.type}") cannot be sent: the panel of the messenger's webview has been disposed.`);
+            return;
+        }
 
-        this.messenger.sendMessage({
-            type: CoreToWebviewMessageType.UpdateVisualisationContent,
+        this.messenger.sendMessage(message);
+    }
+
+    sendNewPDF(): void {
+        console.info("📦 Sending a new PDF to the webview.");
+        const pdfUri = this.ilatex.pdfManager.pdfUri;
+
+        this.sendMessageIfWebviewIsAvailable({
+            type: CoreToWebviewMessageType.UpdatePDF,
+            pdfUri: this.createWebviewSafeUri(pdfUri).toString()
+        });
+    }
+
+    sendNewPDFCompilationStatus(pdfIsCurrentylCompiled: boolean, lastCompilationFailed: boolean = false): void {
+        console.info("📦 Sending a new PDF compilation status to the webview.");
+
+        this.sendMessageIfWebviewIsAvailable({
+            type: CoreToWebviewMessageType.UpdateCompilationStatus,
+            pdfIsCurrentlyCompiled: pdfIsCurrentylCompiled,
+            lastCompilationFailed: lastCompilationFailed
+        });        
+    }
+
+    sendNewVisualisationMetadataFor(model: VisualisationModel): void {
+        console.info("📦 Sending new metadata for one visualisation to the webview.");
+
+        this.sendMessageIfWebviewIsAvailable({
+            type: CoreToWebviewMessageType.UpdateVisualisationMetadata,
             codeMappingId: model.codeMapping.id,
-            contentAsHtml: model.content
+            metadata: model.metadata
         });
     }
 
@@ -114,14 +159,13 @@ export class WebviewManager {
         }
     }
 
-    sendNewVisualisationMetadataFor(model: VisualisationModel): void {
-        console.info("📦 Sending new metadata for one visualisation to the webview.");
-        const newContent = this.ilatex.visualisationModelManager.contentOfAllModels;
+    sendNewVisualisationContentFor(model: VisualisationModel): void {
+        console.info("📦 Sending new content for one visualisation to the webview.");
 
-        this.messenger.sendMessage({
-            type: CoreToWebviewMessageType.UpdateVisualisationMetadata,
+        this.sendMessageIfWebviewIsAvailable({
+            type: CoreToWebviewMessageType.UpdateVisualisationContent,
             codeMappingId: model.codeMapping.id,
-            metadata: model.metadata
+            contentAsHtml: model.content
         });
     }
 
@@ -131,30 +175,10 @@ export class WebviewManager {
         }
     }
 
-    sendNewVisualisationDataForAllModels(): void {
+    sendNewVisualisationContentAndMetadataForAllModels(): void {
         for (let model of this.ilatex.visualisationModelManager.models) {
             this.sendNewVisualisationContentFor(model);
             this.sendNewVisualisationMetadataFor(model);
         }        
-    }
-
-    sendNewPDF(): void {
-        console.info("📦 Sending a new PDF to the webview.");
-        const pdfUri = this.ilatex.pdfManager.pdfUri;
-
-        this.messenger.sendMessage({
-            type: CoreToWebviewMessageType.UpdatePDF,
-            pdfUri: this.createWebviewSafeUri(pdfUri).toString()
-        });
-    }
-
-    sendNewPDFCompilationStatus(pdfIsCurrentylCompiled: boolean, lastCompilationFailed: boolean = false): void {
-        console.info("📦 Sending a new PDF compilation status to the webview.");
-
-        this.messenger.sendMessage({
-            type: CoreToWebviewMessageType.UpdateCompilationStatus,
-            pdfIsCurrentlyCompiled: pdfIsCurrentylCompiled,
-            lastCompilationFailed: lastCompilationFailed
-        });        
     }
 }
