@@ -40,7 +40,7 @@ export class CommandNode extends ASTNode {
     }
 
     get nameEnd(): SourceFilePosition {
-        return this.range.from.with({ column: this.name.length + 1 });
+        return this.range.from.withTranslation({ column: this.name.length + 1 });
     }
 
     get childNodes(): ASTNode[] {

@@ -47,6 +47,13 @@ export class SourceFileRange {
         };
     }
 
+    with(partialRange: Partial<Record<"from" | "to", SourceFilePosition>>): SourceFileRange {
+        return new SourceFileRange(
+            partialRange.from ?? this.from,
+            partialRange.to ?? this.to,
+        );
+    }
+
     toString(): string {
         return `${this.from} –> ${this.to}`;
     }

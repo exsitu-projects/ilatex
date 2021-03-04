@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import * as P from "parsimmon";
 import { RawSourceFilePosition } from "../../shared/source-files/types";
+import { SourceFileRange } from "./SourceFileRange";
 
 
 /** Value representing an unspecified offset for a position in code. */
@@ -95,10 +96,26 @@ export class SourceFilePosition {
 
     with(partialPosition: Partial<Record<"line" | "column" | "offset", number>>): SourceFilePosition {
         return new SourceFilePosition(
-            this.line + (partialPosition["line"] ?? 0),
-            this.column + (partialPosition["column"] ?? 0),
-            this.offset + (partialPosition["offset"] ?? 0)
+            partialPosition.line ?? this.line,
+            partialPosition.column ?? this.column,
+            partialPosition.offset ?? this.offset
         );
+    }
+
+    withTranslation(partialTranslation: Partial<Record<"line" | "column" | "offset", number>>): SourceFilePosition {
+        return new SourceFilePosition(
+            this.line + (partialTranslation.line ?? 0),
+            this.column + (partialTranslation.column ?? 0),
+            this.offset + (partialTranslation.offset ?? 0)
+        );
+    }
+
+    rangeFrom(startPosition: SourceFilePosition): SourceFileRange {
+        return new SourceFileRange(startPosition, this);
+    }
+
+    rangeTo(endPosition: SourceFilePosition): SourceFileRange {
+        return new SourceFileRange(this, endPosition);
     }
 
     toString(): string {
