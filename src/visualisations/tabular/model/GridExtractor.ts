@@ -30,6 +30,7 @@ export class GridExtractor extends ASTAsyncVisitorAdapter {
     async createGrid(): Promise<Grid> {
         return new Grid(
             this.rows,
+            this.unusedVisitedNodes,
             await GridOptions.from(this.tabularNode)
         );
     }

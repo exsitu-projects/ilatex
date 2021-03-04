@@ -9,6 +9,7 @@ import { SourceFileRange } from "../../../core/source-files/SourceFileRange";
 import { ArrayUtils } from "../../../shared/utils/ArrayUtils";
 import { EnvironmentNode } from "../../../core/ast/nodes/EnvironmentNode";
 import { GridOptions } from "./GridOptions";
+import { SpecialSymbolNode } from "../../../core/ast/nodes/SpecialSymbolNode";
 
 export class NoNodeError extends Error {}
 export class NoContentError extends Error {}
@@ -55,6 +56,19 @@ export class Cell {
         return this.astNodes.some(Cell.isContentNode);
     }
 
+    get isFollowedBySeparator(): boolean {
+        if (!this.nextAstNode) {
+            return false;
+        }
+
+        return (this.nextAstNode instanceof SpecialSymbolNode && this.nextAstNode.symbol === "&")
+            || (this.nextAstNode instanceof CommandNode && this.nextAstNode.name === "\\");
+    }
+
+    get followingSeparatorNode(): ASTNode | null {
+        return this.isFollowedBySeparator ? this.nextAstNode : null;
+    }
+
     get start(): SourceFilePosition {
         const firstNode = this.astNodes[0];
         if (firstNode) {
@@ -95,6 +109,13 @@ export class Cell {
         return new SourceFileRange(
             this.start,
             this.end
+        );
+    }
+
+    get rangeWithFinalSeparator(): SourceFileRange {
+        return new SourceFileRange(
+            this.start,
+            this.followingSeparatorNode?.range.to ?? this.end
         );
     }
 
@@ -225,6 +246,15 @@ export class Row {
         return this.cells.length;
     }
 
+    get range(): SourceFileRange {
+        return this.firstCell.start.rangeTo(this.lastCell.end);
+    }
+
+    get rangeWithLastFollowingSeparator(): SourceFileRange {
+        const endPosition = this.lastCell.followingSeparatorNode?.range.to ?? this.lastCell.end;
+        return this.firstCell.start.rangeTo(endPosition);
+    }
+
     get containsNodes(): boolean {
         return this.cells.some(cell => cell.containsNodes);
     }
@@ -233,7 +263,19 @@ export class Row {
         return this.cells.some(cell => cell.containsContentNodes);
     }
 
+    get firstCell(): Cell {
+        if (this.nbCells === 0) {
+            throw new NoNodeError();
+        }
+
+        return this.cells[0];
+    }
+
     get lastCell(): Cell {
+        if (this.nbCells === 0) {
+            throw new NoNodeError();
+        }
+
         return this.cells[this.cells.length - 1];
     }
 
@@ -244,10 +286,12 @@ export class Row {
 
 export class Grid {
     readonly rows: Row[];
+    readonly nodesAfterLastRow: ASTNode[];
     readonly options: GridOptions;
 
-    constructor(rows: Row[], options: GridOptions) {
+    constructor(rows: Row[], nodesAfterLastRow: ASTNode[], options: GridOptions) {
         this.rows = rows;
+        this.nodesAfterLastRow = nodesAfterLastRow;
         this.options = options;
     }
 
@@ -257,6 +301,10 @@ export class Grid {
 
     get lastRow(): Row {
         return this.rows[this.rows.length - 1];
+    }
+
+    get hasNodeAfterLastRow(): boolean {
+        return this.nodesAfterLastRow.length > 0;
     }
 
     static async from(tabularNode: EnvironmentNode): Promise<Grid> {

@@ -187,10 +187,12 @@ class TabularView extends AbstractVisualisationView {
 
             afterRemoveRow(index, amount, source) {
                 console.log("Remove row at index", index);
+                self.deleteDocumentRow(index);
             },
 
             afterRemoveCol(index, amount, source) {
                 console.log("Remove col at index", index);
+                self.deleteDocumentColumn(index);
             }
         };
 
@@ -258,6 +260,28 @@ class TabularView extends AbstractVisualisationView {
         });
     }
 
+    private deleteDocumentRow(rowIndex: number): void {
+        this.messenger.sendMessage({
+            type: WebviewToCoreMessageType.NotifyVisualisationModel,
+            visualisationUid: this.modelUid,
+            title: "delete-row",
+            notification: {
+                rowIndex: rowIndex
+            }
+        });
+    }
+
+    private deleteDocumentColumn(columnIndex: number): void {
+        this.messenger.sendMessage({
+            type: WebviewToCoreMessageType.NotifyVisualisationModel,
+            visualisationUid: this.modelUid,
+            title: "delete-column",
+            notification: {
+                columnIndex: columnIndex
+            }
+        });
+    }
+
     private moveDocumentRow(oldRowIndex: number, newRowIndex: number): void {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
@@ -306,13 +330,6 @@ class TabularView extends AbstractVisualisationView {
         }
 
         this.handsontableMutationObserver.disconnect();
-    }
-
-    onAfterVisualisationErrorRemoval(): void {
-        // When an error is removed, the table will become visible again
-        // In order to ensure it is displayed correctly, this hook is used
-        // to force update the dimensions of the table container
-        this.resizeHandsontableContainer();
     }
 
     // Note: this requires the table to be appended to the DOM
@@ -371,14 +388,23 @@ class TabularView extends AbstractVisualisationView {
 
         // Populate the new container with a new table
         this.generateNewHandsontable();
+        this.resizeHandsontableContainer();
     }
 
     onAfterVisualisationDisplay(): void {
         this.generateNewHandsontable();
+        this.resizeHandsontableContainer();
     }
 
     onBeforeVisualisationRemoval(): void {
         this.destroyCurrentHandsontable();
+    }
+
+    onAfterVisualisationErrorRemoval(): void {
+        // When an error is removed, the table will become visible again
+        // In order to ensure it is displayed correctly, this hook is used
+        // to force update the dimensions of the table container
+        this.resizeHandsontableContainer();
     }
 }
 

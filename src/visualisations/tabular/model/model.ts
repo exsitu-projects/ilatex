@@ -8,6 +8,8 @@ import { HtmlUtils } from "../../../shared/utils/HtmlUtils";
 import { SourceFileRange } from "../../../core/source-files/SourceFileRange";
 import { SourceFilePosition } from "../../../core/source-files/SourceFilePosition";
 import { MathUtils } from "../../../shared/utils/MathUtils";
+import { ASTNode } from "../../../core/ast/nodes/ASTNode";
+import { WhitespaceNode } from "../../../core/ast/nodes/WhitespaceNode";
 
 
 export class NoGridError {}
@@ -55,7 +57,6 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
                 title: "add-column",
                 handler: async payload => {
                     const { newColumnIndex } = payload;
-                    // console.info(`column ${oldColumnIndex} => column ${newColumnIndex}`);
 
                     await this.addColumn(newColumnIndex);
                     this.registerChangeRequestedByTheView();
@@ -65,9 +66,26 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
                 title: "add-row",
                 handler: async payload => {
                     const { newRowIndex } = payload;
-                    // console.info(`row ${oldRowIndex} => row ${newRowIndex}`);
 
                     await this.addRow(newRowIndex);
+                    this.registerChangeRequestedByTheView();
+                }
+            },
+            {
+                title: "delete-column",
+                handler: async payload => {
+                    const { columnIndex } = payload;
+
+                    await this.deleteColumn(columnIndex);
+                    this.registerChangeRequestedByTheView();
+                }
+            },
+            {
+                title: "delete-row",
+                handler: async payload => {
+                    const { rowIndex } = payload;
+
+                    await this.deleteRow(rowIndex);
                     this.registerChangeRequestedByTheView();
                 }
             },
@@ -179,6 +197,93 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
         
         await this.astNode.makeAtomicChangeWithinNode([
             editBuilder => editBuilder.insert(insertPosition.asVscodePosition, contentToInsert)
+        ]);
+    }
+
+    private async deleteColumn(columnIndex: number): Promise<void> {
+        if (!this.grid) {
+            return;
+        }
+
+        const rangesToDelete: SourceFileRange[] = [];
+        const rowsToDelete: Row[] = [];
+
+        const rows = this.grid.rows;
+        for (let row of rows) {
+            const cellToDelete = row.cells[columnIndex];
+
+            // If the current row does not have a cell with the given column index, skip the row
+            if (!cellToDelete) {
+                continue;
+            }
+            
+            const isFirstCell = columnIndex === 0;
+            const isLastCell = columnIndex === row.cells.length - 1;
+
+            if (isLastCell) {
+                // 1.1. If this is the only cell of the row, simply delete the whole row
+                if (isFirstCell) {
+                    rowsToDelete.push(row);
+                }
+                // 1.2. If it not the only cell of the row, delete the cell and the preceeding separator
+                else {
+                    const previousCellSeparatorStart = row.cells[columnIndex - 1].followingSeparatorNode!.range.from;
+                    rangesToDelete.push(previousCellSeparatorStart.rangeTo(cellToDelete.end));
+                }
+            }
+            // 2. Otherwise, delete the cell and the following separator
+            else {
+                rangesToDelete.push(cellToDelete.rangeWithFinalSeparator);
+            }
+        }
+
+        await this.astNode.makeAtomicChangeWithinNode([
+            editBuilder => {
+                // First, delete ranges that preserve the number of rows
+                rangesToDelete.forEach(range => editBuilder.delete(range.asVscodeRange));
+
+                // TODO: delete lines
+            }
+        ]);
+    }
+
+    private async deleteRow(rowIndex: number): Promise<void> {
+        if (!this.grid) {
+            return;
+        }
+
+        const rows = this.grid.rows;
+        const rowToDelete = this.grid.rows[rowIndex];
+
+        if (!rowToDelete) {
+            console.warn(`The row cannot be deleted: there is no row with index ${rowIndex}.`);
+            return;
+        }
+        
+        const isLastRow = rowIndex === rows.length - 1;
+        const nextRow = rows[rowIndex + 1];
+
+        // Delete the row with the given index from the start of the content of the first cell to
+        // - the end of the following separator if it is the last row of the grid/there is no whitespace after, or
+        // - the end of the whitespace following the following separator otherwise
+        let endOfRangeToDelete = rowToDelete.rangeWithLastFollowingSeparator.to;
+        if (!isLastRow && nextRow.firstCell.hasLeadingWhitespace) {
+            endOfRangeToDelete = nextRow.firstCell.astNodes[0].range.to;
+        }
+        else if (isLastRow && this.grid.hasNodeAfterLastRow) {
+            const firstNodeAfterLastRow = this.grid.nodesAfterLastRow[0];
+            if (firstNodeAfterLastRow instanceof WhitespaceNode) {
+                endOfRangeToDelete = firstNodeAfterLastRow.range.to;
+            }
+        }
+
+        const rangeToDelete = new SourceFileRange(
+            rowToDelete.firstCell.contentStart,
+            endOfRangeToDelete
+        );
+        
+        await this.astNode.makeAtomicChangeWithinNode([
+            editBuilder => editBuilder.delete(rangeToDelete.asVscodeRange)
         ]);
     }
 
@@ -403,6 +508,8 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
             })
         ]);
     }
+
+    
     
     protected async updateContentData(): Promise<void> {
         try {
