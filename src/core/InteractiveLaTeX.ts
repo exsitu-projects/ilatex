@@ -59,22 +59,26 @@ export class InteractiveLatex {
     // TODO: use a queue
     // Recompile the document and update everything
     async recompileAndUpdate(): Promise<void> {
-        // 1. Recompile the PDF and update it in the webview
-        await this.pdfManager.recompilePDFAndUpdateWebview();
-        
-        // 2. Update the code mappings from the new code mapping file
-        this.codeMappingManager.updateCodeMappingsFromLatexGeneratedFile();
+        try {
+            // 1. Recompile the PDF and update it in the webview
+            await this.pdfManager.recompilePDFAndUpdateWebview();
+            
+            // 2. Update the code mappings from the new code mapping file
+            this.codeMappingManager.updateCodeMappingsFromLatexGeneratedFile();
 
-        // 3. Update the source files
-        // TODO: use another way to update source files (not just from code mappings...)
-        await this.sourceFileManager.updateSourceFilesFromCodeMappings();
+            // 3. Update the source files
+            // TODO: use another way to update source files (not just from code mappings...)
+            await this.sourceFileManager.updateSourceFilesFromCodeMappings();
 
-        // 4. Update the visualisations (models + views in the webview)
-        await this.visualisationModelManager.extractNewModels();
-        // this.webviewManager.sendNewContentForAllVisualisations();
+            // 4. Update the visualisations (models + views in the webview)
+            await this.visualisationModelManager.extractNewModels();
 
-        // 5. Update the decorations in the editor
-        this.decorationManager.redecorateVisibleEditors();
+            // 5. Update the decorations in the editor
+            this.decorationManager.redecorateVisibleEditors();
+        }
+        catch (error) {
+            console.error("An unexpected error occured during the re-compilation/update phase of iLaTeX:", error);
+        }
     }
 
     static fromMainLatexDocument(mainLatexDocument: vscode.TextDocument, webviewPanel: vscode.WebviewPanel): Promise<InteractiveLatex> {
