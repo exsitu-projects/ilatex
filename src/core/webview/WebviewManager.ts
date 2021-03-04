@@ -25,7 +25,7 @@ export class WebviewManager {
         this.webviewPanel = webviewPanel;
         this.webview = webviewPanel.webview;
 
-        this.messenger = new WebviewMessenger(webviewPanel);
+        this.messenger = new WebviewMessenger(this.webview);
         this.messenger.startHandlingMessages();
 
 
