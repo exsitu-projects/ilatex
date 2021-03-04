@@ -143,6 +143,26 @@ export class Cell {
         );
     }
 
+    get hasLeadingNonContentNodes(): boolean {
+        return this.containsNodes
+            && this.astNodes[0] !== this.firstContentNode;
+    }
+
+    get hasTrailingNonContentNodes(): boolean {
+        return this.containsNodes
+            && this.astNodes[this.astNodes.length - 1] !== this.lastContentNode;
+    }
+
+    get hasLeadingWhitespace(): boolean {
+        return this.containsNodes
+            && this.astNodes[0] instanceof WhitespaceNode;
+    }
+
+    get hasTrailingWhitespace(): boolean {
+        return this.containsNodes
+            && this.astNodes[this.astNodes.length - 1] instanceof WhitespaceNode;
+    }
+
     private static firstContentNodeOf(nodes: ASTNode[]): ASTNode | null {
         const result = ArrayUtils.firstMatch(nodes, Cell.isContentNode);
         return result.success ? result.element : null;

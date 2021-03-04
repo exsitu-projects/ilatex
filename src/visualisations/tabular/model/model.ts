@@ -6,6 +6,8 @@ import { VisualisationModelUtilities } from "../../../core/visualisations/Visual
 import { Cell, Grid, Row } from "./Grid";
 import { HtmlUtils } from "../../../shared/utils/HtmlUtils";
 import { SourceFileRange } from "../../../core/source-files/SourceFileRange";
+import { SourceFilePosition } from "../../../core/source-files/SourceFilePosition";
+import { MathUtils } from "../../../shared/utils/MathUtils";
 
 
 export class NoGridError {}
@@ -50,6 +52,26 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
                 }
             },
             {
+                title: "add-column",
+                handler: async payload => {
+                    const { newColumnIndex } = payload;
+                    // console.info(`column ${oldColumnIndex} => column ${newColumnIndex}`);
+
+                    await this.addColumn(newColumnIndex);
+                    this.registerChangeRequestedByTheView();
+                }
+            },
+            {
+                title: "add-row",
+                handler: async payload => {
+                    const { newRowIndex } = payload;
+                    // console.info(`row ${oldRowIndex} => row ${newRowIndex}`);
+
+                    await this.addRow(newRowIndex);
+                    this.registerChangeRequestedByTheView();
+                }
+            },
+            {
                 title: "move-column",
                 handler: async payload => {
                     const { oldColumnIndex, newColumnIndex } = payload;
@@ -87,6 +109,76 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
     private async replaceCellContent(cell: Cell, newContent: string): Promise<void> {
         await this.astNode.makeAtomicChangeWithinNode([
             editBuilder => editBuilder.replace(cell.contentRange.asVscodeRange, newContent)
+        ]);
+    }
+
+    private async addColumn(newColumnIndex: number): Promise<void> {
+        // TODO: handle the special case of an empty grid?
+        if (!this.grid) {
+            return;
+        }
+
+        // TODO: add a column type BEFORE inserting the new cells
+
+        const textInsertions: {position: SourceFilePosition, content: string}[] = [];
+        const rows = this.grid.rows;
+        
+        for (let row of rows) {
+            const isNewFirstCellOfRow = newColumnIndex === 0;
+            const isNewLastCellOfRow = newColumnIndex > row.lastCell.columnIndex;
+            const insertPosition = isNewLastCellOfRow
+                ? row.lastCell.range.to // insert after the last cell
+                : isNewFirstCellOfRow
+                    ? row.cells[newColumnIndex].contentStart // insert before the content of the 1st cell of the row
+                    : row.cells[newColumnIndex].range.from; // insert before the next cell
+
+            const leadingWhitespace = isNewFirstCellOfRow
+                ? ""
+                : isNewLastCellOfRow && row.lastCell.hasTrailingWhitespace
+                    ? ""
+                    : " ";
+            const contentToInsert = isNewLastCellOfRow
+                ? `${leadingWhitespace}& ~ `
+                : `${leadingWhitespace}~ & `;
+            
+            textInsertions.push({
+                position: insertPosition,
+                content: contentToInsert
+            });
+        }
+
+        await this.astNode.makeAtomicChangeWithinNode([
+            editBuilder => textInsertions.forEach(({position, content}) => {
+                editBuilder.replace(position.asVscodePosition, content);
+            })
+        ]);
+    }
+
+    private async addRow(newRowIndex: number): Promise<void> {
+        // TODO: handle the special case of an empty grid?
+        if (!this.grid) {
+            return;
+        }
+
+        const rows = this.grid.rows;
+
+        const isNewLastRow = newRowIndex > this.grid.lastRow.rowIndex;
+        const insertPosition = isNewLastRow
+            ? this.grid.lastRow.lastCell.range.to
+            : rows[newRowIndex].cells[0].range.from;
+
+        const nbColumnTypes = this.grid.options.columnTypes.length;
+        const referenceRowForLeadingWhitespaceToInsert = rows[MathUtils.clamp(0, newRowIndex, rows.length - 1)];
+        const leadingWhitespaceToInsert = (await this.sourceFile.getContent(
+            new SourceFileRange(
+                referenceRowForLeadingWhitespaceToInsert.cells[0].range.from,
+                referenceRowForLeadingWhitespaceToInsert.cells[0].contentStart
+            )
+        ));
+        const contentToInsert = `${leadingWhitespaceToInsert}~ ${"& ~ ".repeat(Math.max(0, nbColumnTypes - 1))}\\\\`;
+        
+        await this.astNode.makeAtomicChangeWithinNode([
+            editBuilder => editBuilder.insert(insertPosition.asVscodePosition, contentToInsert)
         ]);
     }
 

@@ -41,14 +41,12 @@ class TabularView extends AbstractVisualisationView {
         this.columnDetails = this.extractColumnDetails();
         this.tableContent = this.extractTableContent();
 
-        this.handsontableContainerNode = document.createElement("div");
         this.handsontableContainerNode = this.createHandsontableContainer();
         this.viewNode = document.createElement("div");
         this.viewNode.append(this.handsontableContainerNode);
 
         this.handsontableInstance = null;
         this.handsontableMutationObserver = null; 
-        this.generateNewHandsontable();
     }
 
     // Extract column definitions from the table header
@@ -103,13 +101,23 @@ class TabularView extends AbstractVisualisationView {
         return new Handsontable(this.handsontableContainerNode, {
             data: this.tableContent,
 
-            colHeaders: (index: number) => this.columnDetails[index].type,
-            rowHeaders: Array(this.tableContent.length).fill(" "),
+            colHeaders: (index: number) => index < this.columnDetails.length ? this.columnDetails[index].type : "<default>",
+            rowHeaders: (index: number) => "",
 
             stretchH: "all",
             selectionMode: "single",
             manualColumnMove: true,
             manualRowMove: true,
+
+            contextMenu: [
+                "row_above",
+                "row_below",
+                "col_left",
+                "col_right",
+                "---------",
+                "remove_row",
+                "remove_col"
+            ],
             
             licenseKey: "non-commercial-and-evaluation"
         });
@@ -165,6 +173,24 @@ class TabularView extends AbstractVisualisationView {
                     rowIndex: row,
                     columnIndex: column,
                 });
+            },
+
+            afterCreateRow(index, amount, source) {
+                console.log("Create row at index", index);
+                self.addDocumentRow(index);
+            },
+
+            afterCreateCol(index, amount, source) {
+                console.log("Create col at index", index);
+                self.addDocumentColumn(index);
+            },
+
+            afterRemoveRow(index, amount, source) {
+                console.log("Remove row at index", index);
+            },
+
+            afterRemoveCol(index, amount, source) {
+                console.log("Remove col at index", index);
             }
         };
 
@@ -206,6 +232,28 @@ class TabularView extends AbstractVisualisationView {
                 columnIndex: cellLocation.columnIndex,
                 rowIndex: cellLocation.rowIndex,
                 newContent: newContent
+            }
+        });
+    }
+
+    private addDocumentRow(newRowIndex: number): void {
+        this.messenger.sendMessage({
+            type: WebviewToCoreMessageType.NotifyVisualisationModel,
+            visualisationUid: this.modelUid,
+            title: "add-row",
+            notification: {
+                newRowIndex: newRowIndex
+            }
+        });
+    }
+
+    private addDocumentColumn(newColumnIndex: number): void {
+        this.messenger.sendMessage({
+            type: WebviewToCoreMessageType.NotifyVisualisationModel,
+            visualisationUid: this.modelUid,
+            title: "add-column",
+            notification: {
+                newColumnIndex: newColumnIndex
             }
         });
     }
@@ -291,6 +339,13 @@ class TabularView extends AbstractVisualisationView {
         this.startObservingHandsontableMutations();
     }
 
+    private destroyCurrentHandsontable(): void {
+        this.stopHandlingHandsontableEvents();
+        this.stopObservingHandsontableMutations();
+
+        this.handsontableInstance?.destroy();
+    }
+
     render(): HTMLElement {
         return this.viewNode;
     }
@@ -316,6 +371,14 @@ class TabularView extends AbstractVisualisationView {
 
         // Populate the new container with a new table
         this.generateNewHandsontable();
+    }
+
+    onAfterVisualisationDisplay(): void {
+        this.generateNewHandsontable();
+    }
+
+    onBeforeVisualisationRemoval(): void {
+        this.destroyCurrentHandsontable();
     }
 }
 

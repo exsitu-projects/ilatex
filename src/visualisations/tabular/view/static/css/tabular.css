@@ -3,8 +3,14 @@
        This value will be updated by the tabular visualisation view. */
     --table-height: 60px;
 
-    width: 100%;
+    /* width: 100%; */
+    margin: 10px;
     padding: 0;
     height: var(--table-height);
     overflow: auto;
+}
+
+/* Fixes the  color of the text of the context menu that is, for an unknown reason, white by default. */
+.htContextMenu {
+    color: #000;
 }
