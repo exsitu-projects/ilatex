@@ -135,12 +135,28 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
         if (!this.grid) {
             return;
         }
-
-        // TODO: add a column type BEFORE inserting the new cells
-
-        const textInsertions: {position: SourceFilePosition, content: string}[] = [];
-        const rows = this.grid.rows;
         
+        const textInsertions: {position: SourceFilePosition, content: string}[] = [];
+
+        // Insert a new column type at the appropriate position (or at the end of the parameter value)
+        const options = this.grid.options;
+
+        let columnTypeInsertPosition = options.columnTypesParameterNode.range.to;
+        if (newColumnIndex === 0 && options.nbColumnSpecifications > 0) {
+            columnTypeInsertPosition = options.getSpecificationRangeOfColumnWithIndex(0)!.from;
+        }
+        else if (options.hasSpecificationForColumnWithIndex(newColumnIndex - 1)) {
+            columnTypeInsertPosition = options.getSpecificationRangeOfColumnWithIndex(newColumnIndex - 1)!.to;
+        }
+
+        const defaultNewColumnType = "l";
+        textInsertions.push({
+            position: columnTypeInsertPosition,
+            content: defaultNewColumnType
+        });
+        
+        // In every row, insert a new cell at the appropriate position
+        const rows = this.grid.rows;
         for (let row of rows) {
             const isNewFirstCellOfRow = newColumnIndex === 0;
             const isNewLastCellOfRow = newColumnIndex > row.lastCell.columnIndex;
@@ -185,7 +201,7 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
             ? this.grid.lastRow.lastCell.range.to
             : rows[newRowIndex].cells[0].range.from;
 
-        const nbColumnTypes = this.grid.options.columnTypes.length;
+        const nbColumnTypes = this.grid.options.columnSpecifications.length;
         const referenceRowForLeadingWhitespaceToInsert = rows[MathUtils.clamp(0, newRowIndex, rows.length - 1)];
         const leadingWhitespaceToInsert = (await this.sourceFile.getContent(
             new SourceFileRange(
@@ -208,6 +224,14 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
         const rangesToDelete: SourceFileRange[] = [];
         const rowsToDelete: Row[] = [];
 
+        // Delete the appropriate column type
+        const options = this.grid.options;
+        const columnSpecificationRangeToDelete = options.getSpecificationRangeOfColumnWithIndex(columnIndex);
+        if (columnSpecificationRangeToDelete) {
+            rangesToDelete.push(columnSpecificationRangeToDelete);
+        }
+
+        // In every row, delete the appropriate cell (or the entire row if it only contains one column)
         const rows = this.grid.rows;
         for (let row of rows) {
             const cellToDelete = row.cells[columnIndex];
@@ -546,8 +570,8 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
         return `
             <table>
                 <thead>
-                    ${grid.options.columnTypes.map(
-                        column => `<th>${column}</th>`
+                    ${grid.options.columnSpecifications.map(
+                        column => `<th data-alignement="${column.alignment.toLowerCase()}">${column.text}</th>`
                     ).join("\n")}
                 </thead>
                 <tbody>
