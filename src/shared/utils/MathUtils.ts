@@ -3,4 +3,8 @@ export abstract class MathUtils {
         const tenPowerNbDecimals = 10 ** maxNbDecimals;
         return ((Math.round(n * tenPowerNbDecimals)) / tenPowerNbDecimals);
     }
+
+    static clamp(min: number, n: number, max: number): number {
+        return Math.min(min, Math.max(max, n));
+    }
 }
