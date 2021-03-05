@@ -130,7 +130,7 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
         ]);
     }
 
-    private async addColumn(newColumnIndex: number): Promise<void> {
+    private async addColumn(newColumnIndex: number, editBuilder?: vscode.TextEditorEdit): Promise<void> {
         // TODO: handle the special case of an empty grid?
         if (!this.grid) {
             return;
@@ -180,15 +180,21 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
                 content: contentToInsert
             });
         }
+        
+        // Define and apply the edit function
+        const applyEdit = (editBuilder: vscode.TextEditorEdit) => textInsertions.forEach(({position, content}) => {
+            editBuilder.replace(position.asVscodePosition, content);
+        });
 
-        await this.astNode.makeAtomicChangeWithinNode([
-            editBuilder => textInsertions.forEach(({position, content}) => {
-                editBuilder.replace(position.asVscodePosition, content);
-            })
-        ]);
+        if (editBuilder) {
+            applyEdit(editBuilder);
+        }
+        else {
+            await this.astNode.makeAtomicChangeWithinNode([applyEdit]);
+        }
     }
 
-    private async addRow(newRowIndex: number): Promise<void> {
+    private async addRow(newRowIndex: number, editBuilder?: vscode.TextEditorEdit): Promise<void> {
         // TODO: handle the special case of an empty grid?
         if (!this.grid) {
             return;
@@ -211,12 +217,18 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
         ));
         const contentToInsert = `${leadingWhitespaceToInsert}~ ${"& ~ ".repeat(Math.max(0, nbColumnTypes - 1))}\\\\`;
         
-        await this.astNode.makeAtomicChangeWithinNode([
-            editBuilder => editBuilder.insert(insertPosition.asVscodePosition, contentToInsert)
-        ]);
+        // Define and apply the edit function
+        const applyEdit = (editBuilder: vscode.TextEditorEdit) => editBuilder.insert(insertPosition.asVscodePosition, contentToInsert);
+
+        if (editBuilder) {
+            applyEdit(editBuilder);
+        }
+        else {
+            await this.astNode.makeAtomicChangeWithinNode([applyEdit]);
+        }
     }
 
-    private async deleteColumn(columnIndex: number): Promise<void> {
+    private async deleteColumn(columnIndex: number, editBuilder?: vscode.TextEditorEdit): Promise<void> {
         if (!this.grid) {
             return;
         }
@@ -255,23 +267,35 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
                     rangesToDelete.push(previousCellSeparatorStart.rangeTo(cellToDelete.end));
                 }
             }
-            // 2. Otherwise, delete the cell and the following separator
+            // 2. Otherwise, delete the range from the start of the cell content to
+            // - the end of the leading whitespace of the next cell if there is any,
+            // - the end of the separator following the cell to delete otherwise
             else {
-                rangesToDelete.push(cellToDelete.rangeWithFinalSeparator);
+                const nextCell = row.cells[columnIndex + 1];
+
+                const start = cellToDelete.contentStart;    
+                const end = nextCell.hasLeadingWhitespace
+                    ? nextCell.astNodes[0].range.to
+                    : cellToDelete.followingSeparatorNode!.range.to;
+                rangesToDelete.push(new SourceFileRange(start, end));
             }
         }
 
-        await this.astNode.makeAtomicChangeWithinNode([
-            editBuilder => {
-                // First, delete ranges that preserve the number of rows
-                rangesToDelete.forEach(range => editBuilder.delete(range.asVscodeRange));
+        // Define and apply the edit function
+        const applyEdit = (editBuilder: vscode.TextEditorEdit) => {
+            rangesToDelete.forEach(range => editBuilder.delete(range.asVscodeRange));
+            rowsToDelete.forEach(row => this.deleteRow(row.rowIndex, editBuilder));
+        };
 
-                // TODO: delete lines
-            }
-        ]);
+        if (editBuilder) {
+            applyEdit(editBuilder);
+        }
+        else {
+            await this.astNode.makeAtomicChangeWithinNode([applyEdit]);
+        }
     }
 
-    private async deleteRow(rowIndex: number): Promise<void> {
+    private async deleteRow(rowIndex: number, editBuilder?: vscode.TextEditorEdit): Promise<void> {
         if (!this.grid) {
             return;
         }
@@ -305,10 +329,16 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
             rowToDelete.firstCell.contentStart,
             endOfRangeToDelete
         );
-        
-        await this.astNode.makeAtomicChangeWithinNode([
-            editBuilder => editBuilder.delete(rangeToDelete.asVscodeRange)
-        ]);
+
+        // Define and apply the edit function
+        const applyEdit = (editBuilder: vscode.TextEditorEdit) => editBuilder.delete(rangeToDelete.asVscodeRange);
+
+        if (editBuilder) {
+            applyEdit(editBuilder);
+        }
+        else {
+            await this.astNode.makeAtomicChangeWithinNode([applyEdit]);
+        }
     }
 
     private async moveColumn(oldColumnIndex: number, newColumnIndex: number): Promise<void> {
@@ -533,8 +563,6 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
         ]);
     }
 
-    
-    
     protected async updateContentData(): Promise<void> {
         try {
             this.grid = await Grid.from(this.astNode);
