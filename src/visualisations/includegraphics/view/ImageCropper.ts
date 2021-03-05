@@ -173,7 +173,7 @@ export class ImageCropper extends ImageEditor {
 
             this.cropper = new Cropper(this.invisibleImageNode, {
                 dragMode: "move",
-                viewMode: 3,
+                viewMode: 2,
                 toggleDragModeOnDblclick: false,
                 zoomable: false,
                 scalable: false,
@@ -181,7 +181,7 @@ export class ImageCropper extends ImageEditor {
                 guides: false,
                 center: false,
                 highlight: false,
-                background: false,
+                // background: false,
     
                 cropmove: event => { this.onCropboxChange(event); },
                 cropend: event => { this.onCropboxChangeEnd(event); },
@@ -209,10 +209,10 @@ export class ImageCropper extends ImageEditor {
             return;
         }
 
-        const containerData = cropper.getContainerData();
+        const canvasData = cropper.getCanvasData();
         const imageData = cropper.getImageData();
-        const horizontalScale = containerData.width / imageData.naturalWidth;
-        const verticalScale = containerData.height / imageData.naturalHeight;
+        const horizontalScale = canvasData.width / imageData.naturalWidth;
+        const verticalScale = canvasData.height / imageData.naturalHeight;
         const scaledImageCrop = {
             top: imageCrop.top * verticalScale,
             bottom: imageCrop.bottom * verticalScale,
@@ -227,10 +227,10 @@ export class ImageCropper extends ImageEditor {
         // console.log("scaled crop", scaledImageCrop);
 
         cropper.setCropBoxData({
-            width: containerData.width - scaledImageCrop.left - scaledImageCrop.right,
-            height: containerData.height - scaledImageCrop.top - scaledImageCrop.bottom,
-            left:  0 + scaledImageCrop.left,
-            top: 0 + scaledImageCrop.top
+            width: canvasData.width - scaledImageCrop.left - scaledImageCrop.right,
+            height: canvasData.height - scaledImageCrop.top - scaledImageCrop.bottom,
+            left: canvasData.left + scaledImageCrop.left,
+            top: canvasData.top + scaledImageCrop.top
         });
 
         // console.log("new cropbox data", cropper.getCropBoxData());
