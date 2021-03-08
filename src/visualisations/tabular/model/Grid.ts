@@ -212,7 +212,7 @@ export class Cell {
         nextAstNode: ASTNode | null,
     ): Promise<Cell> {
         const firstContentNode = Cell.firstContentNodeOf(astNodes);
-        const lastContentNode = Cell.firstContentNodeOf(astNodes);
+        const lastContentNode = Cell.lastContentNodeOf(astNodes);
 
         let textContent = "";
         if (firstContentNode && lastContentNode) {
