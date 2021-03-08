@@ -5,6 +5,6 @@ export abstract class MathUtils {
     }
 
     static clamp(min: number, n: number, max: number): number {
-        return Math.min(min, Math.max(max, n));
+        return Math.max(min, Math.min(max, n));
     }
 }
