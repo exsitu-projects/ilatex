@@ -31,6 +31,7 @@ class TabularView extends AbstractVisualisationView {
     private tableContent: string[][];
 
     private viewNode: HTMLElement;
+    private instructionsNode: HTMLElement;
     private handsontableContainerNode: HTMLElement;
     private handsontableInstance: Handsontable | null;
     private handsontableMutationObserver: MutationObserver | null;
@@ -41,8 +42,15 @@ class TabularView extends AbstractVisualisationView {
         this.columnDetails = this.extractColumnDetails();
         this.tableContent = this.extractTableContent();
 
-        this.handsontableContainerNode = this.createHandsontableContainer();
         this.viewNode = document.createElement("div");
+
+        this.instructionsNode = document.createElement("div");
+        this.instructionsNode.classList.add("instructions");
+        this.viewNode.append(this.instructionsNode);    
+        this.instructionsNode.innerHTML =
+            `<strong>Double click</strong> to edit a cell. <strong>Right click</strong> to add or remove a row/column. <strong>Drag</strong> a header cell to move a row/column.`;
+
+        this.handsontableContainerNode = this.createHandsontableContainer();
         this.viewNode.append(this.handsontableContainerNode);
 
         this.handsontableInstance = null;
@@ -374,17 +382,16 @@ class TabularView extends AbstractVisualisationView {
         this.columnDetails = this.extractColumnDetails();
         this.tableContent = this.extractTableContent();
 
-        // Create and configure a new container for the future new table
+        // Create a new container for the future new table
+        // and replace the old one with the new one in the view
+        this.handsontableContainerNode.remove();
         this.handsontableContainerNode = this.createHandsontableContainer();
+        this.viewNode.append(this.handsontableContainerNode);
 
         // Remove the old event listeners and mutation observers
         // before creating a new Handsontable instance
         this.stopHandlingHandsontableEvents();
         this.stopObservingHandsontableMutations();
-
-        // Replace the content of the old view node by the new container
-        this.viewNode.innerHTML = "";
-        this.viewNode.append(this.handsontableContainerNode);
 
         // Populate the new container with a new table
         this.generateNewHandsontable();

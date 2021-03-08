@@ -10,6 +10,11 @@
     overflow: auto;
 }
 
+[data-visualisation-name="tabular"] .instructions {
+    margin: 10px 10px 1ex 10px;
+    font-size: 0.8em;
+}
+
 /* Fixes the  color of the text of the context menu that is, for an unknown reason, white by default. */
 .htContextMenu {
     color: #000;
