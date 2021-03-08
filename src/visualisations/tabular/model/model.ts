@@ -130,6 +130,47 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
         ]);
     }
 
+    private insertColumnType(columnIndex: number, columnType: string, editBuilder: vscode.TextEditorEdit): void {
+        if (!this.grid) {
+            return;
+        }
+        
+        const options = this.grid.options;
+        let columnTypeInsertPosition = options.columnTypesParameterNode.range.to;
+        if (columnIndex === 0 && options.nbColumnSpecifications > 0) {
+            columnTypeInsertPosition = options.getSpecificationRangeOfColumnWithIndex(0)!.from;
+        }
+        else if (options.hasSpecificationForColumnWithIndex(columnIndex - 1)) {
+            columnTypeInsertPosition = options.getSpecificationRangeOfColumnWithIndex(columnIndex - 1)!.to;
+        }
+
+        editBuilder.insert(columnTypeInsertPosition.asVscodePosition, columnType);
+    }
+
+    private deleteColumnType(columnIndex: number, editBuilder: vscode.TextEditorEdit): void {
+        if (!this.grid) {
+            return;
+        }
+        
+        const options = this.grid.options;
+        const columnTypeRange = options.getSpecificationRangeOfColumnWithIndex(columnIndex);
+        if (columnTypeRange) {
+            editBuilder.delete(columnTypeRange.asVscodeRange);
+        }
+    }
+
+    private replaceColumnType(columnIndex: number, newColumnType: string, editBuilder: vscode.TextEditorEdit): void {
+        if (!this.grid) {
+            return;
+        }
+        
+        const options = this.grid.options;
+        const columnTypeRange = options.getSpecificationRangeOfColumnWithIndex(columnIndex);
+        if (columnTypeRange) {
+            editBuilder.replace(columnTypeRange.asVscodeRange, newColumnType);
+        }
+    }
+
     private async addColumn(newColumnIndex: number, editBuilder?: vscode.TextEditorEdit): Promise<void> {
         // TODO: handle the special case of an empty grid?
         if (!this.grid) {
@@ -137,23 +178,6 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
         }
         
         const textInsertions: {position: SourceFilePosition, content: string}[] = [];
-
-        // Insert a new column type at the appropriate position (or at the end of the parameter value)
-        const options = this.grid.options;
-
-        let columnTypeInsertPosition = options.columnTypesParameterNode.range.to;
-        if (newColumnIndex === 0 && options.nbColumnSpecifications > 0) {
-            columnTypeInsertPosition = options.getSpecificationRangeOfColumnWithIndex(0)!.from;
-        }
-        else if (options.hasSpecificationForColumnWithIndex(newColumnIndex - 1)) {
-            columnTypeInsertPosition = options.getSpecificationRangeOfColumnWithIndex(newColumnIndex - 1)!.to;
-        }
-
-        const defaultNewColumnType = "l";
-        textInsertions.push({
-            position: columnTypeInsertPosition,
-            content: defaultNewColumnType
-        });
         
         // In every row, insert a new cell at the appropriate position
         const rows = this.grid.rows;
@@ -182,9 +206,16 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
         }
         
         // Define and apply the edit function
-        const applyEdit = (editBuilder: vscode.TextEditorEdit) => textInsertions.forEach(({position, content}) => {
-            editBuilder.replace(position.asVscodePosition, content);
-        });
+        const applyEdit = (editBuilder: vscode.TextEditorEdit) => {
+            // Add new cells
+            for (let {position, content} of textInsertions) {
+                editBuilder.replace(position.asVscodePosition, content);
+            }
+
+            // Also insert a new column type at the appropriate position
+            const defaultNewColumnType = "l";
+            this.insertColumnType(newColumnIndex, defaultNewColumnType, editBuilder);
+        };
 
         if (editBuilder) {
             applyEdit(editBuilder);
@@ -200,22 +231,37 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
             return;
         }
 
+        const nbColumnTypes = this.grid.options.nbColumnSpecifications;
+        if (nbColumnTypes === 0) {
+            console.warn("No row can be added: no column type is specified.");
+            return;
+        }
+
         const rows = this.grid.rows;
 
+        // The insert position of the new row can either be
+        // - the end of the last cell of the row if it is the last row
+        //   (so that it may optionally be followed by a final separator); or
+        // - the start of the first cell of the next row
+        //   (i.e. including leading whitespace, non-content node, etc).
         const isNewLastRow = newRowIndex > this.grid.lastRow.rowIndex;
         const insertPosition = isNewLastRow
             ? this.grid.lastRow.lastCell.range.to
             : rows[newRowIndex].cells[0].range.from;
 
-        const nbColumnTypes = this.grid.options.columnSpecifications.length;
-        const referenceRowForLeadingWhitespaceToInsert = rows[MathUtils.clamp(0, newRowIndex, rows.length - 1)];
-        const leadingWhitespaceToInsert = (await this.sourceFile.getContent(
-            new SourceFileRange(
-                referenceRowForLeadingWhitespaceToInsert.cells[0].range.from,
-                referenceRowForLeadingWhitespaceToInsert.cells[0].contentStart
-            )
-        ));
-        const contentToInsert = `${leadingWhitespaceToInsert}~ ${"& ~ ".repeat(Math.max(0, nbColumnTypes - 1))}\\\\`;
+        // Try to determine the leading whitespace to insert before the content of the first cell of the new row
+        const referenceRowForLeadingWhitespace = rows[MathUtils.clamp(0, newRowIndex, rows.length - 1)];
+        const leadingWhitespace = referenceRowForLeadingWhitespace.firstCell.hasLeadingWhitespace
+            ? await this.sourceFile.getContent(referenceRowForLeadingWhitespace.firstCell.astNodes[0].range)
+            : "";
+
+        // Only insert a leading row separator if the new row is the new last row
+        const newLeadingRowSeparator = isNewLastRow ? "\\\\" : "";
+
+        // Only insert a trailing row separator if the new row is not the new last row
+        const newTrailingRowSeparator = isNewLastRow ? "" : "\\\\";
+        
+        const contentToInsert = `${newLeadingRowSeparator}${leadingWhitespace}~ ${"& ~ ".repeat(Math.max(0, nbColumnTypes - 1))}${newTrailingRowSeparator}`;
         
         // Define and apply the edit function
         const applyEdit = (editBuilder: vscode.TextEditorEdit) => editBuilder.insert(insertPosition.asVscodePosition, contentToInsert);
@@ -235,13 +281,6 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
 
         const rangesToDelete: SourceFileRange[] = [];
         const rowsToDelete: Row[] = [];
-
-        // Delete the appropriate column type
-        const options = this.grid.options;
-        const columnSpecificationRangeToDelete = options.getSpecificationRangeOfColumnWithIndex(columnIndex);
-        if (columnSpecificationRangeToDelete) {
-            rangesToDelete.push(columnSpecificationRangeToDelete);
-        }
 
         // In every row, delete the appropriate cell (or the entire row if it only contains one column)
         const rows = this.grid.rows;
@@ -285,6 +324,9 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
         const applyEdit = (editBuilder: vscode.TextEditorEdit) => {
             rangesToDelete.forEach(range => editBuilder.delete(range.asVscodeRange));
             rowsToDelete.forEach(row => this.deleteRow(row.rowIndex, editBuilder));
+
+            // Also delete the appropriate column type
+            this.deleteColumnType(columnIndex, editBuilder);
         };
 
         if (editBuilder) {
@@ -346,23 +388,23 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
             return;
         }
         
+        const options = this.grid.options;
         const rows = this.grid.rows;
         const textReplacements: {range: SourceFileRange, newContent: string}[] = [];
+        const columnTypeReplacements: {columnIndex: number, newColumnType: string}[] = [];
 
         // Copy the content of the cells of the origin and target columns
         const originColumnCellsContent = rows
             .map(row => row.cells[oldColumnIndex]?.textContent);
 
         let updateCellContentAt;
+        // Case 1: the column is moved from right to left (<--)
         if (oldColumnIndex > newColumnIndex) {
-            // Case 1: the column is moved from right to left (<--)
             updateCellContentAt = async (rowIndex: number, columnIndex: number) => {
                 if (columnIndex <= oldColumnIndex && columnIndex > newColumnIndex) {
                     const cellToEdit = this.getCellAt(rowIndex, columnIndex);
                     const cellToCopy = this.getCellAt(rowIndex, columnIndex - 1);
 
-                    // console.log(`About to replace ${cellToEdit.textContent} by ${cellToCopy.textContent}`);
-                    // await this.replaceCellContent(cellToEdit, cellToCopy.textContent);
                     textReplacements.push({
                         range: cellToEdit.contentRange,
                         newContent: cellToCopy.textContent
@@ -370,10 +412,10 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
                 }
             };
         }
+        // Case 2: the column is moved from left to right (-->)
+        // In this case, the content of the target column is also updated by this function
+        // (for each line, it must be done first since the target cell is the rightmost edited cell)
         else if (newColumnIndex > oldColumnIndex) {
-            // Case 2: the column is moved from left to right (-->)
-            // In this case, the content of the target column is also updated by this function
-            // (for each line, it must be done first since the target cell is the rightmost edited cell)
             updateCellContentAt = async (rowIndex: number, columnIndex: number) => {
                 let lastEditedCellContent = null;
                 if (columnIndex <= newColumnIndex && columnIndex >= oldColumnIndex) {
@@ -385,8 +427,6 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
                                     ? originColumnCellsContent[rowIndex]
                                     : (lastEditedCellContent ?? cellToCopy.textContent);
 
-                    // console.log(`About to replace ${cellToEdit.textContent} by ${newContent}`);
-                    // await this.replaceCellContent(cellToEdit, newContent);
                     textReplacements.push({
                         range: cellToEdit.contentRange,
                         newContent: newContent
@@ -402,8 +442,8 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
                 }
             };
         }
+        // Case 3: the column is not moved (no cell content has to be updated)
         else {
-            // Case 3: the column is not moved (no cell content has to be updated)
             return;
         }
 
@@ -425,9 +465,6 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
 
         // If the column is moved from right to left (<--),
         // the content of the target column must be finally replaced
-        // (positions will still be correct since all the cells to edit
-        // are located before all the shifted cells — provided two cells of
-        // different rows are never located in the same line!)
         if (oldColumnIndex > newColumnIndex) {
             for (let rowIndex = rows.length - 1; rowIndex >= 0; rowIndex--) {
                 const row = rows[rowIndex];
@@ -438,10 +475,6 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
                     continue;
                 }
                 
-                // await this.replaceCellContent(
-                //     row.cells[newColumnIndex],
-                //     originColumnCellsContent[rowIndex]
-                // );
                 textReplacements.push({
                     range: row.cells[newColumnIndex].contentRange,
                     newContent: originColumnCellsContent[rowIndex]
@@ -449,10 +482,50 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
             }
         }
 
+        // Update the column types as well
+        if (oldColumnIndex > newColumnIndex) { // <--
+            const movedColumnType = options.getSpecificationOfColumnWithIndex(oldColumnIndex)!.text;
+
+            for (let i = newColumnIndex + 1; i <= oldColumnIndex; i++) {
+                columnTypeReplacements.push({
+                    columnIndex: i,
+                    newColumnType: options.getSpecificationOfColumnWithIndex(i - 1)!.text
+                });
+            }
+
+            columnTypeReplacements.push({
+                columnIndex: newColumnIndex,
+                newColumnType: movedColumnType
+            });
+        }
+        else if (newColumnIndex > oldColumnIndex) { // -->
+            const movedColumnType = options.getSpecificationOfColumnWithIndex(oldColumnIndex)!.text;
+
+            for (let i = newColumnIndex - 1; i >= oldColumnIndex; i--) {
+                columnTypeReplacements.push({
+                    columnIndex: i,
+                    newColumnType: options.getSpecificationOfColumnWithIndex(i + 1)!.text
+                });
+            }
+
+            columnTypeReplacements.push({
+                columnIndex: newColumnIndex,
+                newColumnType: movedColumnType
+            });
+        }
+
         await this.sourceFile.makeAtomicChange([
-            editBuilder => textReplacements.forEach(({range, newContent}) => {
-                editBuilder.replace(range.asVscodeRange, newContent);
-            })
+            editBuilder => {
+                // Replace the content of the shifted/moved cells
+                for (let {range, newContent} of textReplacements) {
+                    editBuilder.replace(range.asVscodeRange, newContent);
+                }
+
+                // Replace the column types of the shifted/moved columns
+                for (let {columnIndex, newColumnType} of columnTypeReplacements) {
+                    this.replaceColumnType(columnIndex, newColumnType, editBuilder);
+                }
+            }
         ]);
     }
 
