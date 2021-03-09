@@ -31,6 +31,9 @@ class GridLayoutView extends AbstractVisualisationView {
             onGridResize: (grid: Grid, isFinalSize: boolean) => {
                 // TODO
             },
+            onRowAddButtonClick: () => {
+                this.createRow();
+            },
             onRowResize: (rowAbove: Row, rowBelow: Row, isFinalSize: boolean) => {
                 this.resizeRows(rowAbove, rowBelow, isFinalSize);
             },
@@ -39,6 +42,19 @@ class GridLayoutView extends AbstractVisualisationView {
             },
             onCellContentClick: (cell: Cell) => {
                 this.selectContentOfCell(cell);
+            },
+            onCellDrop: (draggedCell: Cell, targetCell: Cell, side: "left" | "right") => {
+                this.moveCell(
+                    draggedCell,
+                    targetCell.rowIndex,
+                    side === "left" ? targetCell.cellIndex : targetCell.cellIndex + 1
+                );
+            },
+            onCellAddButtonClick: (cell: Cell, newCellLocation: "before" | "after") => {
+                this.createCellNextTo(cell, newCellLocation);
+            },
+            onCellDeleteButtonClick: (cell: Cell) => {
+                this.deleteCell(cell);
             },
         };
 
@@ -58,6 +74,36 @@ class GridLayoutView extends AbstractVisualisationView {
                 cellIndex: cell.cellIndex,
                 rowIndex: cell.rowIndex
             }
+        });
+    }
+
+    private createRow(): void {
+        this.messenger.sendMessage({
+            type: WebviewToCoreMessageType.NotifyVisualisationModel,
+            visualisationUid: this.modelUid,
+            title: "create-row",
+            notification: {}
+        });
+    }
+
+    private resizeRows(rowAbove: Row, rowBelow: Row, isFinalSize: boolean): void {
+        this.resizeThrottler.add(async () => {
+            this.messenger.sendMessage({
+                type: WebviewToCoreMessageType.NotifyVisualisationModel,
+                visualisationUid: this.modelUid,
+                title: "resize-rows",
+                notification: {
+                    rowAboveChange: {
+                        rowIndex: rowAbove.rowIndex,
+                        newRelativeSize: rowAbove.relativeSize
+                    },
+                    rowBelowChange: {
+                        rowIndex: rowBelow.rowIndex,
+                        newRelativeSize: rowBelow.relativeSize
+                    },
+                    isFinalSize: isFinalSize
+                }
+            });
         });
     }
 
@@ -84,24 +130,41 @@ class GridLayoutView extends AbstractVisualisationView {
         });
     }
 
-    private resizeRows(rowAbove: Row, rowBelow: Row, isFinalSize: boolean): void {
-        this.resizeThrottler.add(async () => {
-            this.messenger.sendMessage({
-                type: WebviewToCoreMessageType.NotifyVisualisationModel,
-                visualisationUid: this.modelUid,
-                title: "resize-rows",
-                notification: {
-                    rowAboveChange: {
-                        rowIndex: rowAbove.rowIndex,
-                        newRelativeSize: rowAbove.relativeSize
-                    },
-                    rowBelowChange: {
-                        rowIndex: rowBelow.rowIndex,
-                        newRelativeSize: rowBelow.relativeSize
-                    },
-                    isFinalSize: isFinalSize
-                }
-            }); 
+    private createCellNextTo(cell: Cell, position: "before" | "after"): void {
+        this.messenger.sendMessage({
+            type: WebviewToCoreMessageType.NotifyVisualisationModel,
+            visualisationUid: this.modelUid,
+            title: "create-row",
+            notification: {
+                rowIndex: cell.rowIndex,
+                cellIndex: position === "before" ? cell.cellIndex : cell.cellIndex + 1
+            }
+        });
+    }
+
+    private moveCell(cell: Cell, targetRowIndex: number, targetCellIndex: number): void {
+        this.messenger.sendMessage({
+            type: WebviewToCoreMessageType.NotifyVisualisationModel,
+            visualisationUid: this.modelUid,
+            title: "move-cell",
+            notification: {
+                rowIndex: cell.rowIndex,
+                cellIndex: cell.cellIndex,
+                targetRowIndex: targetRowIndex,
+                targetCellIndex: targetCellIndex
+            }
+        });
+    }
+
+    private deleteCell(cell: Cell): void {
+        this.messenger.sendMessage({
+            type: WebviewToCoreMessageType.NotifyVisualisationModel,
+            visualisationUid: this.modelUid,
+            title: "delete-cell",
+            notification: {
+                rowIndex: cell.rowIndex,
+                cellIndex: cell.cellIndex
+            }
         });
     }
 

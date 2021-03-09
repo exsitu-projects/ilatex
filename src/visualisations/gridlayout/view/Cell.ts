@@ -26,7 +26,11 @@ export class CellResizeHandle {
 
 export class Cell {
     private viewContext: VisualisationViewContext;
+
     readonly node: HTMLElement;
+    readonly contentNode: HTMLElement;
+    private cellDropZoneNode: HTMLElement;
+    private actionButtonsContainerNode : HTMLElement;
 
     readonly cellIndex: number;
     readonly rowIndex: number;
@@ -56,9 +60,29 @@ export class Cell {
         
         this.callbacks = callbacks;
 
-        // Create the node and populate the cell
+        // Create the node and populate it
         this.node = this.createCellNodeFrom();
-        this.populateWithContentFrom(contentCellNode);
+
+        this.contentNode = this.createCellContentNodeFrom(contentCellNode);
+        this.node.append(this.contentNode);
+        
+        this.cellDropZoneNode = this.createCellDropZoneNode();
+        this.node.append(this.cellDropZoneNode);
+                
+        this.actionButtonsContainerNode = this.createActionButtonsContainerNode();
+        this.node.append(this.actionButtonsContainerNode);
+    }
+
+    get draggableNode(): HTMLElement {
+        return this.actionButtonsContainerNode;
+    }
+
+    get leftCellDropZoneNode(): HTMLElement {
+        return this.cellDropZoneNode.querySelector(".left")! as HTMLElement;
+    }
+
+    get rightCellDropZoneNode(): HTMLElement {
+        return this.cellDropZoneNode.querySelector(".right")! as HTMLElement;
     }
 
     get relativeSize(): number {
@@ -79,7 +103,7 @@ export class Cell {
         return node;
     }
 
-    private populateWithContentFrom(contentCellNode: HTMLElement): void {
+    private createCellContentNodeFrom(contentCellNode: HTMLElement): HTMLElement {
         const contentNode = document.createElement("div");
         contentNode.classList.add("cell-content");
         contentNode.textContent = contentCellNode.textContent!.trim();
@@ -87,7 +111,61 @@ export class Cell {
         // Select the content in the code editor on click
         contentNode.addEventListener("click", event => { this.callbacks.onCellContentClick(this); });
 
-        this.node.append(contentNode);
+        return contentNode;
+    }
+
+    private createCellDropZoneNode(): HTMLElement {
+        const contentNode = document.createElement("div");
+        contentNode.classList.add("cell-drop-zone");
+        contentNode.innerHTML = `
+            <div class="left"></div>
+            <div class="right"></div>
+        `;
+
+        return contentNode;        
+    }
+
+    private createActionButtonsContainerNode(): HTMLElement {
+        const contentNode = document.createElement("div");
+        contentNode.classList.add("action-buttons-container");
+
+        // Delete button
+        const deleteButtonNode = document.createElement("button");
+        deleteButtonNode.setAttribute("type", "button");
+        deleteButtonNode.classList.add("delete-cell-button");
+        deleteButtonNode.addEventListener("click", event => {
+            this.callbacks.onCellDeleteButtonClick(this);
+        });
+
+        contentNode.append(deleteButtonNode);
+
+        // Before/after cell insert buttons
+        const addCellButtonsContainerNode = document.createElement("div");
+        addCellButtonsContainerNode.classList.add("add-cell-buttons-container");
+
+        contentNode.append(addCellButtonsContainerNode);
+
+        const addCellBeforeButtonNode = document.createElement("button");
+        addCellBeforeButtonNode.setAttribute("type", "button");
+        addCellBeforeButtonNode.classList.add("add-cell-before-button");
+        addCellBeforeButtonNode.textContent = "Add cell";
+        addCellBeforeButtonNode.addEventListener("click", event => {
+            this.callbacks.onCellAddButtonClick(this, "before");
+        });
+
+        addCellButtonsContainerNode.append(addCellBeforeButtonNode);
+
+        const addCellAfterButtonNOde = document.createElement("button");
+        addCellAfterButtonNOde.setAttribute("type", "button");
+        addCellAfterButtonNOde.classList.add("add-cell-after-button");
+        addCellAfterButtonNOde.textContent = "Add cell";
+        addCellAfterButtonNOde.addEventListener("click", event => {
+            this.callbacks.onCellAddButtonClick(this, "after");
+        });
+
+        addCellButtonsContainerNode.append(addCellAfterButtonNOde);
+
+        return contentNode;        
     }
 
     // This method assumes the distribution of relative size is valid,
@@ -99,11 +177,9 @@ export class Cell {
             return;
         }
 
-        const parentNodeBox = parentNode.getBoundingClientRect();
         const cellResizeHandleWidth = 8; // px
         const totalWidthOfAllCellResizeHandlesInRow = (this.nbCellsInRow - 1) * cellResizeHandleWidth;
 
-        // this.node.style.width = `${newAbsoluteSize}px`;
         this.node.style.width = `calc((100% - ${totalWidthOfAllCellResizeHandlesInRow}px) * ${this.currentRelativeSize})`;
     }
 

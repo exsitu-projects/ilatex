@@ -5,14 +5,21 @@ import { Row, RowResizeHandle } from "./Row";
 
 export interface GridCallbacks {
     onGridResize: (grid: Grid, isFinalSize: boolean) => void;
+    onRowAddButtonClick: () => void;
     onRowResize: (rowAbove: Row, rowBelow: Row, isFinalSize: boolean) => void;
     onCellResize: (leftCell: Cell, rightCell: Cell, isFinalSize: boolean) => void;
     onCellContentClick: (cell: Cell) => void;
+    onCellDrop: (draggedCell: Cell, targetCell: Cell, side: "left" | "right") => void;
+    onCellAddButtonClick: (cell: Cell, newCellLocation: "before" | "after") => void;
+    onCellDeleteButtonClick: (cell: Cell) => void;
 }
 
 export class Grid {
     private viewContext: VisualisationViewContext;
     readonly node: HTMLElement;
+    private rowContainerWrapperNode: HTMLElement;
+    private rowContainerNode: HTMLElement;
+    private commandBarNode: HTMLElement;
     
     readonly rows: Row[];
     readonly rowResizeHandles: RowResizeHandle[];
@@ -42,9 +49,23 @@ export class Grid {
 
         this.callbacks = callbacks;
 
-        // Create the node and populate the grid
-        this.node = this.createGridNodeFrom();
-        this.populateWithRowsAndRowResizeHandlesFrom(contentLayoutNode);
+        // Create the node and populate it
+        this.node = this.createGridNode();
+
+        this.commandBarNode = this.createCommandBarNode();
+        this.node.append(this.commandBarNode);
+
+        this.rowContainerWrapperNode = this.createRowContainerWrapperNode();
+        this.node.append(this.rowContainerWrapperNode);
+
+        this.rowContainerNode = this.createRowContainerNode();
+        this.rowContainerWrapperNode.append(this.rowContainerNode);
+
+        this.populateRowContainerFrom(contentLayoutNode);
+    }
+
+    get cells(): Cell[] {
+        return this.rows.reduce((accumulatedCells, row) => accumulatedCells.concat(row.cells), [] as Cell[]);
     }
 
     get sumOfAllRowRelativeSizes(): number {
@@ -54,17 +75,53 @@ export class Grid {
         );
     }
 
-    private createGridNodeFrom(): HTMLElement {
+    private createGridNode(): HTMLElement {
         const node = document.createElement("div");
         node.classList.add("grid");
 
         return node;
     }
 
-    private populateWithRowsAndRowResizeHandlesFrom(contentLayoutNode: HTMLElement): void {
-        const rowContainerNode = document.createElement("div");
-        rowContainerNode.classList.add("row-container");
+    private createCommandBarNode(): HTMLElement {
+        const node = document.createElement("div");
+        node.classList.add("command-bar");
 
+        const instructionsNode = document.createElement("div");
+        instructionsNode.classList.add("instructions");
+        instructionsNode.innerHTML = `
+            <strong>Hover</strong> a cell to display available actions.
+            <strong>Click</strong> it to select its content.
+            <strong>Drag</strong> it to move it.
+        `;
+        node.append(instructionsNode);
+
+        const addRowButtonNode = document.createElement("button");
+        addRowButtonNode.setAttribute("type", "button");
+        addRowButtonNode.classList.add("add-row-button");
+        addRowButtonNode.textContent = "Insert a new row";
+        addRowButtonNode.addEventListener("click", event => {
+            this.callbacks.onRowAddButtonClick();
+        });
+        node.append(addRowButtonNode);
+
+        return node;
+    }
+
+    private createRowContainerWrapperNode(): HTMLElement {
+        const node = document.createElement("div");
+        node.classList.add("row-container-wrapper");
+
+        return node;
+    }
+
+    private createRowContainerNode(): HTMLElement {
+        const node = document.createElement("div");
+        node.classList.add("row-container");
+
+        return node;
+    }
+
+    private populateRowContainerFrom(contentLayoutNode: HTMLElement): void {
         const contentRowNodes = Array.from(contentLayoutNode.querySelectorAll(".row"));
         const nbRowsInGrid = contentRowNodes.length;
 
@@ -80,7 +137,7 @@ export class Grid {
             );
             
             this.rows.push(row);
-            rowContainerNode.append(row.node);
+            this.rowContainerNode.append(row.node);
 
             // After each row but the last row of the grid,
             // create and add a row resize handle
@@ -88,11 +145,9 @@ export class Grid {
                 const rowResizeHandle = new RowResizeHandle(i);
                 
                 this.rowResizeHandles.push(rowResizeHandle);
-                rowContainerNode.append(rowResizeHandle.node);
+                this.rowContainerNode.append(rowResizeHandle.node);
             }
         }
-
-        this.node.append(rowContainerNode);
     }
 
     resizeRowsAndCells(): void {
@@ -114,8 +169,8 @@ export class Grid {
         const scaledWidth = this.currentWidth * pdfPageScale;
         const scaledHeight = this.currentHeight * pdfPageScale;
 
-        this.node.style.width = `${scaledWidth}px`;
-        this.node.style.height = `${scaledHeight}px`;
+        this.rowContainerWrapperNode.style.width = `${scaledWidth}px`;
+        this.rowContainerWrapperNode.style.height = `${scaledHeight}px`;
 
         this.resizeRowsAndCells();
     }
@@ -152,23 +207,22 @@ export class Grid {
             const rowAbove = this.rows.find(cell => cell.rowIndex === rowResizeHandle.aboveRowIndex)!;
             const rowBelow = this.rows.find(cell => cell.rowIndex === rowResizeHandle.belowRowIndex)!;
 
-            interact(rowResizeHandle.node)
-                .draggable({
-                    startAxis: "y",
-                    lockAxis: "y",
+            interact(rowResizeHandle.node).draggable({
+                startAxis: "y",
+                lockAxis: "y",
 
-                    listeners: {
-                        move: (event: any) => {
-                            this.onRowResizeHandleDrag(rowResizeHandle, event.dy);
-                        }
-                    },
-                })
-                .on("dragmove", () => {
-                    this.callbacks.onRowResize(rowAbove, rowBelow, false);
-                })
-                .on("dragend", () => {
-                    this.callbacks.onRowResize(rowAbove, rowBelow, true);
-                });
+                listeners: {
+                    move: (event: any) => {
+                        this.onRowResizeHandleDrag(rowResizeHandle, event.dy);
+                    }
+                },
+            })
+            .on("dragmove", () => {
+                this.callbacks.onRowResize(rowAbove, rowBelow, false);
+            })
+            .on("dragend", () => {
+                this.callbacks.onRowResize(rowAbove, rowBelow, true);
+            });
         }
     }
 
@@ -178,8 +232,64 @@ export class Grid {
         }
     }
 
+    private startHandlingCellDrags(): void {
+        let draggedCell: Cell | null = null;
+
+        const cells = this.cells;
+        for (let cell of cells) {
+            interact(cell.draggableNode).draggable({
+                listeners: {
+                    start: (event: any) => {
+                        draggedCell = cell;
+
+                        this.node.classList.add("cell-is-dragged");
+                        cell.node.classList.add("dragged");
+                    },
+
+                    end: (event: any) => {
+                        draggedCell = null;
+
+                        this.node.classList.remove("cell-is-dragged");
+                        cell.node.classList.remove("dragged");
+                    },
+                },
+            });
+
+            interact(cell.leftCellDropZoneNode).dropzone({
+                listeners: {
+                    drop: (event: any) => {
+                        if (draggedCell !== null) {
+                            this.callbacks.onCellDrop(draggedCell, cell, "left");
+                        }
+                    }
+                },
+            });
+
+            interact(cell.rightCellDropZoneNode).dropzone({
+                listeners: {
+                    drop: (event: any) => {
+                        if (draggedCell !== null) {
+                            this.callbacks.onCellDrop(draggedCell, cell, "right");
+                            return;
+                        }
+                    }
+                },
+            });
+        }
+    }
+
+    private stopHandlingCellDrags(): void {
+        const cells = this.cells;
+        for (let cell of cells) {
+            interact(cell.draggableNode).unset();
+            interact(cell.leftCellDropZoneNode).unset();
+            interact(cell.rightCellDropZoneNode).unset();
+        }
+    }
+
     onAfterVisualisationDisplay(): void {
         this.startHandlingRowResizeHandleDrags();
+        this.startHandlingCellDrags();
         this.resize();
         
         for (let row of this.rows) {
@@ -189,6 +299,7 @@ export class Grid {
 
     onBeforeVisualisationRemoval(): void {
         this.stopHandlingRowResizeHandleDrags();
+        this.stopHandlingCellDrags();
 
         for (let row of this.rows) {
             row.onBeforeVisualisationRemoval();
