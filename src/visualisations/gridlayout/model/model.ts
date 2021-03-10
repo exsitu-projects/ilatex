@@ -17,12 +17,16 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
     readonly name = "grid layout";
     private layout: Layout | null;
 
+    private readonly indentSize: number;
+
     private lightweightCellSizeEditor: LightweightSourceFileEditor | null;
     private lightweightRowHeightEditor: LightweightSourceFileEditor | null;
 
     constructor(context: VisualisableCodeContext<EnvironmentNode>, utilities: VisualisationModelUtilities) {
         super(context, utilities);
         this.layout = null;
+
+        this.indentSize = 2;
 
         this.lightweightCellSizeEditor = null;
         this.lightweightRowHeightEditor = null;
@@ -257,6 +261,70 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
     }
 
     private async createCellAt(rowIndex: number, cellIndex: number): Promise<void> {
+        if (!this.layout) {
+            return;
+        }
+
+        if (rowIndex > this.layout.rows.length - 1) {
+            console.warn(`The grid layout's cell cannot be created: there is no row at index ${rowIndex}.`);
+            return;
+        }
+
+        const row = this.layout.rows[rowIndex];
+        const cells = row.cells;
+        const nbCells = row.nbCells;
+        const isNewLastCell = nbCells === 0 || cellIndex > row.lastCell.cellIndex;
+
+        // Estimate the current indent using the column in front of the \begin{row} command
+        const currentIndentSize = row.astNode.range.from.column + this.indentSize;
+
+        // The new cell should be inserted
+        // - at the start of the row body if the index is 0 and there is no cell, or
+        // - before the cell with the given index if there is one, or
+        // - at the end of the last cell if the index is greater than its cell index
+        let insertPosition = row.astNode.body.range.from;
+        if (nbCells > 0) {
+            insertPosition = isNewLastCell
+                ? row.lastCell.astNode.range.to
+                : cells[cellIndex].astNode.range.from;
+        }
+
+        // Determine the size of the new row
+        let cellToResize = null;
+        if (nbCells > 0) {
+            cellToResize = cells[MathUtils.clamp(0, cellIndex - 1, row.lastCell.cellIndex)];
+        }
+
+        const newCellSize = cellToResize
+            ? cellToResize.options.relativeSize / 2
+            : 1;
+        const newCellSizeAsString = MathUtils.round(newCellSize, 3).toString();
+
+        // Resize another cell (to make space for the new cell) if required
+        if (cellToResize) {
+            const newSizeOfCellToResize = cellToResize.options.relativeSize - newCellSize;
+            const newSizeOfCellToResizeAsString = MathUtils.round(newSizeOfCellToResize, 3).toString();
+
+            await cellToResize.options.relativeSizeParameterNode.setTextContent(newSizeOfCellToResizeAsString);
+        }
+
+        // Insert a new cell
+        const indent = " ".repeat(this.indentSize);
+        const currentIndent = " ".repeat(currentIndentSize);
+        const newRowText = [
+            `${isNewLastCell ? "\n" + currentIndent : ""}`,
+            `\\begin{cell}{${newCellSizeAsString}}\n`,
+            `${currentIndent}${indent}~\n`,
+            `${currentIndent}\\end{cell}`,
+            `${!isNewLastCell ? "\n" : ""}`,
+            `${!isNewLastCell ? currentIndent : ""}`
+        ].join("");
+
+        await this.sourceFile.makeAtomicChange(editBuilder => 
+            editBuilder.insert(insertPosition.asVscodePosition, newRowText)
+        );
+    }
+
         // TODO: implement
         console.info("createCellAt");
     }
