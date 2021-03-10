@@ -70,7 +70,37 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
                     ], isFinalSize);
                     this.registerChangeRequestedByTheView();
                 }
-            }
+            },
+            {
+                title: "create-row",
+                handler: async payload => {
+                    const { rowIndex } = payload;
+                    await this.createRowAt(rowIndex);
+                }
+            },
+            {
+                title: "create-cell",
+                handler: async payload => {
+                    const { rowIndex, cellIndex } = payload;
+                    await this.createCellAt(rowIndex, cellIndex);
+                }
+            },
+            {
+                title: "move-cell",
+                handler: async payload => {
+                    const { rowIndex, cellIndex, targetRowIndex, targetCellIndex } = payload;
+                    const cell = this.getCellAt(rowIndex, cellIndex);
+                    await this.moveCell(cell, targetRowIndex, targetCellIndex);
+                }
+            },
+            {
+                title: "delete-cell",
+                handler: async payload => {
+                    const { rowIndex, cellIndex } = payload;
+                    const cell = this.getCellAt(rowIndex, cellIndex);
+                    await this.deleteCell(cell);
+                }
+            },
         ];
     }
 
@@ -143,6 +173,26 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
             await this.lightweightRowHeightEditor.applyChange();
             this.lightweightRowHeightEditor = null;
         }
+    }
+
+    private async createRowAt(rowIndex: number): Promise<void> {
+        // TODO: implement
+        console.info("createRowAt");
+    }
+
+    private async createCellAt(rowIndex: number, cellIndex: number): Promise<void> {
+        // TODO: implement
+        console.info("createCellAt");
+    }
+
+    private async deleteCell(cell: Cell): Promise<void> {
+        // TODO: implement
+        console.info("deleteCell");
+    }
+
+    private async moveCell(cell: Cell, targetRowIndex: number, targetCellIndex: number): Promise<void> {
+        // TODO: implement
+        console.info("moveCell");
     }
 
     protected async updateContentData(): Promise<void> {

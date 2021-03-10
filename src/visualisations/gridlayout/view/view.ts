@@ -32,7 +32,8 @@ class GridLayoutView extends AbstractVisualisationView {
                 // TODO
             },
             onRowAddButtonClick: () => {
-                this.createRow();
+                // Create a new bottom row by default
+                this.createRow(this.grid.rows.length);
             },
             onRowResize: (rowAbove: Row, rowBelow: Row, isFinalSize: boolean) => {
                 this.resizeRows(rowAbove, rowBelow, isFinalSize);
@@ -77,12 +78,14 @@ class GridLayoutView extends AbstractVisualisationView {
         });
     }
 
-    private createRow(): void {
+    private createRow(newRowIndex: number): void {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
             visualisationUid: this.modelUid,
             title: "create-row",
-            notification: {}
+            notification: {
+                rowIndex: newRowIndex
+            }
         });
     }
 
@@ -134,7 +137,7 @@ class GridLayoutView extends AbstractVisualisationView {
         this.messenger.sendMessage({
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
             visualisationUid: this.modelUid,
-            title: "create-row",
+            title: "create-cell",
             notification: {
                 rowIndex: cell.rowIndex,
                 cellIndex: position === "before" ? cell.cellIndex : cell.cellIndex + 1
