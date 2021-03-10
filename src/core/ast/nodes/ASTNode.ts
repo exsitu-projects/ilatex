@@ -99,6 +99,38 @@ export abstract class ASTNode {
         });
     }
 
+    // Note: "surrounding whitespace" does not include newline characters
+    async deleteTextContent(trimSurroundingWhitespace: boolean = true): Promise<void> {
+        let rangeToDelete = this.range;
+        if (trimSurroundingWhitespace) {
+            // Determine the start of the leading whitespace (if any)
+            // and the end of the trailing whitespace (if any)
+            // ON THE SAME LINES THAN THE FIRST AND LAST LINE OF THE NODE'S RANGE!
+            const document = await this.sourceFile.document;
+
+            const firstLineOfContent = document.lineAt(this.range.from.line);
+            const contentBeforeNode = firstLineOfContent.text.substring(0, this.range.from.column);
+            const lastNonWhitespaceIndexBeforeNode = Math.max(0, contentBeforeNode.trimRight().length - 1);
+
+            const lastLineOfContent = document.lineAt(this.range.to.line);
+            const contentAfterNode = lastLineOfContent.text.substring(this.range.to.column);
+            const firstNonWhitespaceIndexAfterNode = contentAfterNode.length - contentAfterNode.trimLeft().length;
+
+            rangeToDelete = new SourceFileRange(
+                this.range.from.with({ column: lastNonWhitespaceIndexBeforeNode }),
+                this.range.to.with({ column: this.range.to.column + firstNonWhitespaceIndexAfterNode })
+            );
+        }
+
+        console.log("range to delete:", rangeToDelete);
+
+        await this.makeAtomicChangeWithinNode(editBuilder => {
+            editBuilder.delete(rangeToDelete.asVscodeRange);
+        });
+
+        console.log("delete done")
+    }
+
     // Dispatch a source file change to this node + every of its children in the AST
     // Return a promiseresolving to a boolean indicating whether the node requires reparsing or not
     async dispatchAndProcessChange(change: SourceFileChange): Promise<boolean> {
