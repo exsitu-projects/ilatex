@@ -192,36 +192,20 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
 
         const nbRows = this.layout.nbRows;
         const rows = this.layout.rows;
-
-        // If there is a more than one line of text before the row to be inserted in the environment,
-        // set the leading indent as the length of the last line of this text
-        let indentSize = 2;
-
-        const textInEnvironmentBeforeRowToInsert = await this.sourceFile.getContent(
-            new SourceFileRange(
-                (nbRows === 0 || rowIndex === 0)
-                    ? this.astNode.body.range.from // beginning of body (if there is no row before)
-                    : rows[rowIndex - 1].astNode.range.to, // end of previous row (otherwise)
-                (nbRows === 0 || rowIndex > this.layout.lastRow.rowIndex)
-                    ? this.astNode.body.range.to // end of body (if there is no row after)
-                    : rows[rowIndex].astNode.range.from, // beginning of the row with the given index (otherwise)
-            )
-        );
-
-        const nbLinesInEnvironmentBeforeRowToInsert = StringUtils.countLinesOf(textInEnvironmentBeforeRowToInsert);
-        if (nbLinesInEnvironmentBeforeRowToInsert > 1) {
-            indentSize = StringUtils.lastLineOf(textInEnvironmentBeforeRowToInsert).length;
-        }
+        const isNewLastRow = rowIndex > this.layout.lastRow.rowIndex;
+        
+        // Estimate the current indent using the column in front of the \begin{gridlayout} command
+        const currentIndentSize = this.astNode.range.from.column + this.indentSize;
 
         // The new row should be inserted
         // - at the start of the env. body if the index is 0 and there is no row, or
         // - before the row with the given index if there is one, or
-        // - at the end of the last row if the index is greater than the higher current row index
-        let insertPosition: SourceFilePosition = this.astNode.body.range.from;
+        // - at the end of the last row if the index is greater than its row index
+        let insertPosition = this.astNode.body.range.from;
         if (nbRows > 0) {
-            insertPosition = rowIndex <= this.layout.lastRow.rowIndex 
-                ? this.layout.lastRow.astNode.range.from
-                : this.layout.lastRow.astNode.range.to;
+            insertPosition = isNewLastRow
+                ? this.layout.lastRow.astNode.range.to
+                : rows[rowIndex].astNode.range.from;
         }
 
         // Determine the size of the new row
@@ -244,15 +228,16 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
         }
 
         // Insert a new row with a single cell
-        const indent = " ".repeat(indentSize);
-        const addFinalNewline = rowIndex <= this.layout.lastRow.rowIndex;
+        const indent = " ".repeat(this.indentSize);
+        const currentIndent = " ".repeat(currentIndentSize);
         const newRowText = [
-            `\n`,
-            `${indent}\\begin{row}{${newRowSizeAsString}}\n`,
-            `${indent}${indent}\\begin{cell}{1}\n`,
-            `${indent}${indent}${indent}~\n`,
-            `${indent}${indent}\\end{cell}\n`,
-            `${indent}\\end{row}${addFinalNewline ? "\n" : ""}`,
+            `${isNewLastRow ? "\n" + currentIndent : ""}`,
+            `\\begin{row}{${newRowSizeAsString}}\n`,
+            `${currentIndent}${indent}\\begin{cell}{1}\n`,
+            `${currentIndent}${indent}${indent}~\n`,
+            `${currentIndent}${indent}\\end{cell}\n`,
+            `${currentIndent}\\end{row}`,
+            `${!isNewLastRow ? "\n" : ""}`
         ].join("");
 
         await this.sourceFile.makeAtomicChange(editBuilder => 
