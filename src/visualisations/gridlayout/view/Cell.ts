@@ -108,9 +108,6 @@ export class Cell {
         contentNode.classList.add("cell-content");
         contentNode.textContent = contentCellNode.textContent!.trim();
 
-        // Select the content in the code editor on click
-        contentNode.addEventListener("click", event => { this.callbacks.onCellContentClick(this); });
-
         return contentNode;
     }
 

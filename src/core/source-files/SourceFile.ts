@@ -80,12 +80,12 @@ export class SourceFile {
         const editor = await this.getOrOpenInEditor();
 
         // If the selected range is not visible, possibly scroll to the selection
-        if (scrollIfNotVisible) {
-            editor.revealRange(
-                range.asVscodeRange,
-                vscode.TextEditorRevealType.InCenterIfOutsideViewport
-            );
-        }
+        editor.revealRange(
+            range.asVscodeRange,
+            scrollIfNotVisible
+                ? vscode.TextEditorRevealType.InCenterIfOutsideViewport
+                : undefined
+        );
     }
 
     async getContent(range?: SourceFileRange): Promise<string> {

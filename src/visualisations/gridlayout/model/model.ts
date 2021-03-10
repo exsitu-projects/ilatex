@@ -39,7 +39,8 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
                 title: "select-cell-content",
                 handler: async payload => {
                     const { rowIndex, cellIndex } = payload;
-                    const row = this.getCellAt(rowIndex, cellIndex);
+                    const cell = this.getCellAt(rowIndex, cellIndex);
+                    await cell.astNode.selectRangeInEditor();
                 }
             },
             {

@@ -40,7 +40,7 @@ class GridLayoutView extends AbstractVisualisationView {
             onCellResize: (leftCell: Cell, rightCell: Cell, isFinalSize: boolean) => {
                 this.resizeCells(leftCell, rightCell, isFinalSize);
             },
-            onCellContentClick: (cell: Cell) => {
+            onCellClick: (cell: Cell) => {
                 this.selectContentOfCell(cell);
             },
             onCellDrop: (draggedCell: Cell, targetCell: Cell, side: "left" | "right") => {

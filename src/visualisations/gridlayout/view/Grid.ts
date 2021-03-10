@@ -8,7 +8,7 @@ export interface GridCallbacks {
     onRowAddButtonClick: () => void;
     onRowResize: (rowAbove: Row, rowBelow: Row, isFinalSize: boolean) => void;
     onCellResize: (leftCell: Cell, rightCell: Cell, isFinalSize: boolean) => void;
-    onCellContentClick: (cell: Cell) => void;
+    onCellClick: (cell: Cell) => void;
     onCellDrop: (draggedCell: Cell, targetCell: Cell, side: "left" | "right") => void;
     onCellAddButtonClick: (cell: Cell, newCellLocation: "before" | "after") => void;
     onCellDeleteButtonClick: (cell: Cell) => void;
@@ -253,6 +253,12 @@ export class Grid {
                         cell.node.classList.remove("dragged");
                     },
                 },
+            });
+
+            // To avoid interferences between standard OM event listeners and interact.js,
+            // this listerner is created via interact.js here and now
+            interact(cell.draggableNode).on("tap", (event: any) => {
+                this.callbacks.onCellClick(cell);
             });
 
             interact(cell.leftCellDropZoneNode).dropzone({
