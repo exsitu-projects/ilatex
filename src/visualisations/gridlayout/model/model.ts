@@ -119,7 +119,7 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
         // Associate a unique editable section name to each row
         const nameSectionAfterRow = (row: Row) => `${row.rowIndex}`;
 
-        if (!this.lightweightCellSizeEditor) {
+        if (!this.lightweightRowHeightEditor) {
             const editableSections = sortedChanges.map(change => {
                 return {
                     name: nameSectionAfterRow(change.row),
@@ -127,20 +127,20 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
                 };
             });
 
-            this.lightweightCellSizeEditor = this.sourceFile.createLightweightEditorFor(editableSections);
-            await this.lightweightCellSizeEditor.init();
+            this.lightweightRowHeightEditor = this.sourceFile.createLightweightEditorFor(editableSections);
+            await this.lightweightRowHeightEditor.init();
         }
         
         for (let change of sortedChanges) {
-            await this.lightweightCellSizeEditor.replaceSectionContent(
+            await this.lightweightRowHeightEditor.replaceSectionContent(
                 nameSectionAfterRow(change.row),
                 MathUtils.round(change.newRelativeSize, 3).toString()
             );
         }
 
         if (isFinalSize) {
-            await this.lightweightCellSizeEditor.applyChange();
-            this.lightweightCellSizeEditor = null;
+            await this.lightweightRowHeightEditor.applyChange();
+            this.lightweightRowHeightEditor = null;
         }
     }
 
