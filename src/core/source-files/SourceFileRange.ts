@@ -105,6 +105,9 @@ export class SourceFileRange {
     }
 
     private shiftAfterChangeBeforeRange(change: SourceFileChange): void {
+        const currentStartLineAsVscodeLine = this.from.asVscodePosition.line;
+        const isSingleLine = this.isSingleLine;
+
         this.from.shift.lines += change.shift.lines;
         this.from.shift.offset += change.shift.offset;
 
@@ -115,9 +118,9 @@ export class SourceFileRange {
         // the column must also be shifted.
         // It can either concern the start column only or both the start and end columns
         // (if the end column is located on the same line than the start column).
-        if (this.from.asVscodePosition.line === change.end.line) {
+        if (currentStartLineAsVscodeLine === change.end.line) {
             this.from.shift.columns += change.shift.columns;
-            if (this.isSingleLine) {
+            if (isSingleLine) {
                 this.to.shift.columns += change.shift.columns;
             }
         }
@@ -129,12 +132,14 @@ export class SourceFileRange {
     }
 
     private shiftAfterChangeWithinRange(change: SourceFileChange): void {
+        const currentEndLineAsVscodeLine = this.to.asVscodePosition.line;
+
         this.to.shift.lines += change.shift.lines;
         this.to.shift.offset += change.shift.offset;  
 
         // If the change ends on the same line than this range,
         // the column of the end of this range end must also be shifted.
-        if (change.end.line === this.to.asVscodePosition.line) {
+        if (change.end.line === currentEndLineAsVscodeLine) {
             this.to.shift.columns += change.shift.columns;
         }
     }
