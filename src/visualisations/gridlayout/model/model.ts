@@ -104,8 +104,16 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
                 title: "delete-cell",
                 handler: async payload => {
                     const { rowIndex, cellIndex } = payload;
-                    const cell = this.getCellAt(rowIndex, cellIndex);
-                    await this.deleteCell(cell);
+
+                    // If the row only contains one cell, delete the row instead
+                    const row = this.getRowAt(rowIndex);
+                    if (row.nbCells <= 1) {
+                        await this.deleteRow(row);
+                    }
+                    else {
+                        const cell = this.getCellAt(rowIndex, cellIndex);
+                        await this.deleteCell(cell);
+                    }
                 }
             },
         ];
@@ -193,7 +201,7 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
         const nbRows = this.layout.nbRows;
         const rows = this.layout.rows;
         const isNewLastRow = rowIndex > this.layout.lastRow.rowIndex;
-        
+
         // Estimate the current indent using the column in front of the \begin{gridlayout} command
         const currentIndentSize = this.astNode.range.from.column + this.indentSize;
 
@@ -310,13 +318,12 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
         );
     }
 
-        // TODO: implement
-        console.info("createCellAt");
+    private async deleteRow(row: Row): Promise<void> {
+        await row.astNode.deleteTextContent();
     }
 
     private async deleteCell(cell: Cell): Promise<void> {
-        // TODO: implement
-        console.info("deleteCell");
+        await cell.astNode.deleteTextContent();
     }
 
     private async moveCell(cell: Cell, targetRowIndex: number, targetCellIndex: number): Promise<void> {
