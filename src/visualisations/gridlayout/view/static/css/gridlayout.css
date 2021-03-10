@@ -197,6 +197,7 @@
     height: 1.5em;
     padding: 0;
     background-color: #8a0000;
+    z-index: 1730; /* so that the button remains on top of the add row buttons on very small rows/cells */
 }
 
 [data-visualisation-name="grid layout"] .action-buttons-container .delete-cell-button:hover,
