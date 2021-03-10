@@ -7,6 +7,9 @@ import { Cell, Layout, Row } from "./Layout";
 import { HtmlUtils } from "../../../shared/utils/HtmlUtils";
 import { LightweightSourceFileEditor } from "../../../core/source-files/LightweightSourceFileEditor";
 import { MathUtils } from "../../../shared/utils/MathUtils";
+import { StringUtils } from "../../../shared/utils/StringUtils";
+import { SourceFileRange } from "../../../core/source-files/SourceFileRange";
+import { SourceFilePosition } from "../../../core/source-files/SourceFilePosition";
 
 class NoLayoutError {}
 
@@ -176,8 +179,81 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
     }
 
     private async createRowAt(rowIndex: number): Promise<void> {
-        // TODO: implement
-        console.info("createRowAt");
+        if (!this.layout) {
+            return;
+        }
+
+        console.info("=== Insert new row at: ", rowIndex);
+        console.log(this.layout);
+
+        const nbRows = this.layout.nbRows;
+        const rows = this.layout.rows;
+
+        // If there is a more than one line of text before the row to be inserted in the environment,
+        // set the leading indent as the length of the last line of this text
+        let indentSize = 2;
+
+        const textInEnvironmentBeforeRowToInsert = await this.sourceFile.getContent(
+            new SourceFileRange(
+                (nbRows === 0 || rowIndex === 0)
+                    ? this.astNode.body.range.from // beginning of body (if there is no row before)
+                    : rows[rowIndex - 1].astNode.range.to, // end of previous row (otherwise)
+                (nbRows === 0 || rowIndex > this.layout.lastRow.rowIndex)
+                    ? this.astNode.body.range.to // end of body (if there is no row after)
+                    : rows[rowIndex].astNode.range.from, // beginning of the row with the given index (otherwise)
+            )
+        );
+
+        const nbLinesInEnvironmentBeforeRowToInsert = StringUtils.countLinesOf(textInEnvironmentBeforeRowToInsert);
+        if (nbLinesInEnvironmentBeforeRowToInsert > 1) {
+            indentSize = StringUtils.lastLineOf(textInEnvironmentBeforeRowToInsert).length;
+        }
+
+        // The new row should be inserted
+        // - at the start of the env. body if the index is 0 and there is no row, or
+        // - before the row with the given index if there is one, or
+        // - at the end of the last row if the index is greater than the higher current row index
+        let insertPosition: SourceFilePosition = this.astNode.body.range.from;
+        if (nbRows > 0) {
+            insertPosition = rowIndex <= this.layout.lastRow.rowIndex 
+                ? this.layout.lastRow.astNode.range.from
+                : this.layout.lastRow.astNode.range.to;
+        }
+
+        // Determine the size of the new row
+        let rowToResize = null;
+        if (nbRows > 0) {
+            rowToResize = rows[MathUtils.clamp(0, rowIndex - 1, this.layout.lastRow.rowIndex)];
+        }
+
+        const newRowSize = rowToResize
+            ? rowToResize.options.relativeSize / 2
+            : 1;
+        const newRowSizeAsString = MathUtils.round(newRowSize, 3).toString();
+
+        // Resize another row (to make space for the new row) if required
+        if (rowToResize) {
+            const newSizeOfRowToResize = rowToResize.options.relativeSize - newRowSize;
+            const newSizeOfRowToResizeAsString = MathUtils.round(newSizeOfRowToResize, 3).toString();
+
+            await rowToResize.options.relativeSizeParameterNode.setTextContent(newSizeOfRowToResizeAsString);
+        }
+
+        // Insert a new row with a single cell
+        const indent = " ".repeat(indentSize);
+        const addFinalNewline = rowIndex <= this.layout.lastRow.rowIndex;
+        const newRowText = [
+            `\n`,
+            `${indent}\\begin{row}{${newRowSizeAsString}}\n`,
+            `${indent}${indent}\\begin{cell}{1}\n`,
+            `${indent}${indent}${indent}~\n`,
+            `${indent}${indent}\\end{cell}\n`,
+            `${indent}\\end{row}${addFinalNewline ? "\n" : ""}`,
+        ].join("");
+
+        await this.sourceFile.makeAtomicChange(editBuilder => 
+            editBuilder.insert(insertPosition.asVscodePosition, newRowText)
+        );
     }
 
     private async createCellAt(rowIndex: number, cellIndex: number): Promise<void> {
