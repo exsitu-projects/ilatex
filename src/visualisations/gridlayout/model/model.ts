@@ -132,6 +132,44 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
             .cells[cellIndex];
     }
 
+    private getRowInsertPosition(rowIndex: number): SourceFilePosition {
+        if (!this.layout) {
+            throw new NoLayoutError();
+        }
+
+        const nbRows = this.layout.nbRows;
+        const isNewLastRow = rowIndex > this.layout.lastRow.rowIndex;
+
+        // A new row should be inserted
+        // - at the start of the env. body if the index is 0 and there is no row, or
+        // - before the row with the given index if there is one, or
+        // - at the end of the last row if the index is greater than its row index
+        if (nbRows > 0) {
+            return isNewLastRow
+                ? this.layout.lastRow.astNode.range.to
+                : this.layout.rows[rowIndex].astNode.range.from;
+        }
+
+        return this.astNode.body.range.from;
+    }
+
+    private getCellInsertPosition(row: Row, cellIndex: number): SourceFilePosition {
+        const nbCells = row.nbCells;
+        const isNewLastCell = nbCells === 0 || cellIndex > row.lastCell.cellIndex;
+
+        // A new cell should be inserted
+        // - at the start of the row body if the index is 0 and there is no cell, or
+        // - before the cell with the given index if there is one, or
+        // - at the end of the last cell if the index is greater than its cell index
+        if (nbCells > 0) {
+            return isNewLastCell
+                ? row.lastCell.astNode.range.to
+                : row.cells[cellIndex].astNode.range.from;
+        }
+
+        return row.astNode.body.range.from;
+    }
+
     private async resizeCells(sortedChanges: { cell: Cell, newRelativeSize: number}[], isFinalSize: boolean): Promise<void> {
         // Associate a unique editable section name to each cell
         const nameSectionAfterCell = (cell: Cell) => `${cell.rowIndex}-${cell.cellIndex}`;
@@ -205,16 +243,8 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
         // Estimate the current indent using the column in front of the \begin{gridlayout} command
         const currentIndentSize = this.astNode.range.from.column + this.indentSize;
 
-        // The new row should be inserted
-        // - at the start of the env. body if the index is 0 and there is no row, or
-        // - before the row with the given index if there is one, or
-        // - at the end of the last row if the index is greater than its row index
-        let insertPosition = this.astNode.body.range.from;
-        if (nbRows > 0) {
-            insertPosition = isNewLastRow
-                ? this.layout.lastRow.astNode.range.to
-                : rows[rowIndex].astNode.range.from;
-        }
+        // Get the position where to insert the new row
+        const insertPosition = this.getRowInsertPosition(rowIndex);
 
         // Determine the size of the new row
         let rowToResize = null;
@@ -271,16 +301,8 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
         // Estimate the current indent using the column in front of the \begin{row} command
         const currentIndentSize = row.astNode.range.from.column + this.indentSize;
 
-        // The new cell should be inserted
-        // - at the start of the row body if the index is 0 and there is no cell, or
-        // - before the cell with the given index if there is one, or
-        // - at the end of the last cell if the index is greater than its cell index
-        let insertPosition = row.astNode.body.range.from;
-        if (nbCells > 0) {
-            insertPosition = isNewLastCell
-                ? row.lastCell.astNode.range.to
-                : cells[cellIndex].astNode.range.from;
-        }
+        // Get the position where to insert the new row
+        const insertPosition = this.getCellInsertPosition(row, cellIndex);
 
         // Determine the size of the new cell
         let cellToResize = null;
