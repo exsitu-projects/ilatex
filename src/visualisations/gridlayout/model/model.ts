@@ -282,7 +282,7 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
                 : cells[cellIndex].astNode.range.from;
         }
 
-        // Determine the size of the new row
+        // Determine the size of the new cell
         let cellToResize = null;
         if (nbCells > 0) {
             cellToResize = cells[MathUtils.clamp(0, cellIndex - 1, row.lastCell.cellIndex)];
