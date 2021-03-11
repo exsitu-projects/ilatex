@@ -170,6 +170,10 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
         return row.astNode.body.range.from;
     }
 
+    private getRelativeSizeAsString(relativeSize: number): string {
+        return MathUtils.round(relativeSize, 3).toString();
+    }
+
     private async resizeCells(sortedChanges: { cell: Cell, newRelativeSize: number}[], isFinalSize: boolean): Promise<void> {
         // Associate a unique editable section name to each cell
         const nameSectionAfterCell = (cell: Cell) => `${cell.rowIndex}-${cell.cellIndex}`;
@@ -189,7 +193,7 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
         for (let change of sortedChanges) {
             await this.lightweightCellSizeEditor.replaceSectionContent(
                 nameSectionAfterCell(change.cell),
-                MathUtils.round(change.newRelativeSize, 3).toString()
+                this.getRelativeSizeAsString(change.newRelativeSize)
             );
         }
 
@@ -218,7 +222,7 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
         for (let change of sortedChanges) {
             await this.lightweightRowHeightEditor.replaceSectionContent(
                 nameSectionAfterRow(change.row),
-                MathUtils.round(change.newRelativeSize, 3).toString()
+                this.getRelativeSizeAsString(change.newRelativeSize)
             );
         }
 
@@ -255,7 +259,7 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
         const newRowSize = rowToResize
             ? rowToResize.options.relativeSize / 2
             : 1;
-        const newRowSizeAsString = MathUtils.round(newRowSize, 3).toString();
+        const newRowSizeAsString = this.getRelativeSizeAsString(newRowSize);
 
         // Resize another row (to make space for the new row) if required
         if (rowToResize) {
@@ -318,7 +322,7 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
         // Resize another cell (to make space for the new cell) if required
         if (cellToResize) {
             const newSizeOfCellToResize = cellToResize.options.relativeSize - newCellSize;
-            const newSizeOfCellToResizeAsString = MathUtils.round(newSizeOfCellToResize, 3).toString();
+            const newSizeOfCellToResizeAsString = this.getRelativeSizeAsString(newSizeOfCellToResize);
 
             await cellToResize.options.relativeSizeParameterNode.setTextContent(newSizeOfCellToResizeAsString);
         }
