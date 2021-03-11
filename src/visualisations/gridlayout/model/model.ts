@@ -174,6 +174,66 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
         return MathUtils.round(relativeSize, 3).toString();
     }
 
+
+    private async normalizeRowSizes(rows: Row[], editBuilder?: vscode.TextEditorEdit): Promise<void> {
+        if (!this.layout) {
+            throw new NoLayoutError();
+        }
+
+        // Compute the sum of the relative sizes over all the given rows
+        // If they already sum to 1, there is nothing to do
+        const rowSizesSum = rows.reduce((sum, row) => sum + row.options.relativeSize, 0);
+
+        if (rowSizesSum === 1) {
+            return;
+        }
+
+        // Otherwise, scale every size (up or down) to ensure the sizes sum to 1
+        const scaleRowSizes = (editBuilder: vscode.TextEditorEdit) => {
+            for (let row of rows) {
+                const newSize = row.options.relativeSize / rowSizesSum;
+                editBuilder.replace(
+                    row.options.relativeSizeParameterNode.range.asVscodeRange,
+                    this.getRelativeSizeAsString(newSize)
+                );
+            }
+        };
+
+        if (editBuilder) {
+            scaleRowSizes(editBuilder);
+        }
+        else {
+            this.sourceFile.makeAtomicChange(editBuilder => scaleRowSizes(editBuilder));
+        }
+    }
+
+    private async normalizeCellSizes(cells: Cell[], editBuilder?: vscode.TextEditorEdit): Promise<void> {
+        // Compute the sum of the relative sizes over all the given cells
+        // If they already sum to 1, there is nothing to do
+        const cellSizesSum = cells.reduce((sum, cell) => sum + cell.options.relativeSize, 0);
+        if (cellSizesSum === 1) {
+            return;
+        }
+
+        // Otherwise, scale every size (up or down) to ensure the sizes sum to 1
+        const scaleCellSizes = (editBuilder: vscode.TextEditorEdit) => {
+            for (let cell of cells) {
+                const newSize = cell.options.relativeSize / cellSizesSum;
+                editBuilder.replace(
+                    cell.options.relativeSizeParameterNode.range.asVscodeRange,
+                    this.getRelativeSizeAsString(newSize)
+                );
+            }
+        };
+
+        if (editBuilder) {
+            scaleCellSizes(editBuilder);
+        }
+        else {
+            this.sourceFile.makeAtomicChange(editBuilder => scaleCellSizes(editBuilder));
+        }
+    }
+
     private async resizeCells(sortedChanges: { cell: Cell, newRelativeSize: number}[], isFinalSize: boolean): Promise<void> {
         // Associate a unique editable section name to each cell
         const nameSectionAfterCell = (cell: Cell) => `${cell.rowIndex}-${cell.cellIndex}`;
@@ -345,11 +405,22 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
     }
 
     private async deleteRow(row: Row): Promise<void> {
+        if (!this.layout) {
+            return;
+        }
+
+        const allRowsExceptDeletedRow = this.layout.rows.filter(someRow => someRow !== row);
+
         await row.astNode.deleteTextContent();
+        await this.normalizeRowSizes(allRowsExceptDeletedRow);
     }
 
     private async deleteCell(cell: Cell): Promise<void> {
+        const row = this.getRowAt(cell.rowIndex);
+        const allRowCellsExceptDeletedRow = row.cells.filter(someCell => someCell !== cell);
+
         await cell.astNode.deleteTextContent();
+        await this.normalizeCellSizes(allRowCellsExceptDeletedRow);
     }
 
     private async moveCell(cell: Cell, targetRowIndex: number, targetCellIndex: number): Promise<void> {
