@@ -1,4 +1,3 @@
-import { Range } from "vscode";
 import { StringUtils } from "../../shared/utils/StringUtils";
 import { SourceFile } from "./SourceFile";
 import { SourceFilePosition, SourceFilePositionShift } from "./SourceFilePosition";
@@ -142,12 +141,10 @@ export class LightweightSourceFileEditor {
         // Then, replace the initial content by the last new content WITHOUT making the source file ignore the change
         this.sourceFile.ignoreChanges = false;
         
-        await this.sourceFile.makeAtomicChange(
-            editBuilder => {
-                for (let sectionData of reverseSortedSectionData) {
-                    editBuilder.replace(sectionData.initialRange.asVscodeRange, sectionData.currentContent);
-                }
+        await this.sourceFile.applyEdits(editBuilder => {
+            for (let sectionData of reverseSortedSectionData) {
+                editBuilder.replace(sectionData.initialRange.asVscodeRange, sectionData.currentContent);
             }
-        );
+        });
     }
 }

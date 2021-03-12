@@ -2,10 +2,10 @@ import * as vscode from "vscode";
 import * as P from "parsimmon";
 import { SourceFileRange, RelativeRangePosition } from "../../source-files/SourceFileRange";
 import { SourceFileChange } from "../../source-files/SourceFileChange";
-import { SourceFile, SourceFileEdit } from "../../source-files/SourceFile";
-import { ArrayMap } from "../../../shared/utils/ArrayMap";
+import { SourceFile } from "../../source-files/SourceFile";
 import { ASTAsyncVisitor, ASTSyncVisitor } from "../visitors/visitors";
-import { BlockNode } from "./BlockNode";
+import { AtomicSourceFileEditor, SourceFileEditProvider } from "../../source-files/AtomicSourceFileEditor";
+import { edits } from "./ast-node-edits";
 
 
 export type ASTNodeParser<T extends ASTNode> = (input: string, context: ASTNodeContext) => P.Result<T>;
@@ -23,13 +23,21 @@ export interface ASTNodeContext {
 export abstract class ASTNode {
     readonly abstract type: string;
     protected abstract parser: ASTNodeParser<ASTNode>;
-    readonly sourceFile: SourceFile;
-    readonly range: SourceFileRange;
     protected readonly abstract isLeaf: boolean;
 
+    readonly edits = {
+        setTextContent: (newContent: string) =>
+            edits.setTextContent(this, newContent),
+        deleteTextContent: (trimSurroundingWhitespace: boolean = true) =>
+            edits.deleteTextContent(this, trimSurroundingWhitespace),
+    };
+
+    readonly sourceFile: SourceFile;
+    readonly range: SourceFileRange;
+
     enableReparsing: boolean;
+    private temporarilyPreventReparsing: boolean;
     protected hasUnreparsedContentChanges: boolean;
-    private isPartOfAtomicChange: boolean;
 
     readonly rangeChangeEventEmitter: vscode.EventEmitter<void>;
     readonly contentChangeEventEmitter: vscode.EventEmitter<ASTNodeUpdateResult>;
@@ -41,8 +49,8 @@ export abstract class ASTNode {
         this.range = context.range;
 
         this.enableReparsing = false;
+        this.temporarilyPreventReparsing = false;
         this.hasUnreparsedContentChanges = false;
-        this.isPartOfAtomicChange = false;
 
         this.rangeChangeEventEmitter = new vscode.EventEmitter();
         this.contentChangeEventEmitter = new vscode.EventEmitter();
@@ -66,70 +74,63 @@ export abstract class ASTNode {
         await this.sourceFile.selectRangeInEditor(this.range);
     }
 
-    protected async beginAtomicChange(): Promise<void> {
-        this.isPartOfAtomicChange = true;
+    protected startTemporarilyPreventingReparsing(): void {
+        this.temporarilyPreventReparsing = true;
         for (let node of this.childNodes) {
-            node.beginAtomicChange();
+            node.startTemporarilyPreventingReparsing();
         }
     }
 
-    protected async endAtomicChange(): Promise<void> {
-        this.isPartOfAtomicChange = false;
+    protected stopTemporarilyPreventingReparsing(): void {
+        this.temporarilyPreventReparsing = false;
         for (let node of this.childNodes) {
-            node.endAtomicChange();
+            node.stopTemporarilyPreventingReparsing();
         }
+    }
 
-        if (this.canBeReparsed) {
+    protected async preventReparsingDuring(action: () => Promise<void>, reparseAfter: boolean = false): Promise<void> {
+        this.startTemporarilyPreventingReparsing();
+        await action();
+        this.stopTemporarilyPreventingReparsing();
+
+        if (reparseAfter && this.canBeReparsed) {
             await this.reparseAndUpdate();
         }
     }
 
-    async makeAtomicChangeWithinNode(edit: SourceFileEdit): Promise<void>;
-    async makeAtomicChangeWithinNode(edits: SourceFileEdit[]): Promise<void>;
-    async makeAtomicChangeWithinNode(editOrEdits: SourceFileEdit | SourceFileEdit[]): Promise<void> {
-        // TODO: possibly check that all the given edits are indeed located within this node
-        this.beginAtomicChange();
-        await this.sourceFile.makeAtomicChange(editOrEdits);
-        this.endAtomicChange();
+    async applyEditsWithoutReparsing(editor: AtomicSourceFileEditor): Promise<void>;
+    async applyEditsWithoutReparsing(editProviders: SourceFileEditProvider[]): Promise<void>;
+    async applyEditsWithoutReparsing(editorOrEditProviders: AtomicSourceFileEditor | SourceFileEditProvider[]): Promise<void> {
+        const editor = Array.isArray(editorOrEditProviders)
+            ? this.sourceFile.createAtomicEditor(editorOrEditProviders)
+            : editorOrEditProviders;
+        
+        this.preventReparsingDuring(
+            async () => { await editor.apply(); },
+            true
+        );
     }
 
     async setTextContent(newContent: string): Promise<void> {
-        await this.makeAtomicChangeWithinNode(editBuilder => {
-            editBuilder.replace(this.range.asVscodeRange, newContent);
-        });
+        await this.applyEditsWithoutReparsing([
+            this.edits.setTextContent(newContent)
+        ]);
     }
 
-    // Note: "surrounding whitespace" does not include newline characters
     async deleteTextContent(trimSurroundingWhitespace: boolean = true): Promise<void> {
-        let rangeToDelete = this.range;
-        if (trimSurroundingWhitespace) {
-            // Determine the start of the leading whitespace (if any)
-            // and the end of the trailing whitespace (if any)
-            // ON THE SAME LINES THAN THE FIRST AND LAST LINE OF THE NODE'S RANGE!
-            const document = await this.sourceFile.document;
-
-            const firstLineOfContent = document.lineAt(this.range.from.line);
-            const contentBeforeNode = firstLineOfContent.text.substring(0, this.range.from.column);
-            const lastNonWhitespaceIndexBeforeNode = Math.max(0, contentBeforeNode.trimRight().length - 1);
-
-            const lastLineOfContent = document.lineAt(this.range.to.line);
-            const contentAfterNode = lastLineOfContent.text.substring(this.range.to.column);
-            const firstNonWhitespaceIndexAfterNode = contentAfterNode.length - contentAfterNode.trimLeft().length;
-
-            rangeToDelete = new SourceFileRange(
-                this.range.from.with({ column: lastNonWhitespaceIndexBeforeNode }),
-                this.range.to.with({ column: this.range.to.column + firstNonWhitespaceIndexAfterNode })
-            );
-        }
-
-        console.log("range to delete:", rangeToDelete);
-
-        await this.makeAtomicChangeWithinNode(editBuilder => {
-            editBuilder.delete(rangeToDelete.asVscodeRange);
-        });
-
-        console.log("delete done")
+        await this.applyEditsWithoutReparsing([
+            this.edits.deleteTextContent(trimSurroundingWhitespace)
+        ]);
     }
+
+    // async makeAtomicChangeWithinNode(edit: SourceFileEdit): Promise<void>;
+    // async makeAtomicChangeWithinNode(edits: SourceFileEdit[]): Promise<void>;
+    // async makeAtomicChangeWithinNode(editOrEdits: SourceFileEdit | SourceFileEdit[]): Promise<void> {
+    //     // TODO: possibly check that all the given edits are indeed located within this node
+    //     this.beginAtomicChange();
+    //     await this.sourceFile.makeAtomicChange(editOrEdits);
+    //     this.endAtomicChange();
+    // }
 
     // Dispatch a source file change to this node + every of its children in the AST
     // Return a promiseresolving to a boolean indicating whether the node requires reparsing or not
@@ -142,7 +143,7 @@ export abstract class ASTNode {
         }
 
         if (this.hasUnreparsedContentChanges || someChildNodeRequiresReparsing) {
-            if (!this.isPartOfAtomicChange && this.canBeReparsed) {
+            if (!this.temporarilyPreventReparsing && this.canBeReparsed) {
                 await this.reparseAndUpdate();
                 return this.hasUnreparsedContentChanges;
             }

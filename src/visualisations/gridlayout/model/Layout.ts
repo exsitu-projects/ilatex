@@ -175,6 +175,15 @@ export class Layout {
         return this.rows[this.rows.length - 1];
     }
 
+    getRowAt(rowIndex: number): Row {
+        return this.rows[rowIndex];
+    }
+
+    getCellAt(rowIndex: number, cellIndex: number): Cell {
+        return this.getRowAt(rowIndex)
+            .cells[cellIndex];
+    }
+
     static async createEmptyLayoutFrom(
         node: EnvironmentNode,
         codeMapping: CodeMapping

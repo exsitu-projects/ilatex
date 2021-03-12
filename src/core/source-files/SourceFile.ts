@@ -4,8 +4,7 @@ import { LatexAST } from "../ast/LatexAST";
 import { SourceFileChange } from "./SourceFileChange";
 import { SourceFileRange } from "../source-files/SourceFileRange";
 import { EditableSection, LightweightSourceFileEditor } from "./LightweightSourceFileEditor";
-
-export type SourceFileEdit = (editBuilder: vscode.TextEditorEdit) => void;
+import { AtomicSourceFileEditor, SourceFileEdit, SourceFileEditProvider } from "./AtomicSourceFileEditor";
 
 export class NotInitialisedError {}
 
@@ -93,30 +92,14 @@ export class SourceFile {
         return document.getText(range?.asVscodeRange);
     }
 
-    async makeAtomicChange(edit: SourceFileEdit): Promise<void>;
-    async makeAtomicChange(edits: SourceFileEdit[]): Promise<void>;
-    async makeAtomicChange(editOrEdits: SourceFileEdit | SourceFileEdit[]): Promise<void>;
-    async makeAtomicChange(editOrEdits: SourceFileEdit | SourceFileEdit[]): Promise<void> {
-        const edits = Array.isArray(editOrEdits) ? editOrEdits : [editOrEdits];
-        const editor = await this.getOrOpenInEditor();
+    async applyEdits(...edits: SourceFileEdit[]): Promise<void> {
+        const editor = this.createAtomicEditor();
+        editor.addEdits(...edits);
+        await editor.apply();
+    }
 
-        // If there is a single edit, add undo stops both before and after the edit
-        // If there is more than one edit, add an undo stop before the first edit
-        // and another one after the last edit (but none in between)
-        if (edits.length === 1) {
-            await editor.edit(edits[0]);
-        }
-        else {
-            const firstEdit = edits.shift()!;
-            const lastEdit = edits.pop()!;
-            const otherEdits = edits;
-
-            await editor.edit(firstEdit, { undoStopBefore: true, undoStopAfter: false});
-            for (let edit of otherEdits) {
-                await editor.edit(edit, { undoStopBefore: false, undoStopAfter: false});
-            }
-            await editor.edit(lastEdit, { undoStopBefore: false, undoStopAfter: true});
-        }
+    createAtomicEditor(editProviders: SourceFileEditProvider[] = []): AtomicSourceFileEditor {
+        return new AtomicSourceFileEditor(this, editProviders);
     }
 
     createLightweightEditorFor(editableSections: EditableSection[]): LightweightSourceFileEditor {

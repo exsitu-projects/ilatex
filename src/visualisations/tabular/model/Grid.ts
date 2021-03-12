@@ -13,6 +13,8 @@ import { SpecialSymbolNode } from "../../../core/ast/nodes/SpecialSymbolNode";
 
 export class NoNodeError extends Error {}
 export class NoContentError extends Error {}
+export class NoCellError extends Error {}
+export class NoRowError extends Error {}
 
 export class Cell {
     // The choice of commands not considered as content is strongly inspired by
@@ -305,6 +307,10 @@ export class Grid {
 
     get hasNodeAfterLastRow(): boolean {
         return this.nodesAfterLastRow.length > 0;
+    }
+
+    getCellAt(rowIndex: number, columnIndex: number): Cell {
+        return this.rows[rowIndex].cells[columnIndex];
     }
 
     static async from(tabularNode: EnvironmentNode): Promise<Grid> {
