@@ -63,10 +63,10 @@ export class VisualisationViewContext {
 
         const annotationMaskBox = annotationMaskNode.getBoundingClientRect();
         return [
-            annotationMaskBox.left,
-            annotationMaskBox.top,
-            annotationMaskBox.right,
-            annotationMaskBox.bottom,
+            window.scrollX + annotationMaskBox.left,
+            window.scrollY + annotationMaskBox.top,
+            window.scrollX + annotationMaskBox.right,
+            window.scrollY + annotationMaskBox.bottom,
         ];
     }
 
