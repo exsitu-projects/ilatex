@@ -2,7 +2,7 @@ import { WhitespaceNode } from "../../../core/ast/nodes/WhitespaceNode";
 import { AtomicSourceFileEditor, SourceFileEditProvider } from "../../../core/source-files/AtomicSourceFileEditor";
 import { SourceFileRange } from "../../../core/source-files/SourceFileRange";
 import { MathUtils } from "../../../shared/utils/MathUtils";
-import { Cell, Grid, Row } from "./Grid";
+import { Cell, Grid } from "./Grid";
 
 export const edits = {
     replaceCellContent(cell: Cell, newContent: string): SourceFileEditProvider {

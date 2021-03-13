@@ -81,69 +81,6 @@ export const edits = {
         };
     },
 
-    // resizeCells(sortedChanges: { cell: Cell, newRelativeSize: number}[], isFinalSize: boolean): SourceFileEditProvider {
-    //     return createProviderFor((({ editor }: SourceFileEditContext) => {
-    //         // Associate a unique editable section name to each cell
-    //         const nameSectionAfterCell = (cell: Cell) => `${cell.rowIndex}-${cell.cellIndex}`;
-
-    //         if (!this.lightweightCellSizeEditor) {
-    //             const editableSections = sortedChanges.map(change => {
-    //                 return {
-    //                     name: nameSectionAfterCell(change.cell),
-    //                     range: change.cell.options.relativeSizeParameterNode.range
-    //                 };
-    //             });
-
-    //             this.lightweightCellSizeEditor = this.sourceFile.createLightweightEditorFor(editableSections);
-    //             await this.lightweightCellSizeEditor.init();
-    //         }
-
-    //         for (let change of sortedChanges) {
-    //             await this.lightweightCellSizeEditor.replaceSectionContent(
-    //                 nameSectionAfterCell(change.cell),
-    //                 getRelativeSizeAsString(change.newRelativeSize)
-    //             );
-    //         }
-
-    //         if (isFinalSize) {
-    //             await this.lightweightCellSizeEditor.applyChange();
-    //             this.lightweightCellSizeEditor = null;
-    //         }
-    //     });
-    // },
-
-    // resizeRows(sortedChanges: { row: Row, newRelativeSize: number}[], isFinalSize: boolean): SourceFileEditProvider {
-    //     return createProviderFor((({ editor }: SourceFileEditContext) => {
-
-    //     });
-    //     // Associate a unique editable section name to each row
-    //     const nameSectionAfterRow = (row: Row) => `${row.rowIndex}`;
-
-    //     if (!this.lightweightRowHeightEditor) {
-    //         const editableSections = sortedChanges.map(change => {
-    //             return {
-    //                 name: nameSectionAfterRow(change.row),
-    //                 range: change.row.options.relativeSizeParameterNode.range
-    //             };
-    //         });
-
-    //         this.lightweightRowHeightEditor = this.sourceFile.createLightweightEditorFor(editableSections);
-    //         await this.lightweightRowHeightEditor.init();
-    //     }
-        
-    //     for (let change of sortedChanges) {
-    //         await this.lightweightRowHeightEditor.replaceSectionContent(
-    //             nameSectionAfterRow(change.row),
-    //             getRelativeSizeAsString(change.newRelativeSize)
-    //         );
-    //     }
-
-    //     if (isFinalSize) {
-    //         await this.lightweightRowHeightEditor.applyChange();
-    //         this.lightweightRowHeightEditor = null;
-    //     }
-    // },
-
     createRow(layout: Layout, rowIndex: number): SourceFileEditProvider {
         return async (editor: AtomicSourceFileEditor) => {
             const nbRows = layout.nbRows;

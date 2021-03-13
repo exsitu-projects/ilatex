@@ -1,6 +1,6 @@
 import { StringUtils } from "../../shared/utils/StringUtils";
 import { SourceFile } from "./SourceFile";
-import { SourceFilePosition, SourceFilePositionShift } from "./SourceFilePosition";
+import { SourceFilePosition } from "./SourceFilePosition";
 import { SourceFileRange } from "./SourceFileRange";
 
 export interface EditableSection {

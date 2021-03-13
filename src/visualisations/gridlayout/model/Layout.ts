@@ -3,7 +3,6 @@ import { SourceFileRange } from "../../../core/source-files/SourceFileRange";
 import { EnvironmentNode } from "../../../core/ast/nodes/EnvironmentNode";
 import { CurlyBracesParameterBlockNode } from "../../../core/ast/nodes/CurlyBracesParameterBlockNode";
 import { CodeMapping } from "../../../core/code-mappings/CodeMapping";
-import { EMPTY_AST_VALUE } from "../../../core/ast/LatexParser";
 import { LayoutContentExtractor, LayoutExtractionError } from "./LayoutContentExtractor";
 import { ParameterNode } from "../../../core/ast/nodes/ParameterNode";
 

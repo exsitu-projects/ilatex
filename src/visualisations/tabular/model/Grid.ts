@@ -1,5 +1,4 @@
 import * as vscode from "vscode";
-import * as P from "parsimmon";
 import { GridExtractor } from "./GridExtractor";
 import { ASTNode } from "../../../core/ast/nodes/ASTNode";
 import { CommandNode } from "../../../core/ast/nodes/CommandNode";
