@@ -41,18 +41,18 @@ function getInsertPositionOfCell(row: Row, cellIndex: number): SourceFilePositio
 }
 
 export const edits = {
-    normalizeRowSizes(rows: Row[]): SourceFileEditProvider {
+    normalizeRowSizes(rows: Row[], totalSize: number = 1): SourceFileEditProvider {
         return async (editor: AtomicSourceFileEditor) => {
             // Compute the sum of the relative sizes over all the given rows
             // If they already sum to 1, there is nothing to do
             const rowSizesSum = rows.reduce((sum, row) => sum + row.options.relativeSize, 0);
-            if (rowSizesSum === 1) {
+            if (rowSizesSum === totalSize) {
                 return;
             }
     
-            // Otherwise, scale every size (up or down) to ensure the sizes sum to 1
+            // Otherwise, scale every size (up or down) to ensure the sizes sum to the desired total size
             for (let row of rows) {
-                const newSize = row.options.relativeSize / rowSizesSum;
+                const newSize = (row.options.relativeSize / rowSizesSum) * totalSize;
                 editor.replace(
                     row.options.relativeSizeParameterNode.range,
                     getRelativeSizeAsString(newSize)
@@ -61,18 +61,18 @@ export const edits = {
         };
     },
 
-    normalizeCellSizes(cells: Cell[]): SourceFileEditProvider {
+    normalizeCellSizes(cells: Cell[], totalSize: number = 1): SourceFileEditProvider {
         return async (editor: AtomicSourceFileEditor) => {
             // Compute the sum of the relative sizes over all the given cells
             // If they already sum to 1, there is nothing to do
             const cellSizesSum = cells.reduce((sum, cell) => sum + cell.options.relativeSize, 0);
-            if (cellSizesSum === 1) {
+            if (cellSizesSum === totalSize) {
                 return;
             }
 
-            // Otherwise, scale every size (up or down) to ensure the sizes sum to 1
+            // Otherwise, scale every size (up or down) to ensure the sizes sum to the desired total size
             for (let cell of cells) {
-                const newSize = cell.options.relativeSize / cellSizesSum;
+                const newSize = (cell.options.relativeSize / cellSizesSum) * totalSize;
                 editor.replace(
                     cell.options.relativeSizeParameterNode.range,
                     getRelativeSizeAsString(newSize)
@@ -130,7 +130,16 @@ export const edits = {
         };
     },
 
-    createCell(layout: Layout, rowIndex: number, cellIndex: number): SourceFileEditProvider {
+    createCell(
+        layout: Layout,
+        rowIndex: number,
+        cellIndex: number,
+        options: {
+            cellContent?: string,
+            relativeSize?: number,
+            skipResizing?: boolean
+        } = {}
+    ) : SourceFileEditProvider {
         return async (editor: AtomicSourceFileEditor) => {
             if (rowIndex > layout.rows.length - 1) {
                 console.warn(`The grid layout's cell cannot be created: there is no row at index ${rowIndex}.`);
@@ -154,13 +163,13 @@ export const edits = {
                 cellToResize = cells[MathUtils.clamp(0, cellIndex - 1, row.lastCell.cellIndex)];
             }
     
-            const newCellSize = cellToResize
+            const newCellSize = options.relativeSize ?? (cellToResize
                 ? cellToResize.options.relativeSize / 2
-                : 1;
+                : 1);
             const newCellSizeAsString = MathUtils.round(newCellSize, 3).toString();
     
-            // Resize another cell (to make space for the new cell) if required
-            if (cellToResize) {
+            // Resize another cell (to make space for the new cell) if required an enabled
+            if (cellToResize && !options.skipResizing) {
                 const newSizeOfCellToResize = cellToResize.options.relativeSize - newCellSize;
                 const newSizeOfCellToResizeAsString = getRelativeSizeAsString(newSizeOfCellToResize);
     
@@ -171,41 +180,132 @@ export const edits = {
             // Insert a new cell
             const indent = " ".repeat(INDENT_SIZE);
             const currentIndent = " ".repeat(currentIndentSize);
-            const newRowText = [
+            const newCellContentText = options.cellContent
+                ? options.cellContent.trim()
+                    .split("\n")
+                    .map(line => `${currentIndent}${indent}${line.trimLeft()}`)
+                    .join("\n")
+                    .concat("\n")
+                : `${currentIndent}${indent}~\n`;
+            const newCellText = [
                 `${isNewLastCell ? "\n" + currentIndent : ""}`,
                 `\\begin{cell}{${newCellSizeAsString}}\n`,
-                `${currentIndent}${indent}~\n`,
+                `${newCellContentText}`,
                 `${currentIndent}\\end{cell}`,
                 `${!isNewLastCell ? "\n" : ""}`,
                 `${!isNewLastCell ? currentIndent : ""}`
             ].join("");
     
-            editor.insert(insertPosition, newRowText);
+            editor.insert(insertPosition, newCellText);
         };
     },
 
-    deleteRow(layout: Layout, row: Row): SourceFileEditProvider {
+    deleteRow(
+        layout: Layout,
+        row: Row,
+        options: {
+            skipResizing?: boolean
+        } = {}
+    ): SourceFileEditProvider {
         return async (editor: AtomicSourceFileEditor) => {
-            const allRowsExceptDeletedRow = layout.rows.filter(someRow => someRow !== row);
+            editor.addEditProviders(row.astNode.edits.deleteTextContent());
 
-            editor.addEditProviders(row.astNode.edits.deleteTextContent()) ;
-            editor.addEditProviders(this.normalizeRowSizes(allRowsExceptDeletedRow));
+            if (!options.skipResizing) {
+                const allRowsExceptDeletedRow = layout.rows.filter(someRow => someRow !== row);
+                editor.addEditProviders(this.normalizeRowSizes(allRowsExceptDeletedRow));
+            }
         };
     },
 
-    deleteCell(layout: Layout, cell: Cell): SourceFileEditProvider {
+    deleteCell(
+        layout: Layout,
+        cell: Cell,
+        options: {
+            skipResizing?: boolean,
+            deleteRowIfLastCellOfRow?: boolean,
+            skipResizingAfterDeletingRow?: boolean
+        } = {}
+    ): SourceFileEditProvider {
         return async (editor: AtomicSourceFileEditor) => {
             const row = layout.getRowAt(cell.rowIndex);
-            const allRowCellsExceptDeletedCell = row.cells.filter(someCell => someCell !== cell);
+            if (row.nbCells === 1 && options.deleteRowIfLastCellOfRow) {
+                editor.addEditProviders(
+                    this.deleteRow(
+                        layout,
+                        row,
+                        { skipResizing: options.skipResizingAfterDeletingRow }
+                    )
+                );
+            }
+            else {
+                editor.addEditProviders(cell.astNode.edits.deleteTextContent()) ;
 
-            editor.addEditProviders(cell.astNode.edits.deleteTextContent()) ;
-            editor.addEditProviders(this.normalizeCellSizes(allRowCellsExceptDeletedCell));
+                if (!options.skipResizing) {
+                    const row = layout.getRowAt(cell.rowIndex);
+                    const allRowCellsExceptDeletedCell = row.cells.filter(someCell => someCell !== cell);
+                    editor.addEditProviders(
+                        this.normalizeCellSizes(allRowCellsExceptDeletedCell)
+                    );
+                }
+            }
         };
     },
 
-    moveCell(layout: Layout, cell: Cell, to: { rowIndex: number, cellIndex: number }): SourceFileEditProvider {
+    moveCell(
+        layout: Layout,
+        cell: Cell,
+        target: { rowIndex: number, cellIndex: number }
+    ): SourceFileEditProvider {
         return async (editor: AtomicSourceFileEditor) => {
-            // TODO
+            const sameRowIndex = cell.rowIndex === target.rowIndex;
+            const sameCellIndex = cell.cellIndex === target.cellIndex;
+
+            // If the target position is the same than the current cell position, there is nothing to do
+            if (sameRowIndex && sameCellIndex) {
+                return;
+            }
+
+            const targetRow = layout.getRowAt(target.rowIndex);
+            const currentRelativeSize = cell.options.relativeSize;
+            const newRelativeSize = sameRowIndex
+                ? currentRelativeSize
+                : currentRelativeSize / (1 + currentRelativeSize);
+
+            // Delete the cell from its current location
+            // and insert a cell with the same content and relative size at the target position
+            editor.addEditProviders(this.deleteCell(layout, cell, {
+                skipResizing: true,
+                deleteRowIfLastCellOfRow: true,
+                skipResizingAfterDeletingRow: false
+            }));
+            
+            editor.addEditProviders(this.createCell(layout, target.rowIndex, target.cellIndex, {
+                cellContent: cell.contentText,
+                relativeSize: newRelativeSize,
+                skipResizing: true
+            }));
+
+            // If the cell is moved to another row,
+            // the size of cells in both rows (source adn target) must be normalised
+            // to ensure the sum of the cells is equal to 1 in each row after the edit
+            if (cell.rowIndex !== target.rowIndex) {
+                // Normalise cell sizes in the source row
+                const sourceRow = layout.getRowAt(cell.rowIndex);
+                const otherCellsInSourceRow = sourceRow.cells.filter(someCell => someCell !== cell);
+                if (otherCellsInSourceRow.length > 0) {
+                    editor.addEditProviders(
+                        this.normalizeCellSizes(otherCellsInSourceRow)
+                    );
+                }
+
+                // Normalise cell sizes in the target row
+                editor.addEditProviders(
+                    this.normalizeCellSizes(
+                        targetRow.cells,
+                        1 - newRelativeSize
+                    )
+                );
+            }
         };
     }
 };
