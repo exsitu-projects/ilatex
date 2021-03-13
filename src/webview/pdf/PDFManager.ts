@@ -162,7 +162,7 @@ export class PDFManager {
             CoreToWebviewMessageType.UpdatePDF,
             async (message: UpdatePDFMessage) => {
                 this.pdfSyncTaskRunner.add(async () => {
-                    return this.updatePDF(message.pdfUri);
+                    await this.updatePDF(message.pdfUri);
                 });
             }
         );
@@ -172,7 +172,7 @@ export class PDFManager {
         window.addEventListener("resize", async event => {
             this.pdfResizeDebouncer.add(async () => {
                 this.pdfSyncTaskRunner.add(async () => {
-                    this.renderer?.redraw();
+                    await this.renderer?.redraw();
                 });
             });
         });
