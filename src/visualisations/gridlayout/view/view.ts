@@ -183,6 +183,10 @@ class GridLayoutView extends AbstractVisualisationView {
         this.grid.resize();
     }
 
+    onAfterPdfResize(): void {
+        this.grid.resize();
+    }
+
     render(): HTMLElement {
         return this.grid.node;
     }

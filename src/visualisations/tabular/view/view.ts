@@ -413,6 +413,10 @@ class TabularView extends AbstractVisualisationView {
         // to force update the dimensions of the table container
         this.resizeHandsontableContainer();
     }
+
+    onAfterPdfResize(): void {
+        this.resizeHandsontableContainer();
+    }
 }
 
 export class TabularViewFactory implements VisualisationViewFactory {
