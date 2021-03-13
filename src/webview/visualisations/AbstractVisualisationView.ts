@@ -6,7 +6,7 @@ import { RawSourceFileRange } from "../../shared/source-files/types";
 import { VisualisationViewContext } from "./VisualisationViewContext";
 
 export abstract class AbstractVisualisationView implements VisualisationView {
-    protected instanciationContext: VisualisationViewContext;
+    readonly context: VisualisationViewContext;
     protected messenger: Messenger;
 
     abstract readonly visualisationName: string;
@@ -19,7 +19,7 @@ export abstract class AbstractVisualisationView implements VisualisationView {
         metadata: VisualisationMetadata,
         context: VisualisationViewContext
     ) {
-        this.instanciationContext = context;
+        this.context = context;
         this.messenger = context.messenger;
 
         this.contentNode = contentNode;

@@ -9,6 +9,7 @@ export interface CodeRange {
 }
 
 export interface VisualisationView {
+    readonly context: VisualisationViewContext;
     readonly name: string;
     readonly title: string;
     readonly modelUid: VisualisationModelUID;

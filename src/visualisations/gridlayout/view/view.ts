@@ -61,7 +61,7 @@ class GridLayoutView extends AbstractVisualisationView {
 
         return new Grid(
             this.contentNode.querySelector(".layout")! as HTMLElement,
-            this.instanciationContext,
+            this.context,
             callbacks
         );
     }

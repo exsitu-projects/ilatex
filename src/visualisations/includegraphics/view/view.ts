@@ -80,7 +80,7 @@ class IncludegraphicsView extends AbstractVisualisationView {
             this.preloadedImageNode,
             this.resizerContainerNode,
             this.options,
-            this.instanciationContext,
+            this.context,
             isFinalChange => this.processResizerChange(isFinalChange)
         );
     }
@@ -90,7 +90,7 @@ class IncludegraphicsView extends AbstractVisualisationView {
             this.preloadedImageNode,
             this.cropperContainerNode,
             this.options,
-            this.instanciationContext,
+            this.context,
             () => { this.updateResizerImage(false); },
             isFinalChange => this.processCropperChange(isFinalChange)
         );
@@ -126,7 +126,7 @@ class IncludegraphicsView extends AbstractVisualisationView {
         }
 
         // Shorthands for some details about the PDF page where the image is displayed
-        const pdfPageDetail = this.instanciationContext.pdfPageDetail!;
+        const pdfPageDetail = this.context.pdfPageDetail!;
         const pdfPageScale = pdfPageDetail.scale;
 
         // const imageData = cropper.getCanvasData();
