@@ -1,11 +1,10 @@
-import { AnnotationMaskCoordinates } from "../pdf/PDFPageRenderer";
 import { VisualisationView } from "./VisualisationView";
 
 export class VisualisationPopup {
     readonly visualisationView: VisualisationView;
-    private maskCoordinates: AnnotationMaskCoordinates;
-
     private onClose: (() => void) | null;
+
+    private initialPositionRelativeToAnnotationMask: "above" | "below" | null;
 
     private popupNode: HTMLElement;
     private backgroundNode: HTMLElement | null;
@@ -17,11 +16,11 @@ export class VisualisationPopup {
     private unavailabilityErrorNode: HTMLElement | null;
     private isDisplayingAnError: boolean;
 
-    constructor(view: VisualisationView, maskCoordinates: AnnotationMaskCoordinates, onClose?: () => void) {
+    constructor(view: VisualisationView, onClose?: () => void) {
         this.visualisationView = view;
-        this.maskCoordinates = maskCoordinates;
-
         this.onClose = onClose ?? null;
+
+        this.initialPositionRelativeToAnnotationMask = null;
 
         // The popup node is the root container of the popup in the DOM
         this.popupNode = document.createElement("div");
@@ -67,14 +66,32 @@ export class VisualisationPopup {
     }
 
     updateFramePosition(): void {
-        // Position the frame at the given vertical offset
-        const maskTop = this.maskCoordinates[1];
-        if (maskTop > window.scrollY + (window.innerHeight / 2)) {
+        const maskCoordinates = this.visualisationView.context.annotationMaskCoordinates
+            ?? this.visualisationView.context.initialAnnotationMaskCoordinates;
+
+        // Reset the CSS attributes that position the frame
+        this.frameNode!.style.removeProperty("bottom");
+        this.frameNode!.style.removeProperty("top");
+
+        // The first time this method is called, decide to position the frame
+        // either above or below the annotation mask of the visualisation
+        // (depending on the mask position within the current viewport)
+        const maskTop = maskCoordinates[1];
+        if (this.initialPositionRelativeToAnnotationMask === null) {
+            this.initialPositionRelativeToAnnotationMask =
+                maskTop > window.scrollY + (window.innerHeight / 2)
+                    ? "above"
+                    : "below";
+        }
+
+        // Then/the next times, pdate the right CSS attribute depending on whether the popup
+        // should be displayed below or above the annotation mask of the visualisation
+        if (this.initialPositionRelativeToAnnotationMask === "above") {
             const maskTopToWebpageBottom = document.documentElement.clientHeight - maskTop;
             this.frameNode!.style.bottom = `${maskTopToWebpageBottom + 20}px`;
         }
         else {
-            const maskBottom = this.maskCoordinates[3];
+            const maskBottom = maskCoordinates[3];
             this.frameNode!.style.top = `${maskBottom + 20}px`;
         }
     }

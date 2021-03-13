@@ -121,7 +121,7 @@ export class VisualisationViewManager {
             request.pdfPageDetail
         ));
 
-        const popup = new VisualisationPopup(view, request.annotationMaskCoordinates, () => {
+        const popup = new VisualisationPopup(view, () => {
             this.currentlyDisplayedVisualisationPopup = null;
         });
 
