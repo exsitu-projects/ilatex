@@ -105,6 +105,14 @@ export abstract class AbstractVisualisationView implements VisualisationView {
         });
     }
 
+    onBeforePdfResize(): void {
+        // Do nothing by default
+    }
+
+    onAfterPdfResize(): void {
+        // Do nothing by default
+    };
+
     abstract render(): HTMLElement;
     
     abstract updateContentWith(newContentNode: HTMLElement): void;

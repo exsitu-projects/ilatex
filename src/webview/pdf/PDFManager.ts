@@ -17,6 +17,8 @@ const pdfIsCurrentlyCompiledNotification = new PDFOverlayNotification(
 export class PDFManager {
     private static readonly WAITING_TIME_BEFORE_PDF_RESIZE: number = 50; // ms
     static readonly PDF_COMPILATION_STARTED_EVENT = "pdf-compilation-started";
+    static readonly PDF_WILL_RESIZE_EVENT = "pdf-will-resize";
+    static readonly PDF_DID_RESIZE_EVENT = "pdf-did_resize";
     static readonly PDF_CURRENTLY_RECOMPILED_BODY_CLASS = "pdf-currently-compiled";
     static readonly LAST_PDF_COMPILATION_FAILED_BODY_CLASS = "last-pdf-compilation-failed";
 
@@ -172,7 +174,9 @@ export class PDFManager {
         window.addEventListener("resize", async event => {
             this.pdfResizeDebouncer.add(async () => {
                 this.pdfSyncTaskRunner.add(async () => {
+                    window.dispatchEvent(new CustomEvent(PDFManager.PDF_WILL_RESIZE_EVENT));
                     await this.renderer?.redraw();
+                    window.dispatchEvent(new CustomEvent(PDFManager.PDF_DID_RESIZE_EVENT));
                 });
             });
         });

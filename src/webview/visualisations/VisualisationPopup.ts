@@ -61,18 +61,21 @@ export class VisualisationPopup {
     createFrame() {
         this.frameNode = document.createElement("div");
         this.frameNode.classList.add("popup-frame");
+        this.updateFramePosition();
 
         this.popupNode.append(this.frameNode);
-        
+    }
+
+    updateFramePosition(): void {
         // Position the frame at the given vertical offset
         const maskTop = this.maskCoordinates[1];
         if (maskTop > window.scrollY + (window.innerHeight / 2)) {
             const maskTopToWebpageBottom = document.documentElement.clientHeight - maskTop;
-            this.frameNode.style.bottom = `${maskTopToWebpageBottom + 20}px`;
+            this.frameNode!.style.bottom = `${maskTopToWebpageBottom + 20}px`;
         }
         else {
             const maskBottom = this.maskCoordinates[3];
-            this.frameNode.style.top = `${maskBottom + 20}px`;
+            this.frameNode!.style.top = `${maskBottom + 20}px`;
         }
     }
 
@@ -206,6 +209,15 @@ export class VisualisationPopup {
     onAfterVisualisationMetadataUpdate(): void {
         this.updateTitleBar();
         this.updateErrors();
+    }
+
+    onBeforePdfResize(): void {
+        this.visualisationView.onBeforePdfResize();
+    }
+
+    onAfterPdfResize(): void {
+        this.updateFramePosition();
+        this.visualisationView.onAfterPdfResize();
     }
 
     open() {

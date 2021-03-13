@@ -254,6 +254,20 @@ export class VisualisationViewManager {
                 this.hideCurrentlyDisplayedVisualisation();
             }
         );
+
+        window.addEventListener(
+            PDFManager.PDF_WILL_RESIZE_EVENT,
+            (event: Event) => {
+                this.currentlyDisplayedVisualisationPopup?.onBeforePdfResize();
+            }
+        );
+
+        window.addEventListener(
+            PDFManager.PDF_DID_RESIZE_EVENT,
+            (event: Event) => {
+                this.currentlyDisplayedVisualisationPopup?.onAfterPdfResize();
+            }
+        );
     }
 
     private startHandlingWebviewMessages(): void {

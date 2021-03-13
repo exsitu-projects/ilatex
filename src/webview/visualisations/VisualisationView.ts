@@ -36,6 +36,9 @@ export interface VisualisationView {
     onBeforeVisualisationRemoval(): void;
     onAfterVisualisationRemoval(): void;
 
+    onBeforePdfResize(): void;
+    onAfterPdfResize(): void;
+
     revealInSourceDocument(): void;
 }
 
