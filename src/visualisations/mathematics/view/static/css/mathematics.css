@@ -13,10 +13,12 @@
     padding: 5px;
     background-color: #f7f7f7;
     border: 1px solid #AAA;
+    border-radius: 5px;
     font-family: monospace;
     font-size: 0.8rem;
     color: #333;
-    border-radius: 5px;
+    text-align: left;
+    white-space: break-spaces;
 }
 
 [data-visualisation-name="mathematics"] .complete-math-code:hover {
@@ -29,32 +31,17 @@
     background-color: #fff0da;
 }
 
-[data-visualisation-name="mathematics"] .selected-math-region-code {
-    display: none;
-    font-family: monospace;
-}
-
-[data-visualisation-name="mathematics"] .complete-math-code .selected-region-code {
-    background-color: #8CD3FF;
-}
-
-[data-visualisation-name="mathematics"] .complete-math-code .hovered-region-code,
-[data-visualisation-name="mathematics"] .complete-math-code .selected-region-code.hovered-region-code {
+[data-visualisation-name="mathematics"] .complete-math-code .hovered-region-code {
     background-color: #FDC34C;
 }
 
-[data-visualisation-name="mathematics"] span[data-source-location-start][data-source-location-end] {
+[data-visualisation-name="mathematics"] .typeset-math span[data-source-location-start][data-source-location-end] {
     border-radius: 2px;
     cursor: default;
 }
 
-[data-visualisation-name="mathematics"] span[data-source-location-start][data-source-location-end]:hover,
-[data-visualisation-name="mathematics"] span[data-source-location-start][data-source-location-end].selected-region:hover {
+[data-visualisation-name="mathematics"] .typeset-math span[data-source-location-start][data-source-location-end].hovered {
     background-color: #FDC34C;
-}
-
-[data-visualisation-name="mathematics"] span[data-source-location-start][data-source-location-end].selected-region {
-    background-color: #8CD3FF;
 }
 
 [data-visualisation-name="mathematics"] .typeset-math {

@@ -4,7 +4,15 @@ import { VisualisationViewFactory, VisualisationView } from "../../../webview/vi
 import { WebviewToCoreMessageType } from "../../../shared/messenger/messages";
 import { VisualisationMetadata } from "../../../shared/visualisations/types";
 import { VisualisationViewContext } from "../../../webview/visualisations/VisualisationViewContext";
-import { SelectionRange } from "vscode";
+import { HtmlUtils } from "../../../shared/utils/HtmlUtils";
+
+function nodeContainsPosition(node: HTMLElement, offsetX: number, offsetY: number): boolean {
+    const nodeBox = node.getBoundingClientRect();
+    return nodeBox.left <= offsetX
+        && nodeBox.right >= offsetX
+        && nodeBox.top <= offsetY
+        && nodeBox.bottom >= offsetY;
+}
 
 interface MathCodeSplitByRange {
     code: string;
@@ -23,6 +31,8 @@ class MathematicsView extends AbstractVisualisationView {
     readonly visualisationName = MathematicsView.visualisationName;
 
     private mathCode: string;
+    private mathCodeKatexPrefix: string;
+    private mathCodeKatexSuffix: string;
     
     private viewNode: HTMLElement;
     private instructionsNode: HTMLElement;
@@ -50,6 +60,8 @@ class MathematicsView extends AbstractVisualisationView {
         super(contentNode, metadata, context);
 
         this.mathCode = this.contentNode.innerText;
+        this.mathCodeKatexPrefix = "\\begin{aligned}";
+        this.mathCodeKatexSuffix= "\\end{aligned}";
 
         this.viewNode = document.createElement("div");
         this.viewNode.classList.add("math-container");
@@ -91,7 +103,7 @@ class MathematicsView extends AbstractVisualisationView {
             throw new NoHoveredMathRegionError();
         }
 
-        return MathematicsView.getMathRegionCodeRangeFrom(this.hoveredMathRegionNode);
+        return this.getMathRegionCodeRangeOfNode(this.hoveredMathRegionNode)!;
     }
 
     get hoveredMathRegionCodeSubset(): string {
@@ -103,6 +115,52 @@ class MathematicsView extends AbstractVisualisationView {
             this.trimmedMathCode,
             this.hoveredMathRegionCodeRange
         );
+    }
+
+    private getDeepestMathRegionNodeContainingPosition(viewportX: number, viewportY: number): HTMLElement | null {
+        if (!nodeContainsPosition(this.typesetMathNode, viewportX, viewportY)) {
+            return null;
+        }
+
+        const allNodesContainingPosition = document.elementsFromPoint(viewportX, viewportY);
+        const mathRegionNodesContainingPositionToCodeRanges: { node: HTMLElement, codeRange: [number, number] }[] = [];
+        for (let node of allNodesContainingPosition) {
+            const codeRange = MathematicsView.getRawMathRegionCodeRangeOfNode(node as HTMLElement);
+            if (codeRange) {
+                mathRegionNodesContainingPositionToCodeRanges.push({ node: node as HTMLElement, codeRange: codeRange });
+            }
+        }
+        
+        let bestNodeAndCodeRange = null;
+        for (let nodeAndCodeRange of mathRegionNodesContainingPositionToCodeRanges) {
+            if (!bestNodeAndCodeRange) {
+                bestNodeAndCodeRange = nodeAndCodeRange;
+                continue;
+            }
+
+            // If the code range of the best match contains the current code range, update it
+            if (bestNodeAndCodeRange.codeRange[0] < nodeAndCodeRange.codeRange[0]
+            || bestNodeAndCodeRange.codeRange[1] > nodeAndCodeRange.codeRange[1]) {
+                bestNodeAndCodeRange = nodeAndCodeRange;
+            }
+        }
+
+        return bestNodeAndCodeRange?.node ?? null;
+    }
+
+    // Get the range of LaTeX math code responsible for the math region given its node
+    private getMathRegionCodeRangeOfNode(node: HTMLElement): [number, number] | null {
+        const rawCodeRange = MathematicsView.getRawMathRegionCodeRangeOfNode(node);
+        if (rawCodeRange === null) {
+            return null;
+        }
+
+        // Otherwise, adapt the raw values to take the prefix and suffix
+        // that are added to the actual math code into account
+        return [
+            rawCodeRange[0] - this.mathCodeKatexPrefix.length,
+            rawCodeRange[1] - this.mathCodeKatexPrefix.length
+        ];
     }
 
     private updateInstructionsNode(): void {
@@ -127,12 +185,47 @@ class MathematicsView extends AbstractVisualisationView {
         }
     }
 
+    // Recursively update parent nodes of nodes with source location data
+    // rooted in the typeset math node (until the typeset math node is reached)
+    // private completeTypesetMathNodeWithMissingSourceLocationData(): void {
+    //     const recursivelyUpdateAncestors = (node: HTMLElement, start: number, end: number) => {
+    //         if (node === this.typesetMathNode) {
+    //             return;
+    //         }
+
+    //         const parentNode = node.parentElement;
+    //         if (parentNode) {
+    //             const codeRange = this.getMathRegionCodeRangeOfNode(parentNode);
+    //             if (!codeRange || codeRange[0] > start) {
+    //                 parentNode.setAttribute("data-source-location-start", start.toString());
+    //             }
+    //             if (!codeRange || codeRange[1] < end) {
+    //                 parentNode.setAttribute("data-source-location-end", end.toString());
+    //             }
+
+    //             recursivelyUpdateAncestors(parentNode, start, end);
+    //         }
+    //     };
+        
+    //     this.typesetMathNode
+    //         .querySelectorAll("[data-source-location-start][data-source-location-end]")
+    //         .forEach(node => {
+    //             const codeRange = MathematicsView.getRawMathRegionCodeRangeOfNode(node as HTMLElement);
+    //             if (codeRange) {
+    //                 recursivelyUpdateAncestors(node as HTMLElement, codeRange[0], codeRange[1]);
+    //             }
+    //         });
+    // }
+
     private updateTypesetMathNode(): void {
         // Try to render the current math code using a custom version of the KaTeX library
         try {
-            katex.render(this.trimmedMathCode, this.typesetMathNode, {
+            const trimmedMathCodeWithAlignmentSupport = `${this.mathCodeKatexPrefix}${this.trimmedMathCode}${this.mathCodeKatexSuffix}`;
+            katex.render(trimmedMathCodeWithAlignmentSupport, this.typesetMathNode, {
                 displayMode: true
             });
+
+            // this.completeTypesetMathNodeWithMissingSourceLocationData();
         }
         // If it fails (i.e. throws an exception), display an appropriate error message instead
         catch (error) {
@@ -183,14 +276,14 @@ class MathematicsView extends AbstractVisualisationView {
         }
 
         // If the clicked node is a part of the display maths
-        // and has an ancestor mapped to a region of the math code,
         // enter the math code edit mode and select the region of the code
         // that represents the clicked element
-        const potentialMathRegionNode = targetNode
-            .closest("[data-source-location-start][data-source-location-end]");
-
-        if (potentialMathRegionNode !== null) {
-            const codeRange = MathematicsView.getMathRegionCodeRangeFrom(potentialMathRegionNode as HTMLElement);
+        if (this.typesetMathNode.contains(targetNode)) {
+            const potentialMathRegionNode = this.getDeepestMathRegionNodeContainingPosition(event.clientX, event.clientY);
+            const codeRange = this.getMathRegionCodeRangeOfNode(potentialMathRegionNode as HTMLElement);
+            if (!codeRange) {
+                return;
+            }
 
             // If the selection fails (e.g. because the indices given by KaTeX are invalid),
             // enter the edit mode (do nothing if it is already on)
@@ -214,19 +307,21 @@ class MathematicsView extends AbstractVisualisationView {
 
     private onTypesetMathMouseMove(event: MouseEvent): void {
         // Always reset the hovered region when the mouse moves over the typeset math
-        this.hoveredMathRegionNode = null;
+        if (this.hoveredMathRegionNode) {
+            this.hoveredMathRegionNode.classList.remove("hovered");
+            this.hoveredMathRegionNode = null;
+        }
 
         // If the math code is editable, no hovered region can be highlighted
         if (this.mathCodeIsEditable) {
             return;
         }
 
-        // Update (or remove) the hovered math region
-        const potentialMathRegionNode = (event.target as HTMLElement)
-            .closest("[data-source-location-start][data-source-location-end]");
-
-        if (potentialMathRegionNode !== null) {
+        // Set the new hovered math region
+        const potentialMathRegionNode = this.getDeepestMathRegionNodeContainingPosition(event.clientX, event.clientY);
+        if (potentialMathRegionNode) {
             this.hoveredMathRegionNode = potentialMathRegionNode as HTMLElement;
+            this.hoveredMathRegionNode.classList.add("hovered");
         }
         
         // Since a region of the code might have started or stopped to be hovered,
@@ -296,19 +391,27 @@ class MathematicsView extends AbstractVisualisationView {
 
     // Get a source location offset from a math region node
     // Note: the offsets are actually computed by KaTeX's lexer
-    // and written in custom HTMl attributes in a customised version of KaTeX
-    private static getOffsetFromMathRegionNode(node: HTMLElement, attrSuffix: "start" | "end"): number {
-        return parseInt(
-            node.getAttribute(`data-source-location-${attrSuffix}`)!
-        );
+    // and written in custom HTML attributes in a customised version of KaTeX
+    private static getOffsetFromMathRegionNode(node: HTMLElement, attrSuffix: "start" | "end"): number | null {
+        const attribute = `data-source-location-${attrSuffix}`;
+        if (!node.hasAttribute(attribute)) {
+            return null;
+        }
+
+        return parseInt(node.getAttribute(attribute)!);
     };
 
-    // Get the range of LaTeX math code responsible for the math region given its node
-    private static getMathRegionCodeRangeFrom(node: HTMLElement): [number, number] {
-        return [
-            MathematicsView.getOffsetFromMathRegionNode(node, "start"),
-            MathematicsView.getOffsetFromMathRegionNode(node, "end")
-        ];
+    // Get the raw range of LaTeX math code responsible for the math region given its node
+    // Note: since the values are raw, there is no correction for the added prefix and suffix!
+    private static getRawMathRegionCodeRangeOfNode(node: HTMLElement): [number, number] | null {
+        const start = MathematicsView.getOffsetFromMathRegionNode(node, "start");
+        const end = MathematicsView.getOffsetFromMathRegionNode(node, "end");
+
+        if (start === null || end === null) {
+            return null;
+        }
+
+        return [start, end];
     }
 
     // Split LaTeX math code by the given range,
