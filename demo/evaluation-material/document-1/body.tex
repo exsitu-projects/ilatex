@@ -64,6 +64,37 @@
 %     \log_x(y) = \frac{2}{\lambda_x}\tanh^{-1}{\norm{-x\oplus y}\frac{-x\oplus y}{\norm{-x\oplus y}}},
 % \end{imaths}
 
+% From https://arxiv.org/abs/2103.09279
+\begin{imaths}
+     \int_0^T
+  h_j(t)^\mathrm{T} h_k(t)
+  \mathrm{d} t
+  =
+  {\begin{bmatrix}
+    \langle \varphi_j, \varphi_k\rangle & \langle \varphi_j, \psi_k\rangle\\
+    \langle \psi_j, \varphi_k\rangle & \langle \psi_j, \psi_k\rangle
+  \end{bmatrix}}
+  =
+  \frac{1}{2}\delta_{jk}
+  I_2,
+\end{imaths}
+
+% From https://arxiv.org/abs/2103.09279
+\begin{imaths}
+  \sum_{k=1}^{+\infty}
+  H_k(s)H_k(t)^\mathrm{T}
+  =
+  \langle
+    \chi_{[0,s]},
+    \chi_{[0,t]}
+  \rangle
+  I_n
+  =
+  \min (s,t)I_n,
+  \qquad
+  0\leq s,t\leq T,
+\end{imaths}
+
 \kant[41]
 
 % From https://arxiv.org/abs/2103.09261
@@ -89,6 +120,71 @@
 %     &\leq K_e K_l K_\phi K_\rho\sum_{x\in\mathcal{D}_0} \norm{ x - \eta(x)}_g \leq K_e K_l K_\phi K_\rho w_1^g(\mathcal{D}_0,\mathcal{E})\label{eq:p5}
 % \end{imaths}
 
+\begin{imaths}
+  \left\{
+  \begin{array}{ccl}
+    \mathcal J_1
+    & = & 4
+    K K_{\max} \| \beta^* \|_{\infty} N^{-3\kappa/7}  \\
+    %%%%%%%%%%%%%%%%%%%%%%%%
+    \mathcal J'_1
+    & = &
+    4 K_{\max} N^{ -3/7}  \\
+    %%%%%%%%%%%%%%%%%%%%%%%%
+    \mathcal J_2
+    & = &
+    4 A K \| \beta^* \|_{\infty} N^{-3 \kappa/7} \\
+    %%%%%%%%%%%%%%%%%%%%%%%%
+    \mathcal J'_2
+    & = &
+    4 \bar A N^{-3/7}\\
+    %%%%%%%%%%%%%%%%%%%%%%%%
+    \mathcal J_3
+    & = &
+    4 \sqrt{2} K \| \beta^* \|_{\infty} \frac{d^3}{dx^3} f^*(0) N^{-3 \kappa / 7} \\
+    %%%%%%%%%%%%%%%%%%%%%%%%
+    \mathcal J'_3
+    & = &
+    4 \sqrt{2} \frac{d^3}{dx^3} \bar f^*(0) N^{-3/7} \\
+    %%%%%%%%%%%%%%%%%%%%%%%%
+    \mathcal J_4
+    & = &
+    \frac{
+      16 K K_{\max}
+      \| \beta^* \|_{\infty}
+      \left[
+        C_{(\sigma, \|u\|_{L^\infty(\Omega)})} (\log(\kappa)
+        +
+        \log(N))
+        +
+        N^{r}/L
+      \right]
+      (\log(\kappa) + \log(N) )}{ N^{3 \kappa / 7}} \\
+    %%%%%%%%%%%%%%%%%%%%%%%%
+    \mathcal J'_4
+    & = &
+    \frac{
+      16 K_{\max}
+      \left[
+        C_{(\sigma, \|u\|_{L^\infty(\Omega)})} \log(N)
+        +
+        N^{r}
+      \right]
+      \log(N)
+    }{ N^{3/7}}  \\
+    %%%%%%%%%%%%%%%%%%%%%%%%
+    \mathcal J_5
+    & = &
+    16 K \| \beta^* \|_{\infty}
+    \sqrt{\frac{N^{2r}}{7}} \widetilde{C}_{ (\sigma, \|u\|_{L^\infty(\Omega)})}
+    \frac{\sqrt{\log(\kappa) + \log(N)}}{ N^{3\kappa/7}} \\
+    %%%%%%%%%%%%%%%%%%%%%%%%%
+    \mathcal J'_5 & = & 16 \sqrt{\frac{N^{2r}}{7}} \widetilde{C}_{(\sigma, \|u\|_{L^\infty(\Omega)})}
+            \frac{\sqrt{\log(N)}}{N^{3/7}}
+  \end{array}
+  \right.
+\end{imaths}
+
 \kant[42]
 
 % From https://arxiv.org/abs/2103.09273
@@ -101,6 +197,7 @@
        \textit{baseline w/ ess.} & $38.78_{\pm 0.85}$ & $66.56_{\pm 1.13}$ & $69.33_{\pm 0.75}$ & $38.45_{\pm 0.98}$ & $30.43_{\pm 0.75}$\\ \hline\hline
 
         WL & $49.33_{\pm 4.75}$ & $73.40_{\pm 4.63}$ & $81.10_{\pm 1.90}$ & $49.44_{\pm 2.36}$ & $38.18_{\pm 1.31}$ \\ 
+        % GK & $43.89_{\pm 0.38}$ & $65.87_{\pm 0.98}$ & $65.87_{\pm 0.98}$ & $41.01_{\pm 0.17}$ & $31.82_{\pm 0.08}$ \\
        DGK & $44.5_{\pm 0.52}$ & $66.96_{\pm 0.56}$ & $78.04_{\pm 0.39}$ & $41.27_{\pm 0.18}$ & $32.22_{\pm 0.10}$\\
       PSCN & $45.23_{\pm 2.84}$ & $71.00_{\pm 2.29}$ & $86.30_{\pm 1.58}$ & $49.10_{\pm 0.70}$ & $41.32_{\pm 0.32}$\\
       WKPI & $49.5_{\pm 0.40}$ & $75.10_{\pm 1.10}$ & \textit{n/a} & $59.50_{\pm 0.60}$ & $48.40_{\pm 0.50}$\\
@@ -147,6 +244,27 @@
 			\hline
 		\end{itabular}
 	\end{center}
+\end{table}
+
+\begin{table}[h]
+\scalebox{0.65}{%
+\begin{itabular}{lrcccccccc}
+\toprule
+\phantom{Asset type} & Cum.\ return &  Ann. Sharpe ratio &   Mean &   Std & Skewness & Kurtosis &  (5, 95)-th pct & $\textrm{ARMA}(1, \cdot)$ coef & $\textrm{ARMA}(\cdot, 1)$ coef \\
+\midrule
+       (Lo - Hi) Foc &     3,177.63 &              0.329 &   0.71 & 3.699 &    0.315 &    3.523 & (-5.325, 6.239) &                 -0.95 (-11.87) &                   0.93 (10.53) \\
+       (Lo - Hi) Rep &         5.70 &             -0.489 & -0.387 & 5.308 &    0.053 &    2.258 & (-8.898, 7.904) &                  -0.09 (-0.29) &                    0.20 (0.68) \\
+          SAR factor &    18,219.66 &              0.495 &  1.101 & 5.169 &     0.07 &    3.456 & (-6.293, 9.734) &                    0.36 (3.05) &                  -0.12 (-0.99) \\
+              Mkt-RF &     2,505.58 &              0.263 &    0.7 & 4.477 &   -0.654 &    2.202 & (-7.212, 7.191) &                  -0.68 (-3.24) &                    0.75 (3.92) \\
+                 SMB &       264.59 &             -0.160 &  0.223 & 2.914 &    0.207 &     3.83 & (-4.111, 4.740) &                    0.34 (0.62) &                  -0.31 (-0.56) \\
+                 HML &       220.58 &             -0.199 &   0.19 & 2.948 &    0.079 &    2.463 & (-4.082, 5.213) &                    0.58 (3.29) &                  -0.40 (-2.05) \\
+                 RMW &       467.17 &             -0.070 &  0.312 & 2.279 &     -0.4 &   12.862 & (-2.583, 3.482) &                    0.07 (0.32) &                    0.07 (0.30) \\
+                 CMA &       318.83 &             -0.222 &  0.234 & 1.936 &    0.418 &    2.069 & (-2.521, 3.284) &                  -0.58 (-2.87) &                    0.68 (3.80) \\
+                 MOM &     1,547.36 &              0.199 &  0.608 & 4.366 &   -1.335 &   10.738 & (-6.555, 6.701) &                  -0.41 (-1.51) &                    0.49 (1.87) \\
+                  RF &       687.29 &                    &  0.358 & 0.291 &    0.737 &    0.351 &  (0.000, 0.870) &                  0.98 (128.39) &                  -0.13 (-2.54) \\
+\bottomrule
+\end{itabular}%
+}
 \end{table}
 
 
