@@ -67,7 +67,7 @@
     overflow: hidden;
     background-color: #f4f4f4;
     border: 2px solid #666;
-    color: #5d5d5dad;
+    color: #5d5d5dd9;
 }
 
 [data-visualisation-name="grid layout"] .cell:hover {
@@ -81,8 +81,9 @@
 
 [data-visualisation-name="grid layout"] .cell-content {
     position: absolute;
+    width: 100%;
     padding: 1em;
-    font-size: 0.7rem;
+    font-size: 0.5rem;
     font-family: monospace;
     overflow: hidden;
     white-space: pre-line;
