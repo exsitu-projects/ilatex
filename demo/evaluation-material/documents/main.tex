@@ -1,0 +1,34 @@
+\documentclass[11pt, a4paper]{article}
+\input{preamble}
+
+\begin{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% DOCUMENT 1
+
+% Title page
+\vfill
+\makedoctitle{Document \docone}
+\vfill
+
+% Body
+\newpage
+\input{doc-one/body}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% DOCUMENT 2
+                              
+\newpage
+\setcounter{tasknumber}{1}
+
+% Title page
+\vfill
+\makedoctitle{Document \doctwo}
+\vfill
+
+% Body
+\newpage
+\input{doc-two/body}
+
+\end{document}
+\endinput
+
+

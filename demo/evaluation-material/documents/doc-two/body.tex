@@ -1,0 +1,431 @@
+\input{doc-two/instructions}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%   TASK 1   %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Equation taken from https://arxiv.org/abs/2103.10366
+\taskone
+    
+\begin{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% START EDITING HERE
+    \begin{imaths}
+        \mathcal{E}_i \Leftrightarrow \Big\{ Y_i(t) > \frac{\tau^2}{n} + \frac{\tau}{2\sqrt{n}} \sqrt{\log n} \land {\lVert \mathbf{Y}(t) \rVert}_1  < x_{max} \cdot(1+ n^{-\Omega(1)}) \Big\}
+    \end{imaths}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% STOP EDITING HERE
+\end{code}
+
+\newpage
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%   TASK 2   %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Equation taken from https://arxiv.org/abs/2103.10366
+\tasktwo
+
+\begin{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% START EDITING HERE
+    \begin{imaths}
+        \frac{x_j}{x_{max}}\cdot (x_{max} - x_j) - 2\delta
+        &\ge \sqrt{n\log n}\cdot \left( \frac{x_j\cdot (x_{max}-x_j)}{x_{max} \cdot \sqrt{n\cdot\log{n}}} -2c_1\right) \\
+        &\ge \sqrt{n\log n}\cdot \left( \frac{x_j\cdot \Delta'}{x_j+x_{max}-x_j} -2c_1\right) \\
+    	&= \sqrt{n\log n}\cdot \left( \frac{ \Delta'}{1+\frac{x_{max}-x_j}{x_j}}-2c_1 \right) \\
+        &\overset{(a)}{\ge} \sqrt{n\log n}\cdot \left( \frac{ \Delta'}{1+\frac{\Delta'}{4c_w}}-2c_1 \right) \\
+        &= \sqrt{n\log n} \cdot \left( \frac{4c_w \cdot \Delta' - 2c_1 \cdot (4c_w + \Delta')}{4c_w + \Delta'} \right) \\ 
+        &= \sqrt{n\log n} \cdot \left( \frac{ 4c_w(\Delta'-2c_1) +\Delta'(4c_w-2c_1) }{4c_w + \Delta'} \right)
+        \overset{(b)}{>} 0   
+    \end{imaths}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% STOP EDITING HERE
+\end{code}
+
+\newpage
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%   TASK 3   %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Equation taken from https://arxiv.org/abs/2103.12163
+\taskthree
+
+\begin{code}
+\flushleft
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% START EDITING HERE
+	We begin with the half-line IBVP
+	\begin{imaths}
+	    \begin{cases}
+		q_t = \tfrac{i}{2} q_{xx},& x > 0,\, t > 0, \\
+		q(x,0) = \phi(x),& x > 0,\\
+		q(0,t) = u(t),& t > 0,
+	    \end{cases}\tag{1}
+	\end{imaths}
+	using a centered discretization for $q_{xx}$,
+	\begin{imaths}		
+		\dot{q}_n(t) = \frac{i}{2}\left( \frac{q_{n+1}(t) - 2 q_n(t) + q_{n-1}(t)}{h^2}\right).\tag{2}
+	\end{imaths}
+	The local and dispersion relations are, respectively, 
+	\begin{imaths}
+		\partial_t \left(e^{-iknh} e^{Wt} q_n \right) &= \frac{i}{2 h^2}\Delta \left(e^{-ik(n-1)h} e^{Wt} q_{n} - e^{-iknh} e^{Wt} q_{n-1} \right),\tag{3}
+	\end{imaths} 
+	\begin{imaths}
+		W(k) = \frac{i}{2}\left( \frac{2 - e^{ikh} - e^{-ikh}}{h^2}\right) = \frac{i}{h^2} \left[ 1 - \cos(kh) \right].\tag{4}
+	\end{imaths}
+	With the Dirichlet boundary condition, our transforms begin at $n = 1$ instead of at $n = 0$, resulting in the global relation
+	\begin{imaths}
+		e^{WT} \hat{q}(k,T) - \hat{q}(k,0) - \frac{i}{2}\left[ \frac{ e^{-ikh} f_{0} - f_1}{h} \right] &= 0, \quad \text{Im}(k) \leq 0.\tag{5}
+	\end{imaths}
+	To obtain our ``solution'' formula, we take the inverse transform,
+	\begin{imaths}
+		q_n(T) &= \frac{1}{2 \pi} \int_{-\pi/h}^{\pi/h} e^{iknh} e^{-WT}\hat{q}(k,0)\,dk + \frac{1}{2 \pi} \int_{-\pi/h}^{\pi/h}\frac{ i e^{iknh} e^{-WT}}{2}\left[ \frac{ e^{-ikh} f_{0} - f_1}{h} \right]\,dk.\tag{6}
+	\end{imaths}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% STOP EDITING HERE
+\end{code}
+
+\newpage
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%   TASK 4   %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Table taken from https://arxiv.org/abs/2103.09563
+\taskfour
+
+\begin{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% START EDITING HERE
+	\begin{itabular}{lcc}
+    \toprule
+    \textbf{Model} & \textbf{FWP}\\
+    \midrule
+    Context Attention & 32.05 \\
+    Context Attention + BERT-Domain & 31.02 \\
+    Non-contextual &  61.73 \\
+    Encoded BR & 60.45 \\
+    Encoded BERT-Domain & 52.43 \\
+    Encoded BR + DA & 34.39 \\
+    Encoded BR + DA + BERT-Domain & 53.49 \\
+    Context carry over & 28.33 \\
+    Context carry over + BERT-Domain & 28.84 \\
+    Context carry over + BR + DA & 27.38 \\
+    \bottomrule
+	\end{itabular}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% STOP EDITING HERE
+\end{code}
+
+\newpage
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%   TASK 5   %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Table taken from https://arxiv.org/abs/2103.10291
+\taskfive
+
+\begin{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% START EDITING HERE
+    \newcommand{\langp}[2]{\textsc{#1}$\shortrightarrow$\textsc{#2}}
+    \newcommand{\std}[1]{\footnotesize\textcolor{gray}{#1}}
+    
+    \begin{itabular}{llrrrrrr}
+        \toprule
+        $\alpha$ & $\epsilon$ & \langp{de}{en} & \langp{en}{de} & \langp{ja}{en} & \langp{en}{ja} & \langp{ro}{en} & \langp{en}{ro}\\
+        \midrule
+        1 & 0 & 8.07 \std{$\pm$ 1.21} & 12.97 \std{$\pm$ 2.58} & 23.10 \std{$\pm$ 1.01} & 14.38 \std{$\pm$ 1.06} & 9.10 \std{$\pm$ 0.82} & 4.32 \std{$\pm$ 0.20}\\
+         & 0.01 & 9.66 \std{$\pm$ 1.55} & 17.87 \std{$\pm$ 1.63} & 22.96 \std{$\pm$ 1.28} & 15.41 \std{$\pm$ 1.62} & 12.19 \std{$\pm$ 0.98} & 17.56 \std{$\pm$ 5.55}\\
+         & 0.1 & 22.17 \std{$\pm$ 1.79} & 30.25 \std{$\pm$ 1.54} & 34.79 \std{$\pm$ 1.12} & 31.19 \std{$\pm$ 1.80} & 54.01 \std{$\pm$ 14.54} & 47.24 \std{ $\pm$ 14.66}\\
+        1.5 & 0 & 0.50 \std{$\pm$ 0.03} & 0.78 \std{$\pm$ 0.71} & 0.03 \std{$\pm$ 0.04} & 0.63 \std{$\pm$ 0.66} & 0.18 \std{$\pm$ 0.12} & 0.88 \std{$\pm$ 0.46}\\
+        & 0.01 & 1.11 \std{$\pm$ 0.70} & 6.27 \std{$\pm$ 5.37} & 2.00 \std{$\pm$ 2.59} & 1.57 \std{$\pm$ 1.74} & 2.70 \std{$\pm$ 2.26} & 0.92 \std{$\pm$ 0.44}\\
+        & 0.1 & 0.96 \std{$\pm$ 0.55} & 0.65 \std{$\pm$ 0.30} & 15.67 \std{$\pm$ 22.16} & 13.89 \std{$\pm$ 19.53} & 35.13 \std{$\pm$ 24.33} & 44.12 \std{$\pm$ 2.39}\\
+        \bottomrule
+    \end{itabular}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% STOP EDITING HERE
+\end{code}
+
+\newpage
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%   TASK 6   %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Table taken from https://arxiv.org/abs/2103.10994.pdf
+\tasksix
+
+\begin{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% START EDITING HERE
+    \begin{itabular}{l|ccc}
+    \toprule
+    Method & Arch & Top-1 & Top-5 \\
+    \midrule
+    Supervised & R50 & 76.5 & -- \\
+    \midrule
+    SwAV$^\dagger$ & R50 & 75.3 & -- \\
+    \midrule
+    SimCLRv2 & R50 & 71.7 & 90.4 \\
+    InfoMin & R50 & 73.0 & 91.1 \\
+    BYOL & R50 & 74.3 & 91.6 \\
+    NPID & R50 & 54.0 & -- \\
+    BigBiGAN & R50 & 56.6 & 78.6 \\
+    LA & R50 & 60.2 & -- \\
+    MoCo & R50 & 60.6 & -- \\
+    MoCoV2 & R50 & 71.1 & 90.1 \\
+    SwAV & R50 & 70.1 & -- \\
+    SimCLR & R50 & 69.3 & 89.0 \\
+    PIRL & R50 & 63.6 & -- \\
+    \midrule
+    \textbf{Self-Classifier}  & R50 & 69.7 & 89.3 \\
+    \bottomrule
+    \end{itabular}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% STOP EDITING HERE
+\end{code}
+
+\newpage
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%   TASK 7   %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Images taken from Wikipedia
+\taskseven
+
+\begin{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% START EDITING HERE
+    \iincludegraphics[width=\textwidth]{doc-two/img/square-diffraction.jpg}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% STOP EDITING HERE
+\imagesizeguidesofdoctwo
+\end{code}
+
+\newpage
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%   TASK 8   %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Image taken from Wikipedia
+\taskheight
+
+\begin{code}
+\raggedright
+\begin{wrapfigure}{l}{0.4\textwidth}
+\topwrapfigguideofdoctwo
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% START EDITING HERE
+    \iincludegraphics[width=0.4\textwidth]{doc-two/img/molecule.png}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% STOP EDITING HERE
+\bottomwrapfigguideofdoctwo
+\end{wrapfigure}
+\kant[10-11]
+\end{code}
+
+\newpage
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%   TASK 9   %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Image taken from https://matplotlib.org/stable/gallery/index.html
+\tasknine
+
+\begin{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% START EDITING HERE
+    \iincludegraphics[width=\textwidth]{doc-two/img/matplotlib-graph.png}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% STOP EDITING HERE
+\end{code}
+
+\newpage
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%   TASK 10   %%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Images taken from https://matplotlib.org/stable/gallery/index.html
+\taskten
+
+\begin{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% START EDITING HERE
+    \begin{gridlayout}{\textwidth}{10cm}
+        \begin{row}{1}
+            \begin{cell}{0.5}
+                \centering
+                \includegraphics[width=\cellwidth]{doc-two/img/plot-1.png}
+                \rule{\cellwidth}{4pt}
+            \end{cell}
+            \begin{cell}{0.5}
+                \centering
+                \includegraphics[width=\cellwidth]{doc-two/img/plot-2.png}
+                \rule{\cellwidth}{4pt}
+            \end{cell}
+        \end{row}
+    \end{gridlayout}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% STOP EDITING HERE
+\end{code}
+
+\newpage
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%   TASK 11  %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Images taken from https://arxiv.org/abs/2103.10428
+\taskeleven
+
+\begin{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% START EDITING HERE
+    \begin{gridlayout}{\textwidth}{15cm}
+        \begin{row}{0.25}
+            \begin{cell}{0.333}
+                \centering
+                \includegraphics[width=0.7\cellwidth]{doc-two/img/thumbnail-1.png}
+            \end{cell}
+            \begin{cell}{0.334}
+                \centering
+                \includegraphics[width=0.7\cellwidth]{doc-two/img/thumbnail-2.png}
+            \end{cell}
+            \begin{cell}{0.333}
+                \centering
+                \includegraphics[width=0.7\cellwidth]{doc-two/img/thumbnail-3.png}
+            \end{cell}
+        \end{row}
+        \begin{row}{0.25}
+            \begin{cell}{0.333}
+                \centering
+                \includegraphics[width=0.7\cellwidth]{doc-two/img/thumbnail-4.png}
+            \end{cell}
+            \begin{cell}{0.334}
+                \centering
+                \includegraphics[width=0.7\cellwidth]{doc-two/img/thumbnail-5.png}
+            \end{cell}
+            \begin{cell}{0.333}
+                \centering
+                \includegraphics[width=0.7\cellwidth]{doc-two/img/thumbnail-6.png}
+            \end{cell}
+        \end{row}
+        \begin{row}{0.25}
+            \begin{cell}{0.333}
+                \centering
+                \includegraphics[width=0.7\cellwidth]{doc-two/img/thumbnail-7.png}
+            \end{cell}
+            \begin{cell}{0.334}
+                \centering
+                \includegraphics[width=0.7\cellwidth]{doc-two/img/thumbnail-8.png}
+            \end{cell}
+            \begin{cell}{0.333}
+                \centering
+                \includegraphics[width=0.7\cellwidth]{doc-two/img/thumbnail-9.png}
+            \end{cell}
+        \end{row}
+        \begin{row}{0.25}
+            \begin{cell}{0.333}
+                \centering
+                \includegraphics[width=0.7\cellwidth]{doc-two/img/thumbnail-10.png}
+            \end{cell}
+            \begin{cell}{0.334}
+                \centering
+                \includegraphics[width=0.7\cellwidth]{doc-two/img/thumbnail-11.png}
+            \end{cell}
+            \begin{cell}{0.333}
+                \centering
+                \includegraphics[width=0.7\cellwidth]{doc-two/img/thumbnail-12.png}
+            \end{cell}
+        \end{row}
+    \end{gridlayout}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% STOP EDITING HERE
+\end{code}
+
+\newpage
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%   TASK 12   %%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\tasktwelve
+
+\begin{code}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% START EDITING HERE
+    \begin{gridlayout}{\textwidth}{15cm}
+        \begin{row}{0.1}
+            \begin{cell}{1}
+                \centering
+                Internship report
+            \end{cell}
+        \end{row}
+        \begin{row}{0.1}
+            \begin{cell}{1}
+                % Separator
+            \end{cell}
+        \end{row}
+        \begin{row}{0.1}
+            \begin{cell}{1}
+                \centering
+                \rule{0.6\cellwidth}{0.4pt}\\[1.5ex]
+                {\Large Internship title}\\
+                \rule{0.6\cellwidth}{0.4pt}
+            \end{cell}
+        \end{row}
+        \begin{row}{0.45}
+            \begin{cell}{1}
+                % Separator
+            \end{cell}
+        \end{row}
+        \begin{row}{0.25}
+            \begin{cell}{0.5}
+                \centering
+                \includegraphics[width=\cellwidth]{doc-one/img/logo-univ-ps.png}
+            \end{cell}
+            \begin{cell}{0.5}
+                \centering
+                \includegraphics[width=\cellwidth]{doc-one/img/logo-ex-situ.png}
+            \end{cell}
+        \end{row}
+    \end{gridlayout}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% STOP EDITING HERE
+\logoguidesofdoctwo
+\end{code}
+
+\newpage
