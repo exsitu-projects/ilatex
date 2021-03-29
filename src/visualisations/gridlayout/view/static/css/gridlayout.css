@@ -109,7 +109,7 @@
 
 [data-visualisation-name="grid layout"] .cell-is-dragged .cell:not(.dragged) .cell-drop-zone {
     display: grid;
-    grid-template-columns: min(50px, 25%) auto min(50px, 25%);
+    grid-template-columns: auto 0 auto;
     grid-template-rows: auto;
     grid-template-areas: "left gap right";
 }
@@ -121,31 +121,41 @@
     flex-direction: column;
     justify-content: space-around;
     overflow: hidden;
-    background-color: #0c9eff57;
-    border-color: #0c9eff9b;
+    /* background-color: #0c9eff57; */
+    border-color: #0c9eff3d;
     border-style: solid;
     z-index: 1750;
 }
 
 [data-visualisation-name="grid layout"] .cell-drop-zone .left:hover,
 [data-visualisation-name="grid layout"] .cell-drop-zone .right:hover {
-    background-color: #0c9eff86;
-    border-color: #0c9eff;
+    /* background-color: #0c9eff86; */
+    border-color: #ffaa0c;
 }
 
 [data-visualisation-name="grid layout"] .cell-drop-zone .left {
     grid-area: left;
+    background: linear-gradient(90deg, rgba(12, 158, 255, 0.1) 0%, rgba(12, 158, 255, 0) 25%);
     border-width: 0;
     border-left-width: 5px;
 }
 
 [data-visualisation-name="grid layout"] .cell-drop-zone .right {
     grid-area: right;
+    background: linear-gradient(270deg, rgba(12, 158, 255, 0.1) 0%, rgba(12, 158, 255, 0) 25%);
     border-width: 0;
     border-right-width: 5px;
 }
 
-[data-visualisation-name="grid layout"] .cell:hover .cell-drop-zone .left::before,
+[data-visualisation-name="grid layout"] .cell-drop-zone .left:hover {
+    background: linear-gradient(90deg, rgba(255, 178, 12, 0.25) 0%, rgba(255, 178, 12, 0) 40%);
+}
+
+[data-visualisation-name="grid layout"] .cell-drop-zone .right:hover {
+    background: linear-gradient(270deg, rgba(255, 178, 12, 0.25) 0%, rgba(255, 178, 12, 0) 40%);
+}
+
+/* [data-visualisation-name="grid layout"] .cell:hover .cell-drop-zone .left::before,
 [data-visualisation-name="grid layout"] .cell:hover .cell-drop-zone .right::before {
     color: #0045749f;
     font-size: 0.8em;
@@ -163,13 +173,13 @@
     content: "Insert after";
     text-align: right;
     padding: 0 3px 0 0;
-}
+} */
 
-[data-visualisation-name="grid layout"] .cell-drop-zone .left:hover,
+/* [data-visualisation-name="grid layout"] .cell-drop-zone .left:hover,
 [data-visualisation-name="grid layout"] .cell-drop-zone .right:hover {
-    /* background-color: #0c9eff3b; */
+    /* background-color: #0c9eff3b;
     border-color: #0c9effe0;
-}
+} */
 
 
 
@@ -292,14 +302,14 @@
     touch-action: none;
 }
 
-[data-visualisation-name="grid layout"] .row-resize-handle:hover {
+[data-visualisation-name="grid layout"] .grid:not(.cell-is-dragged) .row-resize-handle:hover {
     background-color: #ffefa2;
     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="rgb(0, 0, 0)" width="18px" height="18px"><path d="M0 0h24v24H0z" fill="none"/><path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>');
     border-top: 2px solid #FFF;
     border-bottom: 2px solid #FFF;
 }
 
-[data-visualisation-name="grid layout"] .cell-resize-handle:hover {
+[data-visualisation-name="grid layout"] .grid:not(.cell-is-dragged) .cell-resize-handle:hover {
     background-color: #ffefa2;
     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="rgb(0, 0, 0)" width="18px" height="18px"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>');
     border-left: 2px solid #FFF;
