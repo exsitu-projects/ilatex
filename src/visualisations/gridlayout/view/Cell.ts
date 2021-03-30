@@ -165,8 +165,6 @@ export class Cell {
         return contentNode;        
     }
 
-    // This method assumes the distribution of relative size is valid,
-    // i.e. the sum over all the cells of the row is equal to 1
     resize(): void {
         const parentNode = this.node.parentElement;
         if (!parentNode) {
@@ -177,7 +175,7 @@ export class Cell {
         const cellResizeHandleWidth = 8; // px
         const totalWidthOfAllCellResizeHandlesInRow = (this.nbCellsInRow - 1) * cellResizeHandleWidth;
 
-        this.node.style.width = `calc((100% - ${totalWidthOfAllCellResizeHandlesInRow}px) * ${this.currentRelativeSize})`;
+        this.node.style.width = `calc((100% - ${totalWidthOfAllCellResizeHandlesInRow}px) * ${this.scaledRelativeSize})`;
     }
 
     resizeToRelativeSize(newRelativeSize: number): void {

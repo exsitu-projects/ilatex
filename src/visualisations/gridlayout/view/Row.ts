@@ -134,8 +134,6 @@ export class Row {
         }
     }
 
-    // This method assumes the distribution of relative size is valid,
-    // i.e. the sum over all the rows of the grid is equal to 1
     resize(): void {
         const parentNode = this.node.parentElement;
         if (!parentNode) {
@@ -147,7 +145,7 @@ export class Row {
         const rowResizeHandleHeight = 8; // px
         const totalHeightOfAllRowResizeHandles = (this.nbRowsInGrid - 1) * rowResizeHandleHeight;
 
-        this.node.style.height = `calc((100% - ${totalHeightOfAllRowResizeHandles}px) * ${this.currentRelativeSize})`;
+        this.node.style.height = `calc((100% - ${totalHeightOfAllRowResizeHandles}px) * ${this.scaledRelativeSize})`;
     }
 
     resizeToRelativeSize(newRelativeSize: number): void {

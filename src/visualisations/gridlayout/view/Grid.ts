@@ -193,8 +193,8 @@ export class Grid {
         const rowAboveSizeChangeRatio = (rowAboveHeight + dy) / rowAboveHeight;
         const rowBelowSizeChangeRatio = (rowBelowHeight - dy) / rowBelowHeight;
 
-        if (rowAboveHeight * rowAboveSizeChangeRatio < 25
-        ||  rowBelowHeight * rowBelowSizeChangeRatio < 25) {
+        if ((rowAboveHeight >= 20 && rowAboveHeight * rowAboveSizeChangeRatio < 25)
+        ||  (rowBelowHeight >= 20 && rowBelowHeight * rowBelowSizeChangeRatio < 25)) {
             return;
         }
 
