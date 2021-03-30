@@ -1,0 +1,142 @@
+\documentclass[sigconf]{acmart}
+
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage{float}
+
+\usepackage{ilatex}
+\usepackage{gridlayout}
+
+
+\DeclareRobustCommand{\reftheme}[1]{T{#1}}
+
+
+\newcommand{\psubref}[1]{\subref{#1}} 
+
+
+\newcommand{\citeparticipant}[2][]{%
+\if\relax\detokenize{#1}\relax%
+\og{}\emph{#2}\fg%
+\else%
+\og{}\emph{#2}\fg~(#1)%
+\fi%
+}
+
+
+\newcommand{\elips}{[\textellipsis\kern-0.25ex]}
+
+
+\newcommand{\eg}{\textit{e.g.}}
+\newcommand{\ie}{\textit{i.e.}}
+\newcommand{\etal}{\textit{et~al.}}
+
+
+\DeclareRobustCommand{\iLaTeX}{\mbox{{\large{\itshape i}-\hspace{-0.25mm}}\LaTeX{}}}
+
+\graphicspath{{img/}}  
+\def\venue{IHM~'20'21} 
+
+\usepackage[french,english]{babel}
+\newcommand{\en}[1]{\foreignlanguage{english}{#1}}
+\newcommand{\fr}[1]{\foreignlanguage{french}{#1}}
+
+\renewcommand{\acksname}{Remerciements}
+\renewcommand{\refname}{Références}
+
+\AtBeginDocument{%
+  \providecommand\BibTeX{{%
+    \normalfont B\kern-0.5em{\scshape i\kern-0.25em b}\kern-0.8em\TeX}}}
+
+
+\copyrightyear{2021} 
+\acmYear{2021} 
+\setcopyright{acmcopyright}\acmConference[IHM '20.21]{32e Conférence Francophone sur l'Interaction Homme-Machine}{April 13--16, 2021}{Virtual Event, France}
+\acmBooktitle{32e Conférence Francophone sur l'Interaction Homme-Machine (IHM '20.21), April 13--16, 2021, Virtual Event, France}
+\acmPrice{15.00}
+\acmDOI{10.1145/3450522.3451325}
+\acmISBN{978-1-4503-8362-2/21/04}
+
+\begin{document}
+\selectlanguage{french}
+\sloppy
+
+\def\titreFR{Représentations intermédiaires interactives pour la manipulation de code \LaTeX{}}
+\def\titreEN{Interactive Intermediate Representations for \LaTeX{} Code Manipulation}
+\def\titreSHORT{} 
+
+\title[\fr{\titreSHORT}]{\fr{\titreFR}}
+\subtitle{\en{\titreEN}}
+
+\author{Camille Gobert}
+\email{gobert@lri.fr}
+\affiliation{%
+  \institution{Universit\'e Paris-Saclay, CNRS, Inria, LISN}
+  \city{91400 Orsay}
+  \country{France}
+}
+
+\author{Michel Beaudouin-Lafon}
+\email{mbl@lri.fr}
+\affiliation{%
+  \institution{Universit\'e Paris-Saclay, CNRS, Inria, LISN}
+  \city{91400 Orsay}
+  \country{France}
+}
+
+\begin{abstract} 
+\en{
+Editing documents written in a description language such as \LaTeX{} is difficult. Few editors improve the experience, and WYSIWYG interfaces for \LaTeX{} are often limited. Yet, \LaTeX{} is still used extensively, especially in the scientific community. We interviewed 11 \LaTeX{} users and performed a thematic analysis of the issues they face. We define the concept of interactive intermediate representations (IIR) and propose to use it to answer some of these problems. IIR constitute a new kind of user interface for document description languages that enable to visualise and manipulate certain pieces of code through suitable representations. We present \iLaTeX{}, a prototype of a \LaTeX{} editor equipped with IIR, and discuss its design, its implementation, its preliminary evaluation and its limits. We conclude on the benefits of IIR for document description language editing.
+}
+\end{abstract}
+
+\begin{CCSXML}
+<ccs2012>
+    <concept>
+        <concept_id>10003120.10003121.10003122.10003334</concept_id>
+        <concept_desc>Human-centered computing~User studies</concept_desc>
+        <concept_significance>300</concept_significance>
+    </concept>
+    <concept>
+        <concept_id>10003120.10003121.10003124.10010865</concept_id>
+        <concept_desc>Human-centered computing~Graphical user interfaces</concept_desc>
+        <concept_significance>300</concept_significance>
+    </concept>
+</ccs2012>
+\end{CCSXML}
+
+\ccsdesc[300]{Human-centered computing~User studies}
+\ccsdesc[300]{Human-centered computing~Graphical user interfaces}
+
+\keywords{\en{\LaTeX{}, code editor, intermediate representation}}
+
+\begin{otherlanguage}{english}%
+\maketitle%
+\end{otherlanguage}%
+\section*{R\'esum\'e}
+\ignorespaces\fr{
+L'édition de documents rédigés dans un langage de description tel que \LaTeX{} est un processus difficile. Peu d'éditeurs améliorent cette expérience, et les interfaces WYSIWYG existantes sont souvent limitées. Pourtant, \LaTeX{} demeure largement utilisé, notamment dans le milieu scientifique. Nous avons interviewé 11 utilisateurs de \LaTeX{} et réalisé une analyse thématique des problèmes qu’ils rencontrent. Nous définissons le concept de représentations intermédiaires interactives (RII) et proposons de l'utiliser pour répondre à certains de ces problèmes. Les RII constituent un nouveau genre d’interface utilisateur pour les langages de description de document qui permet de visualiser et de manipuler certains morceaux de code à travers des représentations adaptées. Nous présentons \iLaTeX{}, un prototype d'éditeur \LaTeX{} doté de RII, et discutons son design, son implémentation, son évaluation préliminaire et ses limites. Nous concluons sur les avantages des RII pour l’édition de langages de description de documents.
+}%
+%
+\section*{Mots-cl\'es}
+\fr{\LaTeX{}, éditeur de code, représentation intermédiaire}%
+
+\input{sections/introduction}
+\input{sections/related-work}
+\input{sections/interviews}
+\input{sections/prototype}
+\input{sections/conclusion}
+
+\begin{acks}
+Nous remercions Han (Evan) Han et Wendy Mackay pour leurs commentaires sur les premières versions de l'analyse thématique, ainsi que Jean-Philippe Rivière, Elizabeth Walton, Téo Sanchez et Alexandre Battut pour leurs critiques de la première version de cet article.
+Nous remercions également tous les participants interviewés pour leur temps.
+Ce travail à été en partie financé par : European Research Council (ERC) grant \no{}695464 ONE : Unified Principles of Interaction. 
+\end{acks}
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{references}
+
+\appendix
+
+
+\end{document}
+\endinput

@@ -1,0 +1,27 @@
+\section{Introduction}
+\label{sec:introduction}%
+
+Les systèmes de préparation de documents sont des outils numériques qui peuvent être utilisés pour créer et modifier des documents textuels.
+Ils sont généralement divisés en deux catégories~\cite{johnson1988styles} : les langages de description de document (\eg{} Markdown, Asciidoc, \LaTeX{}, HTML), et les systèmes WYSIWYG (\eg{} Microsoft Word, Apple Pages, LibreOffice Writer).
+Les langages de description requièrent de coder le document d'une certaine manière, en utilisant un langage particulier (typiquement à base de commandes ou de balises), afin de décrire comment le système doit interpréter le document source afin de générer le document final.
+À l'inverse, les systèmes WYSIWYG permettent aux utilisateurs de voir à tout moment à quoi ressemble le document final et de modifier directement son contenu ou son apparence, sans passer par un langage intermédiaire.
+Aucune de ces deux approches ne semble en mesure de supplanter l’autre :
+les éditeurs de code ne semblent pas adaptés pour visualiser et manipuler le contenu structuré et les abstractions couramment utilisées, et aucune interface graphique ne semble pouvoir capturer l'expressivité~d'un~langage aussi~puissant~que~\LaTeX{}.
+
+Nous proposons de les combiner à l'aide de \emph{représentations intermédiaires interactives} (RII) de certains morceaux de code, qui permettent de les visualiser et de les manipuler à travers des représentations plus adaptées.
+Nous définissons une RII comme une représentation alternative d'un code textuel possédant deux caractéristiques :
+elle doit être \emph{intermédiaire}, c'est-à-dire conceptuellement située \emph{entre} le code et le document final ;
+et elle doit être \emph{interactive}, c'est-à-dire permettre de modifier le code auquel elle est associée.
+Bien que cette idée ne soit pas nouvelle, elle n'a à notre connaissance jamais été clairement nommée, définie, ni appliquée au domaine des langages de description de documents.
+
+Ce nouveau genre d'interface utilisateur pour éditeur de langages de description de document se distingue des interfaces WYSIWYG, car nous défendons que manipuler directement le document final n'est pas systématiquement mieux que manipuler son code source.
+Plutôt que de restreindre les utilisateurs à utiliser l'un ou l'autre de ces substrats de document~\cite{beaudouinlafon2017towards}, nous proposons plutôt d'en introduire de nouveaux et de laisser le choix aux utilisateurs en fonction de leurs besoins.
+En utilisant un éditeur doté de RII, un utilisateur pourrait par exemple choisir de visualiser un tableau sous forme de grille lors de sa conception ou pour réordonner certaines colonnes par manipulation directe, tout en conservant la possibilité d'éditer directement le code des commandes utilisées dans les cellules.
+
+Afin de mieux comprendre les besoins auxquels pourraient répondre les RII, nous avons interviewé 11 utilisateurs de \LaTeX{} et réalisé une analyse thématique des problèmes que ceux-ci rencontrent.
+Nous avons ensuite développé \iLaTeX{}, un prototype d'éditeur \LaTeX{} doté de RII.
+Celui-ci permet d'interagir avec certains éléments du PDF produit par \LaTeX{} afin d'afficher des représentations intermédiaires interactives du code qui les a générées.
+Notre contribution est donc à la fois empirique, théorique et technique.
+Nous commençons par présenter d'autres travaux en lien avec le concept de RII ;
+nous poursuivons en détaillant la méthodologie et les résultats de notre analyse thématique ; nous introduisons \iLaTeX{} et discutons son design, son implémentation, son évaluation préliminaire et ses limites ;
+et nous concluons sur la pertinence des RII pour les éditeurs de langages de description de document.
