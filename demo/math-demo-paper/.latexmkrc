@@ -1,0 +1,1 @@
+../../latex/base-latexmkrc
