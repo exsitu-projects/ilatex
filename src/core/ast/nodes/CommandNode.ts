@@ -20,11 +20,11 @@ export type CommandNodeParameters = (
 export class CommandNode extends ASTNode {
     static readonly type = "command" as const;
 
-    readonly type = CommandNode.type;
+    readonly type: string = CommandNode.type;
     readonly name: string;
     readonly parameters: CommandNodeParameters;
     protected parser: ASTNodeParser<CommandNode>;
-    protected readonly isLeaf = false;
+    protected readonly isLeaf: boolean = false;
 
     constructor(
         name: string,

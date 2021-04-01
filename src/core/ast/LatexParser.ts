@@ -21,6 +21,7 @@ import { ParameterValueNode } from "./nodes/ParameterValueNode";
 import { SpecialSymbolNode } from "./nodes/SpecialSymbolNode";
 import { SquareBracesParameterBlockNode } from "./nodes/SquareBracesParameterBlockNode";
 import { TextNode } from "./nodes/TextNode";
+import { VerbCommandNode } from "./nodes/VerbCommandNode";
 import { WhitespaceNode } from "./nodes/WhitespaceNode";
 
 
@@ -97,6 +98,7 @@ type LatexParsers = {
     specificEnvironement: EnvironmentNode,
     anyEnvironement: EnvironmentNode,
     specificCommand: CommandNode,
+    verbCommand: VerbCommandNode,
     anyCommand: CommandNode,
     command: CommandNode,
     environment: EnvironmentNode,
@@ -353,6 +355,32 @@ export class LatexParser {
                     ...specifiedCommands.map(command => this.createCommandParser(command))
                 );
             },
+
+            verbCommand: lang => {
+                // A utility function to escape every character of a string for using it in a regular expression
+                // Adapted from https://stackoverflow.com/a/3561711
+                const escapeForRegex = (string: string) => string.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+
+                // First, the delimiter used by this \verb command must be extracted;
+                // then, the argument of the command can be parsed (until the delimiter is met again).
+                return P.seq(
+                    P.string("\\verb"),
+                    P.any
+                ).chain(([command, delimiter]) => {
+                    return P.seqMap(
+                        P.regex(new RegExp(`[^${escapeForRegex(delimiter)}]*`)),
+                        P.string(delimiter),
+                        (content, endDelimiter) => content
+                    )
+                    .thru(this.contextualiseParserOutput(this.reparsers.verbCommand, (value, context, reparser) => new VerbCommandNode(
+                        "verb",
+                        delimiter,
+                        value,
+                        context,
+                        reparser
+                    )));
+                });
+            },
         
             anyCommand: lang => {
                 return P.regexp(/\\(([^a-z])|(([a-z]+\**)))/i)
@@ -395,19 +423,25 @@ export class LatexParser {
                         }
         
                         const remainingInput = input.substring(index + 1);
+
+                        // Case 1 — it is a verbatim command (\verb)
+                        if (remainingInput.startsWith("verb")
+                        &&  remainingInput.substr(4, 1).match(/[a-zA-Z\*]/) === null) {
+                            return P.makeSuccess(index, lang.verbCommand);
+                        }
         
-                        // Case 1 — it is the beginning of an environement
-                        if (remainingInput.startsWith("begin{")) {
-                            // Case 1.1 — it is a specific environement (with a known name)
+                        // Case 2 — it is the beginning of an environement
+                        else if (remainingInput.startsWith("begin{")) {
+                            // Case 2.1 — it is a specific environement (with a known name)
                             if (isStartingWithSpecificEnvironementBeginning(remainingInput)) {
                                 return P.makeSuccess(index, lang.specificEnvironement);
                             }
         
-                            // Case 1.2 — it is an unknown environement
+                            // Case 2.2 — it is an unknown environement
                             return P.makeSuccess(index, lang.anyEnvironement);
                         }
         
-                        // Case 2 — it is the end of an environement
+                        // Case 3 — it is the end of an environement
                         // This should not happen: \end commands should only be read by env. parsers.
                         // They must NOT be consumed as regular commands; otherwise, env. parsers
                         // will not be able to read the \end command they expect!
@@ -415,12 +449,12 @@ export class LatexParser {
                             return P.makeFailure(index, "\\<any command> (unexpected \\end)");
                         }
         
-                        // Case 3 — it is a specific command (with a known name)
+                        // Case 4 — it is a specific command (with a known name)
                         else if (isStartingWithSpecificCommandName(remainingInput)) {
                             return P.makeSuccess(index, lang.specificCommand);
                         }
         
-                        // Case 4 — it is an unknown command
+                        // Case 5 — it is an unknown command
                         else {
                             return P.makeSuccess(index, lang.anyCommand);
                         }
@@ -646,6 +680,7 @@ export class LatexParser {
             specificEnvironement: createASTNodeReparserFor(this.parsers.specificEnvironement),
             anyEnvironement: createASTNodeReparserFor(this.parsers.anyEnvironement),
             specificCommand: createASTNodeReparserFor(this.parsers.specificCommand),
+            verbCommand: createASTNodeReparserFor(this.parsers.verbCommand),
             anyCommand: createASTNodeReparserFor(this.parsers.anyCommand),
             command: createASTNodeReparserFor(this.parsers.command),
             environment: createASTNodeReparserFor(this.parsers.environment),
