@@ -10,4 +10,6 @@
 *.upa
 *.upb
 *.xcp
+*.pyg
+*.toc
 *.ilatex-mappings
