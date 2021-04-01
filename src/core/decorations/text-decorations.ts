@@ -9,7 +9,7 @@ export const textDecorations = {
 
     // For debug purposes only
     availableVisualisableCode: vscode.window.createTextEditorDecorationType({
-        backgroundColor: "rgba(20, 20, 255, 0.2)",
+        backgroundColor: "rgba(20, 20, 255, 0.05)",
         borderRadius: "2px"
     }),
 
