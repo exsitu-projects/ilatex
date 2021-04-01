@@ -1,0 +1,112 @@
+\documentclass[11pt, a4paper]{article}
+
+\input{preamble}
+\input{instructions}
+
+\begin{document}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%   TASK 4   %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Table taken from https://arxiv.org/abs/2103.09563
+\taskfour
+
+\begin{task}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% START EDITING HERE
+	\begin{itabular}{lcc}
+    \toprule
+    \textbf{Model} & \textbf{FWP}\\
+    \midrule
+    Context Attention & 32.05 \\
+    Context Attention + BERT-Domain & 31.02 \\
+    Non-contextual &  61.73 \\
+    Encoded BR & 60.45 \\
+    Encoded BERT-Domain & 52.43 \\
+    Encoded BR + DA & 34.39 \\
+    Encoded BR + DA + BERT-Domain & 53.49 \\
+    Context carry over & 28.33 \\
+    Context carry over + BERT-Domain & 28.84 \\
+    Context carry over + BR + DA & 27.38 \\
+    \bottomrule
+	\end{itabular}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% STOP EDITING HERE
+\end{task}
+
+\newpage
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%   TASK 5   %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Table taken from https://arxiv.org/abs/2103.10291
+\taskfive
+
+\begin{task}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% START EDITING HERE
+    \newcommand{\langp}[2]{\textsc{#1}$\shortrightarrow$\textsc{#2}}
+    \newcommand{\std}[1]{\footnotesize\textcolor{gray}{#1}}
+    
+    \begin{itabular}{llrrrrrr}
+        \toprule
+        $\alpha$ & $\epsilon$ & \langp{de}{en} & \langp{en}{de} & \langp{ja}{en} & \langp{en}{ja} & \langp{ro}{en} & \langp{en}{ro}\\
+        \midrule
+        1 & 0 & 8.07 \std{$\pm$ 1.21} & 12.97 \std{$\pm$ 2.58} & 23.10 \std{$\pm$ 1.01} & 14.38 \std{$\pm$ 1.06} & 9.10 \std{$\pm$ 0.82} & 4.32 \std{$\pm$ 0.20}\\
+         & 0.01 & 9.66 \std{$\pm$ 1.55} & 17.87 \std{$\pm$ 1.63} & 22.96 \std{$\pm$ 1.28} & 15.41 \std{$\pm$ 1.62} & 12.19 \std{$\pm$ 0.98} & 17.56 \std{$\pm$ 5.55}\\
+         & 0.1 & 22.17 \std{$\pm$ 1.79} & 30.25 \std{$\pm$ 1.54} & 34.79 \std{$\pm$ 1.12} & 31.19 \std{$\pm$ 1.80} & 54.01 \std{$\pm$ 14.54} & 47.24 \std{ $\pm$ 14.66}\\
+        1.5 & 0 & 0.50 \std{$\pm$ 0.03} & 0.78 \std{$\pm$ 0.71} & 0.03 \std{$\pm$ 0.04} & 0.63 \std{$\pm$ 0.66} & 0.18 \std{$\pm$ 0.12} & 0.88 \std{$\pm$ 0.46}\\
+        & 0.01 & 1.11 \std{$\pm$ 0.70} & 6.27 \std{$\pm$ 5.37} & 2.00 \std{$\pm$ 2.59} & 1.57 \std{$\pm$ 1.74} & 2.70 \std{$\pm$ 2.26} & 0.92 \std{$\pm$ 0.44}\\
+        & 0.1 & 0.96 \std{$\pm$ 0.55} & 0.65 \std{$\pm$ 0.30} & 15.67 \std{$\pm$ 22.16} & 13.89 \std{$\pm$ 19.53} & 35.13 \std{$\pm$ 24.33} & 44.12 \std{$\pm$ 2.39}\\
+        \bottomrule
+    \end{itabular}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% STOP EDITING HERE
+\end{task}
+
+\newpage
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%   TASK 6   %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Table taken from https://arxiv.org/abs/2103.10994.pdf
+\tasksix
+
+\begin{task}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% START EDITING HERE
+    \begin{itabular}{l|ccc}
+    \toprule
+    Method & Arch & Top-1 & Top-5 \\
+    \midrule
+    Supervised & R50 & 76.5 & -- \\
+    \midrule
+    SwAV$^\dagger$ & R50 & 75.3 & -- \\
+    \midrule
+    SimCLRv2 & R50 & 71.7 & 90.4 \\
+    InfoMin & R50 & 73.0 & 91.1 \\
+    BYOL & R50 & 74.3 & 91.6 \\
+    NPID & R50 & 54.0 & -- \\
+    BigBiGAN & R50 & 56.6 & 78.6 \\
+    LA & R50 & 60.2 & -- \\
+    MoCo & R50 & 60.6 & -- \\
+    MoCoV2 & R50 & 71.1 & 90.1 \\
+    SwAV & R50 & 70.1 & -- \\
+    SimCLR & R50 & 69.3 & 89.0 \\
+    PIRL & R50 & 63.6 & -- \\
+    \midrule
+    \textbf{Self-Classifier}  & R50 & 69.7 & 89.3 \\
+    \bottomrule
+    \end{itabular}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% STOP EDITING HERE
+\end{task}
+
+
+\end{document}

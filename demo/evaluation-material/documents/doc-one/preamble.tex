@@ -47,15 +47,12 @@
 }
 
 % Task titles + instructions and code blocks
-\newcounter{tasknumber}
-\setcounter{tasknumber}{1}
 
-\newcommand{\newtask}{
+\newcommand{\newtask}[1]{
     \begin{center}
         \Huge
-        \textbf{Task \arabic{tasknumber}}
+        \textbf{Task #1}
     \end{center}
-    \stepcounter{tasknumber}
     \vspace{1em}
 }
 
@@ -118,9 +115,9 @@
 \newcommand{\logoguidesofdoctwo}{%
     \resizebox{\textwidth}{!}{%
         \hspace{0.15\textwidth}%
-        \fcolorbox{white}{green!20}{\makebox[0.3\textwidth]{\textbf{Univ. Paris-Saclay}}}%
+        \fcolorbox{white}{green!20}{\makebox[0.3\textwidth]{\textbf{Inria}}}%
         \hspace{0.1\textwidth}
-        \fcolorbox{white}{red!20}{\makebox[0.3\textwidth]{\textbf{ex)situ}}}%
+        \fcolorbox{white}{red!20}{\makebox[0.3\textwidth]{\textbf{CNRS}}}%
         \hspace{0.15\textwidth}%
     } \\
 }

@@ -1,0 +1,104 @@
+\documentclass[11pt, a4paper]{article}
+
+\input{preamble}
+\input{instructions}
+
+\begin{document}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%   TASK 1   %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Equation taken from https://arxiv.org/abs/2103.15745
+\taskone
+    
+\begin{task}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% START EDITING HERE
+    \begin{imaths}
+        U_2&=\langle x\rangle\cup \langle -x\rangle\cup \langle x^2\rangle\cup \left\langle \frac{1+x}{2} \right\rangle_{\hskip-4pt 6}
+        \cup \left\langle \frac{1+x}{2x}\right\rangle_{\hskip-4pt 6}  \cup \left\langle \frac{(1+x)^2}{4x}\right\rangle_{\hskip-4pt 6} . \\
+        &= \left\{
+        x, \frac{1}{x}, \frac{x}{x-1}, \frac{x-1}{x}, \frac{1}{1-x}, 1-x, \frac{1}{x^2}, x^2, \frac{x^2}{x^2-1}, \frac{x^2-1}{x^2}, \frac{1}{1-x^2},  1-x^2, \right.\\
+        &\frac{1}{1+x}, \frac{x}{1+x}, \frac{1+x}{x}, -x, \frac{-1}{x}, 1+x, \frac{x+1}2,\frac{1-x}2, \frac{1 + x}{x - 1}, \frac{x - 1}{1 + x}, \frac{2}{1 + x}, \frac{2}{1-x},\\
+        &\frac{1+x}{1-x}, \frac{1-x}{1+x}, \frac{2x}{1+x}, \frac{2x}{x-1}, \frac{1+ x}{2x}, \frac{(1+x)^2}{(x-1)^2}, \frac{(x-1)^2}{(1+x)^2}, \frac{(1+x)^2}{4x},\\
+        &\left.\frac{4x}{(1+x)^2}, \frac{-4x}{(x-1)^2}, \frac{(x-1)^2}{-4x} . \right\}
+    \end{imaths}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% STOP EDITING HERE
+\end{task}
+
+\newpage
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%   TASK 2   %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Equation taken from https://arxiv.org/abs/2103.10366
+\tasktwo
+
+\begin{task}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% START EDITING HERE
+    \begin{imaths}
+        \frac{x_j}{x_{max}}\cdot (x_{max} - x_j) - 2\delta
+        &\ge \sqrt{n\log n}\cdot \left( \frac{x_j\cdot (x_{max}-x_j)}{x_{max} \cdot \sqrt{n\cdot\log{n}}} -2c_1\right) \\
+        &\ge \sqrt{n\log n}\cdot \left( \frac{x_j\cdot \Delta'}{x_j+x_{max}-x_j} -2c_1\right) \\
+    	&= \sqrt{n\log n}\cdot \left( \frac{ \Delta'}{1+\frac{x_{max}-x_j}{x_j}}-2c_1 \right) \\
+        &\overset{(a)}{\ge} \sqrt{n\log n}\cdot \left( \frac{ \Delta'}{1+\frac{\Delta'}{4c_w}}-2c_1 \right) \\
+        &= \sqrt{n\log n} \cdot \left( \frac{4c_w \cdot \Delta' - 2c_1 \cdot (4c_w + \Delta')}{4c_w + \Delta'} \right) \\ 
+        &= \sqrt{n\log n} \cdot \left( \frac{ 4c_w(\Delta'-2c_1) +\Delta'(4c_w-2c_1) }{4c_w + \Delta'} \right)
+        \overset{(b)}{>} 0   
+    \end{imaths}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% STOP EDITING HERE
+\end{task}
+
+\newpage
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%   TASK 3   %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Equation taken from https://arxiv.org/abs/2103.12163
+\taskthree
+
+\begin{task}
+\flushleft
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% START EDITING HERE
+	We begin with the half-line IBVP
+	\begin{imaths}
+	    \begin{cases}
+		q_t = \tfrac{i}{2} q_{xx},& x > 0,\, t > 0, \\
+		q(x,0) = \phi(x),& x > 0,\\
+		q(0,t) = u(t),& t > 0,
+	    \end{cases}\tag{1}
+	\end{imaths}
+	using a centered discretization for $q_{xx}$,
+	\begin{imaths}		
+		\dot{q}_n(t) = \frac{i}{2}\left( \frac{q_{n+1}(t) - 2 q_n(t) + q_{n-1}(t)}{h^2}\right).\tag{2}
+	\end{imaths}
+	The local and dispersion relations are, respectively, 
+	\begin{imaths}
+		\partial_t \left(e^{-iknh} e^{Wt} q_n \right) &= \frac{i}{2 h^2}\Delta \left(e^{-ik(n-1)h} e^{Wt} q_{n} - e^{-iknh} e^{Wt} q_{n-1} \right),\tag{3}\\
+		W(k) &= \frac{i}{2}\left( \frac{2 - e^{ikh} - e^{-ikh}}{h^2}\right) = \frac{i}{h^2} \left[ 1 - \cos(kh) \right].
+	\end{imaths}
+	With the Dirichlet boundary condition, our transforms begin at $n = 1$ instead of at $n = 0$, resulting in the global relation
+	\begin{imaths}
+		e^{WT} \hat{q}(k,T) - \hat{q}(k,0) - \frac{i}{2}\left[ \frac{ e^{-ikh} f_{0} - f_1}{h} \right] &= 0, \quad \text{Im}(k) \leq 0.\tag{5}
+	\end{imaths}
+	To obtain our ``solution'' formula, we take the inverse transform,
+	\begin{imaths}
+		q_n(T) &= \frac{1}{2 \pi} \int_{-\pi/h}^{\pi/h} e^{iknh} e^{-WT}\hat{q}(k,0)\,dk + \frac{1}{2 \pi} \int_{-\pi/h}^{\pi/h}\frac{ i e^{iknh} e^{-WT}}{2}\left[ \frac{ e^{-ikh} f_{0} - f_1}{h} \right]\,dk.\tag{6}
+	\end{imaths}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% STOP EDITING HERE
+\end{task}
+
+
+\end{document}

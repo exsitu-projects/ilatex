@@ -4,13 +4,19 @@
 %%%%%%%%%%%%%%%%%%%%   TASK 1   %%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Equation taken from https://arxiv.org/abs/2103.10366
+% Equation taken from https://arxiv.org/abs/2103.15745
 \taskone
     
 \begin{task}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% START EDITING HERE
     \begin{imaths}
-        \mathcal{E}_i \Leftrightarrow \Big\{ Y_i(t) > \frac{\tau^2}{n} + \frac{\tau}{2\sqrt{n}} \sqrt{\log n} \land {\lVert \mathbf{Y}(t) \rVert}_1  < x_{max} \cdot(1+ n^{-\Omega(1)}) \Big\}
+        U_2&=\langle x\rangle\cup \langle -x\rangle\cup \langle x^2\rangle\cup \left\langle \frac{1+x}{2} \right\rangle_{\hskip-4pt 6}
+        \cup \left\langle \frac{1+x}{2x}\right\rangle_{\hskip-4pt 6}  \cup \left\langle \frac{(1+x)^2}{4x}\right\rangle_{\hskip-4pt 6} . \\
+        &= \left\{
+        x, \frac{1}{x}, \frac{x}{x-1}, \frac{x-1}{x}, \frac{1}{1-x}, 1-x, \frac{1}{x^2}, x^2, \frac{x^2}{x^2-1}, \frac{x^2-1}{x^2}, \frac{1}{1-x^2},  1-x^2, \right.\\
+        &\frac{1}{1+x}, \frac{x}{1+x}, \frac{1+x}{x}, -x, \frac{-1}{x}, 1+x, \frac{x+1}2,\frac{1-x}2, \frac{1 + x}{x - 1}, \frac{x - 1}{1 + x}, \frac{2}{1 + x}, \frac{2}{1-x},\\
+        &\frac{1+x}{1-x}, \frac{1-x}{1+x}, \frac{2x}{1+x}, \frac{2x}{x-1}, \frac{1+ x}{2x}, \frac{(1+x)^2}{(x-1)^2}, \frac{(x-1)^2}{(1+x)^2}, \frac{(1+x)^2}{4x},\\
+        &\left.\frac{4x}{(1+x)^2}, \frac{-4x}{(x-1)^2}, \frac{(x-1)^2}{-4x} . \right\}
     \end{imaths}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% STOP EDITING HERE
 \end{task}
@@ -73,10 +79,8 @@
 	\end{imaths}
 	The local and dispersion relations are, respectively, 
 	\begin{imaths}
-		\partial_t \left(e^{-iknh} e^{Wt} q_n \right) &= \frac{i}{2 h^2}\Delta \left(e^{-ik(n-1)h} e^{Wt} q_{n} - e^{-iknh} e^{Wt} q_{n-1} \right),\tag{3}
-	\end{imaths} 
-	\begin{imaths}
-		W(k) = \frac{i}{2}\left( \frac{2 - e^{ikh} - e^{-ikh}}{h^2}\right) = \frac{i}{h^2} \left[ 1 - \cos(kh) \right].\tag{4}
+		\partial_t \left(e^{-iknh} e^{Wt} q_n \right) &= \frac{i}{2 h^2}\Delta \left(e^{-ik(n-1)h} e^{Wt} q_{n} - e^{-iknh} e^{Wt} q_{n-1} \right),\tag{3}\\
+		W(k) &= \frac{i}{2}\left( \frac{2 - e^{ikh} - e^{-ikh}}{h^2}\right) = \frac{i}{h^2} \left[ 1 - \cos(kh) \right].
 	\end{imaths}
 	With the Dirichlet boundary condition, our transforms begin at $n = 1$ instead of at $n = 0$, resulting in the global relation
 	\begin{imaths}
@@ -392,35 +396,35 @@
         \begin{row}{0.1}
             \begin{cell}{1}
                 \centering
-                Internship report
+                Technical report
             \end{cell}
         \end{row}
-        \begin{row}{0.1}
+        \begin{row}{0.15}
             \begin{cell}{1}
                 % Separator
             \end{cell}
         \end{row}
-        \begin{row}{0.1}
+        \begin{row}{0.15}
             \begin{cell}{1}
                 \centering
                 \rule{0.6\cellwidth}{0.4pt}\\[1.5ex]
-                {\Large Internship title}\\
+                {\Large Report title}\\
                 \rule{0.6\cellwidth}{0.4pt}
             \end{cell}
         \end{row}
-        \begin{row}{0.45}
+        \begin{row}{0.3}
             \begin{cell}{1}
                 % Separator
             \end{cell}
         \end{row}
-        \begin{row}{0.25}
+        \begin{row}{0.3}
             \begin{cell}{0.5}
                 \centering
-                \includegraphics[width=\cellwidth]{doc-two/img/logo-univ-ps.png}
+                \includegraphics[width=\cellwidth]{doc-two/img/logo-inria.png}
             \end{cell}
             \begin{cell}{0.5}
                 \centering
-                \includegraphics[width=\cellwidth]{doc-two/img/logo-ex-situ.png}
+                \includegraphics[width=\cellwidth]{doc-two/img/logo-cnrs.png}
             \end{cell}
         \end{row}
     \end{gridlayout}

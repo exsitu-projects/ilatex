@@ -1,0 +1,105 @@
+\documentclass[11pt, a4paper]{article}
+
+\input{preamble}
+\input{instructions}
+
+\begin{document}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%   TASK 1   %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Equation taken from https://arxiv.org/abs/2103.15745
+\taskone
+    
+\begin{task}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% START EDITING HERE
+    \begin{imaths}
+        O\left(\frac{x(x-1)}{x^2+1}\right):= &
+        \left\langle \frac{x(x-1)}{x^2+1}\right\rangle_{\hskip-4pt 6}\cup
+        \left\langle \frac{x(x+1)}{x^2+1}\right\rangle_{\hskip-4pt 6}\cup
+        \left\langle \frac{x(x-i)}{x^2-1}\right\rangle_{\hskip-4pt 6}\cup
+        \left\langle \frac{x(x+i)}{x^2-1}\right\rangle_{\hskip-4pt 6}\\
+        =
+        &\left\{\frac{1+x^2}{1-x},\frac{1-x}{1+x^2},\frac{x(x+1)}{x-1},\frac{x(x+1)}{x^2+1},\frac{x^2+1}{x(x+1)},\right.\\
+        &\frac{x(1-x)}{x+1},\frac{x+1}{x(1-x)},\frac{x+1}{x^2+1},\frac{x^2+1}{x+1},\frac{x(x-1)}{x^2+1},\frac{x^2+1}{x(x-1)},\\
+        &\frac{-ix(x+i)}{x-i},\frac{1-x^2}{i(x-i)},\frac{i(x-i)}{1-x^2},\frac{x(x+i)}{x^2-1},\frac{x^2-1}{x(x+i)},\\
+        &\left. \frac{i(x+i)}{x(i-x)},\frac{x(i-x)}{i(x+i)},\frac{i(x+i)}{x^2-1},\frac{x^2-1}{i(x+i)},\frac{x(x-i)}{x^2-1},\frac{x^2-1}{x(x-i)}\right\}.
+    \end{imaths}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% STOP EDITING HERE
+\end{task}
+
+\newpage
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%   TASK 2   %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Equation taken from https://arxiv.org/abs/2103.09261
+\tasktwo
+
+\begin{task}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% START EDITING HERE
+    \begin{imaths}
+       A_{z^m}^*(H_k)(z)&=\sum_{n=0}^\infty \frac{\lambda^n}{\prod_{j=0}^{n-1}(k+j(m-1))}A_{z^m}^*\left(z^{k+n(m-1)}\right)\\
+       &=0+\sum_{n=1}^\infty \frac{\lambda^n}{\prod_{j=0}^{n-1}(k+j(m-1))}A_{z^m}^*\left(z^{k+n(m-1)}\right)\\
+       &=\sum_{n=1}^\infty \frac{\lambda^n}{\prod_{j=0}^{n-1}(k+j(m-1))}\cdot(k+n(m-1)-m+1)\cdot\left(z^{k+n(m-1)-m+1}\right)\\
+       &=\sum_{n=1}^\infty \frac{\lambda^n}{\prod_{j=0}^{n-1}(k+j(m-1))}\cdot(k+(n-1)(m-1))\cdot\left(z^{k+(n-1)(m-1)}\right)\\
+        &=\sum_{n=1}^\infty \frac{\lambda\cdot\lambda^{n-1}}{\prod_{j=0}^{n-1}(k+j(m-1))}\left(z^{k+(n-1)(m-1)}\right)\\
+        &=\lambda\cdot \sum_{n=0}^\infty \frac{\lambda^n}{\prod_{j=0}^{n-1}(k+j(m-1))}\left(z^{k+n(m-1)}\right)\\
+        &=\lambda H_k(z)
+    \end{imaths}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% STOP EDITING HERE
+\end{task}
+
+\newpage
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%   TASK 3   %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Equation taken from https://arxiv.org/abs/2103.12163
+\taskthree
+
+\begin{task}
+\flushleft
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% START EDITING HERE
+	Consider the second-order discretized advection equation
+	\begin{imaths}
+		\dot{q}_n(t) = -c\left(\frac{q_{n-2}(t) - 4 q_{n-1}(t) + 3q_{n}(t)}{2h}\right).\tag{1}
+	\end{imaths}
+	Following the usual steps, the global relation is
+	\begin{imaths}
+		 e^{WT} \hat{q}(k,T) - \hat{q}(k,0) - c \left( \frac{ 4 e^{-ikh} f_{0} - e^{-2ikh} f_{0} - e^{-ikh} f_{0} }{2}\right)&= 0, \quad \text{Im}(k) \leq 0,\tag{2}
+	\end{imaths}
+	with dispersion relation
+	\begin{imaths}
+		W(k) = c \,\frac{e^{-2ikh} - 4 e^{-ikh} + 3}{2h},\tag{3}
+	\end{imaths}
+	and nontrivial symmetry
+	\begin{imaths}
+		\nu_1(k) = \frac{i}{h} \ln\left(4 - e^{-ikh}\right).\tag{4}
+	\end{imaths}
+	Solving for $\hat{q}(k,T)$ and taking the inverse transform, we obtain
+	\begin{imaths}
+		q_n(T) &= \frac{1}{2\pi} \int_{-\pi/h}^{\pi/h} e^{iknh} e^{-WT} \hat{q}(k,0)\,dk\tag{5} \\
+		&\quad\, + \frac{c}{2\pi} \int_{-\pi/h}^{\pi/h} e^{iknh} e^{-WT} \left( \frac{ 4 e^{-ikh} f_{0} - e^{-2ikh} f_{0} - e^{-ikh} f_{-1} }{2}\right)\,dk.
+	\end{imaths}
+		With the given Dirichlet boundary condition, we encounter the ghost point $f_{-1}(W,T)$, which is unknown. [\dots] Instead, we return to the continuous problem, where the PDE itself gives the Neumann boundary condition from the Dirichlet condition:
+	\begin{imaths}
+		q_x(0,t) = \frac{-1}{c}\,q_{t}(0,t) = \frac{-1}{c}\,\frac{\partial}{\partial t} q(0,t) = \frac{-u'(t)}{c} = \frac{-v(t)}{c}, \quad v(t) = u'(t).\tag{6}
+	\end{imaths}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% STOP EDITING HERE
+\end{task}
+
+
+\end{document}

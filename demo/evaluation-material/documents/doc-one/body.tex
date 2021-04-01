@@ -4,23 +4,22 @@
 %%%%%%%%%%%%%%%%%%%%   TASK 1   %%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Equation taken from https://arxiv.org/abs/2103.09279
+% Equation taken from https://arxiv.org/abs/2103.15745
 \taskone
     
 \begin{task}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% START EDITING HERE
     \begin{imaths}
-         \int_0^T
-      h_j(t)^\mathrm{T} h_k(t)
-      \mathrm{d} t
-      =
-      {\begin{bmatrix}
-        \langle \varphi_j, \varphi_k\rangle & \langle \varphi_j, \psi_k\rangle\\
-        \langle \psi_j, \varphi_j\rangle & \langle \psi_j, \psi_k\rangle
-      \end{bmatrix}}
-      =
-      \frac{1}{2}\delta_{jk}
-      I_2,
+        O\left(\frac{x(x-1)}{x^2+1}\right):= &
+        \left\langle \frac{x(x-1)}{x^2+1}\right\rangle_{\hskip-4pt 6}\cup
+        \left\langle \frac{x(x+1)}{x^2+1}\right\rangle_{\hskip-4pt 6}\cup
+        \left\langle \frac{x(x-i)}{x^2-1}\right\rangle_{\hskip-4pt 6}\cup
+        \left\langle \frac{x(x+i)}{x^2-1}\right\rangle_{\hskip-4pt 6}\\
+        =
+        &\left\{\frac{1+x^2}{1-x},\frac{1-x}{1+x^2},\frac{x(x+1)}{x-1},\frac{x(x+1)}{x^2+1},\frac{x^2+1}{x(x+1)},\right.\\
+        &\frac{x(1-x)}{x+1},\frac{x+1}{x(1-x)},\frac{x+1}{x^2+1},\frac{x^2+1}{x+1},\frac{x(x-1)}{x^2+1},\frac{x^2+1}{x(x-1)},\\
+        &\frac{-ix(x+i)}{x-i},\frac{1-x^2}{i(x-i)},\frac{i(x-i)}{1-x^2},\frac{x(x+i)}{x^2-1},\frac{x^2-1}{x(x+i)},\\
+        &\left. \frac{i(x+i)}{x(i-x)},\frac{x(i-x)}{i(x+i)},\frac{i(x+i)}{x^2-1},\frac{x^2-1}{i(x+i)},\frac{x(x-i)}{x^2-1},\frac{x^2-1}{x(x-i)}\right\}.
     \end{imaths}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% STOP EDITING HERE
 \end{task}
@@ -46,7 +45,7 @@
        &=\sum_{n=1}^\infty \frac{\lambda^n}{\prod_{j=0}^{n-1}(k+j(m-1))}\cdot(k+n(m-1)-m+1)\cdot\left(z^{k+n(m-1)-m+1}\right)\\
        &=\sum_{n=1}^\infty \frac{\lambda^n}{\prod_{j=0}^{n-1}(k+j(m-1))}\cdot(k+(n-1)(m-1))\cdot\left(z^{k+(n-1)(m-1)}\right)\\
         &=\sum_{n=1}^\infty \frac{\lambda\cdot\lambda^{n-1}}{\prod_{j=0}^{n-1}(k+j(m-1))}\left(z^{k+(n-1)(m-1)}\right)\\
-        &=\lambda\cdot \sum_{n=0}^\infty \frac{\lambda^n}{\prod_{j=0}^{n-1}(k+j(m-1))}z^{k+n(m-1)}\\
+        &=\lambda\cdot \sum_{n=0}^\infty \frac{\lambda^n}{\prod_{j=0}^{n-1}(k+j(m-1))}\left(z^{k+n(m-1)}\right)\\
         &=\lambda H_k(z)
     \end{imaths}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% STOP EDITING HERE
