@@ -1,0 +1,12 @@
+% !TEX root = main.tex
+
+\begin{abstract}
+
+	An important goal of neural architecture search (NAS) is to automate-away the design of neural networks on new tasks in under-explored domains. 
+	Motivated by this broader vision for NAS, we study the problem of enabling users to discover the right neural operations given data from their specific domain.
+	We introduce a search space of neural operations called XD-Operations that mimic the inductive bias of standard multi-channel convolutions while being much more expressive:
+	we prove that XD-operations include many named operations across several application areas.
+	Starting with any standard backbone network such as LeNet or ResNet, we show how to transform it into an architecture search space over XD-operations and how to traverse the space using a simple weight-sharing scheme.
+	On a diverse set of applications---image classification, solving partial differential equations (PDEs), and sequence modeling---our approach consistently yields models with lower error than baseline networks and sometimes even lower error than expert-designed domain-specific approaches.
+	
+\end{abstract}

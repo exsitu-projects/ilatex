@@ -1,0 +1,546 @@
+% Template for ICME 2021 paper; to be used with:
+%          spconf.sty  - ICASSP/ICIP/ICME LaTeX style file, and
+%          IEEEbib.bst - IEEE bibliography style file.
+% --------------------------------------------------------------------------
+
+
+\documentclass{article}
+
+\usepackage{amsmath,epsfig}
+%Note that the package is spconfa4, included in the template.
+\usepackage[preprint]{spconfa4}
+
+
+%Copyright notice: Authors are required to add the copyright notice.
+%                  Please refer to the camera-ready submission instructions for the correct note.
+\copyrightnotice{\textbf{978-1-6654-3864-3/21/\$31.00~\copyright 2021 IEEE}}
+
+
+\let\OLDthebibliography\thebibliography
+\renewcommand\thebibliography[1]{
+  \OLDthebibliography{#1}
+  \setlength{\parskip}{0pt}
+  \setlength{\itemsep}{0pt plus 0.3ex}
+}
+
+% \usepackage{spconf,amsmath,epsfig}
+\usepackage{times}
+\usepackage{epsfig}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{caption}
+
+% \usepackage[justification=centering]{caption}
+% \usepackage[justification=raggedright]{caption}
+
+% Include other packages here, before hyperref.
+\usepackage{booktabs}
+\usepackage{multirow}
+% \usepackage[dvipsnames,table]{xcolor}
+% \usepackage{wrapfig}
+% \usepackage{subcaption}
+\usepackage{enumitem}
+\usepackage{dsfont}
+\usepackage{balance}
+\usepackage{placeins}
+\usepackage{stfloats}
+% \usepackage[pagebackref=true,breaklinks=true,colorlinks,bookmarks=false]{hyperref}
+% \usepackage[preprint]{spconfa4}
+% 
+% \let\OLDthebibliography\thebibliography
+% \renewcommand\thebibliography[1]{
+%   \OLDthebibliography{#1}
+%   \setlength{\parskip}{0pt}
+%   \setlength{\itemsep}{0pt plus 0.3ex}
+% }
+
+% \pagestyle{empty}
+
+
+% \usepackage{fancyhdr}
+
+% \fancyhf{}
+
+% \renewcommand{\headrulewidth}{0pt}
+
+% \fancyfoot[c]{}
+
+% \fancypagestyle{FirstPage}{
+
+% \lfoot{978-1-7281-6455-7/20/\$31.00 \copyright2020 IEEE}
+
+% }
+
+\usepackage{ilatex}
+\usepackage{gridlayout}
+
+\begin{document}\sloppy
+
+
+
+
+% Title.
+% ------
+\title{DeepWORD: A GCN-based Approach for Owner-member Relationship Detection in Autonomous Driving}
+%
+% Single address.
+% ---------------
+\name{Zizhang Wu$^{1,\ast}$, Man Wang$^{1}$, Jason Wang$^{1}$, Wenkai Zhang$^{1}$, Muqing Fang$^{2}$, Tianhao Xu$^{3}$}
+\address{$^{1}$Zongmu Technology; $^{2}$Politecnico di Torino; $^{3}$Technical University of Braunschweig\\
+{\tt \small zizhang.wu@zongmutech.com}}
+
+
+\maketitle
+
+% %%%%%%%%% ABSTRACT
+% \input{texs/00_abstract.tex}
+
+% %%%%%%%%% BODY TEXT
+% \input{texs/01_introduction.tex}
+% \input{texs/02_related_work.tex}
+% \input{texs/03_method.tex}
+% \input{texs/04_experiment.tex}
+% \input{texs/05_conclusion.tex}
+\begin{abstract}
+ It's worth noting that the owner-member relationship between wheels and vehicles has an significant contribution to the 3D perception of vehicles, especially in the embedded environment. However, there are currently two main challenges about the above relationship prediction: i) The traditional heuristic methods based on IoU can hardly deal with the traffic jam scenarios for the occlusion. ii) It is difficult to establish an efficient applicable solution for the vehicle-mounted system. To address these issues, we propose an innovative relationship prediction method, namely \textbf{DeepWORD}, by designing a graph convolution network (GCN). Specifically, we utilize the feature maps with local correlation as the input of nodes to improve the information richness. Besides, we introduce the graph attention network (GAT) to dynamically amend the prior estimation deviation. Furthermore, we establish an annotated owner-member relationship dataset called \textbf{WORD} as a large-scale benchmark, which will be available soon. The experiments demonstrate that our solution achieves state-of-the-art accuracy and real-time in practice. 
+
+\end{abstract}
+
+\begin{keywords}
+autonomous driving, vehicle-mounted perception system, owner-member relationship of wheels and vehicles, GCN, GAT 
+\end{keywords}
+%tianhao:The perception and localization functions of vehicles play important roles in obstacle avoiding and motion planning in autonomous driving. The existing visual-based methods mainly use the relative locations of wheels and vehicles to estimate the 3-D information of the target vehicles. We argue two main challenges about these methods: i) Merely based on prior statistics these methods can’t generalize. ii) It is difficult to establish an efficient and applicable logical judgment for complex traffic scenarios. Thus, we propose a novel relationship prediction method by introducing a graph convolution network (GCN) to learn the owner-member relationship between wheels and vehicles. Specifically, to improve the information richness of the node in GCN, we employ the feature maps with local correlation as the representation of nodes. Besides, we introduce the GAT encoder to dynamically amend the prior estimation deviation. Extensive experiments demonstrate that our proposed method achieves state-of-the-art performance. Furthermore, we establish an annotated owner-member relationship dataset between wheels and vehicles, named WORD, as a large-scale benchmark and will release it for the benefit of the community.
+
+
+%ori:The perception and localization of vehicles play vital roles in obstacle avoiding and motion planning in autonomous driving. While existing vision-based methods usually employ the IoU or the relative position of wheels and vehicles to estimate the 3-D information of the target vehicle, we raise two main challenges about these approaches. i) These methods based on prior statistics are difficult to generalize; ii) It is hard to establish an effective and applicable logical judgement for complex traffic scenarios. In this paper, we propose a novel dependency prediction method by introducing graph convolution network (GCN) to learn the relationship of wheels and vehicles. Specifically, to improve the information richness of the node in GCN, we employ the feature maps with local correlation as the representation of nodes. Besides, we introduce GAT encoder for the first time to dynamically amends the prior estimation deviation. Furthermore, we annotate a large-scale benchmark and will release it for the benifit of community. Extensive experiments demonstrate that the proposed method achieve state-of-the-art performance. The dataset and code will be available soon.
+
+% ori
+% The perception and localization for the surrounding vehicles play a vital role to avoid obstacles and calculate path planning in autonomous driving system. In order to get the position information of a neighboring vehicle, one of the effective ways is to associate the vehicle with position known wheels, which physical coordinates can be calculated by the homography transformation. However, to our best knowledge, there is no effective method specific for predicting dependency between wheel and vehicle in automotive filed, especially in dense vehicle scenario. In this paper, we conducted a thorough study of relationship between wheel and vehicle on autonomous scene for the first time. Firstly, we establish an annotated vehicle and wheel dataset, which is collected by vehicle mounted fisheye camera system. It contains approximately 11,230 fisheye images captured by four cameras distributed in vehicle. Secondly, we build a graph convolution based dependency prediction network for wheel and vehicle. Meanwhile, we explore the ability of graph convolution to predict the relationship of wheel and vehicle pairs. The performance and efficiency have been proved in our dataset.
+
+\section{INTRODUCTION}
+% \thispagestyle{FirstPage}
+%In the field of autonomous driving, the three-dimensional location information of other vehicles in the vehicle surrounding environment plays a critical role in decision making and motion planning of the vehicle. 
+
+%In the field of autonomous driving, vehicle decision making and motion planning are some of the most active research areas, which are supported by obtaining the three-dimensional position information of surrounding vehicles in the environment. Among the vehicle-mounted visual positioning methods applied to the embedded system, they estimate the three-dimensional coordinates of the target vehicle by detecting the wheel grounding point and taking a homography transformation. However, the above methods miss the vehicle body information, which may lead to inaccurate estimates vehicle's location and size information. Thus some research based on the dependency of wheels and vehicle to obtain three-dimensional information of the target vehicle, commonly use the IoU or the position of the wheel and vehicle detection, etc. Nevertheless, these methods that only perform prior statistical analysis and complex logical judgment on a limited data set have two shortcomings: 1) unable to cover all application scenarios and poor generalization ability; 2) difficult to establish an effective and applicable dependency judgment logic for complex scenarios, such as parking lots, congested roads, and roads with mixing transportation.
+
+%In this paper, we introduce the GCN encoder to implicitly model the dependency of wheel and vehicle, which makes up for the method of just relying on the logical judgment. Besides, through the effective supervision for learning dependency relationship, the model can be adapted to changes in different scenarios.
+
+% \input{figs/figure01.tex}
+\begin{figure}[!t]
+    \centering
+    \includegraphics[width=7.5cm]{figure01.pdf}
+ %   \captionsetup{font={small}}
+    \caption{The visualization of the owner-member relationship between wheels and vehicles on 3D information acquisition. The estimation of four BEV corners come into being after obtaining the relationship between wheels and vehicles. In this way, the projection position of surrounding vehicles is helpful for the autonomous driving system to make decision.}
+    \label{fig:Figure01}
+\end{figure}
+
+
+
+
+With the rapid development of autonomous driving \cite{article13}, the 3D perception has drawn increasing attention and shown great potential in the vehicle-mounted system \cite{article14, article15}, which is critical to localization \cite{article16,  article17}, planning, and obstacle avoidance \cite{article18, article19}, etc., as shown in Figure \ref{fig:Figure01}. Among existing methods \cite{article20, article21, article22}, they usually employ the homography transformation \cite{article20} of the wheel grounding points obtained from the wheel's detection results to estimate the localization of target vehicles with limited computing ability in the low cost environment. Consequently, it is necessary to introduce the owner-member relationship of wheels and vehicles to constrain the process. While researchers usually employ IoU to predict relationships of different objects, due to the difficulty of embedded network transplantation. It is inappropriate to predict the relationship solely through IoU for complex scenarios, as shown in Figure \ref{fig:Figure02}, in which two different vehicle bounding-boxes completely contain the same wheel.
+
+In this paper, in order to cope with various scenarios and get rid of the constraints of prior analysis, we propose a novel owner-member relationship prediction method by introducing a graph convolution network (GCN) to implicitly learn the relationship between the wheels and vehicles. 
+
+% they use the IoU of wheels and vehicles to determine their owner-member relationship, but this way requires prior statistics with high accuracy and has challenging to handle the complex scene shown in Figure \ref{fig:Figure02}, in which two different vehicle detection boxes completely contains a wheel box. Therefore, we argue that the method of determining the relationship solely through IoU is inappropriate. Based on this, we introduce GCN to learn the owner-member relationship between wheels and vehicles.
+
+
+
+
+
+
+% With the rapid development of autonomous driving \cite{article13}, the 3D perception has drawn increasing attention and has shown great potential in vehicle-mounted system \cite{article14, article15}, which is critical to vehicle localization \cite{article16, article17}, planning and obstacle avoidance \cite{article18, article19} etc. In particular, how to obtain the 3-D information of surrounding vehicles is one of the research hotspots. Among existing methods \cite{article20, article21, article22}, they usually employ a homography transformation \cite{article20} of visible wheel grounding points to estimate the localization of target vehicles. However, it neglects the bounding-boxes of vehicle in this way, which may lead to inaccurate estimation. Consequently, some researches introduce the dependency of wheels and vehicles to constrain the process, they use the IoU of wheels and vehicles to determine their owner-member relationship, but this way requires prior statistics with high accuracy and has challenging to handle the complex scene shown in Figure \ref{fig:Figure02}, in which two different vehicle detection boxes completely contains a wheel box. Therefore, we argue that the method of determining the relationship solely through IoU is inappropriate. Based on this, we introduce GCN to learn the owner-member relationship between wheels and vehicles.
+
+% In this paper, we propose a novel dependency prediction method by introducing graph convolution network (GCN) to implicitly learning the relationship of the wheels and vehicles. 
+
+
+
+%With the rapid development of autonomous driving \cite{article13}, the 3D perception has drawn increasing attention and has shown great potential in vehicle-mounted system \cite{article14, article15}, which is critical to vehicle localization \cite{article16, article17}, planning and obstacle avoidance \cite{article18, article19} etc. In particular, how to obtain the 3-D information of surrounding vehicles is one of the research hotspots. Among existing methods \cite{article20, article21, article22}, they usually employ a homography transformation \cite{article20} of visible wheel grounding points to estimate the localization of target vehicles. However, it neglects the vehicle body information in this way, which may lead to inaccurate estimation. Consequently, some researches introduce the dependency of wheels and vehicles to constrain the process, in which the IoU and relative position of wheels and vehicles are commonly used. Nevertheless, these methods perform prior statistical analysis and a complex logical judgment on a limited dataset, so they are unable to cover all application scenarios with poor generalization ability. Besides, it is difficult to establish an effective and applicable dependency judgment logic for complex scenarios, such as parking lots, congested roads, and roads with mixing transportation.
+
+%In this paper, we propose a novel dependency prediction method by introducing graph convolution network (GCN) to implicitly learning the relationship of the wheels and vehicles. 
+
+%GAT encoder are introduced which makes up for the method of just relying on the logical judgment. Besides, through the effective supervision for learning dependency relationship, the model can be adapted to changes in different scenarios.
+
+\section{RELATED WORK AND OUR CONTRIBUTIONS}
+% \input{figs/figure02.tex} 
+\begin{figure}[!t]
+    \centering
+    \includegraphics[width=8cm]{figure02a.pdf}
+ %   \captionsetup{font={small}}
+    \caption{The visualization of complex scenarios. It is obvious that the bounding-boxes of vehicles 4 and 5 completely contain wheel 0 as shown in (a), and the bounding-boxes of vehicles 7 and 8 also completely contain wheel 9 as shown in (b). In these scenarios, the prediction of the owner-member relationship is not available with the IoU alone.}
+    \label{fig:Figure02}
+\end{figure}
+
+\subsection{Related work}
+\textbf{Traditional relationship prediction methods.}
+Traditional relationship prediction methods generally observe the statistics and set constraint ranges by the attributes of objects, such as semantic dependency, pose, and order constraint, and then design the appropriate models for training and prediction. \cite{article3} proposes a model based on the spatial layout information of the detection object to predict the relationship. \cite{article4} employs the CRF (Conditional Random Field) \cite{article25} to obtain statistics prior of owner-member relationship between objects and builds a model to predict the correlation between objects. \cite{article5} regards the common occurrence frequency of object pairs as prior knowledge and utilizes LSTM (Long short-term memory) \cite{article26} as an encoder to transfer context information to improve the feature representation between objects.
+
+% Traditional relationship prediction methods generally start from the prior characteristics of each target's attributes, such as semantic dependency, pose and order constraint, observing the sample statistics and set constraint ranges and hyper-parameters, and then design learning models for training and prediction. \cite{article3} proposed a model based on the spatial layout information of the detection target to predict the relationship. \cite{article4} uses the CRF (Conditional Random Field) \cite{article25} to static the dependence relationship between objects with each other, and builds a model to predict the correlation between objects as the prediction results of the relationship. \cite{article5} regards the common occurrence frequency of object pairs as prior knowledge, and uses LSTM (Long short-term memory) \cite{article26} as an encoder to transfer context information to improve the feature representation between targets.
+\textbf{Graph convolutional network methods.}
+The frequency domain based GCN standard mathematical expression paradigm is constructed after the exploration and optimization of series methods \cite{article6, article7, article8, article9}, so that the graph convolutional structure can be trained like the general convolutional structure. Specially, GCN-based relationship prediction methods are mainly manifested in the prediction of the owner-member and relative location relationships between objects. \cite{article10} proposes the graphSAGE method, which expounds the understanding of the aggregation and updates operator of graph neural networks from the perspective of the space domain. It also summarizes the mathematical expression in the space domain and explores the optimization method of the training problem of large-scale graph data structure. Moreover, to better predict the importance of the connection relationship between nodes, \cite{article11} introduces the attention mechanism into the graph neural network. Besides, \cite{article12} tries to encode the relationship through a graph neural network and introduces a spatial-aware graph relationship network (SGRN) for automatic discovery. It combines key semantics and spatial relationships at the same time to achieve better relationship prediction.
+
+% In the field of autonomous driving, graph relationship prediction is mainly manifested in predicting the subordination and location relationship between perceived targets. After the exploration and optimization of series articles \cite{article6,article7,article8,article9}, GCN standard mathematical expression paradigm which is based on frequency domain is constructed, so that the graph structure data can be forward and backward propagation and training like ordinary structured data. paper\cite{article10} proposed the graphSAGE method, expounded the understanding of the aggregation and update operator of graph neural networks from the perspective of space domain. It also summarizes the space domain mathematical expression and explores the optimization method of the training problem of large-scale graph data structure. Furthermore, \cite{article11} introduces the Attention mechanism into the graph neural network, which can better predict the importance of the connection relationship between nodes, which improves the accuracy of target relationship prediction. \cite{article12} tries to encode relationships through graphs, and introduces a spatially aware graph relationship network (SGRN) for automatic discovery, and combined key semantics and spatial relationships to reason about each object to achieve better relationship prediction.
+
+
+\subsection{Our motivations and contributions}
+After the exploration of the above methods, we find that there are still some challenges in the owner-member relationship prediction of wheels and vehicles.
+
+Firstly, there is no available public dataset for this task in the field of autonomous driving, which brings huge difficulties to deep learning based methods. Secondly, the above methods usually predict the owner-member relationship of wheels and vehicles with the prior statistical distribution, such as the IoU or the relative position of wheels and vehicles. Thus, they are incapable of covering all the scenarios, which is unbeneficial to the generalization of the method. Moreover, it is difficult to build an effective model by stacking a series of logical judgments for complicated scenarios.
+
+In this work, we attempt to fill the research gaps to some extent. So we propose a GCN based owner-member relationship prediction method for wheels and vehicles. Specifically, to take full advantage of the prior knowledge, we make an analysis of geometrical relative location statistics between wheels and vehicles and consider them as prior parameters. In addition, to more efficiently supervise the learning process, we introduce the GCN structure to modeling the owner-member relationship between the wheels and vehicles. Furthermore, we utilize the feature vectors with local correlation as the input of nodes for improving the information richness of the nodes in GCN. Finally, to decrease the negative impact of noise in prior statistical data, the GAT \cite{article11} module is introduced to dynamically amend the prior estimation deviation of edges through the training process. Our contributions are summarized as follows:
+
+1) We establish a large-scale benchmark dataset WORD including 9,000 samples, which is the known first available relationship dataset in the field of autonomous driving and will be public as soon.
+
+2) We propose a GCN-based owner-member relationship prediction network for wheels and vehicles, which can excellently cope with the relationship prediction in different complicated scenarios.
+
+3) We validate the effectiveness of our proposed method through the WORD dataset. The experiment results show that this method achieves superior accuracy, and especially real-time effects in an embedded environment.
+
+%The experimental results on WORD demonstrate the proposed method is far superior to the methods based on logical stack.
+
+\section{DEEPWORD: A GCN-BASED APPROACH FOR OWNER-MEMBER RELATIONSHIP DETECTION}
+% \input{figs/figure03.tex}
+\begin{figure*}[!t]
+    \centering
+    \iincludegraphics[width=17cm]{figure03.png}
+ %   \captionsetup{font={small}}
+    \caption{The overall framework of the proposed DeepWORD. The input is the detected bounding box, and after ROI Align the images are the same size. Whereafter, it generates corresponding feature vectors with MLP operation, learning the owner-member relationship with GCN to update the feature vectors. Further, we calculate the cosine distance between the feature vectors from the wheels and vehicles, and retain the wheel-vehicle pairs greater than the threshold as the final results.}
+    \label{fig:Figure03}
+\end{figure*}
+
+
+% \begin{figure}[!ht]
+% 		\begin{minipage}[a]{1\linewidth}
+% 			\centering
+% 			\centerline{\includegraphics[width=7cm]{figs/Figure03a.pdf}}
+% 			\centerline{(a)}
+% 		\end{minipage}
+		
+% 		\begin{minipage}{1\linewidth}
+% 			\centering
+% 			\centerline{\includegraphics[width=7cm]{figs/Figure03b.pdf}}
+% 			\centerline{(b)}
+			
+% 		\end{minipage}
+		
+%         % \setlength{\abovecaptionskip}{-10pt}%
+%         \caption{Visualization.}
+%         \label{fig:Figure03}
+% 	\end{figure}
+
+In this section, we introduce the proposed method in detail, which is about the owner-member relationship between the wheels and vehicles based on the graph convolution. 
+
+\subsection{The overall framework of proposed method}
+
+The overall framework of the proposed DeepWORD is shown in Figure \ref{fig:Figure03}, which consists of a detection network and a GCN-based owner-member relationship prediction network. To achieve more efficient detection, we employ CenterNet \cite{article24} as the object detection network and feed the detection results into the relationship prediction network to predict the owner-member relationship between the wheels and vehicles.
+
+
+Specially, we use two Gaussian mixture distributions from prior statistics as the initial value of the edge in the relationship prediction network. Moreover, in order to amend the deviation from prior statistics, we introduce the GAT into GCN to dynamically update edges. The updated feature vectors of each object are available after GCN, which can fuse more global semantic information to improve the similarity of the wheels and vehicles that belong to the identical vehicle. Subsequently, cosine distance can measure the similarity of the wheels and vehicles and retain the wheel-vehicle pairs with scores greater than the default threshold 0.5.
+
+ 
+% In our proposed GCN relationship prediction network, first of all, based on the detection frame that the detection network outputs, we extract the feature maps of wheels and vehicles and input them into the GCN network. 
+
+% With Gaussian mixture model, the adjacent matrixes estimate the value of every edge. Next, while the GCN network updates node features, we employ GAT network to update the value of every edge dynamically. Finally, with the code feature that GCN updates, we compute the inner product of every pair wheel and vehicle and acquire the final score after sigmoid.
+
+% The overall framework of the proposed DeepWORD is shown in Figure \ref{fig:Figure03}, which is composed of a detection network and a GCN-based owner-member relationship prediction network. In order to achieve more efficient detection, we employ CenterNet as the object detection network, and the detection results are fed to the relationship prediction network after RoI Align to. We adopt CenterNet as a detection network to obtain the detection frame of wheels and vehicles and input the prediction frame to the relationship prediction network to realize the prediction of owner-member relationship of every pair of wheel and vehicle. 
+
+% Specifically, we input a fisheye image with RGB three channels into the backbone of detection network to capture features. The backbone we use is ResNet18. Whereafter, based on the predicted detection frame, we extract every wheel and vehicle on the last layer of feature maps that are outputted by backbone and input them into relationship prediction network after adjusting size with ROI Align.
+
+% In relationship prediction network, two Gaussian mixture distributions from prior statistics compute the probability value of every pair of wheel and vehicle. The probability value is just the value of initial edge and is inputted into graph convolution network with the feature maps, which are generated by ROI Align, of every object. In graph convolution network, we adopt GAT as the attention model to update adjacent matrixes dynamically to amend the bias in prior estimation. After graph convolution network, the updated feature maps of every object are available. In this stage, the new feature maps can fuse more global semantic information to improve the similarity of wheels and vehicles that belong to identical vehicle. Eventually, the feature maps that GCN outputs compute the similarity score of wheel-vehicle pair. 
+ 
+
+ 
+% In our proposed GCN relationship prediction network, first of all, based on the detection frame that the detection network outputs, we extract the feature maps of wheels and vehicles and input them into the GCN network. With Gaussian mixture model, the adjacent matrixes estimate the value of every edge. Next, while the GCN network updates node features, we employ GAT network to update the value of every edge dynamically. Finally, with the code feature that GCN updates, we compute the inner product of every pair wheel and vehicle and acquire the final score after sigmoid.
+
+\subsection{GCN-based relationship prediction network}
+
+In this section, we cover the implementation details of the proposed GCN-based relationship prediction network.
+
+% In GCN-based relationship network, we send the detection results of wheels and vehicles after RoI Align into the GCN network, where the adjacency matrix estimates the weight of each edge. Furthermore, while the GCN network updates the node features, we apply the GAT network to update the weight of each edge dynamically. Finally, we employ the updated node features of GCN to calculate the inner product of wheels and vehicles, and then through the sigmoid to output the final score.
+
+% In GCN-based relationship network, we send the detection results of wheels and vehicles after RoI Align into the GCN network, where the adjacency matrix estimates the weight of each edge. Furthermore, while the GCN network updates the node features, we apply the GAT network to update the weight of each edge dynamically. Finally, we employ the updated node features of GCN to calculate the inner product of wheels and vehicles, and then through the sigmoid to output the final score.
+
+
+
+
+
+\textbf{Prior statistical relationship.} The prior statistical relationship between wheels and vehicles is helpful to the update of nodes in GCN. In our method, we employ the Gaussian mixture distribution to model the position relationship between wheels and vehicles, as shown in Figure \ref{fig:Figure06}. We find that there are identical relationships of the bounding-boxes of wheels and vehicles that belong to the identical vehicle: For most bounding-boxes of vehicles, the distances with its subordinate wheels are shorter than that with other wheels. Meanwhile, the most bounding-boxes of wheels generally locate in the bottom half location of the vehicle bounding-boxes. 
+
+% \input{figs/figure06}
+\begin{figure}[!h]
+    \centering
+    \iincludegraphics[width=5cm]{figure06.png}
+ %   \captionsetup{font={small}}
+    \caption{The distance ratio distribution of wheel-vehicle pairs.}
+    \label{fig:Figure06}
+\end{figure}
+
+As stated above, we conduct a statistical analysis of the distance ratio of wheel-wheel and wheel-vehicle pairs. In detail, to eliminate the interference of different sizes of objects, we normalize them as follows:
+\setlength\abovedisplayskip{5pt}
+\setlength\belowdisplayskip{5pt}
+\begin{imaths}
+D^2  = (\frac{A_\text{j}}{W}-\frac{B_\text{j}}{W})^2+(\frac{A_\text{i}}{H}-\frac{B_\text{i}}{H})^2
+\end{imaths}
+% \label{Eq(1)}
+\noindent
+where $A$ means the vehicle with $B$ means the wheel in the wheel-vehicle pair, while in the wheel-wheel pair, $A$ is the rear wheel and $B$ is the front wheel. $A_\text{j}$ and $B_\text{j}$ represent the horizontal positions of $A$ and $B$, $A_\text{i}$ and $B_\text{i}$ refer to the vertical positions of $A$ and $B$. $W$ and $H$ are the width and height of the input image.
+
+%where $A$ represents vehicle with $B$ represents wheel in wheel-vehicle pair, and $A$ represents rear wheel with $B$ represents front wheel in wheel-wheel pair. $A_\text{j}$ and $B_\text{j}$ represent the horizontal positions of object $A$ and $B$, $A_\text{i}$ and $B_\text{i}$ represent the vertical positions of object $A$ and $B$. $W$ and $H$ are the width and height of the input image.
+
+
+To relieve the influence of image distortion and the scale changes from the near to the distant, we employ Eq.\ref{Eq(2)} to obtain the distance ratio between vehicles and wheels. After the log transformation, it is obvious that the distribution accords with the Gaussian mixture model. We also apply this data processing approach to the front-rear wheel pairs. Consequently, with two Gaussian mixture models it models the above two distance ratios separately, which can work as the prior statistic of adjacent matrices in GCN.
+\setlength\abovedisplayskip{5pt}
+\setlength\belowdisplayskip{5pt}
+\begin{imaths}
+Ratio = \frac{2D}{W_\text{B}+H_\text{B}}
+\end{imaths}
+% \label{Eq(2)}
+\noindent
+where $W_\text{B}$ and $H_\text{B}$ represent the width and height of $B$.
+
+% The correlation is helpful for the update of code feature. In our methods, we regard the position relationship between wheels and vehicles as a distribution, using Gaussian distribution to model. 
+
+% In addition, under the visualization analyzing of data it is notable that the location boxes of identical vehicle and its wheels on IoU and pixel position have the following relationship:
+
+% 1) For most location box of wheels, the intersection of location boxes of vehicles and their wheels has a higher proportion against wheel box, most reach 1.
+
+% 2) Most wheel boxes locate the bottom half section of the vehicle box.
+
+% Based on the above two relationships, we conduct statistics about data to analyze. First, in order to manage the influence of images with different size to the statistic of locations of wheels and vehicles, as shown in formula 1 all parameters have no dimensions, effects of fisheye distortion vanish on account of relativistic treatment. 
+
+% Under formula 2 we can get the ratio, and combine the ratios of front wheels and rear wheels for log function. Note that this distribution accords with the Gaussian mixture model. Consequently, with modeling above two statistics by using Gaussian mixture model in datasets, we obtain the computation model of prior parameters in adjacency matrixes.
+
+\textbf{GCN structure.} In the proposed GCN structure, we utilize the feature vectors obtained by convolutional layers plus fully connected layers (\textbf{Conv+fc}) as nodes, which makes our model tend strongly to express local spatial information. It is noteworthy that we employ the above-mentioned prior statistic relationship to initialize the corresponding values of the adjacency matrix. Finally, we calculate the cosine distance of the updated nodes information of vehicle-wheel pairs after the GCN structure and then retain the pairs whose scores are greater than the default threshold as the final result pairs. Here we take the threshold as 0.5 after experiments.
+
+% The GCN structure is shown as follows:
+% \begin{equation}
+% GCN\rightarrow Relu(WXA)
+% \label{Eq(3)}
+% \end{equation}
+
+% \noindent 
+% where $X$ and $A$ represent the input feature vector and adjacency matrix, respectively. 
+
+% After acquiring the detecting box of wheels and vehicles from detecting network, we introduce the GCN encoder, and capture the feature of the owner-member relationship between wheels and vehicles that is implicitly staged modelled, so that more effectively supervise the learning of owner-member relationship and improve the expression of vectors for correlations. Relative to the individual feature capturing to wheels and vehicles, we adopt the architecture of graph convolution in embedding feature map, it implicitly realizes the secondary supervision optimization to owner-member relationship. However, the existing methods that employ GCN in image task, generally extract the object representation, whose width and height are 1x1, in two stages. The downsampling that samples the length of representation vector as d, causes loss of feature richness.
+
+% In our GCN operation, we propose the way of using feature maps to represent the original features of the objects, that the feature form of each node is a 3-D feature map, rather than the usual feature vectors in GCN, which makes our model tends strongly to express local spatial information. Moreover, instead of using fully convolutional layers to process feature vectors, we adopt on operations to implement feature mapping of nodes, so that our model is better to adapt to the one-owner relationship issues. 
+
+% Specifically, after the backbone, the wheels and vehicles are reshaped to a uniform size through ROI Align according to the bounding box. Subsequently, each car or wheel is sent as a node to the GCN encoder to conduct feature encoding, then each node outputs the updated feature map. Among them, we employ the above-mentioned a prior geometric relationship statistics to calculate the initial adjacency matrix parameters. We use the coordinate information of the wheels and vehicles detection box on each map as input through two Gaussian mixture models to calculate the probability of each pair of wheels and vehicles. This probability value initializes the corresponding node of the adjacency matrix. Finally, we calculate the inner product of vehicles and wheels on the feature map after the GCN encoder as the similarity distance between the two objects, and then through sigmoid to get the final score. Here we take the threshold as 0.5 to determine the owner-member relationship between wheels and vehicles.
+
+\textbf{GAT module.} Given that the prior statistics are greatly related to the number of samples and the scene richness, we introduce the GAT into GCN to amend the deviation caused by the limited data. Specifically, we can weight GAT linearly for each edge and secondly refine the weights of the edges in GCN, which can alleviate the impact of noise in the available dataset and enhance the representation ability of the network. 
+
+We set the nodes vector as $\textbf{h}=\left \{ {\overrightarrow{h}_{\text{1}}},{\overrightarrow{h}_{\text{2}}},...,{\overrightarrow{h}_{\text{N}}}\right \}$, where ${\overrightarrow{h}_{\text{i}}}\in R^{F}$, $N$ represents the number of nodes, and $F$ is the number of features in each node. In GCN structure, we input the features of each node $\overrightarrow{h}$ and their adjacent nodes $\overrightarrow{h}_{\text{i}}$ into the GAT module, and concatenate them through two fully connected layers. Then we extract the weight matrix $\textbf{W}= \left \{ w_{\text{1}},w_{\text{2}},...,w_{N\times N} \right \}$ by fully-connected layers (FC) and nonlinear activation layers, where $w_{\text{i}}\in R^{F\times F}$.
+\setlength\abovedisplayskip{5pt}
+\setlength\belowdisplayskip{5pt}
+\begin{equation}
+Net(X_\text{1},X_\text{2}) \rightarrow FC(Relu(FC(Concat(X_\text{1},X_\text{2}))))
+\label{Eq(3)}
+\end{equation}
+\noindent
+where $Net$ denotes the procedure of dealing with GCN, $(X_{\text{1}},X_{\text{2}})$ represents the features of each node with their adjacent nodes, $FC$ is a fully connected layer.
+
+Following, we utilize the softmax function to normalize the output and obtain the attention coefficient $Scale_i$:
+\setlength\abovedisplayskip{5pt}
+\setlength\belowdisplayskip{5pt}
+\begin{equation}
+Scale_{\text{i}}=\frac{exp(Net(\overrightarrow{h},\overrightarrow{h}_{\text{i}}))}{\sum _{\text{j}}exp(Net(\overrightarrow{h},\overrightarrow{h}_{\text{i}}))}
+\label{Eq(4)}
+\end{equation}
+Finally, we update the original edge weight $w_{\text{i}}$ between the node and the adjacent node by multiplying it with $Scale_{\text{i}}$ to get a new weight $w_{\text{i}}^{'}$ as follows:
+\setlength\abovedisplayskip{5pt}
+\setlength\belowdisplayskip{5pt}
+\begin{equation}
+w_{\text{i}}^{'} = w_{\text{i}}\times Scale_{\text{i}}
+\label{Eq(5)}
+\end{equation}
+
+In this way, we can dynamically correct the prior estimation deviation of the edge during the training process, and improve the prediction accuracy of the owner-member relationship between wheels and vehicles.
+
+\textbf{Label preparation.} To obtain appropriate label for relationship prediction network, firstly, we resize the obtained feature maps of the wheels and vehicles to $H\times W$ and normalize each value to [0, 1]. Hence, four normalized coordinates of objects constitute a matrix of $H\times W$. The concatenation of the coordinate matrix and the matrix of wheels and vehicles serves as the input feature of the relationship network for $H\times W\times \text{7}$. Besides, we build a Gaussian mixture distribution to model the available data. Then we calculate the probability of wheel-vehicle pairs and wheel-wheel pairs to generate the initial adjacency matrix. Moreover, we also set the values of unnecessary objects to 0 at corresponding positions in the adjacent matrix, such as small objects.
+
+
+
+
+% In the adjacency matrix mentioned above, we use edge-based prior probabilities for prior modeling the owner-member relationship between wheels and vehicles. However, due to the constraints of collection time and cost, we can only collect a limited amount of data and tend to biased estimation of the statistics data. Such as, some parking slots contain mostly cars and others are trucks, the light intensity and vehicle parking attitude are different. These scenarios disturb our prior estimation. Therefore, we introduce a GAT in the GCN model. Specifically, through the process of training the model, GAT linearly weighted and secondary correct the weights of edges, which can alleviate the impact of noise in the collected data to the model updates node features ability. 
+
+% \begin{equation}
+% Net(X_{1},X_{2}):fc(relu(fc(concat(X_{1},X_{2}))))
+% \label{Eq(3)}
+% \end{equation}
+
+% \noindent
+% where $Net$ denotes the procedure of dealing with GCN, $(X_{1},X_{2})$ represents the input features of each node with their adjacent nodes, $fc$ is a fully convolutional layer.
+
+% In the GCN network, the features of each node $\overrightarrow{h}$ ( $\textbf{h}=\left \{ {\overrightarrow{h}_{1}},{\overrightarrow{h}_{2}},...,{\overrightarrow{h}_{N}}\right \},{\overrightarrow{h}_{i}}\in R^{F}$, where $N$ is the number of nodes, and $F$ is the number of features in each node.) and their adjacent nodes $\overrightarrow{h}_{i}$ as input to the GAT module, each of them are first concatenated and then through two fully convolutional layers and a nonlinear activation to extract weight matrix ($\textbf{W}= \left \{ w_{1},w_{2},...,w_{N\times N} \right \}, w_{i}\in R^{F\times F}$) as shown in Eq.\ref{Eq(3)}. Following, these weights as inputs to softmax function to get the output attention coefficients $scale_{i}$. Finally, we update the original edge weight $w_{i}$ between the node and the adjacent node by multiplied it with $scale_{i}$ to get the new weight $w_{i}^{'}$ as follows:
+
+
+
+% \begin{equation}
+% scale_{i}=\frac{exp(Net(\overrightarrow{h},\overrightarrow{h}_{i}))}{\sum _{j}exp(Net(\overrightarrow{h},\overrightarrow{h}_{i}))}
+% \label{Eq(4)}
+% \end{equation}
+
+% \begin{equation}
+% w_{i}^{'} = w_{i}\times scale_{i}
+% \label{Eq(5)}
+% \end{equation}
+
+
+% By taking the GAT encoder, we can realize to dynamically correct the prior estimation deviation of the edge during the training, and improve the prediction accuracy of the owner-member relationship between wheels and vehicles.
+
+
+
+\section{EXPERIMETS}
+\subsection{Dataset overview}
+We construct a dataset called WORD (Wheel and Vehicle Owner-Member Relationship Dataset) as a benchmark, which contains two typical categories in autonomous driving: parking scene and highway scene. The WORD contains about 9,000 images, which are collected by a surround-view camera system composed of 4 fisheye cameras. In the WORD, the images with same frame id represent the recording of the environment from different camera's view simultaneously.
+% \input{figs/figure04.tex} 
+\begin{figure*}[!t]
+    \centering
+    \includegraphics[width=17cm]{figure04.pdf}
+ %   \captionsetup{font={small}}
+    \caption{The visualization of the owner-member relationship between wheels and vehicles. (a) Front camera; (b) Left camera; (c) Right camera. Where the upper left corner  is the number of each object, the red line between two wheels means that they are a couple. The green and blue lines respectively connect the rear and front wheels and the vehicles that they belong to.}
+    \label{fig:Figure04}
+\end{figure*}
+
+% To better evaluate our algorithm in different scene, we constructed a dataset called WORD (Deep Wheel and Vehicle Onwner-Member Relationship Dataset) as a benchmark for this relationship predict algorithm. this dataset contains typical data for two categories: the parking scene and the highway scene, which aims to maximum inclusion all the object's situations encountered by autonomous vehicles driving in real scene. For example, a single wheel or whole two wheels are occlusion, different object heading angle such as parallel, vertical even random situation compared with self-driving car,etc. DeepWORD contains about 9,000 images, collected by 4 surround-view cameras which installed in a same car, and each sample has a corresponding annotation file. More interestingly, images with the same frame id in different channels represent the recording of the environment from different angles at the same time which can evaluated the algorithm performance with same target at same time in different angles.
+
+
+
+
+\subsection{Improvements on embedded platforms}
+
+In order to deploy our model to the embedded platform of autonomous driving system, we deeply analyze the Qualcomm SNPE acceleration library and find that some operations in the proposed model are not supported. These operations mainly include ROI Align, GCN matrix multiplication operations, multiple heads and sizes input, etc. Therefore, we make some improvements in the proposed model as follows:
+ 
+(1) we remove the RoI Align and resize the feature map extracted from the original image to a fixed size ($\text{56} \times \text{56}$).
+ 
+(2) we use a fully connected layer instead of the matrix multiplication operation in GCN.
+ 
+(3) To solve the problems deriving from the multiple heads and sizes input, we remove the FC encoding module of the coordinate value and concatenate it with the cropped vehicles and wheels from the original image to generate the input features in size of $H \times W \times \text{7}$.
+
+% In order to make the model is able to successfully deploy to the embedded hardware platform of autonomous system, we deeply analyzed the  Qualcomm SNPE acceleration library which we used and found that some structures and operations in the model are not supported. These structures or operations mainly include ROI Align, GCN matrix multiplication operations, multiple input structures and variable-size inputs, etc. Therefore, we have made some improvements to the structure and operation of the model, specifically:
+
+% (1) Remove ROI Align and extract the wheels and car body rectangle from original image, then resize to a fix size such as 56x56 and align them.
+
+% (2) Use a fully connected layer instead of the matrix multiplication operation in GCN network.
+
+% (3) To solve the problem of multi-input and variable-size input, we remove the FC encoding module of the coordinate value, and concat with the extracted car or wheel sub-images from original image.Finally, a fixed tensor map of$H \times W \times 7$is formed.
+
+% (4) All car frames and wheel frames must be extracted in the original image of a fixed size of $320 \times 192$ to facilitate transplantation
+ 
+
+\subsection{Backbone selection}
+
+In order to deploy our model to the embedded platform of autonomous driving, we conduct a series of experiments in backbone selection as shown in Table \ref{table01}. We select the structure of Conv+fc as our backbone to extract feature maps after considering the trade-off of speed and accuracy.
+% \input{tables/Table01.tex}
+
+\begin{table}[!h]
+\setlength{\tabcolsep}{5pt}
+\centering
+\small
+\caption{Performance comparison of backbone selection. $AP_{v}$ represents the accuracy of image visualization. 10-speed and 1-speed indicate the speed at which the model processes the image when the batch size is 10 and 1, respectively. }
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Backbone & \begin{tabular}[c]{@{}c@{}}Model size\\ (M)\end{tabular} & \begin{tabular}[c]{@{}c@{}}$AP_{v}$\\ (\%)\end{tabular} & \begin{tabular}[c]{@{}c@{}}10-Speed\\ (ms/10imgs)\end{tabular} &
+\begin{tabular}[c]{@{}c@{}}1-Speed\\ (ms/img)\end{tabular}  \\ \midrule
+Conv+fc       & 68                                                      & 62.83                                                 & 28                                                            & 5       \\
+ResNet18 & 66                                                     & 92.47                                                 & 110                                                           & 13      \\ \bottomrule
+\end{tabular}
+
+\label{table01}
+\end{table}
+ 
+Furthermore, we also conduct experiments to find the equilibrium between speed and accuracy after confirming the backbone, as shown in Table \ref{table02}. The results guide us when appropriately deepen the convolutional layers and reduce the amount of fully connected layers, we reduce the size of the model to 28M. The model achieves the best performance of 95.70\% on image visualization accuracy, and its running speed is almost double faster than Conv+fc.
+% \input{tables/Table02.tex}
+\begin{table}[!h]
+\setlength{\tabcolsep}{3pt}
+\small
+\caption{Performance comparison of different parameters setting based on Conv+fc. The measures taken in turn for backbone are: 1) Neg0.1: reduces the weight of negative samples to 0.1; 2) -Neg: decreases the number of negative samples; 3) -Sma: uses a mask to filter too small objects; 4) 56: intercepts the input image size to 56; 5) 56\_ex\_4: deepens 4 convolutions and reduce the amount of fully connected layers.}
+\begin{tabular}{@{}lcccc@{}}
+
+\toprule
+Backbone            & \begin{tabular}[c]{@{}c@{}}Model size\\ (M)\end{tabular} & \begin{tabular}[c]{@{}c@{}}$AP_{v}$\\ (\%)\end{tabular} & \begin{tabular}[c]{@{}c@{}}10-Speed\\ (ms/10imgs)\end{tabular} &
+\begin{tabular}[c]{@{}c@{}}1-Speed\\ (ms/img)\end{tabular} \\ \midrule
+Conv+fc          & 68                                                       & 62.83                                                 & 28                                                            & 5       \\
+Conv+fc Neg0.1          & 68                                                       & 69.34                                                 & 28                                                            & 5       \\
+Conv+fc-Neg           & 68                                                       & 73.42                                                 & 28                                                            & 5       \\
+Conv+fc-sma           & 68                                                       & 89.21                                                 & 28                                                            & 5       \\
+Conv+fc 56           & 53                                                       & 90.33                                                 & 18                                                            & 4       \\
+Conv+fc 56\_ex\_4 & \textbf{28}                                                       & \textbf{95.70}                                & \textbf{13.1}                                          & \textbf{3.2}     \\ \bottomrule
+\end{tabular}
+
+\label{table02}
+\end{table}
+
+
+% Because of the required arrangement of embedded platform for autonomous driving, the requirement of the size of model and the inference speed of network is relatively high. Therefore, we perform a series of experiments for the selection of backbone. After filtration we select ResNet18 plus fc and ResNet18 to conduct analysis on datasets. The results are shown in table \ref{table01} .  Through the consideration of model size, processing speed and accuracy of image, we select the structure of ResNet18 plus fc as our backbone to extract feature maps.
+% \input{tables/Table01.tex}
+
+% Furthermore, after confirming the fundamental network structure, through adjusting different parameters of network, we conduct several versions of experiments to find the equilibrium point between processing speed and performance. The results of experiments are shown in table \ref{table02} .
+% \input{tables/Table02.tex}
+
+
+% \subsection{Label preparation} 
+
+% To obtain appropriate label for relationship prediction network, firstly, we resize the obtained feature maps of the wheels and vehicles to $H\times W$ and normalize each value to [0, 1]. Hence, four normalized coordinates of objects constitute a matrix of $H\times W$. The concatenation of the coordinate matrix and the matrix of wheels and vehicles serves as the input feature of the relationship network for $H\times W\times \text{7}$. Besides, we build a Gaussian mixture distribution to model the available data. Then we calculate the probability of wheel-vehicle pairs and wheel-wheel pairs to generate the initial adjacency matrix. Moreover, we also set the values of unnecessary objects to 0 at corresponding positions in the adjacent matrix, such as small objects.
+
+% Since the coordinate information is the input of the owner-member relationship network, we need to process the original data to meet the requirements of the network.
+
+% After we obtain the wheels and vehicles box maps, it is necessary to resize them to a uniform size $H\times W$ and perform the normalization for pixels. The four coordinates of the detection box are normalized simultaneously. Subsequently, the four normalized coordinates generate a $H\times W$ matrix, respectively, and the value of each matrix is corresponding to the coordinate. Later the coordinates matrixes concatenate with the above wheels and vehicles matrixes. Therefore, we get $H\times W\time 7$ features as the input for our relationship network. Besides, based on manual annotates and statistics on the data, we build a Gaussian mixture distribution to model the data set. Then we calculate the probability of each pair of wheels and vehicles, front wheels and rear wheels to generate the initial adjacency. Furthermore, we also produce mask labels to filter the unnecessary objects efficiently, such as small objects, between wheels, and between cars, these objects have the same size as their adjacency matrix and mark as 0 in the corresponding position.
+
+\subsection{Training of the relationship network} 
+
+At the training stage, the structure of Conv+fc extracts the features of the input feature matrix. Firstly, the input matrix goes through Conv+fc, and GCN structure updates these feature vectors. Besides, we normalize the obtained features and calculate the cosine distance of each wheel and vehicle as the final relationship prediction results. Moreover, we use the L2 loss and adjust the weights of positive and negative samples manually to optimize the model. At the prediction stage, we multiply the predicted matrix with the mask, the position where the value is greater than 0.5 indicates that the corresponding combination has the owner-member relationship. The mask is mainly used to filter unnecessary objects. The visualization of the owner-member relationship between wheels and vehicles in highway scenes is shown in Figure \ref{fig:Figure04}.
+
+
+
+% During the actual training process, we employ a structure of ResNet-18 with fully convolution layers to extract the features of the input $H\times W\time 7$ wheels and vehicle maps. The detailed extraction process is to first go through ResNet18 plus an FC layer to obtain the output feature maps. Then, the above mentioned GCN updates these feature maps. Furthermore, we normalize the obtained features and calculate the inner product of each wheel and vehicle as to the final relationship prediction results. Besides, we use the L2 loss and adjust the weights of positive and negative samples manually to optimize the model. In the prediction stage of the network, we multiply the predicted matrix with the mask, the position where the value is greater than 0.5 indicates that the combination has the owner-member relationship. The mask here mainly filters unnecessary objects.
+
+
+\subsection{Performance evaluation of DeepWORD}
+
+To prove the effectiveness of our structure, we compare the proposed DeepWORD with the previous logic model method. We select 1000 images to form an easy scene dataset in which each image contains no more than three vehicles, 1000 images to form a hard scene dataset where each image has more than three vehicles, and a mixed dataset consisting 500 easy images and 500 hard images. All of the samples in these three dataset are randomly sampled from the WORD. Some samples are shown in Figure \ref{fig:Figure05}. 
+% \input{tables/Table03.tex}
+
+\begin{table}[!b]
+\setlength{\tabcolsep}{15pt}
+\centering
+\small
+\caption{Performance comparison of DeepWORD and logic model method.}
+\label{table03}
+
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Methods             & Easy  & Hard  & Mixed \\ \midrule
+Logic model & 92.91 & 71.83 & 79.90 \\
+DeepWORD           &  \textbf{99.17} &  \textbf{94.35} &  \textbf{95.14} \\ \bottomrule
+\end{tabular}
+\end{table}
+
+Furthermore, we perform experiments on these three datasets to compare classification accuracy. As shown in Table \ref{table03}, in an easy scene, our DeepWORD has a suspicious improvement by 6.26\% in terms of accuracy, compared with the logic model method. On hard and mixed datasets, the proposed DeepWORD has a significant improvement over the logic model method, and the accuracy has increased by 22.52\% and 15.24\% on each dataset. We check the results and find that the logic model method is likely to misjudge the owner-member relationship in the scene of dense vehicles parked vertically side by side. It is noteworthy that the DeepWORD is simpler and more efficient than the logic model method in terms of the scenario coverage capability and the accuracy of prediction.
+% \input{figs/figure05.tex}
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=8.5cm]{figure05.pdf}
+ %   \captionsetup{font={small}}
+    \caption{(a) and (b) are easy and hard samples of WORD.}
+    \label{fig:Figure05}
+\end{figure}
+
+\section{CONCLUSION AND FUTURE WORK}
+
+In this paper, we propose a GCN-based owner-member relationship prediction network DeepWORD, which has good applicability and forecast precision in different scenarios. In particular, extensive experiments prove the efficiency and effectiveness of the proposed method in vehicle-mounted surround-view camera system. Besides, we establish and release a large-scale relationship dataset WORD. It is the first available dataset for relationship detection in the field of autonomous driving and is conducive to promote relevant research. In the future, we will continuously enlarge the WORD to include more real-world samples and will try to refine our owner-member relationship prediction solution DeepWORD.
+
+%In this paper, we propose a GCN-based owner-member relationship prediction network \textbf{DeepWORD}, which is useful in different scenarios. In particular, extensive experiments prove the efficiency and effectiveness of the proposed method in vehicle-mounted surround-view camera system. Besides, we establish and release a large-scale relathionship dataset \textbf{WORD}. It is the first available dataset for relationship detection in the field of autonomous driving and is conducive to promote the relevant research. In near future, we will continuously enlarge the \textbf{WORD} to include more real-world samples and will try to refine our owner-member relationship prediction solution \textbf{DeepWORD}.
+
+
+
+
+
+
+
+
+\small
+\bibliographystyle{IEEEbib}
+\bibliography{icme2021template}
+
+\end{document}
+

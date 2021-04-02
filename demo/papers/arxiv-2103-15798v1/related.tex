@@ -1,0 +1,24 @@
+% !TEX root = main.tex
+
+\subsection{Related Work}
+
+AutoML is a well-studied area, with most work focusing on fairly small hyperparameter spaces \citep{bergstra2012rs,li2018hyperband} or on NAS \citep{elsken2019nas}.
+Most NAS operation spaces only contain a few specific operations such as convolutions \citep{liu2019darts,zela2020nasbench1shot1,dong2020nasbench201};
+even when expanded to include many filter sizes \citep{mei2020atomnas}, such search spaces may not be useful for domains where convolutions are ineffective.
+Applications of NAS outside vision have largely followed the same pattern of combining human-designed primitives \citep{nekrasov2019nas,wang2020textnas}. 
+On the other extreme, \citet{real2020automlzero} demonstrated the possibility of evolving all aspects of ML---not just the model but also its learning algorithm---from scratch.
+We seek to establish a middle ground with large and domain-agnostic search spaces that still allow the application of well-tested learning algorithms, e.g. stochastic gradient descent (SGD).
+%In the latter case, it has been observed that the search spaces are still ``easy" in the sense that random architectures do reasonably well \citep{elsken2019nas,li2019rsws}.
+%Our main contribution is a family of search spaces generalizing convolutions \citep{lecun1999lenet}.
+
+Several papers have generalized the DFT to replace layers in deep networks \citep{dao2019butterfly,alizadeh2020butterfly,ailon2020butterfly}, including the one whose K-matrices we apply \cite{dao2020kaleidoscope}.
+These works focus on replacing {\em linear} layers in deep nets to speed up or add structure to models while {\em reducing} expressivity.
+In contrast, we can replace {\em convolutions} and other types of layers while {\em increasing} expressivity by extending their diagonalization using K-matrices.
+As discussed in Section~\ref{sec:relax}, using K-matrices to do this directly is inefficient for input dimension $>1$.
+
+%Beyond NAS, recent work by \citet{zhou2021symmetries} uses a meta-learning framing \citep{thrun1998ltl} to study how to learn more general types of symmetries---beyond simply translational---from multi-task data.
+%This transfer-based setup allows a clear formalization of learning such equivariances, though unlike NAS, it is not applicable to single-task settings.
+%In addition, their technical approach does not generalize 2d convolutions due to computational intractability, while our XD-operations are indeed able to do so.
+
+%Recently, \citet{neyshabur2020convolutions} showed that sparsity-inducing optimization can train fully connected nets that match the performance of convolutional networks and in the process the weights learn local connectivity patterns.
+%However, none of these papers return parameterizable operations from a formally defined search space.

@@ -1,0 +1,68 @@
+% !TEX root = main.tex
+
+\section{Experimental Details: CIFAR-10 and Permuted CIFAR-10}
+
+\begin{table}[!h]
+	\centering
+	\begin{threeparttable}
+		\begin{tabular}{cclcccc}
+			\hline
+			search space & backbone & task & optimizer & initial step-size & warmup epochs & perturb \\
+			\hline
+			\multirow{4}{*}{$\tilde\Search_\DARTS$}
+			& \multirow{2}{*}{LeNet}
+			& CIFAR-10 & Adam & 1E-1 & 0 & 0.1 \\
+			&& Permuted CIFAR-10 & Adam & 1E-1 & 50 & 0.875 \\
+			\cline{2-7}
+			& \multirow{2}{*}{ResNet-20}
+			& CIFAR-10 & Adam & 1E-3 & 0 & 0.1 \\
+			&& Permuted CIFAR-10 & Adam & 1E-1 & 0 & 0.875 \\
+			\hline
+			\multirow{4}{*}{$\Search_\XD$}
+			& \multirow{2}{*}{LeNet}
+			& CIFAR-10 & Adam & 1E-4 & 0 & - \\
+			&& Permuted CIFAR-10 & Adam & 1E-3 & 0 & -\\
+			\cline{2-7}
+			& \multirow{2}{*}{ResNet-20}
+			& CIFAR-10 & Adam & 1E-4 & 50 & - \\
+			&& Permuted CIFAR-10 & Adam & 1E-3 & 0 & - \\
+			\hline
+		\end{tabular}
+		%		\begin{tablenotes}
+		%			\item[$\ast$] table note 1
+		%			\item[$\dagger$] table note 2
+		%		\end{tablenotes}
+		\caption{\label{app:tab:cifar}
+			Architecture optimizer settings on CIFAR-10 tasks.
+			Note that the step-size is updated using the same schedule as the backbone.
+		}
+	\end{threeparttable}
+\end{table}
+
+For our experiments with image classification backbones we use the standard CIFAR-10 data \citep{krizhevsky2009cifar} and a permuted version where all rows and columns are identically permuted.
+For unpermuted data we use standard data augmentation (c.f. \citet{he2016resnet}) while for permuted data we do not use any data augmentation.
+As specified in Section~\ref{sec:chrysalis}, we keep the training routine of the model weights the same and tune only the architecture optimizer, the settings of which are specified in Table~\ref{app:tab:cifar}.
+Note that for the DARTS operation space we specify a ``perturb" parameter that specifies how unbiased the initial architecture parameters are towards the backbone operation;
+specifically, we initialize architecture parameters so as to assign one minus this quantity as the weight to the backbone operation, so 0.875 means the initialization is uniform (since $|\tilde\Search_\DARTS|=8$) while 0.1 means the backbone operation is assigned 0.9 of the weight.
+
+\subsection{LeNet}
+
+The LeNet backbone we consider consists of two $\Conv_{5\times 5}$ layers, each followed by $\MaxP_{2\times 2}$, and two fully connected layers.
+When warm-starting with XD-operations we use $\AvgP_{2\times2}$ instead of $\MaxP_{2\times2}$, while when warm-starting with the DARTS operations we use $\MaxP_{3\times 3}$.
+For the baseline training routine we use 200 epochs of Momentum(0.9), with the first 100 at learning rate 0.01, the next 50 at 0.005, and the last 50 at 0.001.
+
+\subsection{ResNet-20}
+
+We use the implementation and training routine provided here: \url{https://github.com/akamaster/pytorch_resnet_cifar10}.
+When replacing operations in the backbone we substitute for both the $\Conv_{3\times3}$ operations and the skip-connections $\Id$;
+some of the latter are downsampled, which XD-operations can handle as strides.
+
+\subsection{DARTS Cell Search}
+
+To search the full DARTS search space, which is a standard NAS benchmark, we use GAEA PC-DARTS, a recent state-of-the-art method \citep{li2021gaea}.
+On CIFAR-10 we simply use their best reported cell but evaluate it using the ``base" routine from \citet{yang2020nas}, i.e. without auxiliary losses or additional data augmentation;
+this is to obtain fair comparison with the other backbone models.
+Note that the model is still much larger and the training routine much more intensive.
+On permuted data we follow the standard three-stage pipeline in which we run search four times, train all four found cells and select the best one, and finally train that cell multiple times.
+
+\newpage

@@ -1,0 +1,240 @@
+% !TEX root = main.tex
+
+\section{The Expressive Diagonalization Relaxation}\label{sec:relax}
+
+In this section we overview our main contribution:
+a large, general search space of neural operations.
+Formally, we view a neural architecture as a {\em parameterizable} object---a mapping from model weights to functions---that can be described by a {\em labeled} directed acyclic graph (DAG) $\G(V,E)$.
+Each edge in $E$ has the form $(u,v,\Op)$, where $u,v\in V$ are nodes and $\Op$ is an operation that can be parameterized to define some transformation of the representation at node $u$;
+node $v$ aggregates the outputs of its incoming edges to construct a new representation.
+For example, the popular ResNet architecture \citep{he2016resnet} has many nodes $v$ with two incoming edges, one labeled by the convolution operation $\Conv$ and one labeled by the identity (skip-connect) operation $\Id$, whose outputs it sums and passes to two outgoing edges with the same labels.
+Each architecture DAG has a source node into which we pass input data and an output node that returns a prediction or score.
+
+Neural architecture search is the problem of automatically selecting which operation to use at each edge of $\G$ in order to optimize some objective.\footnote{It is often defined as selecting both operations and a graph topology \citep{zoph2018nas}, but if the set of operations contains the zero-operation $\Zero$ then the former subsumes the latter.}
+For each edge $e\in E$ a NAS algorithm must pick one element of a {\em search space} $\Search=\{\Op_a\vert a\in\A\}$ of operations specified by architecture parameters $a\in\A$ to assign to $e$;
+in past work, $\A$ has usually indexed a small set of operations.
+As an example, we will refer to a variant\footnote{For memory-efficiency, all convolutions in the original DARTS search space are separable \citep{liu2019darts}.} of the DARTS search space in which $\A_\DARTS=\{1,\dots,8\}$, with each operation $\DARTS_a\in\Search_\DARTS$ being one of $\Zero$, $\Id$, $\MaxP_{3\times 3}$, $\AvgP_{3\times 3}$, $\Conv_{3\times 3\textrm{ or }5\times 5}$, or $\DilC_{3\times 3,2\textrm{ or }5\times 5,2}$ \citep{liu2019darts}.
+
+Our main contribution is a novel family of operations that comprise a search space containing almost all these operations, in addition to many others that have been found useful on different types of data.
+The starting point of our construction of these XD-operations is the simple observation that all the operations $\Op\in\Search_\DARTS$ listed above except $\MaxP_{3\times3}$ are {\em linear}, i.e.
+for any model weights $\*w$ there exists a matrix $\*A_{\*w}$ such that for all inputs $\*x$ we have $\Op(\*w)(\*x)=\*A_{\*w}\*x$.
+More specifically, all seven of them return convolutions:
+to see this note that $\Zero$, $\Id$, and $\AvgP_{3\times3}$ each apply a convolution with filter $\0_{1\times1}$, $\1_{1\times1}$, and $\1_{3\times3}/9$, respectively.
+This means that most of the operations in the DARTS search space---which is representative of NAS operation spaces in computer vision---share the convolution's diagonalization by the discrete Fourier transform (DFT).
+Formally, if $\*A_{\*w}\in\R^{n^2\times n^2}$ is the matrix representing a 2d convolution with filter $\*w\in\R^{\*k}$ of kernel size $\*k\in[n]^2$, then for any 2d input $\*x\in\R^{n^2}$ we have
+\begin{equation}\label{eq:fourier}
+\Conv(\*w)(\*x)=\*A_{\*w}\*x=\*F^{-1}\diag\left(\*F\underline{\*w}\right)\*F\*x
+\end{equation}
+Here $[n]=\{1,\dots,n\}$, $\diag(\*z)$ denotes the diagonal matrix with nonzero entries $\*z$, $\underline{\*w}\in\R^{n^2}$ is an appropriate zero-padding of $\*w\in\R^{\*k}$, and $\*F\in\C^{n^2\times n^2}$ is the 2d DFT (a Kronecker product of two 1d DFTs).
+
+This diagonalization explicates both the computational and representational efficiency of the DARTS operations, as both the DFT and its inverse can be applied in time $\BigO(n\log n)$ and represented with $\BigO(n\log n)$ bits.
+It also suggests a natural way to dramatically expand the operation space while preserving these efficiencies:
+simply replace the Fourier matrices $\*F$ and $\*F^{-1}$ in \eqref{eq:fourier} by a more general family of efficient matrices.
+Doing so yields the single-channel version of our {\em expressive diagonalization} (XD) operations:
+\begin{equation}\label{eq:xd1}
+\XD_\alpha^\1(\*w)(\*x)=\Real\left(\*K\diag\left(\*L\underline{\*w}\right)\*M\*x\right)
+\end{equation}
+Here the architecture parameter $\alpha=(\*K,\*L,\*M)$ determines the exact matrices used to replace $\*F$ and $\*F^{-1}$ in Equation~\ref{eq:fourier}.
+
+The main remaining question is the family of efficient matrices to use, i.e. the domain of the architecture parameters $\*K$, $\*L$, and $\*M$.
+For this we turn to the Kaleidoscope matrices, or {\em K-matrices}, of \citet{dao2020kaleidoscope}, which generalize $\*F$ and $\*F^{-1}$ to include all computationally efficient linear transforms with short description length.
+This includes important examples, such as sparse matrices and permutations, that add significant expressivity to the DFT.
+To obtain this general family, K-matrices allow the DFT's butterfly factors---matrices whose products yield its efficient implementation---to take on different values.
+While a detailed construction of K-matrices can be found in the original paper, we need only the following useful properties: 
+they are as (asymptotically) efficient to apply and represent as DFTs, they are differentiable and can thus be updated using gradient-based methods, and they can be composed (made ``deeper") to make more expressive K-matrices.
+
+Specifying that $\*K$, $\*L$, and $\*M$ in Equation~\ref{eq:xd1} are K-matrices largely completes our core contribution:
+a new search space $\Search_\XD$ of XD-operations with K-matrix architecture parameters.
+We give a full multi-channel formalization in $N$ dimensions, as well as an overview of its expressivity, in Section~\ref{sec:xd}.
+First, we note some key aspects of this new search space:
+\begin{itemize}[leftmargin=*,topsep=-1pt,noitemsep]\setlength\itemsep{2pt}
+	\item{\bf Complexity:} the function $\XD_\alpha^\1$ requires three K-matrices and $\BigO(1)$ filter weights to represent, which implies description length $\BigO(n\log n)$;
+	this is larger than a regular convolution (which has no architecture parameters) but is not quadratic in the input size like a linear layer.
+	Applying $\XD_\alpha^\1$ requires multiplication by three K-matrices, yielding a per-channel time complexity of $\BigO(n\log n)$. 
+	This matches the efficiency of convolutions.
+	\item{\bf Initialization:} a crucial advantage of XD-operations is that we can initialize or {\em warm-start} search using operations with known constructions.
+	In particular, since we can recover convolutions \eqref{eq:fourier} by setting architecture parameters $\*K=\*F^{-1}$, $\*L=\*F$, and $\*M=\*F$ in Equation~\ref{eq:xd1}, we can always start search with any convolutional backbone network.
+	We use this extensively in experiments.
+	\item{\bf K-matrices:} as they contain all efficient linear transforms, K-matrices can represent all functions returned by XD-operations, including convolutions.
+	However, if both the input dimension $N$ and filter size are $>1$, as in most applications, then the only known way is to apply K-matrices directly to flattened inputs $\*x\in\R^{n^N}$, yielding much worse description length $\BigO(n^N\log n)$.
+	In contrast, as detailed in Section~\ref{subsec:xdmc} our diagonalization approach allows the use of Kronecker products to apply DFTs to each dimension separately, yielding description length $\BigO(n\log n)$.
+	It is thus the first (and in some sense, ``right") method to use such matrices as replacements for convolutions.
+	Furthermore, diagonalization allows us to separate model weights $\*w$ from architecture parameters $\alpha$, letting the former vary across channels while fixing the latter.
+\end{itemize}
+
+Finally, we address the fact that the architecture parameters of $\Search_\XD$ are continuous, not discrete, contrasting with much of the NAS literature.
+This can be viewed as a natural extension of the weight-sharing paradigm \citep{pham2018enas}, in which continuous relaxation enables updating architecture parameters with gradient methods.
+For example, many algorithms traverse the relaxed DARTS search space 
+$\tilde\Search_\DARTS=\left\{\sum_{i=1}^8\lambda_i\DARTS_i\vert\lambda_i\ge0,\sum_{i=1}^8\lambda_i=1\right\}$, defined via DARTS operations $\DARTS_i\in\Search_\DARTS$ and architecture parameters $\lambda_i$ in the 8-simplex;
+most search spaces then requires discretizing after search via a rounding procedure that maps from the simplex to $\A_\DARTS$.
+
+Our XD-relaxation avoids the poor scaling of the simplex relaxation when operations are added one-by-one.
+In particular, the per-iteration cost of many NAS algorithms increases linearly with operation count \citep{liu2019darts} while the number of iterations of state-of-the-art methods increases logarithmically in the same \citep{li2021gaea}.
+In contrast, $\Search_\XD$ contains numerous useful operations while taking roughly as long to search on CIFAR-10 as $\tilde\Search_\DARTS$.
+
+%In the remainder of this section, we first formalize parameterizable operations, which will be useful in both our construction of XD-operations and in our analysis of their expressivity.
+%Then we specify our new search space and describe several useful properties.
+%Finally, we conclude by analyzing the expressivity of XD-operations by providing numerous examples of important named neural operations that they contain.
+%This last step is critical because it enables us to initialize search using the operations specified in many backbones across a variety of applications.
+
+%Finally, we note three properties that parameterizable operations on $\X=\R^{n\times n}$ can have that may be desirable from a computational or sample efficiency view:
+%
+%\begin{Def}\label{def:eff}
+%	A parameterizable operation $\Op$ over parameter space $\W$ is {\bf computationally efficient} if given arbitrary $\*w\in\W$ and $\*x\in\R^n$ we can compute $\Op(\*w)(\*x)$ to arbitrary precision in time $\BigO(n\log n)$.
+%\end{Def}
+%
+%\begin{Def}\label{def:dl}
+%	A parameterizable operation $\Op$ over parameter space $\W$ has {\bf short description length} if every parameterized function $\Op(\*w):\R^n\mapsto\R^n$ can be represented to arbitrary precision with $\BigO(n\log n)$ bits.
+%\end{Def}
+%
+%\begin{Def}\label{def:lin}
+%	A parameterizable operation $\Op$ over parameter space $\W$ is {\bf linear} if for every $\*w\in\W$ there exists $\*A_{\*w}\in\R^{n\times n}$ such that $\Op(\*w)=\Lin(\*A_{\*w})$.
+%\end{Def}
+%
+%An example of an operation that satisfies all three properties is the convolution operator.
+%A simple operation that does not have short description length and is not efficient is the linear operation, which requires a number of parameters and a computation time that are both quadratic in the number of inputs.
+%For an example of an operation that is not linear consider the multi-head self-attention mechanism in Transformer architectures \citep{vaswani2017attention}.
+
+\section{XD-Operations and Their Expressivity}\label{sec:xd}
+
+Here we formalize XD-operations and discuss what operations they can express.
+To do so, we first define operations:
+\begin{Def}\label{def:po}
+	A {\bf parameterizable operation} is a mapping $\Op:\W\mapsto\F$ from parameter space $\W$ to a space $\F=\{\Op(\*w):\X\mapsto\Y\vert\*w\in\W\}$ of {\bf parameterized functions} from input space $\X$ to output space $\Y$.
+	A {\bf search space} is a set of operations with the same $\W$, $\X$, and $\Y$.
+\end{Def}
+
+For example, if $\X=\Y=\R^n$ and $\W=\R^{n\times n}$ then each $\*W\in\W$ defines a parameterized linear layer that for each $\*x\in\X$ returns $\Lin(\*W)(\*x)=\*W\*x$.
+Here $\Lin$ is the parameterizable operation and for each $\*W$ the linear map $\Lin(\*W)$ is the parameterized function.
+
+From Definition~\ref{def:po}, we say a search space can {\em express} a specific operation if it contains it.
+Crucially, the ability of a parameterizable operation $\Op_1$ to express a parameterized function $\Op_2(\*w)$ output from another operation $\Op_2$ given the right set of weights $\*w$ does {\em not} imply that a search space containing $\Op_1$ can express $\Op_2$.
+For example, $\Lin(\*I_n)=\Id(\*W)~\forall~\*W\in\R^{n\times n}$ but $\Lin(\*W)\ne\Id(\*W)~\forall~\*W\ne\*I_n$, so a search space containing the linear operation $\Lin$ cannot express the skip-connection $\Id$, despite the fact that $\Lin$ can be parameterized to compute the identity.
+
+%As exemplified by the DARTS search space $\Search_\DARTS$, modern search spaces generally contain a fairly limited number of operations.
+%Of these operations only convolutions use their model weights, and they may not always be the right choice in non-vision domains.
+%Our goal is instead to construct a significantly larger search space that contains effective operations for many tasks.
+%Still, because convolutions satisfy the three desirable properties above, are used as baselines in many fields, and share a diagonalization with basic pooling operations including $\AvgP$ and $\Id$, our construction is designed as an extension of them.
+%In particular, we start with the diagonalization of the matrix $\*A_{\*w}\in\R^{n^N\times n^N}$ representing a convolution with filter $\*w\in\R^{\*k}$ of kernel size $\*k\in[n]^N$ by the $N$-dimensional discrete Fourier Transform (DFT) $\*F\in\C^{n^N\times n^N}$ (a Kronecker product of $N$ 1d DFTs):
+%\begin{equation}\label{eq:fourier}
+%\Conv(\*w)(\*x)=\*A_{\*w}\*x=\*F^{-1}\diag(\*F\underline{\*w})\*F\*x
+%\end{equation}
+%Here $\*x$ is any element of $\R^{n^N}$, $[n]=\{1,\dots,n\}$, $\diag(\*z)$ denotes the diagonal matrix with nonzero entries $\*z$, and $\underline{\*w}\in\R^{n^N}$ is an appropriate zero-padding of $\*w\in\R^{\*k}$.
+%
+%The convolution's diagonalization explicates both its computational and representational efficiency, as both the DFT and its inverse can be applied in time $\BigO(n\log n)$ and represented with $\BigO(n\log n)$ bits.
+%Starting from the butterfly diagrams that represent the construction of the DFT as a product of small factor matrices, \citet{dao2020kaleidoscope} introduced Kaleidoscope matrices, or {\em K-matrices}, which generalize $\*F$ and $\*F^{-1}$ to include all computationally efficient linear transforms with short description length.
+%This includes important examples, such as sparse matrices and permutations, that add significant expressivity to the DFT.
+%While a detailed construction of K-matrices can be found in the original paper, we need only the above efficiency properties, the fact that we can update the K-matrix representation using gradient-based methods, and the ability to compose multiple K-matrices into deeper ones;
+%in particular we say that a K-matrix has depth-$d$ if it is a product of $d$ depth-1 K-matrices.
+
+\subsection{Formalizing Multi-Channel XD-Operations}\label{subsec:xdmc}
+
+Recall the single-channel XD-operation $\XD_\alpha^\1$ in Equation~\ref{eq:xd1}, which is parameterized by a three-matrix architecture parameter $\alpha=(\*K,\*L,\*M)$.
+In the general case of input dimension $N\ge1$, every matrix $\*B\in\alpha$ is a Kronecker product of $N$ $K$-matrices of depth $\*d\in\Z_+^3$, i.e. $\*B=\bigotimes_{i=1}^N\*B_i$ for K-matrices $\*B_i\in\C^{n\times n}$ of depth $\*d_{[1]}$, $\*d_{[2]}$, or $\*d_{[3]}$ for $\*B=\*K$, $\*L$, or $\*M$, respectively.\footnote{A depth-$d$ K-matrix is a product of $d$ depth-1 K-matrices.}
+Roughly speaking, $\XD_\alpha^\1$ can express a set of linear operations that can be diagonalized by K-matrices and are thus efficient to compute and represent, such as convolutions (recall that we recover the diagonalization of $\Conv(\*w)$ in Equation~\ref{eq:fourier} by setting $\*K$, $\*L$, and $\*M$ appropriately in Equation~\ref{eq:xd1}).
+However, $\XD_\alpha^\1$ cannot represent efficient {\em parameter-free} operations such as skip-connections and average-pooling, both common in NAS.
+In particular, the only way to force the operation to ignore the model weights $\*w$ is to set one of the K-matrices to zero, producing the zero-operation.
+We can avoid this by adding a bias vector $\*b\in\C^{n^N}$ as an architecture parameter, producing the {\em biased} single-channel XD-operation:
+\begin{equation}\label{eq:biased}
+\XD_{\alpha,\*b}^\1(\*w)(\*x)=\Real\left(\*K\diag(\*L\underline{\*w}+\*b)\*M\*x\right)
+\end{equation}
+Doing this allow us to define skip-connections (set $\*K$ and $\*M$ to the identity, $\*L$ to the zero matrix, and $\*b=\1_{n^N}$) and average-pooling (set $\*K=\*F^{-1}$, $\*L=\0_{n^N\times n^N}$, $\*M=\*F$, and $\*b$ to be $\*F$ multiplied by the appropriate pooling filter).
+
+Our last step is to use $\XD_{\alpha,\*b}^\1$ to construct multi-channel ``layers" that pass multiple input features through multiple channels and re-combine them as multiple output features.
+This follows the primary way of using convolutions in deep nets, which is to apply multiple convolutions with different filters to multiple inputs.
+The key insight here is that we will share the same parameterizable operation (specified by $\alpha$ and $\*b$) across all channels, just as in convolutional layers.
+\begin{Def}\label{def:xd}
+	Let $a=(\alpha,\*b,\*C)$ be an architecture parameter where $\alpha=(\*K,\*L,\*M)$ is a triple of Kronecker products of $N$ K-matrices with depths $\*d\in\Z_+^3$, $\*b\in\C^{n^N}$ is a bias term, and $\*C\in\C^{c\times c}$ is a matrix of channel gates.\footnote{For simplicity we formalize the case where all $N$ dimensions have the same input size $n$ and there is an identical number $c$ of input and output channels; both are straightforward to extend.}
+	The {\bf XD-operation} $\XD_a$ of depth $\*d$ specified by $a$ is a parameterizable operation on parameter space $\W=\R^{c\times c\times\*k}$ consisting of $c^2$ filters of size $\*k\in[n]^N$ that outputs parameterized functions on $\X=\R^{c\times n^N}$ mapping every $\*x\in\X$ to\vspace{-5pt}
+	\begin{equation}
+	\XD_a(\*w)(\*x)=
+	\begin{pmatrix}
+	\sum\limits_{j=1}^c\*C_{[1,j]}\XD_{\alpha,\*b}^\1(\*w_{[1,j]})(\*x_{[j]})\\
+	\vdots\\
+	\sum\limits_{j=1}^c\*C_{[c,j]}\XD_{\alpha,\*b}^\1(\*w_{[c,j]})(\*x_{[j]})
+	\end{pmatrix}
+	\end{equation}
+	We use $\Search_\XD$ to describe the set of such operations.
+\end{Def}
+The parameter $\*C$ allows interpolation between all-to-all layers ($\*C=\1_{c\times c}$), e.g. multi-channel convolutions, and layers where each channel is connected to one other channel ($\*C=\*I_c$), as in skip-connections and average-pooling.
+
+We conclude our construction by discussing two properties:
+%In particular, note that all XD-operations satisfy the properties in Definitions~\ref{def:eff},~\ref{def:dl}, and~\ref{def:lin}.
+\begin{itemize}[leftmargin=*,topsep=-1pt,noitemsep]\setlength\itemsep{2pt}
+	\item{\bf Kernel size:} the weight-space available to an XD-operation is $\R^{c\times c\times n^N}$; however, since we will initialize search with existing backbone nets, we will use zero-padding to have the same weight space $\R^{c\times c\times k^N}$ as the convolutions with filter size $k\le n$ that they replace.
+	This preserves the number of weights but also means that if the backbone has $3\times3$ filters our search space will {\em not} contain $5\times5$ convolutions.
+	Experimentally, we find that relaxing the constraint to allow this does not significantly affect results on image tasks, so we do not do so in subsequent applications to avoid increasing the weight count.
+	\item{\bf Depth:} an XD-operation's depth is a triple describing the depths of its K-matrices $\*K$, $\*L$, and $\*M$.
+	Increasing depth trades off efficiency for expressivity;
+	for example, in the next section we describe operations that we can show are contained in $\Search_\XD$ if $\*L$ or $\*M$ have depth $>1$.
+	By default we will set the depth to be the minimum needed to initialize search with the operation used by the backbone.
+\end{itemize}
+
+
+\subsection{Expressivity of XD-Operations}\label{subsec:express}
+
+%\begin{table*}[!t]
+%	\centering
+%	\begin{threeparttable}
+%		\begin{tabular}{ccrccccc}
+%			\hline
+%			{\bf Search space} & \multicolumn{2}{c}{Operation} & \multicolumn{5}{c}{Architecture setting, if distinct from $\Conv$} \\
+%			weight space & \multicolumn{2}{c}{name} & $\*K$ & $\*L$ & $\*M$ & $\*b$ & $\*C$ \\
+%			\hline
+%			& \multicolumn{2}{l}{Convolution with filter size $n$ ($=\Conv$)} & $\*F^{-1}$&  $\*F$ & $\*F$ & $\0_n$ & $\1_{c\times c}$ \\
+%			& \multicolumn{2}{l}{Convolution with filter size $k\in[n]$} & & $\*F\diag(\underline{\1_k})$ \\
+%			$\{\XD_a\}$ & \multicolumn{2}{l}{$^\dagger$Dilated conv. with filter size $k$, dilation $s>1$} & & $\*F\diag(\underline{\*a_{k,s}})$ \\
+%			& \multicolumn{2}{l}{$^\ddagger$Grouped conv. with filter size $k$, partition $g$ of $[c]$} & & $\*F\diag(\underline{\1_k})$ & & & $\*B_g$ \\
+%			$\W=\R^{c\times c\times n}$ & \multicolumn{2}{l}{$^\ast$Multiplication by a fixed K-matrix $\*A\in\C^{n\times n}$} & & $\0_{n\times n}$ & $\*F\*A$ & $\*1_n$ & $\*I_c$ \\
+%			& \multicolumn{2}{l}{$^\star$(Conv. with filter size $k$)\hspace{0.7mm}$\circ$\hspace{0.5mm}(Mult. by K-matrix $\*A$)} & & $\*F\diag(\underline{\1_k})$ & $\*F\*A$ \\
+%			& \multicolumn{2}{l}{Average pooling with filter size $k\in[n]$} & & $\*0_{n\times n}$ & & $\frac1k\underline{\*F\1_k}$ & $\*I_c$ \\
+%			\hline
+%			$\{\XD_{a_1}\circ\XD_{a_2}\}$ & Depthwise-separable conv. & $\XD_{a_1}$: & & $\*F\diag(\underline{\1_1})$ & & & \\
+%			$\W=(\R^{c\times c\times n})^2$ & with filter size $k$ & $\XD_{a_2}$: & & $\*F\diag(\underline{\1_k})$ & & & $\*I_c$ \\
+%			\hline
+%		\end{tabular}
+%		\begin{tablenotes}\footnotesize
+%			\item[$^\dagger$] $\*a_{k,s}\in\{0,1\}^{(k-1)s+1}$ is a vector with $s$ zeros between each of $k$ ones.
+%			\item[$^\ddagger$] $\*B_g\in\{0,1\}^{c\times c}$ satisfies $\*B_g[i,j]=1\iff i$ and $j$ are in the same group in the partition $g$ of the set of channels $[c]$.
+%			\item[$^\ast$] Includes skip-connections ($\*A=\*I_n$) and the zero-operation ($\*A=\0_{n\times n}$).
+%			\item[$^\star$] Includes convolutions of permutations ($\*A$ is a permutation) and graph convolutions ($\*A$ is a modified adjacency matrix and $k=1$).
+%		\end{tablenotes}
+%		\caption{\label{tab:expressivity}
+%			\normalsize
+%			Summary of operations contained in a search space over XD-operations when the input/output spaces $\X$ and $\Y$ are 1d;
+%			extending these results to $N$-dimensions is straightforward.
+%			Note that to handle all the operation in a single search space we require $\XD$ to have depth $\*d\ge(1,1,d)$, where $d$ is one plus the depth of the K-matrix $\*A$.
+%		}
+%	\end{threeparttable}
+%\end{table*}
+
+Several papers have proposed replacing deep net layers with efficient linear transforms \cite{moczulski2015acdc,dao2020kaleidoscope};
+there the question of expressivity comes down to the capacity of the linear transform used.
+For example, multi-channel layers composed of a K-matrix in every channel can represent a different transform in each, thus allowing the output to be any combination of operations such as DFTs, permutations, and many more.
+Our case is less straightforward since we care about expressivity of the search space, not of parameterized functions, and our approach is less-expressive {\em by design} as all channels share the K-matrices $\*K$, $\*L$, and $\*M$.
+The latter can be thought of a useful inductive bias on NAS:
+the set of XD-operations is still much broader than the set of convolutions, but the way in which model weights are applied is the same across all channels of a layer.
+
+Expressivity results are a way to see if this bias is useful or constraining.
+Here we summarize some important operations that we can show are XD-operations in the 1d case; 
+these facts are proved in the appendix and are straightforward to extend to multi-dimensional inputs.
+Formally, there exists $\*d\in\Z_+^3$ such that the set of XD-operations of depth $\*d$ over weights $\W=\R^{c\times c\times k}$ and inputs $\X=\R^n$ contains
+\begin{enumerate}[leftmargin=*,topsep=-1pt,noitemsep]\setlength\itemsep{2pt}
+	\item all convolutions with filter size $\le k$, dilation at most $\lfloor\frac{n-1}{k-1}\rfloor$, stride at most $n-1$, and arbitrary channel groups.
+	\item all of $\Id$, $\Zero$, or $\AvgP_s$ for any $s\le n$.
+	\item composing either of the above with multiplication of all input or output channels by a bounded-depth K-matrix.
+\end{enumerate}
+Note this does not account for {\em all} important XD-operations, e.g. we show in the appendix that they can also express Fourier Neural Operators \citep{li2021fno} with $\le\lfloor k/2\rfloor$ modes.
+Still, the 2d-versions of the first two account for non-separable variants of most operations considered in past NAS work in computer vision, apart from the nonlinear $\MaxP$ \citep{ying2019nasbench101,dong2020nasbench201}.
+Note that depthwise-separable convolutions {\em are} contained in the set of compositions of XD-operations.
+The third item implies that XD-operations can express the basic and diffusion graph convolutions over fixed graphs \citep{kipf2017gcn,li2018dcrnn}:
+both are point-wise convolutions composed with a sparse linear transform based on the adjacency matrix, which  K-matrices can represent efficiently.
+
+Apart from understanding our search space, a chief motivation for these results is to enable initializing search using the operations of existing backbones.
+As a concrete example used in Section~\ref{sec:seq}, consider dilated convolutions, which for $k>1$ apply filters of effective size $(k-1)d+1$ with nonzero entries separated by $d$ zeros.
+One could hope to express the application of $\DilC_{k,d}$ to an input $\*x\in\R^n$ in the single-channel setting as $\*F^{-1}\diag(\*F\diag(\*p_{k,s})\underline{\*w})\*F\*x$, where $\*p_{s,k}\in\{0,1\}^n$ zeroes out appropriate entries of $\underline{\*w}$, but this requires filter size $(k-1)d+1>k$, increasing the number of model weights.
+Instead, we can use a permutation $\*P_{k,s}\in\{0,1\}^{n\times n}$ to place the $k$ entries of $\underline{\*w}$ into dilated positions before applying the DFT:
+\begin{equation}\label{eq:dilated}
+	\DilC_{k,s}(\*w)(\*x)=\*F^{-1}\diag(\*F\*P_{k,s}\underline{\*w})\*F\*x
+\end{equation}
+As permutations are depth-2 K-matrices \citep{dao2020kaleidoscope}, we can express $\DilC_{k,s}$ with an XD-operation of depth $(1,3,1)$, with $\*K=\*F^{-1}$, $\*L=\*F\*P_{k,s}$, and $\*M=\*F$.

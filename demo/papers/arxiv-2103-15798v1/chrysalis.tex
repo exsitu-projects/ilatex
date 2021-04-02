@@ -1,0 +1,149 @@
+% !TEX root = main.tex
+
+\section{Finding Good XD-Operations}\label{sec:chrysalis}
+
+This section outlines a simple NAS procedure that we use to evaluate XD-operations.
+Recall that a NAS method must find an architecture by assigning operations as labels to each edge $(u,v,\Op)$ of a computational graph.
+We aim to simultaneously find good operation-edge assignments and model weights, a goal distinct from the classic {\em two-stage} NAS formulation, which finds assignments in an initial search phase before training the resulting architecture from scratch \citep{ying2019nasbench101}.
+However, the use of weight-sharing \citep{pham2018enas} extends NAS to {\em one-shot} objectives where model weights and architecture parameters are jointly optimized.
+Under weight-sharing, architecture parameters become regular weights in a larger ``supernet," adding flexibility by extending the hypothesis class \citep{li2021gaea}.
+
+To assess XD-operations directly, rather than consider a general set of graphs we assume the user provides a starter network with existing edge labels $\Op_{u,v}$ as a backbone.
+We transform this into a weight-sharing supernet by reparameterizing each operation $\Op_{u,v}$ as an XD-operation $\XD_{a_{u,v}}$ with architecture parameter $a_{u,v}$.
+Then we apply gradient-based methods to simultaneously update both $a_{u,v}$ and the model weights $\*w_{u,v}$  associated with each edge as follows:
+\begin{itemize}[leftmargin=*,topsep=-1pt,noitemsep]\setlength\itemsep{2pt}
+	\item {\bf Architecture parameters} $a_{u,v}$ are initialized using the original operation used by the backbone by setting $\Op_{u,v}=\XD_{a_{u,v}}$;
+	$a_{u,v}$ is then updated via SGD or Adam \citep{kingma2015adam}.
+	We tune step-size, momentum, and the number of ``warmup" epochs: 
+	initial epochs during which only model weights $\*w_{u,v}$ are updated.
+	This can be viewed as a specialized step-size schedule.
+	\item {\bf Model weights} $\*w_{u,v}$ are initialized and updated using the routine provided with the backbone model.
+\end{itemize}
+This allows us to take advantage of established topologies and optimizers while still searching for new operations.
+
+\section{Application: Image Classification}
+
+
+\begin{table}[!t]
+	\centering
+	\begin{threeparttable}
+		\begin{tabular}{lccc}
+			\hline
+			{\bf Backbone} & & Permuted & Cost \\
+			~~search space & CIFAR-10 & CIFAR-10$^\ast$ & (hours$^\dagger$) \\
+			\hline
+			{\bf LeNet} & $75.5\pm0.1$ & $43.7\pm0.5$ & 0.3 \\
+			~~$\tilde\Search_\DARTS$ & $75.6\pm3.4$ & $47.7\pm1.0$ & 1.0 \\
+			~~$\Search_\XD$ & $77.7\pm0.7$ & $63.0\pm1.0$ & 0.9 \\
+			\hline
+			{\bf ResNet-20} & $91.7\pm0.2$ & $58.6\pm0.7$ & 0.6 \\
+			~~$\tilde\Search_\DARTS$ & $92.7\pm0.2$ & $58.0\pm1.0$ & 5.3 \\
+			~~$\Search_\XD$ & $92.4\pm0.2$ & $73.5\pm1.6$ & 5.6 \\
+			\hline
+			DARTS Cell$^\ddagger$ & $96.0\pm0.2$ & $66.3\pm0.5$ & 28.6 \\
+			\hline
+		\end{tabular}
+		\begin{tablenotes}\footnotesize
+			\item[$\ast$] No data augmentation used in the permuted case.
+			\item[$\dagger$] On a V100 GPU; time for DARTS Cell is training cost only.
+			\item[$\ddagger$] Search using GAEA PC-DARTS \citep{li2021gaea}; training using ``base" routine from \citet{yang2020nas}.\vspace{-4pt}
+		\end{tablenotes}
+		\caption{\label{tab:cifar}
+			Search space comparison on CIFAR-10.
+			Validation accuracies reported as averages over three trials.\vspace{-4pt}
+		}
+	\end{threeparttable}
+\end{table}
+
+\begin{figure*}[!t]
+	\centerline{\includegraphics[width=0.666\columnwidth]{figures/pde_1d.pdf}
+		\includegraphics[width=0.666\columnwidth]{figures/pde_2d.pdf}
+		\includegraphics[width=0.666\columnwidth]{figures/pde_2d_trace.pdf}\vspace{-12pt}
+	}
+	\caption{
+		\textbf{(a)} and \textbf{(b)} Relative error on Burgers' equation and Darcy Flow across different resolutions, including all those considered by \citet{li2021fno}.
+		\textbf{(c)} Training curves (dotted) and test curves (solid) on Darcy Flow, showing better generalization of XD-operations.}
+	\label{fig:pde}
+\end{figure*}
+
+We start by applying the above procedure to image classification.
+As we seek to apply NAS to diverse tasks beyond computer vision, we study only simple settings that demonstrate the need for XD-operations, in particular the LeNet \citep{lecun1999lenet} and ResNet \citep{he2016resnet} backbones applied to two datasets: 
+CIFAR-10 \citep{krizhevsky2009cifar} and a variant where the rows and columns of all images are permuted.
+Since convolutions are the ``right" operation for images, we expect the convolution-centric baselines below to do well on CIFAR-10.
+On the other hand, as the ``right" operation on permuted data, at least in layer one, is an inverse permutation followed by convolution, here we may see a benefit of using XD-operations, which contain this operation (recall $\Search_\XD$ includes compositions of convolutions with multiplication by a K-matrix, e.g. a permutation).
+
+We compare applying the Section~\ref{sec:chrysalis} algorithm to the set of XD-operations with two baselines:
+a similar method applied to the relaxed set $\tilde\Search_\DARTS$ of DARTS operations from Section~\ref{sec:relax} and a two-stage state-of-the-art algorithm---GAEA PC-DARTS \citep{li2021gaea}---over the DARTS space \cite{liu2019darts}.
+To optimize over $\tilde\Search_\DARTS$ we take an approach similar to the DARTS algorithm:
+parameterize the simplex using a softmax and apply Adam.
+We experiment with both a uniform initialization and one biased towards the backbone operation.
+While both $\Search_\XD$ and $\Search_\DARTS$ contain LeNet's $\Conv_{5\times 5}$ layers and ResNet's $\Conv_{3\times 3}$ and $\Id$, for LeNet's $\MaxP_{3\times 3}$ layer we initialize with the closest operation in each.
+For direct comparison, both search spaces employ weights with maximum filter size $5\times 5$ and for both we evaluate the shared weights rather than retraining after search (we find that the latter hurts the performance of $\tilde\Search_\DARTS$).
+We set the XD-operations' depth to $\*d=\*3_3$ to express both the dilated convolutions in $\Search_\DARTS$ and convolutions composed with permutations.
+
+In Table~\ref{tab:cifar}, we see that while both the relaxed DARTS space and XD-operations perform comparably on regular images, XD-operations achieve around 15\% better accuracy with both backbones when the images are permuted.\footnote{\citet{dao2020kaleidoscope} also investigate permuted CIFAR-10; they obtain higher accuracies with a larger backbone net and an auxiliary loss that encourages permutation-like K-matrices.}
+There they even significantly outperform standard cell-based search, despite the latter's much more expensive and intensive training routine (600 epochs v. the 200 used for ResNet-20), much larger model size (2.3 million parameters v. 1.2 million), and higher performance on regular images.
+These results show that to enable NAS on diverse data, we will need a search space that contains truly novel operations, not just combinations of existing ones.
+In the remainder of the paper, we study more diverse and realistic tasks that show further evidence that $\Search_\XD$ is a strong candidate for this.
+
+%\subsection{Transforming LeNet: An Illustrative Example}
+%
+%\begin{table}[!t]
+%	\centering
+%	\begin{threeparttable}
+%		\begin{tabular}{lccc}
+%			\hline
+%			{\bf Backbone} & CIFAR & Permuted & CIFAR \\
+%			~operation & 10 & CIFAR-10 & 100 \\
+%			\hline
+%			{\bf LeNet} & \\
+%			~linear layer & \\
+%			~K-matrix layer & \\
+%			~XD (fixed random) & \\
+%			~XD (from scratch) & \\
+%			~~+~offline eval.$^\ast$ & \\
+%			~XD (warm start) & \\
+%			~~+~offline eval.$^\ast$ & \\
+%			\hline
+%			{\bf ResNet-20} & \\
+%			~XD (from scratch) & \\
+%			~~+~offline eval.$^\ast$ & \\
+%			~XD (warm start) & \\
+%			~~+~offline eval.$^\ast$ & \\
+%			\hline
+%		\end{tabular}
+%		\begin{tablenotes}\footnotesize
+%			\item[$\ast$] For CIFAR-100 we transfer operations found on CIFAR-10.
+%		\end{tablenotes}
+%		\caption{\label{tab:cifar}
+%			\normalsize
+%			Comparison of fixed and found operations on CIFAR data using the LeNet and ResNet-20 backbones.
+%			All XD operations used have depth (3,3,3).
+%		}
+%	\end{threeparttable}
+%\end{table}
+%
+%We start our investigation with CIFAR image classification \citep{krizhevsky2009cifar} and the variant where the rows and columns of each image are separately permuted.
+%LeNet \citep{lecun1999lenet}, a network with two convolutional and two fully connected layers, is the first backbone we study;
+%to convert it into a search space we simply replace the convolutions by XD-operations.
+%We compare search over XD-operations to several non-convolutional baselines:
+%linear layers, K-matrix layers (each convolution in each channel is replaced by a K-matrix), and fixed random XD-operations.
+%Searching for XD-operations significantly outperforms all of these baselines, showing that the XD parameterization is a useful constraint on top of linear or K-matrix layers.
+%
+%We make a distinction in Table~\ref{tab:cifar} between ``from scratch" search, in which the K-matrices in XD-operations are initialized to be random orthonormal, and ``warm start" search, which is the approach described in the previous section of initializing XD-operations to match the backbone operations.
+%The purpose of this is to investigate whether we can ``re-discover" convolutions (or the respective ``right" operation in other domains) without knowing about them;
+%as shown in Table~\ref{tab:cifar}, while warm-starting with convolutions does do better on regular images, from-scratch search almost matches convolutions (i.e. the original backbone) on images and in fact does much better on permuted images.
+%Another distinction we make is between evaluating the found operations using the shared weights, which we will be doing in all subsequent sections, and ``offline evaluation" that fixes the found operations but re-initializes and retrains the model weights;
+%this is in-line with the common two-stage NAS approach.
+%We find that offline evaluation performs worse but that the learned operations are still quite effective, including when they are found on CIFAR-10 and used on CIFAR-100.
+%
+%\subsection{Transforming ResNet: A Scaled-Up Example}
+%
+%Next we study the same datasets using the higher performance ResNet-20 architecture \citep{he2016resnet} as a backbone.
+%While we are again able to find better operations than convolutions when using them to initialize search, starting from scratch performs much worse, even on permuted images.
+%This is likely due to the need with this backbone to warmup search by not updating architecture parameters for the first quarter of the training epochs.
+%Thus for subsequent applications we focus on the warm start approach without offline evaluation, although our experiments with LeNet suggest that the alternative is still a viable future direction.
+%
+%Note that we replace both convolutions and skip-connections in the ResNet backbone with XD-operations;
+%this slightly increases the model weight count because XD-operations are by default parameterizable.
+%The choice to do this does not significantly affect performance, and the found operation ignores its model weights (i.e. $\*L\approx\0$), so for simplicity and to preserve the number of model weights we only replace parameterizable operations in the applications below.
