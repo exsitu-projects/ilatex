@@ -42,3 +42,7 @@ body.visualisations-unavailable .annotation-mask:hover {
     cursor: not-allowed;
 }
 
+body.visualisations-disabled .annotation-mask,
+body.visualisations-disabled .annotation-mask:hover {
+    display: none !important;
+}

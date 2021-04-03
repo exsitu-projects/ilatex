@@ -181,4 +181,15 @@ export class WebviewManager {
             this.sendNewVisualisationMetadataFor(model);
         }        
     }
+
+    sendNewGlobalOptions(): void {
+        console.info("📦 Sending new global options to the webview.");
+
+        this.sendMessageIfWebviewIsAvailable({
+            type: CoreToWebviewMessageType.UpdateGlobalOptions,
+            options: {
+                enableVisualisations: this.ilatex.options.enableVisualisations
+            }
+        });
+    }
 }

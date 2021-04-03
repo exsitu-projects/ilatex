@@ -6,6 +6,7 @@ export const enum CoreToWebviewMessageType {
     UpdateVisualisationMetadata = "UpdateVisualisationMetadata",
     UpdatePDF = "UpdatePDF",
     UpdateCompilationStatus = "UpdateCompilationStatus",
+    UpdateGlobalOptions = "UpdateGlobalOptions"
 }
 
 export const enum WebviewToCoreMessageType {
@@ -41,11 +42,19 @@ export interface UpdateCompilationStatusMessage {
     lastCompilationFailed: boolean;
 }
 
+export interface UpdateGlobalOptionsMessage {
+    type: CoreToWebviewMessageType.UpdateGlobalOptions;
+    options: {
+        enableVisualisations: boolean;
+    }
+}
+
 export type CoreToWebviewMessage =
     | UpdateVisualisationContentMessage
     | UpdateVisualisationMetadataMessage
     | UpdatePDFMessage
-    | UpdateCompilationStatusMessage;
+    | UpdateCompilationStatusMessage
+    | UpdateGlobalOptionsMessage;
 
 
 // Specification of each type of message which can be sent by the webview to the core

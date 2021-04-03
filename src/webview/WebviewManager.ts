@@ -1,3 +1,4 @@
+import { CoreToWebviewMessageType, UpdateGlobalOptionsMessage } from "../shared/messenger/messages";
 import { Messenger } from "./Messenger";
 import { PDFManager } from "./pdf/PDFManager";
 import { VisualisationViewManager } from "./visualisations/VisualisationViewManager";
@@ -12,6 +13,21 @@ export class WebviewManager {
         this.pdfManager = new PDFManager(this.messenger);
         this.visualisationViewManager = new VisualisationViewManager(this.messenger);
 
+        this.startHandlingWebviewMessages();
         this.messenger.startHandlingMessages();
+    }
+
+    private updateGlobalOptions(newGlobalOptions: UpdateGlobalOptionsMessage["options"]): void {
+        // Globally enable or disable visualisations
+        this.visualisationViewManager.setVisualisationsGloballyEnabled(newGlobalOptions.enableVisualisations);
+    }
+
+    private startHandlingWebviewMessages(): void {
+        this.messenger.setHandlerFor(
+            CoreToWebviewMessageType.UpdateGlobalOptions,
+            async (message: UpdateGlobalOptionsMessage) => {
+                this.updateGlobalOptions(message.options);
+            }
+        );
     }
 }

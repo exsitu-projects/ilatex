@@ -37,6 +37,7 @@ export class VisualisationViewManager {
     static readonly REQUEST_VISUALISATION_DISPLAY_EVENT = "request-visualisation-display";
     static readonly VISUALISATION_AVAILABILITY_CHANGE_EVENT = "visualisation-availability-change";
     static readonly VISUALISATIONS_ARE_UNAVAILABLE_BODY_CLASS = "visualisations-unavailable";
+    static readonly VISUALISATIONS_ARE_DISABLED_BODY_CLASS = "visualisations-disabled";
     private static readonly AVAILABLE_VISUALISATION_FACTORIES: VisualisationViewFactory[] = [
         new IncludegraphicsViewFactory(),
         new TabularViewFactory(),
@@ -76,6 +77,23 @@ export class VisualisationViewManager {
 
     get hasCurrentlyDisplayedVisualisationView(): boolean {
         return this.currentlyDisplayedVisualisationPopup !== null;
+    }
+
+    setVisualisationsGloballyEnabled(enable: boolean): void {
+        // If visualisations are globally disabled, tag the body element with a dedicated class
+        // and hide the currently displayed visualisation (if any)
+        document.body.classList.toggle(
+            VisualisationViewManager.VISUALISATIONS_ARE_DISABLED_BODY_CLASS, 
+            !enable
+        );
+        
+        // If visualisations have possibly become globally disabled, hide the currently displayed visualisation (if any)
+        if (!enable) {
+            this.hideCurrentlyDisplayedVisualisation();
+        }
+
+        // Signal that the availability of the visualisation may have changed
+        this.emitVisualisationAvailabilityChangeEvent();
     }
 
     private ensureVisualisationDataExistsForCodeMappingId(codeMappingId: number): void {

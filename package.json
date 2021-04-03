@@ -12,18 +12,25 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:ilatex.init"
+		"onCommand:ilatex.initWithVisualisations",
+		"onCommand:ilatex.initWithoutVisualisations"
 	],
 	"main": "./out/extension/core/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "ilatex.init",
-				"title": "Initialise iLaTeX from the document open in the active editor"
+				"command": "ilatex.initWithVisualisations",
+				"title": "Initialise iLaTeX from the document with focus",
+				"enablement": "resourceLangId == latex"
+			},
+			{
+				"command": "ilatex.initWithoutVisualisations",
+				"title": "Initialise iLaTeX from the document with focus (WITHOUT visualisations)",
+				"enablement": "resourceLangId == latex"
 			},
 			{
 				"command": "ilatex.recompile",
-				"title": "Recompile the document open in the active editor with iLaTeX",
+				"title": "Recompile the iLaTeX documents using the document with focus",
 				"enablement": "ilatex:hasActiveInstances == true"
 			}
 		]

@@ -7,10 +7,15 @@ import { SourceFileManager } from "./source-files/SourceFileManager";
 import { CodeMappingManager } from "./code-mappings/CodeMappingManager";
 import { SourceFile } from "./source-files/SourceFile";
 
+export interface InteractiveLatexOptions {
+    enableVisualisations: boolean;
+}
 
 export class InteractiveLatex {
     readonly mainSourceFileUri: vscode.Uri;
     private webviewPanel: vscode.WebviewPanel;
+
+    readonly options: InteractiveLatexOptions;
 
     readonly sourceFileManager: SourceFileManager;
     readonly codeMappingManager: CodeMappingManager;
@@ -19,11 +24,18 @@ export class InteractiveLatex {
     readonly visualisationModelManager: VisualisationModelManager;
     readonly decorationManager: DecorationManager;
 
-    private sourceFileSaveObserverDisposable: vscode.Disposable;
+    // private sourceFileSaveObserverDisposable: vscode.Disposable;
+    private fileSaveObserverDisposable: vscode.Disposable;
 
-    private constructor(mainSourceFileUri: vscode.Uri, webviewPanel: vscode.WebviewPanel) {
+    private constructor(
+        mainSourceFileUri: vscode.Uri,
+        webviewPanel: vscode.WebviewPanel,
+        options: InteractiveLatexOptions
+    ) {
         this.mainSourceFileUri = mainSourceFileUri;
         this.webviewPanel = webviewPanel;
+
+        this.options = options;
 
         this.sourceFileManager = new SourceFileManager(this);
         this.codeMappingManager = new CodeMappingManager(this);
@@ -32,10 +44,14 @@ export class InteractiveLatex {
         this.visualisationModelManager = new VisualisationModelManager(this);
         this.decorationManager = new DecorationManager(this);
         
-        this.sourceFileSaveObserverDisposable =
-            this.sourceFileManager.sourceFileSaveEventEmitter.event(
-                async sourceFile => await this.onSourceFileSave(sourceFile)
-            );
+        // this.sourceFileSaveObserverDisposable =
+        //     this.sourceFileManager.sourceFileSaveEventEmitter.event(
+        //         async sourceFile => await this.onSourceFileSave(sourceFile)
+        //     );
+
+        this.fileSaveObserverDisposable = vscode.workspace.onDidSaveTextDocument(envent => {
+            this.recompileAndUpdate();
+        });
     }
 
     private async init(): Promise<void> {
@@ -49,7 +65,8 @@ export class InteractiveLatex {
         this.visualisationModelManager.dispose();
         this.decorationManager.dispose();
 
-        this.sourceFileSaveObserverDisposable.dispose();
+        // this.sourceFileSaveObserverDisposable.dispose();
+        this.fileSaveObserverDisposable.dispose();
     }
 
     private async onSourceFileSave(sourceFile: SourceFile): Promise<void> {
@@ -60,20 +77,29 @@ export class InteractiveLatex {
     // Recompile the document and update everything
     async recompileAndUpdate(): Promise<void> {
         try {
-            // 1. Recompile the PDF and update it in the webview
+            // 1. Ensure the global options are up-to-date in the webview
+            this.webviewManager.sendNewGlobalOptions();
+
+            // 3. Recompile the PDF and update it in the webview
             await this.pdfManager.recompilePDFAndUpdateWebview();
+
+            // Only perform the next steps if visualisations are globally enabled
+            // TODO: handle this somewhere else?
+            if (!this.options.enableVisualisations) {
+                return;
+            }
             
-            // 2. Update the code mappings from the new code mapping file
+            // 3. Update the code mappings from the new code mapping file
             this.codeMappingManager.updateCodeMappingsFromLatexGeneratedFile();
 
-            // 3. Update the source files
+            // 4. Update the source files
             // TODO: use another way to update source files (not just from code mappings...)
             await this.sourceFileManager.updateSourceFilesFromCodeMappings();
 
-            // 4. Update the visualisations (models + views in the webview)
+            // 5. Update the visualisations (models + views in the webview)
             await this.visualisationModelManager.extractNewModels();
 
-            // 5. Update the decorations in the editor
+            // 6. Update the decorations in the editor
             this.decorationManager.redecorateVisibleEditors();
         }
         catch (error) {
@@ -81,9 +107,13 @@ export class InteractiveLatex {
         }
     }
 
-    static fromMainLatexDocument(mainLatexDocument: vscode.TextDocument, webviewPanel: vscode.WebviewPanel): Promise<InteractiveLatex> {
+    static fromMainLatexDocument(
+        mainLatexDocument: vscode.TextDocument,
+        webviewPanel: vscode.WebviewPanel,
+        options: InteractiveLatexOptions
+    ): Promise<InteractiveLatex> {
         return new Promise(async (resolve, reject) => {
-            const ilatex = new InteractiveLatex(mainLatexDocument.uri, webviewPanel);
+            const ilatex = new InteractiveLatex(mainLatexDocument.uri, webviewPanel, options);
             await ilatex.init();
 
             resolve(ilatex);
