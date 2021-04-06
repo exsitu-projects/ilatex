@@ -33,6 +33,7 @@
 
 [data-visualisation-name="grid layout"] .command-bar .instructions {
     padding: 0 0 0 5px;
+    font-size: 0.8em;
 }
 
 [data-visualisation-name="grid layout"] .row-container-wrapper {
