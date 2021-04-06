@@ -122,40 +122,4 @@ Lorsque l'un d'eux est cliqué, \iLaTeX{} identifie le morceau de code auquel co
 Celui-ci est identifié en comparant l'identifiant attribué à l'annotation du PDF à ceux présents dans le fichier généré lors de la compilation du document.
 
 
-
-\subsection{Évaluation préliminaire}
-Étant donné la variabilité de l'expertise et des besoins de chaque utilisateur de \LaTeX{} (comme en attestent les différents profils des participants interviewés --- voir la {Table \ref{tab:participants}}), une étude quantitative de l'efficacité de \iLaTeX{} (\eg{} vitesse d'édition, nombre d'essais-et-erreurs) ne nous semble pas être très pertinente.
-À l'inverse, une étude plus qualitative --- telle qu'une étude de terrain --- permettrait de mieux comprendre les contextes dans lesquels les RII sont préférées à l'édition du code et de découvrir des utilisations inattendues et des fonctionnalités manquantes.
-Cependant, le contexte sanitaire en place depuis l'émergence de la pandémie de Covid-19 ne nous a pour l'instant pas permis d'organiser une telle évaluation.
-En dépit de cela, une fois les interviews terminées, nous avons toutefois décidé de recueillir les avis des participants sur une vidéo d'une version précoce de \iLaTeX{} afin d'obtenir une première estimation de son potentiel.
-Conscients du risque de biais dus à cette approche, nous avons fait particulièrement attention à ne pas parler du prototype ni de la notion de RII avant la fin de chaque interview.
-
-\subsubsection{Méthodologie}
-Nous avons présenté à chaque participant une vidéo d'un prototype de \iLaTeX{} d'une durée d'environ deux minutes.
-Celle-ci présentait l'interface utilisateur du logiciel et l'utilisation de versions préliminaires des visualisations du code des images et des tableaux (semblables à celles présentées dans cette section).
-La vidéo étant muette, nous expliquions chaque action en voix off à l'aide d'un script.
-Une fois la vidéo terminée, nous avons demandé aux participants ce qu'ils avaient compris du système, s'ils aimeraient l'essayer, et s'il y avait d'autres types d'éléments du PDF ou de morceaux de code \LaTeX{} qu'ils souhaiteraient manipuler d'une façon similaire.
-Ces évaluations ont été enregistrées dans les mêmes conditions que celles des interviews.
-
-\subsubsection{Résultats}
-La majorité des participants ont exprimé des réactions positives concernant la vidéo du prototype : \citeparticipant[P1]{Mais comment t'as codé ça ? C'est trop cool !} ; \citeparticipant[P7]{vend ton truc à Overleaf \elips{} qu'ils le rajoutent !}
-Tous ont indiqué avoir compris le fonctionnement de \iLaTeX{}.
-Plusieurs ont également fait la remarque que cela semblait facile à utiliser : \citeparticipant[P4]{c'est vachement intuitif, \elips{} ça fait référence à des compétences que les gens ont déjà} ; \citeparticipant[P8]{je pense que c'est plus user-friendly que juste modifier le code}.
-Les utilisateurs les plus experts semblent eux aussi enthousiastes à l'idée d'utiliser le système.
-P5 a d'ailleurs insisté sur le fait que \iLaTeX{} ne cherche pas à supprimer l'accès au code (\citeparticipant{si ce n'était pas comme ça je ne me verrais pas interagir avec}), et P11 a reconnu que \iLaTeX{} pourrait \citeparticipant[P11]{m'encourager à utiliser plus d'illustrations et de tableaux}.
-En outre, P4 a souligné le potentiel pédagogique des visualisations : \citeparticipant{si je devais donner un cours sur \LaTeX{}, c'est un outil que j'utiliserais vraiment beaucoup je pense}, car il permet selon elle d'\citeparticipant[P4]{en apprendre un peu plus et un peu plus vite sur le code}.
-
-Certains participants ont suggéré de nouvelles fonctionnalités pour les visualisations existantes (\eg{} sélectionner l'alignement horizontal des cellules d'une colonne de tableau), et plusieurs d'entre eux ont également mentionné qu'ils aimeraient avoir un contrôle plus direct sur les positions et les marges des différents éléments de leurs documents --- motivant ainsi le développement ultérieur de l'environnement \texttt{gridlayout}.
-Quelques participants ont estimé qu'ils n'interagiraient que peu avec les visualisations de code peu compliqué (\eg{} les paramètres de la commande \texttt{includegraphics}), mais qu'ils seraient beaucoup plus intéressés par le système si celui-ci permettait de visualiser le code d'autres types de contenu.
-Les exemples recueillis comprennent les figures composées de plusieurs sous-figures (P4), les molécules créées avec le paquet \texttt{chemfig} (P7), la configuration du style des éléments bibliographiques en éditant directement l'un d'entre eux (P6), et l'édition localisée des longues formules mathématiques (P9).
-En outre, il est intéressant de noter que très peu de participants ont exprimé le souhait de pouvoir interagir avec le PDF dans le but de mettre en forme le document --- allant ainsi dans le sens de la distinction entre RII et WYSIWYG.
-
-
-
-\subsection{Limitations}
-Bien que le prototype fonctionne dans sa forme actuelle, celui-ci souffre de plusieurs limitations qui en font plutôt une preuve de concept.
-D'une part, bien que la grammaire reconnue par l'analyseur syntaxique puisse être facilement étendue pour détecter l'utilisation d'autres commandes ou environnements (\eg{} pour faire une RII de listes implémentées avec les environnement \texttt{itemize} et \texttt{enumerate}), celle-ci ne permet pas de reconnaître certaines constructions (\eg{} les commandes utilisant des chevrons dans les présentations Beamer).
-D'autre part, les trois visualisations que nous avons implémentées sont limitées en terme de fonctionnalités (\eg{} pas de fusion de cellules de tableau) et de robustesse (\eg{} tous les types de colonne ne sont pas supportés).
-
-En outre, une évaluation plus systématique et longitudinale de \iLaTeX{} est nécessaire pour mieux comprendre les apports et les limites des RII pour l'édition de langages de description de document.
-Néanmoins, bien que les avis que nous avons récoltés ne permettent pas de conclure de manière définitive sur l'apport en utilité ou en efficacité de \iLaTeX{}, il mettent en évidence l'intérêt que des utilisateurs de \LaTeX{} semblent porter aux RII --- soulignant l'importance de mener une évaluation plus approfondie d'un tel système.
+\input{sections/evaluation-preliminaire-et-limitations}
