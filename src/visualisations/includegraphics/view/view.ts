@@ -278,6 +278,8 @@ class IncludegraphicsView extends AbstractVisualisationView {
     }
 
     onAfterVisualisationDisplay(): void {
+        super.onAfterVisualisationDisplay();
+
         this.preloadedImageNode.onload = () => {
             this.resizer.display();
             this.cropper.display();
@@ -285,6 +287,8 @@ class IncludegraphicsView extends AbstractVisualisationView {
     }
 
     onBeforeVisualisationRemoval(): void {
+        super.onAfterVisualisationRemoval();
+        
         this.resizer.destroy();
         this.cropper.destroy();
     }

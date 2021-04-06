@@ -399,15 +399,21 @@ class TabularView extends AbstractVisualisationView {
     }
 
     onAfterVisualisationDisplay(): void {
+        super.onAfterVisualisationDisplay();
+        
         this.generateNewHandsontable();
         this.resizeHandsontableContainer();
     }
 
     onBeforeVisualisationRemoval(): void {
+        super.onBeforeVisualisationRemoval();
+        
         this.destroyCurrentHandsontable();
     }
 
     onAfterVisualisationErrorRemoval(): void {
+        super.onAfterVisualisationErrorRemoval();
+        
         // When an error is removed, the table will become visible again
         // In order to ensure it is displayed correctly, this hook is used
         // to force update the dimensions of the table container
@@ -415,6 +421,8 @@ class TabularView extends AbstractVisualisationView {
     }
 
     onAfterPdfResize(): void {
+        super.onAfterPdfResize();
+        
         this.resizeHandsontableContainer();
     }
 }

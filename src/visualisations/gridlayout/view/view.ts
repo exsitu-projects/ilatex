@@ -172,18 +172,26 @@ class GridLayoutView extends AbstractVisualisationView {
     }
 
     onAfterVisualisationDisplay(): void {
+        super.onAfterVisualisationDisplay();
+
         this.grid.onAfterVisualisationDisplay();
     }
 
     onBeforeVisualisationRemoval(): void {
+        super.onBeforeVisualisationRemoval();
+
         this.grid.onBeforeVisualisationRemoval();
     }
 
     onAfterVisualisationErrorRemoval(): void {
+        super.onAfterVisualisationErrorRemoval();
+
         this.grid.resize();
     }
 
     onAfterPdfResize(): void {
+        super.onAfterPdfResize();
+        
         this.grid.resize();
     }
 
