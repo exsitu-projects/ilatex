@@ -149,18 +149,21 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
                 title: "reveal-code-in-editor",
                 handler: async notifiction => {
                     await this.astNode.selectRangeInEditor();
+                    this.logEvent("reveal-code-in-editor");
                 }
             },
             {
                 title: "view-popup-did-open",
                 handler: async notifiction => {
                     this.viewDidOpenEventEmitter.fire(this);
+                    this.logEvent("display-visualisation");
                 }
             },
             {
                 title: "view-popup-did-close",
                 handler: async notifiction => {
                     this.viewDidCloseEventEmitter.fire(this);
+                    this.logEvent("hide-visualisation");
 
                     // Only save the document if the view performed at least one change
                     if (this.viewPerformedUnsavedChanges) {
@@ -204,6 +207,16 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
         this.stopObservingAstNode();
     }
 
+    protected logEvent(event: string): void {
+        const metadata = this.metadata;
+        this.utilities.logEvent({
+            event: event,
+            fileName: metadata.fileName,
+            visualisationUid: metadata.uid,
+            visualisationCodeMappingId: metadata.codeMappingId,
+            visualisationName: metadata.name
+        });
+    }
 
     protected abstract updateContentData(): Promise<void>;
 

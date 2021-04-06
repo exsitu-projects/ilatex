@@ -6,6 +6,7 @@ import { DecorationManager } from "./decorations/DecorationManager";
 import { SourceFileManager } from "./source-files/SourceFileManager";
 import { CodeMappingManager } from "./code-mappings/CodeMappingManager";
 import { SourceFile } from "./source-files/SourceFile";
+import { LogFileManager } from "./logs/LogFileManager";
 
 export interface InteractiveLatexOptions {
     enableVisualisations: boolean;
@@ -17,6 +18,7 @@ export class InteractiveLatex {
 
     readonly options: InteractiveLatexOptions;
 
+    readonly logFileManager: LogFileManager;
     readonly sourceFileManager: SourceFileManager;
     readonly codeMappingManager: CodeMappingManager;
     readonly pdfManager: PDFManager;
@@ -37,6 +39,7 @@ export class InteractiveLatex {
 
         this.options = options;
 
+        this.logFileManager = new LogFileManager(this);
         this.sourceFileManager = new SourceFileManager(this);
         this.codeMappingManager = new CodeMappingManager(this);
         this.pdfManager = new PDFManager(this);
@@ -52,6 +55,8 @@ export class InteractiveLatex {
         this.fileSaveObserverDisposable = vscode.workspace.onDidSaveTextDocument(envent => {
             this.recompileAndUpdate();
         });
+
+        this.logFileManager.logCoreEvent({ event: "started" });
     }
 
     private async init(): Promise<void> {
@@ -64,6 +69,10 @@ export class InteractiveLatex {
         this.webviewManager.dispose();
         this.visualisationModelManager.dispose();
         this.decorationManager.dispose();
+        
+        // Dispose the log file manager last in case it needs to be used to log an error
+        this.logFileManager.logCoreEvent({ event: "disposed" });
+        this.logFileManager.dispose();
 
         // this.sourceFileSaveObserverDisposable.dispose();
         this.fileSaveObserverDisposable.dispose();
@@ -85,26 +94,26 @@ export class InteractiveLatex {
 
             // Only perform the next steps if visualisations are globally enabled
             // TODO: handle this somewhere else?
-            if (!this.options.enableVisualisations) {
-                return;
+            if (this.options.enableVisualisations) {
+                // 3. Update the code mappings from the new code mapping file
+                this.codeMappingManager.updateCodeMappingsFromLatexGeneratedFile();
+
+                // 4. Update the source files
+                // TODO: use another way to update source files (not just from code mappings...)
+                await this.sourceFileManager.updateSourceFilesFromCodeMappings();
+
+                // 5. Update the visualisations (models + views in the webview)
+                await this.visualisationModelManager.extractNewModels();
+
+                // 6. Update the decorations in the editor
+                this.decorationManager.redecorateVisibleEditors();
             }
-            
-            // 3. Update the code mappings from the new code mapping file
-            this.codeMappingManager.updateCodeMappingsFromLatexGeneratedFile();
-
-            // 4. Update the source files
-            // TODO: use another way to update source files (not just from code mappings...)
-            await this.sourceFileManager.updateSourceFilesFromCodeMappings();
-
-            // 5. Update the visualisations (models + views in the webview)
-            await this.visualisationModelManager.extractNewModels();
-
-            // 6. Update the decorations in the editor
-            this.decorationManager.redecorateVisibleEditors();
         }
         catch (error) {
             console.error("An unexpected error occured during the re-compilation/update phase of iLaTeX:", error);
         }
+
+        this.logFileManager.logCoreEvent({ event: "recompiled" });
     }
 
     static fromMainLatexDocument(
