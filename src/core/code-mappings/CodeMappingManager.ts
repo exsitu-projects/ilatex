@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
 import { InteractiveLatex } from "../InteractiveLaTeX";
-import { ExtensionFileReader } from "../utils/FileReader";
+import { ExtensionFileReader } from "../utils/ExtensionFileReader";
 import { CodeMapping } from "./CodeMapping";
 
 export class NoLatexGeneratedMappingFileError {}
