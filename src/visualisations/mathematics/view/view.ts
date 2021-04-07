@@ -226,6 +226,8 @@ class MathematicsView extends AbstractVisualisationView {
             });
 
             // this.completeTypesetMathNodeWithMissingSourceLocationData();
+
+            this.updateTypesetMathNodeScale();
         }
         // If it fails (i.e. throws an exception), display an appropriate error message instead
         catch (error) {
@@ -235,6 +237,28 @@ class MathematicsView extends AbstractVisualisationView {
                     <div class="info">Note that iLaTeX may fail at parsing math code that is actually valid (e.g. if you custom math commands).</div>
                 </div>
             `;
+        }
+    }
+
+    // Ensure the whole formula is visible by scaling it down using CSS
+    // so that the width does not exceed the width of the container
+    private updateTypesetMathNodeScale(): void {
+        // It seems that the first element that has the same width than the complete formula
+        // is the element with the 'base' class within the .katex-html container
+        const typesetMathMaxWidth = this.typesetMathNode.clientWidth;
+        const katexBaseNode = this.typesetMathNode.querySelector(".katex-html .base") as HTMLElement | null;
+        if (!katexBaseNode) {
+            return;
+        }
+
+        const typesetMathRealWidth = katexBaseNode.clientWidth;
+
+        if (typesetMathMaxWidth < typesetMathRealWidth) {
+            const scale = typesetMathMaxWidth / typesetMathRealWidth;
+            katexBaseNode.style.transform = `translateX(${(typesetMathMaxWidth - typesetMathRealWidth) / 2}px) scale(${scale})`;
+        }
+        else {
+            katexBaseNode.style.transform = ``;
         }
     }
 
@@ -393,7 +417,18 @@ class MathematicsView extends AbstractVisualisationView {
         this.updateCompleteMathCodeNode();
     };
 
+    onAfterVisualisationDisplay(): void {
+        super.onAfterVisualisationDisplay();
+        this.updateTypesetMathNodeScale();
+    }
+
+    onAfterPdfResize(): void {
+        super.onAfterPdfResize();
+        this.updateTypesetMathNodeScale();
+    }
+
     onBeforeVisualisationRemoval(): void {
+        super.onBeforeVisualisationRemoval();
         this.stopHandlingEvents();
     }
 
