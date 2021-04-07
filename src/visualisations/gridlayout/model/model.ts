@@ -51,6 +51,7 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
                 handler: async payload => {
                     const { rowIndex, cellIndex } = payload;
                     await this.selectCellContent(rowIndex, cellIndex);
+                    this.logEvent("select-cell-content");
                 }
             },
             {
@@ -58,6 +59,7 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
                 handler: async payload => {
                     const { rowIndex } = payload;
                     await this.createRow(rowIndex);
+                    this.logEvent("create-row");
                 }
             },
             {
@@ -65,6 +67,7 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
                 handler: async payload => {
                     const { rowIndex, cellIndex } = payload;
                     await this.createCell(rowIndex, cellIndex);
+                    this.logEvent("create-cell");
                 }
             },
             {
@@ -75,6 +78,7 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
                         { rowIndex: rowIndex, cellIndex: cellIndex },
                         { rowIndex: targetRowIndex, cellIndex: targetCellIndex }
                     );
+                        this.logEvent("move-cell");
                 }
             },
             {
@@ -82,6 +86,7 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
                 handler: async payload => {
                     const { rowIndex, cellIndex } = payload;
                     await this.deleteCell(rowIndex, cellIndex);
+                    this.logEvent("delete-cell");
                 }
             },
             {
@@ -92,6 +97,10 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
                         [leftCellChange, rightCellChange],
                         isFinalSize
                     );
+                    
+                    if (isFinalSize) {
+                        this.logEvent("resize-cells");
+                    }
                 }
             },
             {
@@ -102,6 +111,10 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
                         [rowAboveChange, rowBelowChange],
                         isFinalSize
                     );
+                    
+                    if (isFinalSize) {
+                        this.logEvent("resize-rows");
+                    }
                 }
             },
         ];

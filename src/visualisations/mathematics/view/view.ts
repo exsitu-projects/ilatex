@@ -327,6 +327,14 @@ class MathematicsView extends AbstractVisualisationView {
         // Since a region of the code might have started or stopped to be hovered,
         // update the math code node in any case
         this.updateCompleteMathCodeNode();
+
+        // Notify the model a math region has been selected
+        this.messenger.sendMessage({
+            type: WebviewToCoreMessageType.NotifyVisualisationModel,
+            visualisationUid: this.modelUid,
+            title: "math-region-selected",
+            notification: {}
+        });
     }
 
     private onCompleteMathCodeFocus(event: FocusEvent) {

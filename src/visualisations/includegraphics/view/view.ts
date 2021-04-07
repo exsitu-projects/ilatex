@@ -81,7 +81,7 @@ class IncludegraphicsView extends AbstractVisualisationView {
             this.resizerContainerNode,
             this.options,
             this.context,
-            isFinalChange => this.processResizerChange(isFinalChange)
+            (changeType, isFinalChange) => this.processResizerChange(changeType, isFinalChange)
         );
     }
 
@@ -92,7 +92,7 @@ class IncludegraphicsView extends AbstractVisualisationView {
             this.options,
             this.context,
             () => { this.updateResizerImage(false); },
-            isFinalChange => this.processCropperChange(isFinalChange)
+            (changeType, isFinalChange) => this.processCropperChange(changeType, isFinalChange)
         );
     }
 
@@ -107,12 +107,12 @@ class IncludegraphicsView extends AbstractVisualisationView {
         }
     }
 
-    private processResizerChange(isFinalChange: boolean): void {
-        this.computeAndSendIncludegraphicsOptions(isFinalChange);
+    private processResizerChange(changeType: string, isFinalChange: boolean): void {
+        this.computeAndSendIncludegraphicsOptions(changeType, isFinalChange);
     }
 
-    private processCropperChange(isFinalChange: boolean): void {
-        this.computeAndSendIncludegraphicsOptions(isFinalChange);
+    private processCropperChange(changeType: string, isFinalChange: boolean): void {
+        this.computeAndSendIncludegraphicsOptions(changeType, isFinalChange);
         this.updateResizerImage();
     }
 
@@ -221,13 +221,14 @@ class IncludegraphicsView extends AbstractVisualisationView {
         return newOptions;
     }
 
-    private sendIncludegraphicsOptions(newOptions: IncludegraphicsOptions, isFinalUpdate: boolean): void {
+    private sendIncludegraphicsOptions(newOptions: IncludegraphicsOptions, changeType: string, isFinalUpdate: boolean): void {
         const message = {
             type: WebviewToCoreMessageType.NotifyVisualisationModel,
             visualisationUid: this.modelUid,
             title: "set-options",
             notification: {
                 newOptions: newOptions,
+                changeType: changeType,
                 isFinalUpdate: isFinalUpdate
             }
         };
@@ -242,9 +243,9 @@ class IncludegraphicsView extends AbstractVisualisationView {
         }
     }
 
-    private computeAndSendIncludegraphicsOptions(isFinalUpdate: boolean): void {
+    private computeAndSendIncludegraphicsOptions(changeType: string, isFinalUpdate: boolean): void {
         const newOptions = this.computeIncludegraphicsOptions();
-        this.sendIncludegraphicsOptions(newOptions, isFinalUpdate);
+        this.sendIncludegraphicsOptions(newOptions, changeType, isFinalUpdate);
     }
 
     render(): HTMLElement {

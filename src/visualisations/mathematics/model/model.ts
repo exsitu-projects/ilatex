@@ -25,11 +25,20 @@ export class MathematicsModel extends AbstractVisualisationModel<EnvironmentNode
             ...super.viewMessageHandlerSpecifications,
 
             {
+                title: "math-region-selected",
+                handler: async payload => {
+                    this.logEvent("math-region-selected");
+                }
+            },
+            {
                 title: "set-math-code",
                 handler: async payload => {
                     const { trimmedMathCode } = payload;
+
                     await this.setNewMathCode(trimmedMathCode);
                     this.registerChangeRequestedByTheView();
+
+                    this.logEvent("set-math-code");
                 }
             }
         ];

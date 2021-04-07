@@ -25,7 +25,7 @@ export class ImageCropper extends ImageEditor {
         initialOptions: IncludegraphicsOptions,
         viewContext: VisualisationViewContext,
         cropperReadyCallback: () => void,
-        changeCallback: (isFinalChange: boolean) => void,
+        changeCallback: (changeType: string, isFinalChange: boolean) => void,
     ) {
         super(imageNode, containerNode, initialOptions, viewContext, changeCallback);
 
@@ -237,11 +237,11 @@ export class ImageCropper extends ImageEditor {
     }
 
     private onCropboxChange(event: Cropper.CropMoveEvent): void {
-        this.notifyChange(false);
+        this.notifyChange("recrop-image", false);
     }
 
     private onCropboxChangeEnd(event: Cropper.CropEndEvent): void {
-        this.notifyChange(true);
+        this.notifyChange("recrop-image", true);
     }
 
     private recropFromOptions(): void {

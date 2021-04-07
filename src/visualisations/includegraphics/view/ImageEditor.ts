@@ -15,14 +15,14 @@ export abstract class ImageEditor {
     protected naturalImageSize: ImageSize;
     protected options: IncludegraphicsOptions;
 
-    private changeCallback: (isFinalChange: boolean) => void;
+    private changeCallback: (changeType: string, isFinalChange: boolean) => void;
 
     constructor(
         imageNode: HTMLImageElement,
         containerNode: HTMLElement,
         initialOptions: IncludegraphicsOptions,
         viewContext: VisualisationViewContext,
-        changeCallback: (isFinalChange: boolean) => void
+        changeCallback: (changeType: string, isFinalChange: boolean) => void
     ) {
         this.viewContext = viewContext;
         this.containerNode = containerNode;
@@ -45,8 +45,8 @@ export abstract class ImageEditor {
         this.onIncludegraphicsOptionsUpdate();
     }
 
-    protected notifyChange(isFinalChange: boolean): void{
-        this.changeCallback(isFinalChange);
+    protected notifyChange(changeType: string, isFinalChange: boolean): void{
+        this.changeCallback(changeType, isFinalChange);
     }
 
     protected static extractNaturalImageSizeFrom(imageNode: HTMLImageElement): ImageSize {

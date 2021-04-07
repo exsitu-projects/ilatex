@@ -35,6 +35,7 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
                 handler: async payload => {
                     const { rowIndex, columnIndex } = payload;
                     await this.selectCellContent(rowIndex, columnIndex);
+                    this.logEvent("select-cell-content");
                 }
             },
             {
@@ -42,6 +43,7 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
                 handler: async payload => {
                     const { rowIndex, columnIndex, newContent } = payload;
                     await this.setCellContent(rowIndex, columnIndex, newContent);
+                    this.logEvent("set-cell-content");
                 }
             },
             {
@@ -49,6 +51,7 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
                 handler: async payload => {
                     const { newRowIndex } = payload;
                     await this.createRow(newRowIndex);
+                    this.logEvent("add-row");
                 }
             },
             {
@@ -56,6 +59,7 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
                 handler: async payload => {
                     const { rowIndex } = payload;
                     await this.deleteRow(rowIndex);
+                    this.logEvent("delete-row");
                 }
             },
             {
@@ -63,6 +67,7 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
                 handler: async payload => {
                     const { oldRowIndex, newRowIndex } = payload;
                     await this.moveRow(oldRowIndex, newRowIndex);
+                    this.logEvent("move-row");
                 }
             },
             {
@@ -70,6 +75,7 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
                 handler: async payload => {
                     const { newColumnIndex } = payload;
                     await this.createColumn(newColumnIndex);
+                    this.logEvent("add-column");
                 }
             },
             {
@@ -77,6 +83,7 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
                 handler: async payload => {
                     const { columnIndex } = payload;
                     await this.deleteColumn(columnIndex);
+                    this.logEvent("delete-column");
                 }
             },
             {
@@ -84,6 +91,7 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
                 handler: async payload => {
                     const { oldColumnIndex, newColumnIndex } = payload;
                     await this.moveColumn(oldColumnIndex, newColumnIndex);
+                    this.logEvent("move-column");
                 }
             },
         ];

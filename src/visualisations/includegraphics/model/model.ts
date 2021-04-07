@@ -54,10 +54,15 @@ export class IncludegraphicsVisualisationModel extends AbstractVisualisationMode
             {
                 title: "set-options",
                 handler: async payload => {
-                    const newRawOptions = payload.newOptions as RawImageOptions;
+                    const { newOptions, changeType, isFinalUpdate } = payload;
 
-                    await this.updateImageOptionParameterUsing(newRawOptions, payload.isFinalUpdate);
+                    const newRawOptions = newOptions as RawImageOptions;
+                    await this.updateImageOptionParameterUsing(newRawOptions, isFinalUpdate);
                     this.registerChangeRequestedByTheView();
+
+                    if (isFinalUpdate) {
+                        this.logEvent(changeType);
+                    }
                 }
             }
         ];

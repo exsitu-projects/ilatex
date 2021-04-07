@@ -23,7 +23,7 @@ export class ImageResizer extends ImageEditor {
         containerNode: HTMLElement,
         initialOptions: IncludegraphicsOptions,
         viewContext: VisualisationViewContext,
-        changeCallback: (isFinalChange: boolean) => void
+        changeCallback: (changeType: string, isFinalChange: boolean) => void
     ) {
         super(imageNode, containerNode, initialOptions, viewContext, changeCallback);
 
@@ -224,7 +224,7 @@ export class ImageResizer extends ImageEditor {
         this.aspectRatio = this.naturalAspectRatio;
         this.resizeTo(this.adaptImageSize(this.imageSize, { force: true }));
 
-        this.notifyChange(true);
+        this.notifyChange("restore-natural-aspect-ratio", true);
     }
 
     private resizeTo(newSize: ImageSize): void {
@@ -268,8 +268,8 @@ export class ImageResizer extends ImageEditor {
                     }
                 },
             })
-            .on("resizemove", () => { this.notifyChange(false); })
-            .on("resizeend", () => { this.notifyChange(true); });
+            .on("resizemove", () => { this.notifyChange("resize-image", false); })
+            .on("resizeend", () => { this.notifyChange("resize-image", true); });
     }
 
     private stopHandlingResizeEvents(): void {
