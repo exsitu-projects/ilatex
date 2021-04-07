@@ -47,6 +47,21 @@ export class SourceFileRange {
         };
     }
 
+    containsPosition(position: SourceFilePosition): boolean {
+        return this.from.isBeforeOrEqual(position)
+            && this.to.isAfterOrEqual(position);
+    }
+    
+    contains(otherRange: SourceFileRange): boolean {
+        return this.containsPosition(otherRange.from)
+            && this.containsPosition(otherRange.to);
+    }
+
+    intersects(otherRange: SourceFileRange): boolean {
+        return this.containsPosition(otherRange.from)
+            || this.containsPosition(otherRange.to);
+    }
+
     with(partialRange: Partial<Record<"from" | "to", SourceFilePosition>>): SourceFileRange {
         return new SourceFileRange(
             partialRange.from ?? this.from,
