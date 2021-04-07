@@ -4,6 +4,7 @@ import { VisualisationModelUID, VisualisationMetadata, VisualisationContent } fr
 import { ASTNode } from "../ast/nodes/ASTNode";
 import { CodeMapping } from "../code-mappings/CodeMapping";
 import { SourceFile } from "../source-files/SourceFile";
+import { SourceFileRange } from "../source-files/SourceFileRange";
 
 export interface VisualisationModel {
     readonly name: string;
@@ -17,6 +18,7 @@ export interface VisualisationModel {
     readonly sourceFile: SourceFile;
     readonly codeMapping: CodeMapping;
     readonly astNode: ASTNode;
+    readonly codeRange: SourceFileRange;
 
     readonly metadata: VisualisationMetadata;
     readonly content: VisualisationContent;

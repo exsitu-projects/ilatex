@@ -5,6 +5,7 @@ import { VisualisationModelUID, VisualisationContent, VisualisationMetadata } fr
 import { ASTNode } from "../ast/nodes/ASTNode";
 import { CodeMapping } from "../code-mappings/CodeMapping";
 import { SourceFile } from "../source-files/SourceFile";
+import { SourceFileRange } from "../source-files/SourceFileRange";
 import { VisualisationModel } from "./VisualisationModel";
 import { VisualisableCodeContext } from "./VisualisationModelProvider";
 import { VisualisationModelUtilities } from "./VisualisationModelUtilities";
@@ -101,6 +102,10 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
 
     get astNode(): T {
         return this.context.astNode;
+    }
+
+    get codeRange(): SourceFileRange {
+        return this.astNode.range;
     }
 
     get metadata(): VisualisationMetadata {
