@@ -8,13 +8,20 @@ import { AtomicSourceFileEditor, SourceFileEdit, SourceFileEditProvider } from "
 
 export class NotInitialisedError {}
 
+export type SourceFileChangeProcessingResult = {
+    processedByAst: boolean;
+    changeIsLoggable: boolean;
+};
+
 export class SourceFile {
     readonly uri: vscode.Uri;
     readonly name: string;
     private latexAst: LatexAST | null;
     private hasUnsavedChanges: boolean;
 
+    // Note: if changes are ignored, they will not be logged either!
     ignoreChanges: boolean;
+    skipChangeLogging: boolean;
 
     private constructor(absolutePath: string) {
         this.uri = vscode.Uri.file(absolutePath);
@@ -23,6 +30,7 @@ export class SourceFile {
         this.hasUnsavedChanges = false;
 
         this.ignoreChanges = false;
+        this.skipChangeLogging = false;
     }
 
     private async init(): Promise<void> {
@@ -123,12 +131,21 @@ export class SourceFile {
         }
     }
 
-    async processChange(change: SourceFileChange): Promise<void> {
+    async processChange(change: SourceFileChange): Promise<SourceFileChangeProcessingResult> {
         this.hasUnsavedChanges = true;
         
         if (this.latexAst && !this.ignoreChanges) {
             await this.latexAst.processSourceFileChange(change);
+            return {
+                processedByAst: true,
+                changeIsLoggable: !this.skipChangeLogging
+            };
         }
+
+        return {
+            processedByAst: false,
+            changeIsLoggable: false
+        };
     }
 
     async processSave(): Promise<void> {

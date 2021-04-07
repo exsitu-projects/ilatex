@@ -24,14 +24,15 @@ export type PartialLogEntry = {
     event: string;
     fileName: string;
 
-    // Details about the visualisation associated with the piece of code affected by the edit 
-    visualisationUid: number;
-    visualisationCodeMappingId: number;
-    visualisationName: number;
-
     // Details about the edit operation
-    editKind: SourceFileChangeKind;
-    editRange: RawSourceFileRange;
+    editKind: string;
+    editRange: string;
+
+    // Optional details about the visualisation associated to
+    // the piece of code affected by the edit (if any)
+    visualisationUid?: number;
+    visualisationCodeMappingId?: number;
+    visualisationName?: number;
 } | {
     source: LogEntrySource.Error;
     event: string;

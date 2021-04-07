@@ -43,6 +43,9 @@ export class AtomicSourceFileEditor {
             await editProvider(this);
         }
 
+        // Do not log changes that originate from the iLaTeX extension
+        this.sourceFile.skipChangeLogging = true;
+
         const success = await editor.edit(editBuilder => {
             for (let edit of this.edits) {
                 edit(editBuilder);
@@ -52,5 +55,7 @@ export class AtomicSourceFileEditor {
         if (!success) {
             console.warn("One of the following edits could not be performed (the whole batch failed):", this.edits);
         }
+
+        this.sourceFile.skipChangeLogging = false;
     }
 }

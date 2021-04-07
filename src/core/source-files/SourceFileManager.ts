@@ -3,6 +3,8 @@ import { CodeMapping } from "../code-mappings/CodeMapping";
 import { InteractiveLatex } from "../InteractiveLaTeX";
 import { SourceFile } from "./SourceFile";
 import { SourceFileChange } from "./SourceFileChange";
+import { SourceFilePosition } from "./SourceFilePosition";
+import { SourceFileRange } from "./SourceFileRange";
 
 
 export class SourceFileManager {
@@ -104,7 +106,35 @@ export class SourceFileManager {
         if (sourceFileInChangedDocument) {
             for (let contentChange of event.contentChanges) {
                 const sourceFileChange = new SourceFileChange(contentChange);
-                await sourceFileInChangedDocument.processChange(sourceFileChange);
+                const changeProcessingResult = await sourceFileInChangedDocument.processChange(sourceFileChange);
+
+                if (changeProcessingResult.changeIsLoggable) {
+                    const editedVisualisationModel = this.ilatex.visualisationModelManager.findModelContainingRange(new SourceFileRange(
+                        SourceFilePosition.fromVscodePosition(sourceFileChange.start),
+                        SourceFilePosition.fromVscodePosition(sourceFileChange.end)
+                    ));
+
+                    let editedVisualisationDataToLog = {};
+                    if (editedVisualisationModel) {
+                        editedVisualisationDataToLog = {
+                            visualisationName: editedVisualisationModel.name,
+                            visualisationUid: editedVisualisationModel.uid,
+                            visualisationCodeMappingId: editedVisualisationModel.codeMapping.id,
+                        };
+                    }
+
+                    this.ilatex.logFileManager.logUserEditEvent({
+                        fileName: sourceFileInChangedDocument.name,
+                        event: "text-edit",
+                        editKind: sourceFileChange.kind.toLowerCase(),
+                        editRange:
+                            `${sourceFileChange.start.line};${sourceFileChange.start.character}` +
+                            `:` +
+                            `${sourceFileChange.end.line};${sourceFileChange.end.character}`,
+
+                        ...editedVisualisationDataToLog
+                    });
+                }
             }
 
             this.sourceFileChangeEventEmitter.fire(sourceFileInChangedDocument);
