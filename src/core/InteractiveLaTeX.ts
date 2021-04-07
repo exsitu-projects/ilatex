@@ -56,7 +56,7 @@ export class InteractiveLatex {
             this.recompileAndUpdate();
         });
 
-        this.logFileManager.logCoreEvent({ event: "started" });
+        this.logFileManager.logCoreEvent({ event: "ilatex-started" });
     }
 
     private async init(): Promise<void> {
@@ -71,7 +71,7 @@ export class InteractiveLatex {
         this.decorationManager.dispose();
         
         // Dispose the log file manager last in case it needs to be used to log an error
-        this.logFileManager.logCoreEvent({ event: "disposed" });
+        this.logFileManager.logCoreEvent({ event: "ilatex-disposed" });
         this.logFileManager.dispose();
 
         // this.sourceFileSaveObserverDisposable.dispose();
@@ -114,7 +114,7 @@ export class InteractiveLatex {
             this.logFileManager.logError({ event: "unexpected-recompilation-error" });
         }
 
-        this.logFileManager.logCoreEvent({ event: "recompiled" });
+        this.logFileManager.logCoreEvent({ event: "ilatex-updated" });
     }
 
     static fromMainLatexDocument(
