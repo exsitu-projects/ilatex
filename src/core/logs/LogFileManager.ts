@@ -26,7 +26,7 @@ export class LogFileManager {
         this.ilatex = ilatex;
 
         this.logEntries = [];
-        this.logFile = LogFile.fromMainSourceFileUri(this.ilatex.mainSourceFileUri);
+        this.logFile = new LogFile(this.ilatex.mainSourceFileUri.path);
     }
 
     log(entry: PartialLogEntry): void {

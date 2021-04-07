@@ -35,12 +35,13 @@ const orderedCsvColumnNames: WriteableLogEntryKeys[] = [
 ];
 
 export class LogFile {
+    private readonly mainSourceFilePath: string;
     private readonly path: string;
     private logFileWriter: FileWriter;
 
-    constructor(path: string) {
-        this.path = path;
-
+    constructor(mainSourceFilePath: string) {
+        this.mainSourceFilePath = mainSourceFilePath;
+        this.path = LogFile.getLogFilePathFromMainSourceFilePath(mainSourceFilePath);
 
         // Note: the existence of the log file must be tested BEFORE creating the file writer,
         // as it will create the file if it does not exist yet!
@@ -69,7 +70,7 @@ export class LogFile {
     // so it can be easily removed to make the file CSV-parse-able!
     private writeFileHeader(): void {
         this.logFileWriter.write(`# This is a log file created by the iLaTeX editor\n`);
-        this.logFileWriter.write(`# created at: ${this.path}\n`);
+        this.logFileWriter.write(`# main source file: ${this.mainSourceFilePath}\n`);
         this.logFileWriter.write(`# created on: ${new Date().toUTCString()} (${Date.now()})\n`);
     }
 
@@ -123,14 +124,10 @@ export class LogFile {
         }
     }
 
-    static fromMainSourceFileUri(mainSourceFileUri: vscode.Uri): LogFile {
-        const mainFilePath = mainSourceFileUri.path;
-        const lastDotIndex = mainFilePath.lastIndexOf(".");
-
-        const logFilePath = mainFilePath
+    private static getLogFilePathFromMainSourceFilePath(mainSourceFilePath: string): string {
+        const lastDotIndex = mainSourceFilePath.lastIndexOf(".");
+        return mainSourceFilePath
             .substring(0, lastDotIndex >= 0 ? lastDotIndex : undefined)
             .concat(".ilatex-logs");
-
-        return new LogFile(logFilePath);
     }
 }
