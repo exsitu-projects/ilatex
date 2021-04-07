@@ -151,10 +151,7 @@ export class SourceFileManager {
                         fileName: sourceFileInChangedDocument.name,
                         event: "text-edit",
                         editKind: sourceFileChange.kind.toLowerCase(),
-                        editRange:
-                            `${sourceFileChange.start.line};${sourceFileChange.start.character}` +
-                            `:` +
-                            `${sourceFileChange.end.line};${sourceFileChange.end.character}`,
+                        editSize: sourceFileChange.size,
 
                         ...editedVisualisationDataToLog
                     });

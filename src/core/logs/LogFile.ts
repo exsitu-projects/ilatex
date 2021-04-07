@@ -14,12 +14,12 @@ const logEntryFieldsToCsvColumnNames: Record<WriteableLogEntryKeys, string> = {
     timestamp: "timestamp",
     fileName: "filename",
 
+    visualisationName: "visualisation-name",
     visualisationUid: "visualisation-uid",
     visualisationCodeMappingId: "visualisation-code-mapping-id",
-    visualisationName: "visualisation-name",
 
     editKind: "edit-kind",
-    editRange: "edit-range"
+    editSize: "edit-size"
 };
 
 const orderedCsvColumnNames: WriteableLogEntryKeys[] = [
@@ -27,11 +27,11 @@ const orderedCsvColumnNames: WriteableLogEntryKeys[] = [
     "event",
     "timestamp",
     "fileName",
+    "visualisationName",
     "visualisationUid",
     "visualisationCodeMappingId",
-    "visualisationName",
     "editKind",
-    "editRange",
+    "editSize",
 ];
 
 export class LogFile {

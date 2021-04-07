@@ -26,7 +26,7 @@ export type PartialLogEntry = {
 
     // Details about the edit operation
     editKind: string;
-    editRange: string;
+    editSize: number;
 
     // Optional details about the visualisation associated to
     // the piece of code affected by the edit (if any)
