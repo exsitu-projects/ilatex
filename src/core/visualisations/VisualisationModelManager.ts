@@ -3,6 +3,7 @@ import { NotifyVisualisationModelMessage } from "../../shared/messenger/messages
 import { VisualisationModelUID } from "../../shared/visualisations/types";
 import { CodeMappingID } from "../code-mappings/CodeMapping";
 import { InteractiveLatex } from "../InteractiveLaTeX";
+import { SourceFileRange } from "../source-files/SourceFileRange";
 import { VisualisationModelExtractor } from "./extractors/VisualisationModelExtractor";
 import { VisualisationModel } from "./VisualisationModel";
 
@@ -48,6 +49,15 @@ export class VisualisationModelManager {
     findModelWithCodeMappingId(id: CodeMappingID): VisualisationModel | undefined {
         return this.models.find(model => model.codeMapping.id === id);
     }
+
+    findModelContainingRange(range: SourceFileRange): VisualisationModel | undefined {
+        return this.models.find(model => model.codeRange.contains(range));
+    }
+
+    findModelIntersectingRange(range: SourceFileRange): VisualisationModel | undefined {
+        return this.models.find(model => model.codeRange.intersects(range));
+    }
+
 
     dispose(): void {
         
