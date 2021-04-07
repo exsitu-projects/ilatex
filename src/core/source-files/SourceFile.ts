@@ -129,6 +129,9 @@ export class SourceFile {
         this.astNodeParsingErrorEventObserverDisposable =
             this.latexAst.parsingErrorEventEmitter.event(parsingError => {
                 this.astNodeParsingErrorEventEmitter.fire(parsingError);
+                vscode.window.showWarningMessage(
+                    `File '${this.name}' could not be parsed by iLaTeX\n(code visualisations will not be available in this file).`
+                );
             });
 
         await this.latexAst.init();
