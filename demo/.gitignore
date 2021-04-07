@@ -13,3 +13,4 @@
 *.pyg
 *.toc
 *.ilatex-mappings
+*.ilatex-logs
