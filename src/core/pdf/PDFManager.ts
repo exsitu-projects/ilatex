@@ -65,6 +65,7 @@ export class PDFManager {
                 // returned by the buildPDF method
                 if (closedTerminal.exitStatus && closedTerminal.exitStatus.code !== 0) {
                     this.lastBuildFailed = true;
+                    this.ilatex.logFileManager.logCoreEvent({ event: "pdf-compilation-failure" });
                     rejectCompilation("LaTeX compilation error");
 
                     if (notifyWebview) {
@@ -73,6 +74,7 @@ export class PDFManager {
                 }
                 else {
                     this.lastBuildFailed = false;
+                    this.ilatex.logFileManager.logCoreEvent({ event: "pdf-compilation-success" });
                     resolveCompilation();
 
                     if (notifyWebview) {
