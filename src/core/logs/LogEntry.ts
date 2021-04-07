@@ -36,6 +36,14 @@ export type PartialLogEntry = {
 } | {
     source: LogEntrySource.Error;
     event: string;
+
+    // Optional file related to the error (if any)
+    fileName?: string;
+
+    // Optional details about the visualisation related to the error (if any)
+    visualisationUid?: number;
+    visualisationCodeMappingId?: number;
+    visualisationName?: number;
 };
 
 export type LogEntry = {

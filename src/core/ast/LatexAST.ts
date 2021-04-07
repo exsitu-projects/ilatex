@@ -22,7 +22,7 @@ export class LatexAST {
     private readonly sourceFile: SourceFile;
     private rootNode: ASTRootNode | null;
 
-    // readonly parsingErrorEventEmitter: vscode.EventEmitter<ASTParsingError>;
+    readonly parsingErrorEventEmitter: vscode.EventEmitter<ASTParsingError>;
 
     private rootNodeObserverDisposable: vscode.Disposable | null;
     
@@ -31,7 +31,7 @@ export class LatexAST {
         this.sourceFile = sourceFile;
         this.rootNode = null;
 
-        // this.parsingErrorEventEmitter = new vscode.EventEmitter();
+        this.parsingErrorEventEmitter = new vscode.EventEmitter();
 
         this.rootNodeObserverDisposable = null;
     }
@@ -78,7 +78,7 @@ export class LatexAST {
         }
         catch (parsingError) {
             console.warn(`The parsing of the AST of ${this.sourceFile.name} failed:`, parsingError);
-            // this.parsingErrorEventEmitter.fire(parsingError);
+            this.parsingErrorEventEmitter.fire(parsingError);
 
             return false;
         }

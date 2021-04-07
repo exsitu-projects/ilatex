@@ -5,6 +5,7 @@ import { SourceFileChange } from "./SourceFileChange";
 import { SourceFileRange } from "../source-files/SourceFileRange";
 import { EditableSection, LightweightSourceFileEditor } from "./LightweightSourceFileEditor";
 import { AtomicSourceFileEditor, SourceFileEdit, SourceFileEditProvider } from "./AtomicSourceFileEditor";
+import { ASTParsingError } from "../ast/ASTParser";
 
 export class NotInitialisedError {}
 
@@ -23,6 +24,10 @@ export class SourceFile {
     ignoreChanges: boolean;
     skipChangeLogging: boolean;
 
+    astNodeParsingErrorEventEmitter: vscode.EventEmitter<ASTParsingError>;
+
+    astNodeParsingErrorEventObserverDisposable: vscode.Disposable | null;
+
     private constructor(absolutePath: string) {
         this.uri = vscode.Uri.file(absolutePath);
         this.name = path.basename(absolutePath);
@@ -31,6 +36,10 @@ export class SourceFile {
 
         this.ignoreChanges = false;
         this.skipChangeLogging = false;
+
+        this.astNodeParsingErrorEventEmitter = new vscode.EventEmitter();
+
+        this.astNodeParsingErrorEventObserverDisposable = null;
     }
 
     private async init(): Promise<void> {
@@ -115,7 +124,13 @@ export class SourceFile {
     }
 
     async parseNewAST(): Promise<void> {
+        this.astNodeParsingErrorEventObserverDisposable?.dispose();
         this.latexAst = new LatexAST(this);
+        this.astNodeParsingErrorEventObserverDisposable =
+            this.latexAst.parsingErrorEventEmitter.event(parsingError => {
+                this.astNodeParsingErrorEventEmitter.fire(parsingError);
+            });
+
         await this.latexAst.init();
     }
 
@@ -151,6 +166,10 @@ export class SourceFile {
     async processSave(): Promise<void> {
         await this.parseNewAST();
         this.hasUnsavedChanges = false;
+    }
+
+    dispose(): void {
+        this.astNodeParsingErrorEventObserverDisposable?.dispose();
     }
 
     static async fromAbsolutePath(absolutePath: string): Promise<SourceFile> {

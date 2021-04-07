@@ -111,6 +111,7 @@ export class InteractiveLatex {
         }
         catch (error) {
             console.error("An unexpected error occured during the re-compilation/update phase of iLaTeX:", error);
+            this.logFileManager.logError({ event: "unexpected-recompilation-error" });
         }
 
         this.logFileManager.logCoreEvent({ event: "recompiled" });

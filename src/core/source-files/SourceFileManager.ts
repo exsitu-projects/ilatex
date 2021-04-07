@@ -14,6 +14,7 @@ export class SourceFileManager {
     readonly sourceFileChangeEventEmitter: vscode.EventEmitter<SourceFile>;
     readonly sourceFileSaveEventEmitter: vscode.EventEmitter<SourceFile>;
 
+    private sourceFilesToParsingErrorObserverDisposables: Map<SourceFile, vscode.Disposable>;
     private textDocumentChangeObserverDisposable: vscode.Disposable;
     private textDocumentSaveObserverDisposable: vscode.Disposable;
 
@@ -23,6 +24,8 @@ export class SourceFileManager {
 
         this.sourceFileChangeEventEmitter = new vscode.EventEmitter();
         this.sourceFileSaveEventEmitter = new vscode.EventEmitter();
+
+        this.sourceFilesToParsingErrorObserverDisposables = new Map();
 
         this.textDocumentChangeObserverDisposable = vscode.workspace.onDidChangeTextDocument(
             async (event) => await this.processTextDocumentChange(event)
@@ -54,8 +57,16 @@ export class SourceFileManager {
     }
 
     dispose() {
+        for (let disposable of this.sourceFilesToParsingErrorObserverDisposables.values()) {
+            disposable.dispose();
+        }
+
         this.textDocumentChangeObserverDisposable.dispose();
         this.textDocumentSaveObserverDisposable.dispose();
+
+        for (let sourceFile of this.sourceFiles) {
+            sourceFile.dispose();
+        }
     }
 
     async saveAllSourceFiles(): Promise<void> {
@@ -64,17 +75,19 @@ export class SourceFileManager {
         );
     }
 
-    // TODO: decide what to do with source files
-    // whose path do not appear in any code mapping anymore:
-    // should they be kept or deleted?
-    // For the moment, no source file is ever removed...
     async updateSourceFilesFromCodeMappings(): Promise<void> {
         const absolutePathsOfCurrentSourceFiles = this.files.map(file => file.uri.path);
         const absolutePathsOfCodeMappings = new Set(
             this.ilatex.codeMappingManager.codeMappings.map(codeMapping => codeMapping.absolutePath)
         );
 
-        // Remove source files whose paths do not appear in the new set of code mappings' paths 
+        // Remove source files whose paths do not appear in the new set of code mappings' paths
+        // Stop observing parsing errors in those files
+        const sourceFilesToRemove = this.files.filter(sourceFile => !absolutePathsOfCodeMappings.has(sourceFile.uri.path));
+        for (let sourceFile of sourceFilesToRemove) {
+            this.sourceFilesToParsingErrorObserverDisposables.delete(sourceFile);
+        }
+
         this.files = this.files.filter(sourceFile => absolutePathsOfCodeMappings.has(sourceFile.uri.path));
 
         // Update source files whose path appear in both the new set of code mappings' paths
@@ -92,6 +105,17 @@ export class SourceFileManager {
 
             const newSourceFile = await SourceFile.fromAbsolutePath(path);
             this.files.push(newSourceFile);
+
+            // Start observing parsing errors in these files
+            this.sourceFilesToParsingErrorObserverDisposables.set(
+                newSourceFile,
+                newSourceFile.astNodeParsingErrorEventEmitter.event(parsingError => {
+                    this.ilatex.logFileManager.logError({
+                        event: "parsing-error",
+                        fileName: newSourceFile.name
+                    });
+                })
+            );
         }
 
         // console.log("New list of source files: ", this.files);
