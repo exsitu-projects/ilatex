@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { MessageHandler } from "../../shared/messenger/AbstractMessenger";
 import { CoreToWebviewMessage, CoreToWebviewMessageType, NotifyVisualisationModelMessage, WebviewToCoreMessage, WebviewToCoreMessageType } from "../../shared/messenger/messages";
+import { SILENT_TASK_ERROR_HANDLER } from "../../shared/tasks/Task";
 import { TaskQueuer } from "../../shared/tasks/TaskQueuer";
 import { InteractiveLatex } from "../InteractiveLaTeX";
 import { ExtensionFileReader } from "../utils/ExtensionFileReader";
@@ -32,8 +33,8 @@ export class WebviewManager {
         this.messenger = new WebviewMessenger(this.webview);
         this.messenger.startHandlingMessages();
 
-        this.incomingMessageDispatchQueuer = new TaskQueuer();
-        this.outgoingMessageQueuer = new TaskQueuer();
+        this.incomingMessageDispatchQueuer = new TaskQueuer(SILENT_TASK_ERROR_HANDLER);
+        this.outgoingMessageQueuer = new TaskQueuer(SILENT_TASK_ERROR_HANDLER);
 
         this.webviewPanelHasBeenDisposed = false;
         this.webviewPanelDidDisposeObserverDisposable = webviewPanel.onDidDispose(() => {
@@ -100,6 +101,10 @@ export class WebviewManager {
 
     dispose(): void {
         this.messenger.stopHandlingMessages();
+            
+        this.incomingMessageDispatchQueuer.clearNextTasks();
+        this.outgoingMessageQueuer.clearNextTasks();
+
         this.webviewPanelDidDisposeObserverDisposable.dispose();
         this.webviewPanelStateChangeObserverDisposable.dispose();
         
