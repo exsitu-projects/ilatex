@@ -50,6 +50,11 @@ export class DecorationManager {
     }
 
     private computeCodeLensesForDocument(document: vscode.TextDocument): vscode.CodeLens[] {
+        // If visualisations are not enabled, do not provide any code lens
+        if (!this.ilatex.options.enableVisualisations) {
+            return [];
+        }
+
         return this.ilatex.visualisationModelManager.models
             .filter(model => model.sourceFile.isRepresentedByDocument(document) && !model.metadata.available)
             .map(model => new vscode.CodeLens(model.astNode.range.asVscodeRange, {
@@ -79,6 +84,11 @@ export class DecorationManager {
     }
 
     private redecorateEditorWithVisualisations(editor: vscode.TextEditor, models: VisualisationModel[]): void {
+        // If visualisations are not enabled, do not decorate any editor
+        if (!this.ilatex.options.enableVisualisations) {
+            return;
+        }
+
         // Individual AST of visualisations should be decorated for debug purposes only
         // const astNodeCollecter = new ASTNodeCollecter();
         // models.forEach(model => model.astNode.syncVisitWith(astNodeCollecter));

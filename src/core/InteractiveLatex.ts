@@ -92,22 +92,18 @@ export class InteractiveLatex {
                 // 3. Recompile the PDF and update it in the webview
                 await this.pdfManager.recompilePDFAndUpdateWebview();
     
-                // Only perform the next steps if visualisations are globally enabled
-                // TODO: handle this somewhere else?
-                if (this.options.enableVisualisations) {
-                    // 3. Update the code mappings from the new code mapping file
-                    this.codeMappingManager.updateCodeMappingsFromLatexGeneratedFile();
-    
-                    // 4. Update the source files
-                    // TODO: use another way to update source files (not just from code mappings...)
-                    await this.sourceFileManager.updateSourceFilesFromCodeMappings();
-    
-                    // 5. Update the visualisations (models + views in the webview)
-                    await this.visualisationModelManager.extractNewModels();
-    
-                    // 6. Update the decorations in the editor
-                    this.decorationManager.redecorateVisibleEditors();
-                }
+                // 3. Update the code mappings from the new code mapping file
+                this.codeMappingManager.updateCodeMappingsFromLatexGeneratedFile();
+
+                // 4. Update the source files
+                // TODO: use another way to update source files (not just from code mappings...)
+                await this.sourceFileManager.updateSourceFilesFromCodeMappings();
+
+                // 5. Update the visualisations (models + views in the webview)
+                await this.visualisationModelManager.extractNewModels();
+
+                // 6. Update the decorations in the editor
+                this.decorationManager.redecorateVisibleEditors();
                 
                 this.logFileManager.logCoreEvent({ event: "ilatex-updated" });
                 this.isUpdating = false;
