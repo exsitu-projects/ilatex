@@ -15,6 +15,10 @@ export class WebviewManager {
     private webview: vscode.Webview;
     private messenger: WebviewMessenger;
 
+    // Asycnhronous queues to manage async message dispatch/sending more easily
+    private incomingMessageDispatchQueuer: TaskQueuer;
+    private outgoingMessageQueuer: TaskQueuer;
+
     private webviewPanelHasBeenDisposed: boolean;
 
     private webviewPanelDidDisposeObserverDisposable: vscode.Disposable;
@@ -28,6 +32,8 @@ export class WebviewManager {
         this.messenger = new WebviewMessenger(this.webview);
         this.messenger.startHandlingMessages();
 
+        this.incomingMessageDispatchQueuer = new TaskQueuer();
+        this.outgoingMessageQueuer = new TaskQueuer();
 
         this.webviewPanelHasBeenDisposed = false;
         this.webviewPanelDidDisposeObserverDisposable = webviewPanel.onDidDispose(() => {
@@ -62,12 +68,10 @@ export class WebviewManager {
         // Dispatch a webview notification to the right visualisation.
         // Since notification handlers can perform asynchronous operations,
         // notification message are queued and dispatched one after the other.
-        const notificationDispatchQueuer = new TaskQueuer();
-
         this.setHandlerFor(
             WebviewToCoreMessageType.NotifyVisualisationModel,
             async (message) => {
-                notificationDispatchQueuer.add(async () => {
+                this.incomingMessageDispatchQueuer.add(async () => {
                     await this.ilatex.visualisationModelManager.dispatchWebviewMessage(
                         message as NotifyVisualisationModelMessage
                     );
@@ -98,6 +102,8 @@ export class WebviewManager {
         this.messenger.stopHandlingMessages();
         this.webviewPanelDidDisposeObserverDisposable.dispose();
         this.webviewPanelStateChangeObserverDisposable.dispose();
+        
+        this.webviewPanel.dispose();
     }
 
     revealWebviewPanel(): void {
@@ -120,7 +126,9 @@ export class WebviewManager {
             return;
         }
 
-        this.messenger.sendMessage(message);
+        this.outgoingMessageQueuer.add(async () => {
+            await this.messenger.sendMessage(message);
+        });
     }
 
     sendNewPDF(): void {

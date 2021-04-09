@@ -25,10 +25,11 @@ export class WebviewMessenger extends AbstractMessenger<
 
     stopHandlingMessages(): void {
         this.messageHandlerDisposable?.dispose();
+        this.messageHandlerDisposable = null;
     }
 
-    sendMessage(message: CoreToWebviewMessage): void {
-        this.webview.postMessage(message);
+    async sendMessage(message: CoreToWebviewMessage): Promise<void> {
+        await this.webview.postMessage(message);
     }
 
 }

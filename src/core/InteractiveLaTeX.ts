@@ -14,7 +14,6 @@ export interface InteractiveLatexOptions {
 
 export class InteractiveLatex {
     readonly mainSourceFileUri: vscode.Uri;
-    private webviewPanel: vscode.WebviewPanel;
 
     readonly options: InteractiveLatexOptions;
 
@@ -35,7 +34,6 @@ export class InteractiveLatex {
         options: InteractiveLatexOptions
     ) {
         this.mainSourceFileUri = mainSourceFileUri;
-        this.webviewPanel = webviewPanel;
 
         this.options = options;
 
