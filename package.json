@@ -32,6 +32,11 @@
 				"command": "ilatex.recompile",
 				"title": "Recompile the iLaTeX documents using the document with focus",
 				"enablement": "ilatex:hasActiveInstances == true"
+			},
+			{
+				"command": "ilatex.stopAllInstances",
+				"title": "Stop every iLaTeX instance that is currently running",
+				"enablement": "ilatex:hasActiveInstances == true"
 			}
 		]
 	},

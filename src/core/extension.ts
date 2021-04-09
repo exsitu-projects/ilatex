@@ -105,6 +105,24 @@ async function tryRecompilingILatexDocumentsUsingActiveEditor(): Promise<void> {
 	}
 }
 
+function stopAllILatexInstances(): void {
+	console.warn(`Stopping the ${rootLatexDocumentPathsToIlatexInstances.size} iLaTeX instances currently running...`);
+
+	// Dispose of any remaining iLaTeX instance
+	for (let ilatex of rootLatexDocumentPathsToIlatexInstances.values()) {
+		try {
+			ilatex.dispose();
+		}
+		catch (error) {
+			console.error(`An error occured while disposing of the iLaTeX instance of file ${path.basename(ilatex.mainSourceFileUri.path)}:`, error);
+		}
+	}
+
+	rootLatexDocumentPathsToIlatexInstances.clear();
+
+	console.warn(`All the iLaTeX instances have now been disposed.`);
+}
+
 export function activate(context: vscode.ExtensionContext): void {
 	context.subscriptions.push(
 		// Commands to initialise iLaTeX with and without interactive visualisations
@@ -120,15 +138,15 @@ export function activate(context: vscode.ExtensionContext): void {
 		// Command to recompile the LaTeX documents associated with the file opened in the current active editor (if any)
 		vscode.commands.registerCommand("ilatex.recompile", async () => {
 			await tryRecompilingILatexDocumentsUsingActiveEditor();
+		}),
+
+		// Command to stop any instance of iLaTeX that is currently running
+		vscode.commands.registerCommand("ilatex.stopAllInstances", async () => {
+			stopAllILatexInstances();
 		})
 	);
 }
 
 export function deactivate(): void {
-	// Dispose of any remaining iLaTeX instance
-	for (let ilatex of rootLatexDocumentPathsToIlatexInstances.values()) {
-		ilatex.dispose();
-	}
-
-	rootLatexDocumentPathsToIlatexInstances.clear();
+	stopAllILatexInstances();
 }
