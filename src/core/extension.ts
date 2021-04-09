@@ -88,7 +88,7 @@ async function tryCreatingNewILatexInstanceFromActiveEditor(context: vscode.Exte
 	}
 }
 
-async function tryRecompilingILatexDocumentsUsingActiveEditor(): Promise<void> {
+function tryRecompilingILatexDocumentsUsingActiveEditor(): void {
 	const activeEditor = vscode.window.activeTextEditor;
 	if (!activeEditor || !activeEditor.document) {
 		return;
@@ -100,7 +100,7 @@ async function tryRecompilingILatexDocumentsUsingActiveEditor(): Promise<void> {
 		});
 
 		if (activeEditorContainsFileFromCurrentInstance) {
-			await ilatexInstance.recompileAndUpdate();
+			ilatexInstance.recompileAndUpdate();
 		}
 	}
 }
@@ -137,7 +137,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
 		// Command to recompile the LaTeX documents associated with the file opened in the current active editor (if any)
 		vscode.commands.registerCommand("ilatex.recompile", async () => {
-			await tryRecompilingILatexDocumentsUsingActiveEditor();
+			tryRecompilingILatexDocumentsUsingActiveEditor();
 		}),
 
 		// Command to stop any instance of iLaTeX that is currently running

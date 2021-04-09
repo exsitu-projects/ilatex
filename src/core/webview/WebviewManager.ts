@@ -84,12 +84,7 @@ export class WebviewManager {
             WebviewToCoreMessageType.SaveAndRecompileRequest,
             async (message) => {
                 await this.ilatex.sourceFileManager.saveAllSourceFiles();
-
-                // TODO: remove this
-                // If the PDF is not already being compiled, rebuild it once the files have been saved
-                if (!this.ilatex.pdfManager.isBuildingPDF) {
-                    await this.ilatex.pdfManager.recompilePDFAndUpdateWebview();
-                }
+                this.ilatex.recompileAndUpdate();
             }
         );
     }

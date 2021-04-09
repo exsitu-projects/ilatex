@@ -5,8 +5,8 @@ import { VisualisationModelManager } from "./visualisations/VisualisationModelMa
 import { DecorationManager } from "./decorations/DecorationManager";
 import { SourceFileManager } from "./source-files/SourceFileManager";
 import { CodeMappingManager } from "./code-mappings/CodeMappingManager";
-import { SourceFile } from "./source-files/SourceFile";
 import { LogFileManager } from "./logs/LogFileManager";
+import { TaskDebouncer } from "../shared/tasks/TaskDebouncer";
 
 export interface InteractiveLatexOptions {
     enableVisualisations: boolean;
@@ -24,6 +24,9 @@ export class InteractiveLatex {
     readonly webviewManager: WebviewManager;
     readonly visualisationModelManager: VisualisationModelManager;
     readonly decorationManager: DecorationManager;
+
+    private updateDebouncer: TaskDebouncer;
+    private isUpdating: boolean;
 
     private fileSaveObserverDisposable: vscode.Disposable;
 
@@ -43,6 +46,9 @@ export class InteractiveLatex {
         this.webviewManager = new WebviewManager(this, webviewPanel);
         this.visualisationModelManager = new VisualisationModelManager(this);
         this.decorationManager = new DecorationManager(this);
+
+        this.updateDebouncer = new TaskDebouncer(5, error => this.processUpdateError(error));
+        this.isUpdating = false;
         
         this.fileSaveObserverDisposable = vscode.workspace.onDidSaveTextDocument(envent => {
             this.recompileAndUpdate();
@@ -69,43 +75,53 @@ export class InteractiveLatex {
         this.fileSaveObserverDisposable.dispose();
     }
 
-    private async onSourceFileSave(sourceFile: SourceFile): Promise<void> {
-        await this.recompileAndUpdate();
+    // Recompile the document and update everything
+    recompileAndUpdate(ignoreIfCurrentlyUpdating: boolean = true): Promise<void> {
+        return new Promise((resolve, reject) => {
+            if (this.isUpdating && ignoreIfCurrentlyUpdating){
+                resolve();
+                return;
+            }
+
+            this.updateDebouncer.add(async () => {
+                this.isUpdating = true;
+    
+                // 1. Ensure the global options are up-to-date in the webview
+                this.webviewManager.sendNewGlobalOptions();
+    
+                // 3. Recompile the PDF and update it in the webview
+                await this.pdfManager.recompilePDFAndUpdateWebview();
+    
+                // Only perform the next steps if visualisations are globally enabled
+                // TODO: handle this somewhere else?
+                if (this.options.enableVisualisations) {
+                    // 3. Update the code mappings from the new code mapping file
+                    this.codeMappingManager.updateCodeMappingsFromLatexGeneratedFile();
+    
+                    // 4. Update the source files
+                    // TODO: use another way to update source files (not just from code mappings...)
+                    await this.sourceFileManager.updateSourceFilesFromCodeMappings();
+    
+                    // 5. Update the visualisations (models + views in the webview)
+                    await this.visualisationModelManager.extractNewModels();
+    
+                    // 6. Update the decorations in the editor
+                    this.decorationManager.redecorateVisibleEditors();
+                }
+                
+                this.logFileManager.logCoreEvent({ event: "ilatex-updated" });
+                this.isUpdating = false;
+
+                resolve();
+            });
+        });
     }
 
-    // TODO: use a queue
-    // Recompile the document and update everything
-    async recompileAndUpdate(): Promise<void> {
-        try {
-            // 1. Ensure the global options are up-to-date in the webview
-            this.webviewManager.sendNewGlobalOptions();
+    private processUpdateError(error: any): void {
+        console.error("An unexpected error occured during the re-compilation/update phase of iLaTeX:", error);
+        this.logFileManager.logError({ event: "unexpected-recompilation-error" });
 
-            // 3. Recompile the PDF and update it in the webview
-            await this.pdfManager.recompilePDFAndUpdateWebview();
-
-            // Only perform the next steps if visualisations are globally enabled
-            // TODO: handle this somewhere else?
-            if (this.options.enableVisualisations) {
-                // 3. Update the code mappings from the new code mapping file
-                this.codeMappingManager.updateCodeMappingsFromLatexGeneratedFile();
-
-                // 4. Update the source files
-                // TODO: use another way to update source files (not just from code mappings...)
-                await this.sourceFileManager.updateSourceFilesFromCodeMappings();
-
-                // 5. Update the visualisations (models + views in the webview)
-                await this.visualisationModelManager.extractNewModels();
-
-                // 6. Update the decorations in the editor
-                this.decorationManager.redecorateVisibleEditors();
-            }
-        }
-        catch (error) {
-            console.error("An unexpected error occured during the re-compilation/update phase of iLaTeX:", error);
-            this.logFileManager.logError({ event: "unexpected-recompilation-error" });
-        }
-
-        this.logFileManager.logCoreEvent({ event: "ilatex-updated" });
+        this.isUpdating = false;
     }
 
     static fromMainLatexDocument(
