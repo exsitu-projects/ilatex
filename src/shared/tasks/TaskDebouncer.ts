@@ -1,16 +1,24 @@
-import { Task } from "./Task";
+import { Task, TaskError, TaskErrorHandler } from "./Task";
+
+const defaultTaskErrorHandler = (error: TaskError) => {
+    console.error("An error occured while running a task in a debouncer:", error);
+};
 
 export class TaskDebouncer {
     private nextTask: Task | null;
     private timeout: ReturnType<typeof setTimeout> | null;
     private isRunningTask: boolean;
     private waitingTime: number; // milliseconds
+
+    private taskErrorHandler: TaskErrorHandler;
     
-    constructor(waitingTime: number) {
+    constructor(waitingTime: number, errorHandler?: TaskErrorHandler) {
         this.nextTask = null;
         this.timeout = null;
         this.isRunningTask = false;
         this.waitingTime = waitingTime;
+
+        this.taskErrorHandler = errorHandler ?? defaultTaskErrorHandler;
     }
 
     add(task: Task): void {
@@ -26,6 +34,10 @@ export class TaskDebouncer {
         }
     }
 
+    clearNextTask(): void {
+        this.nextTask = null;
+    }
+
     private runTask(task: Task): void {
         this.timeout = setTimeout(async () => {
             this.isRunningTask = true;
@@ -33,13 +45,17 @@ export class TaskDebouncer {
                 await task();
             }
             catch (error) {
-                console.error("An error occured while running a task in a debouncer:", error);
+                this.taskErrorHandler(error);
             }
             this.isRunningTask = false;
-
             this.timeout = null;
-            if (this.nextTask) {
-                this.runTask(this.nextTask);
+
+            // Save a reference to nextTask now to avoid the situation
+            // where it exists during the test but not within the block
+            // because an async operation called clearNextTask()
+            const nextTask = this.nextTask;
+            if (nextTask) {
+                this.runTask(nextTask);
                 this.nextTask = null;
             }
         }, this.waitingTime);

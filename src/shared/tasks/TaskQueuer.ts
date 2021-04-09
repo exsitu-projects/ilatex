@@ -1,12 +1,20 @@
-import { Task } from "./Task";
+import { Task, TaskError, TaskErrorHandler } from "./Task";
+
+const defaultTaskErrorHandler = (error: TaskError) => {
+    console.error("An error occured while running a task in a queuer:", error);
+};
 
 export class TaskQueuer {
     private queue: Array<Task>;
     private isRunningTask: boolean;
+
+    private taskErrorHandler: TaskErrorHandler;
     
-    constructor() {
+    constructor(errorHandler?: TaskErrorHandler) {
         this.queue = [];
         this.isRunningTask = false;
+
+        this.taskErrorHandler = errorHandler ?? defaultTaskErrorHandler;
     }
 
     add(...tasks: Task[]): void {
@@ -19,23 +27,27 @@ export class TaskQueuer {
         }
     }
 
+    clearNextTasks(): void {
+        this.queue = [];
+    }
+
     private async runAllTasks(): Promise<void> {
-        if (this.queue.length === 0) {
-            return;
-        }
-
-        this.isRunningTask = true;
-
+        // Immediately save a reference to nextTask to avoid the situation
+        // where it exists during the test but not within the block
+        // because an async operation called clearNextTasks()
         const nextTask = this.queue.shift();
-        try {
-            await nextTask!();
-        }
-        catch (error) {
-            console.error("An error occured while running a task in a queuer:", error);
-        }
+        if (nextTask) {
+            this.isRunningTask = true;
 
-        await this.runAllTasks();
+            try {
+                await nextTask!();
+            }
+            catch (error) {
+                this.taskErrorHandler(error);
+            }
 
-        this.isRunningTask = false;
+            await this.runAllTasks();
+            this.isRunningTask = false;
+        }
     }
 }
