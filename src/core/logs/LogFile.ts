@@ -1,4 +1,3 @@
-import * as vscode from "vscode";
 import * as fs from "fs";
 import { LogEntry } from "./LogEntry";
 import { FileWriter, FileWriterMode } from "../utils/FileWriter";

@@ -25,7 +25,6 @@ export class InteractiveLatex {
     readonly visualisationModelManager: VisualisationModelManager;
     readonly decorationManager: DecorationManager;
 
-    // private sourceFileSaveObserverDisposable: vscode.Disposable;
     private fileSaveObserverDisposable: vscode.Disposable;
 
     private constructor(
@@ -45,11 +44,6 @@ export class InteractiveLatex {
         this.visualisationModelManager = new VisualisationModelManager(this);
         this.decorationManager = new DecorationManager(this);
         
-        // this.sourceFileSaveObserverDisposable =
-        //     this.sourceFileManager.sourceFileSaveEventEmitter.event(
-        //         async sourceFile => await this.onSourceFileSave(sourceFile)
-        //     );
-
         this.fileSaveObserverDisposable = vscode.workspace.onDidSaveTextDocument(envent => {
             this.recompileAndUpdate();
         });
@@ -72,7 +66,6 @@ export class InteractiveLatex {
         this.logFileManager.logCoreEvent({ event: "ilatex-disposed" });
         this.logFileManager.dispose();
 
-        // this.sourceFileSaveObserverDisposable.dispose();
         this.fileSaveObserverDisposable.dispose();
     }
 

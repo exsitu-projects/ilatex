@@ -1,4 +1,3 @@
-import { any } from "parsimmon";
 import { LatexLength } from "../../shared/latex-length/LatexLength";
 import { ParameterAssignmentNode } from "../ast/nodes/ParameterAssignmentNode";
 import { ParameterNode } from "../ast/nodes/ParameterNode";

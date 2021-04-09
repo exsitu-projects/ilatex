@@ -23,10 +23,6 @@ export class SourceFileRange {
     constructor(from: SourceFilePosition, to: SourceFilePosition) {
         this.from = from;
         this.to = to;
-
-        // this.changeBeforeRangeEventEmitter = new vscode.EventEmitter();
-        // this.changeWithinRangeEventEmitter = new vscode.EventEmitter();
-        // this.changeAcrossRangeEventEmitter = new vscode.EventEmitter();
     }
 
     get isSingleLine(): boolean {

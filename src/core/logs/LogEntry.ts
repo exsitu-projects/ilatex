@@ -1,6 +1,3 @@
-import { RawSourceFileRange } from "../../shared/source-files/types";
-import { SourceFileChangeKind } from "../source-files/SourceFileChange";
-
 export const enum LogEntrySource {
     CoreEvent = "core",
     VisualisationEvent = "visualisation",
