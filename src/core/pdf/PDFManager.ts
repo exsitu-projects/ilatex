@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
-import { InteractiveLatex } from "../InteractiveLaTeX";
+import { InteractiveLatex } from "../InteractiveLatex";
 
 export class PDFManager {
     private ilatex: InteractiveLatex;

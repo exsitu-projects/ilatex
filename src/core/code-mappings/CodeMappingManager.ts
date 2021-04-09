@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import { InteractiveLatex } from "../InteractiveLaTeX";
+import { InteractiveLatex } from "../InteractiveLatex";
 import { ExtensionFileReader } from "../utils/ExtensionFileReader";
 import { CodeMapping } from "./CodeMapping";
 

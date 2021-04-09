@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { InteractiveLatex } from "./InteractiveLaTeX";
+import { InteractiveLatex } from "./InteractiveLatex";
 
 // Map from root LaTeX document paths to their iLaTeX instances
 // Note: there must be at most one iLaTeX instqnce per root

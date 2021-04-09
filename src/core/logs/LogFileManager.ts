@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { InteractiveLatex } from "../InteractiveLaTeX";
+import { InteractiveLatex } from "../InteractiveLatex";
 import { LogEntry, LogEntrySource, PartialLogEntry } from "./LogEntry";
 import { LogFile } from "./LogFile";
 

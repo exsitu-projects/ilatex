@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { ArrayMap } from "../../shared/utils/ArrayMap";
 import { ASTNodeCollecter } from "../ast/visitors/ASTNodeCollecter";
-import { InteractiveLatex } from "../InteractiveLaTeX";
+import { InteractiveLatex } from "../InteractiveLatex";
 import { VisualisationModel } from "../visualisations/VisualisationModel";
 import { textDecorations } from "./text-decorations";
 

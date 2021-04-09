@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { CodeMapping } from "../code-mappings/CodeMapping";
-import { InteractiveLatex } from "../InteractiveLaTeX";
+import { InteractiveLatex } from "../InteractiveLatex";
 import { SourceFile } from "./SourceFile";
 import { SourceFileChange } from "./SourceFileChange";
 import { SourceFilePosition } from "./SourceFilePosition";

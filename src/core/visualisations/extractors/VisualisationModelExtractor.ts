@@ -6,7 +6,7 @@ import { MathematicsVisualisationModelProvider } from "../../../visualisations/m
 import { TabularVisualisationModelProvider } from "../../../visualisations/tabular/model/provider";
 import { ASTNode } from "../../ast/nodes/ASTNode";
 import { CodeMapping, CodeMappingID } from "../../code-mappings/CodeMapping";
-import { InteractiveLatex } from "../../InteractiveLaTeX";
+import { InteractiveLatex } from "../../InteractiveLatex";
 import { SourceFile } from "../../source-files/SourceFile";
 import { SourceFilePosition } from "../../source-files/SourceFilePosition";
 import { VisualisationModel } from "../VisualisationModel";

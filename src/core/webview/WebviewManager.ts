@@ -3,7 +3,7 @@ import { MessageHandler } from "../../shared/messenger/AbstractMessenger";
 import { CoreToWebviewMessage, CoreToWebviewMessageType, NotifyVisualisationModelMessage, WebviewToCoreMessage, WebviewToCoreMessageType } from "../../shared/messenger/messages";
 import { SILENT_TASK_ERROR_HANDLER } from "../../shared/tasks/Task";
 import { TaskQueuer } from "../../shared/tasks/TaskQueuer";
-import { InteractiveLatex } from "../InteractiveLaTeX";
+import { InteractiveLatex } from "../InteractiveLatex";
 import { ExtensionFileReader } from "../utils/ExtensionFileReader";
 import { VisualisationModel } from "../visualisations/VisualisationModel";
 import { WebviewMessenger } from "./WebviewMessenger";

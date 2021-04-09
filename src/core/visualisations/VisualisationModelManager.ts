@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { NotifyVisualisationModelMessage } from "../../shared/messenger/messages";
 import { VisualisationModelUID } from "../../shared/visualisations/types";
 import { CodeMappingID } from "../code-mappings/CodeMapping";
-import { InteractiveLatex } from "../InteractiveLaTeX";
+import { InteractiveLatex } from "../InteractiveLatex";
 import { SourceFileRange } from "../source-files/SourceFileRange";
 import { VisualisationModelExtractor } from "./extractors/VisualisationModelExtractor";
 import { VisualisationModel } from "./VisualisationModel";

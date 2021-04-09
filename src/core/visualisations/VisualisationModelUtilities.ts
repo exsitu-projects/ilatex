@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { InteractiveLatex } from "../InteractiveLaTeX";
+import { InteractiveLatex } from "../InteractiveLatex";
 import { VisualisationEventLogEntryData } from "../logs/LogFileManager";
 
 export class VisualisationModelUtilities {
