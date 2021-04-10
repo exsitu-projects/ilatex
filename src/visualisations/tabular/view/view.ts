@@ -184,22 +184,18 @@ class TabularView extends AbstractVisualisationView {
             },
 
             afterCreateRow(index, amount, source) {
-                console.log("Create row at index", index);
                 self.addDocumentRow(index);
             },
 
             afterCreateCol(index, amount, source) {
-                console.log("Create col at index", index);
                 self.addDocumentColumn(index);
             },
 
             afterRemoveRow(index, amount, source) {
-                console.log("Remove row at index", index);
                 self.deleteDocumentRow(index);
             },
 
             afterRemoveCol(index, amount, source) {
-                console.log("Remove col at index", index);
                 self.deleteDocumentColumn(index);
             }
         };

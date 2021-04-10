@@ -178,7 +178,7 @@ export class TabularVisualisationModel extends AbstractVisualisationModel<Enviro
     protected async updateContentData(): Promise<void> {
         try {
             this.grid = await Grid.from(this.astNode);
-            console.log("New grid model:", this.grid);
+            // console.log("New grid model:", this.grid);
 
             this.contentUpdateEndEventEmitter.fire(true);
         }

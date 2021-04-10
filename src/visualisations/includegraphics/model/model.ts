@@ -147,7 +147,7 @@ export class IncludegraphicsVisualisationModel extends AbstractVisualisationMode
             );
             this.contentUpdateEndEventEmitter.fire(true);
 
-            console.log("New image model:", this.image);
+            // console.log("New image model:", this.image);
         }
         catch (error) {
             console.log(`The content data update of the visualisation with UID ${this.uid} (${this.name}) failed.`);
