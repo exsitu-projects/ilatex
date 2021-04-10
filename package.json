@@ -58,6 +58,7 @@
 		"build-webview": "rollup -c",
 		"watch-core": "tsc --build --watch ./",
 		"watch-webview": "rollup -cw",
+		"package": "vsce package -o ilatex.vsix",
 		"clean": "rm -rf out"
 	},
 	"devDependencies": {
