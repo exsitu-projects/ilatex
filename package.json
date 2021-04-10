@@ -41,8 +41,17 @@
 				"title": "Destroy all the iLaTeX documents",
 				"enablement": "ilatex:hasActiveInstances == true"
 			}
+		],
+		"snippets": [
+			{
+				"language": "latex",
+				"path": "./snippets/ilatex.json"
+			}
 		]
 	},
+	"extensionDependencies": [
+		"torn4dom4n.latex-support"
+	],
 	"scripts": {
 		"lint": "eslint src --ext ts",
 		"build-core": "tsc --build ./",

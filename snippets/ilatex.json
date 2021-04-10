@@ -1,0 +1,22 @@
+{
+	"ilatex.iincludegraphics": {
+		"prefix": "\\iincludegraphics",
+		"body": "\\iincludegraphics[width=${2:\\linewidth}]{$1}$0",
+		"description": "The \\iincludegraphics command."
+    },
+    "ilatex.imaths": {
+		"prefix": "\\begin{imaths}",
+		"body": "\\begin{imaths}\n\t${0:a^b + b^2 = c^2}\n\\end{imaths}\n",
+		"description": "The imaths environment."
+    },
+    "ilatex.itabular": {
+		"prefix": "\\begin{itabular}",
+		"body": "\\begin{itabular}{ll}\n\t${0:foo} & bar \\\\\\\n\tfoo & bar\n\\end{itabular}\n",
+		"description": "The itabular environment."
+    },
+    "ilatex.gridlayout": {
+		"prefix": "\\begin{gridlayout}",
+		"body": "\\begin{gridlayout}{\\linewidth}{8cm}\n\t\\begin{row}{0.5}\n\t\t\\begin{cell}{0.5}\n\t\t\t${0:foo}\n\t\t\\end{cell}\n\t\t\\begin{cell}{0.4}\n\t\t\tbar\n\t\t\\end{cell}\n\t\\end{row}\n\t\\begin{row}{0.5}\n\t\t\\begin{cell}{0.5}\n\t\t\tfoo\n\t\t\\end{cell}\n\t\t\\begin{cell}{0.5}\n\t\t\tbar\n\t\t\\end{cell}\n\t\\end{row}\n\\end{gridlayout}\n",
+		"description": "The gridlayout environment."
+    }
+}
