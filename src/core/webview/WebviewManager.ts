@@ -103,7 +103,9 @@ export class WebviewManager {
         this.webviewPanelDidDisposeObserverDisposable.dispose();
         this.webviewPanelStateChangeObserverDisposable.dispose();
         
-        this.webviewPanel.dispose();
+        if (!this.webviewPanelHasBeenDisposed) {
+            this.webviewPanel.dispose();
+        }
     }
 
     revealWebviewPanel(): void {

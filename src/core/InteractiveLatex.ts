@@ -120,16 +120,20 @@ export class InteractiveLatex {
         this.isUpdating = false;
     }
 
-    static fromMainLatexDocument(
-        mainLatexDocument: vscode.TextDocument,
+    static fromMainLatexFileAt(
+        uri: vscode.Uri,
         webviewPanel: vscode.WebviewPanel,
         options: InteractiveLatexOptions
     ): Promise<InteractiveLatex> {
         return new Promise(async (resolve, reject) => {
-            const ilatex = new InteractiveLatex(mainLatexDocument.uri, webviewPanel, options);
-            await ilatex.init();
-
-            resolve(ilatex);
+            try {
+                const ilatex = new InteractiveLatex(uri, webviewPanel, options);
+                await ilatex.init();
+                resolve(ilatex);
+            }
+            catch (error) {
+                reject(error);
+            }
         });
     }
 }

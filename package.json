@@ -1,7 +1,7 @@
 {
 	"name": "interactive-latex",
-	"displayName": "InteractiveLaTeX",
-	"description": "Interactive visualisations for LaTeX documents.",
+	"displayName": "i-LaTeX",
+	"description": "Interactive code visualisations for LaTeX documents.",
 	"version": "0.0.1",
 	"publisher": "exsitu",
 	"private": true,
@@ -12,30 +12,33 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:ilatex.initWithVisualisations",
-		"onCommand:ilatex.initWithoutVisualisations"
+		"onStartupFinished"
 	],
 	"main": "./out/extension/core/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "ilatex.initWithVisualisations",
-				"title": "Initialise iLaTeX from the document with focus",
+				"command": "ilatex.showDocumentCreationMenu",
+				"title": "Display a menu to choose how to create a new iLaTeX document"
+			},
+			{
+				"command": "ilatex.createDocumentFromActiveEditor",
+				"title": "Create an iLaTeX document from the active editor",
 				"enablement": "resourceLangId == latex"
 			},
 			{
-				"command": "ilatex.initWithoutVisualisations",
-				"title": "Initialise iLaTeX from the document with focus (WITHOUT visualisations)",
+				"command": "ilatex.createDocumentFromActiveEditorWithoutVisualisations",
+				"title": "Create an iLaTeX document from the active editor (disable visualisations)",
 				"enablement": "resourceLangId == latex"
 			},
 			{
-				"command": "ilatex.recompile",
-				"title": "Recompile the iLaTeX documents using the document with focus",
+				"command": "ilatex.recompileDocumentsUsingActiveEditor",
+				"title": "Recompile the iLaTeX documents that use the file in the active editor",
 				"enablement": "ilatex:hasActiveInstances == true"
 			},
 			{
-				"command": "ilatex.stopAllInstances",
-				"title": "Stop every iLaTeX instance that is currently running",
+				"command": "ilatex.destroyAllDocuments",
+				"title": "Destroy all the iLaTeX documents",
 				"enablement": "ilatex:hasActiveInstances == true"
 			}
 		]
