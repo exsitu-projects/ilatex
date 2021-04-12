@@ -1,17 +1,13 @@
 \documentclass[11pt, a4paper]{article}
 \input{preamble}
 
-% These two packages are required for iLaTeX to work!
+% These two packages are required for iLaTeX to work:
 \usepackage{ilatex}
 \usepackage{gridlayout}
 
 \begin{document}
 
 \makedoctitle{Introduction to \iLaTeX{}}
-\vfill
-\tableofcontents
-% \newpage
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% START OF CONTENT
 
@@ -40,84 +36,39 @@ In case of doubt of whether you can or should use IIR for the current task, plea
 
 
 
-\section{Usage of \iLaTeX{}}
-In order to use an IIR, two steps are required:
-\begin{enumerate}[noitemsep]
-    \item the IIR must be \emph{created} from a piece of visualisable code by \iLaTeX{};
-    \item the IIR must be \emph{displayed} by the user.
-\end{enumerate}
-
-Each step is explained in more details below.
-
-\subsection{Creating an IIR}
+\section{General usage of \iLaTeX{}}
 \iLaTeX{} will automatically attempt to find all pieces of visualisable code in your document and to create an IIR for every of them.
-Visualisable code is detected by the usage of special \LaTeX{} commands and environments that are known to be visualisable by \iLaTeX{}.
-The detail of every command and environment you can use to create an IIR will be explained later in this document.
+Visualisable code is detected by the usage of \textbf{special \LaTeX{} commands and environments} that are known to be visualisable by \iLaTeX{}. They will be explained in more details in the next section.
 
-These special commands and environments are provided by special \LaTeX{} packages named \texttt{ilatex} and \texttt{gridlayout}.
-They must be included in the preamble of yout document (\ie before the \verb|\begin{document}| command).
-In fact, if you check the first lines of this file, you will notice they have already been included for you. That will be the case in every \LaTeX{} file provided to you in this study.
-If you notice or believe that they are missing, please notify the investigator.
+Most of the time, the IIR associated to a PDF element with a \textbf{blue halo} can be displayed by clicking on it.
+In some situations however, an IIR may be \textbf{disabled}. In this case, you may encounter the following visuals:
 
-\begin{warning}
-    When you edit the code of the document, \iLaTeX{} keeps track of the start and the end of every piece of visualisable code in the document.
-    However, in some situations, \iLaTeX{} may be unable to understand the syntax of your code, or it may loose track of a piece of visualisable code already bound to an IIR.
-    
-    In particular, the latter is likely to happen if you edit a range of the document that is both within and outside the range of a visualisable piece of code (\eg delete it, replace it by pasted text).
-    
-    When it happens, \iLaTeX{} will show you it lost track of a piece of visualisable code by highlighting this piece of code in red.
-    You have two options to fix the problem:
-    
-    \begin{itemize}
-        \item \textbf{In case of a syntax error} (\eg a curly bracket ``\verb|{|'' that has no matching closing bracket ``\verb|}|''), you can edit the code to fix it, and \iLaTeX{} will remove the red highlighting as soon as the syntax becomes valid again.
-        
-        \item \textbf{Otherwise}, you should recompile the document to force \iLaTeX{} to re-detect all the visualisable pieces of code and re-create all IIRs.
-        This can be done by clicking the message displayed above the piece of code highlighted in red, by clicking the ``Recompile'' button displayed on top of the PDF, or by saving the document.
-    \end{itemize}
-\end{warning}
+\newpage
+\begin{minipage}[t][2.5cm][c]{0.45\textwidth}
+    \includegraphics[width=\textwidth]{img/disabled-table.png}
+\end{minipage}
+\hspace{0.05\textwidth}
+\begin{minipage}[t][2.5cm][c]{0.5\textwidth}
+    A \textbf{grey halo} means the IIR is disabled: it cannot be clicked.
+    It happens (1) every time the document is \textbf{compiling} or (2) when the \textbf{compilation fails}.
+\end{minipage}
+\begin{minipage}[t][2.5cm][c]{0.45\textwidth}
+    \includegraphics[width=\textwidth]{img/syntax-error-in-visualisation.png}
+\end{minipage}
+\hspace{0.05\textwidth}
+\begin{minipage}[t][2.5cm][c]{0.5\textwidth}
+    If you edit visualisable code \textbf{while its IIR is displayed}, \iLaTeX{} may (1) fail at \textbf{parsing your code} or (2) \textbf{loose track} of the code.
+    In this case, either fix the syntax or recompile \mbox{the document} to force \iLaTeX{} to re-detect every piece of \mbox{visualisable code}.
+\end{minipage}
 
-If you are unable to make \iLaTeX{} recognise a piece of code that should be visualisable, feel free to ask the investigator for help!
-
-
-\subsection{Displaying an IIR}
-
-In addition to being associated to a IIR, each piece of visualisable code is associated to an element in the PDF (the element created from this piece of code).
-Every such element will be \textbf{surrounded by a blue halo} in the PDF viewer of \iLaTeX{}, that can be clicked to display the IIR.
-
-Depending on the position of the clicked element on your screen, the IIR can be displayed either below or above the element---so that you can always look at the element while you use the IIR.
-
-\begin{warning}
-    In some cases, the halo of an element may be gray.
-    A gray halo means that an IIR exists for this element but is \textbf{not available at the moment}.
-    
-    All halos will turn gray \textbf{every time your document is being compiled} (you cannot use an IIR while compiling), and every time the \textbf{last compilation of your document failed} (you will be notified by a popup message when it fails).
-   
-    If you fix an error that prevented your document from being compiled and compile again, the halo should eventually turn blue again.
-    If it remains gray despite having fixed all errors, please ask the investigator for help.
-\end{warning}
-
-\begin{info}
-    When an IIR is displayed, you can of course interact with it, but you can also keep editing the source code of your document: as long as there is no syntax error, \iLaTeX{} will dynamically update the IIR so it always reflects the content of the visualisable piece of code it represents!
-    
-    This can be used to see how a certain change affects an IIR without having to recompile the entire document.
-\end{info}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 \section{List of IIRs available in \iLaTeX{}}
-There are four kind of IIRs available in \iLaTeX{}.
-Each IIR is specialised for a particular kind of content, and each IIR is associated with a single command or environment.
-The four IIRs are described in the next pages, along with their commands/environments.
 
-If you are reading this in \iLaTeX{}, you are more than encouraged to interact with every blue halo you can spot in the PDF and see how it affects the code!
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-\newpage
+% \newpage
 \subsection{Mathematics}
 
 An IIR for mathematics can be created with the \texttt{imaths} environment:
@@ -165,7 +116,7 @@ It behaves like the \verb|\includegraphics| command provided by the \texttt{grap
 Only the \texttt{width}, \texttt{height}, \texttt{trim} and \texttt{clip} options are recognised by \iLaTeX{}.
 You can still use all the other options supported by \verb|\includegraphics|, but the IIR will ignore them and may delete them.
 
-This IIR enables you to \textbf{resize} and to \textbf{crop} the image (\ie only display a certain region of the image). To resize the image (top) or the cropped region (bottom), click and drag one of the height handles displayed around the image.
+This IIR enables you to \textbf{resize} and to \textbf{crop} the image (\ie only display a certain region of the image). To resize the image (top widget) or the cropped region (bottom widget), click and drag one of the handles displayed around the frame.
 
 \begin{info}
     \iLaTeX{} supports the most common \emph{length macros} like \verb|\textwidth|, so you can freely use them in the options.
@@ -258,7 +209,7 @@ A cell can contain \textbf{arbitrary content} (text, image, table, etc), but it 
 \end{gridlayout}
 \end{lstlisting}
 
-In contrary to the other IIRs presented before, this IIR is not a wrapper around an existing command or environment.
+Contrary to the other IIRs, this IIR is not a wrapper around an existing command or environment.
 Internally, every row and every cell is a \texttt{minipage} whose dimensions and position are managed for you.
 
 The \texttt{grid} environment expects two mandatory arguments: the \textbf{width} and the \textbf{height} of the grid.
@@ -324,6 +275,52 @@ This IIR enables you to \textbf{insert a new row}, a \textbf{new cell}, and to \
         \end{row}
     \end{gridlayout}
 \end{example}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\section{Summary of every special commands and environments}
+Do not forget to adapt the parameters as needed!
+
+\subsection*{Mathematics}
+
+\commanddesc{Insert a single- or multi-line formula}
+\hfill
+\lstinline[style=custom-latex]|\begin{imaths} f(x) = 1 \end{imaths}|
+
+
+
+\subsection*{Images}
+
+\commanddesc{Insert an image}
+\hfill
+\lstinline[style=custom-latex]|\iincludegraphics[width=\textwidth]{image.png}|
+
+
+
+\subsection*{Tables}
+
+\commanddesc{Insert tabulated data}
+\hfill
+\lstinline[style=custom-latex]|\begin{itabular}{ll} a & b \\ c & d \end{itabular}|
+
+
+
+\subsection*{Grid layouts}
+\commanddesc{Insert a grid layout}
+\hfill
+\lstinline[style=custom-latex]|\begin{gridlayout}{\textwidth}{8cm} ... \end{gridlayout}|
+
+\commanddesc{Insert a row (in a grid layout)}
+\hfill
+\lstinline[style=custom-latex]|\begin{row}{0.5} ... \end{row}|
+
+\commanddesc{Insert a cell (in a row)}
+\hfill
+\lstinline[style=custom-latex]|\begin{cell}{0.5} ... \end{cell}|
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END OF CONTENT
