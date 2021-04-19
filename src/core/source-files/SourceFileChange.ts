@@ -99,7 +99,7 @@ export class SourceFileChange {
             case SourceFileChangeKind.Replacement:
                 return event.text.length - event.rangeLength;
             case SourceFileChangeKind.Deletion:
-                return event.rangeLength;
+                return -event.rangeLength;
         }
     }
 
