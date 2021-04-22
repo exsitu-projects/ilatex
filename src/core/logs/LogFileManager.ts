@@ -20,16 +20,22 @@ export class LogFileManager {
     private ilatex: InteractiveLatex;
 
     private logEntries: LogEntry[];
-    private logFile: LogFile;
+    private logFile: LogFile | null; // null if logging is disabled
 
     constructor(ilatex: InteractiveLatex) {
         this.ilatex = ilatex;
 
         this.logEntries = [];
-        this.logFile = new LogFile(this.ilatex.mainSourceFileUri.path);
+        this.logFile = this.ilatex.options.enableLogging
+            ? new LogFile(this.ilatex.mainSourceFileUri.path)
+            : null;
     }
 
     log(entry: PartialLogEntry): void {
+        if (!this.logFile) {
+            return;
+        }
+
         const fullEntry = {
             mainFileName: path.basename(this.ilatex.mainSourceFileUri.path),
             activeFileName: path.basename(vscode.window.activeTextEditor?.document.uri.path ?? ""),
@@ -59,6 +65,10 @@ export class LogFileManager {
     }
 
     dispose(): void {
+        if (!this.logFile) {
+            return;
+        }
+
         this.logFile.close();
     }
 }

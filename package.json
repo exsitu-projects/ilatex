@@ -47,7 +47,18 @@
 				"language": "latex",
 				"path": "./snippets/ilatex.json"
 			}
-		]
+		],
+		"configuration": {
+			"title": "i-LaTeX",
+			"properties": {
+			  "ilatex.enableLogging": {
+				"type": "boolean",
+				"default": true,
+				"scope": "application",
+				"description": "Enable the automatic logging of various events in .ilatex-logs files."
+			  }
+			}
+		  }
 	},
 	"extensionDependencies": [
 		"torn4dom4n.latex-support"

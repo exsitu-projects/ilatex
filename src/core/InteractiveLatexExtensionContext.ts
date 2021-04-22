@@ -85,7 +85,9 @@ export class InteractiveLatexExtensionContext {
 
 			const ilatexOptions = {
 				enableVisualisations:
-					!item.description && item.description !== "(disable code visualisations)"
+					!item.description && item.description !== "(disable code visualisations)",
+				enableLogging:
+					vscode.workspace.getConfiguration("ilatex").get("enableLogging")! as boolean
 			};
 				
 			if (item.label === "$(default-view-icon) Create from the active editor") {
@@ -110,13 +112,17 @@ export class InteractiveLatexExtensionContext {
 			// from the file opened in the current active editor (if any)
 			vscode.commands.registerCommand("ilatex.createDocumentFromActiveEditor", async () => {
 				this.ilatexDocumentManager.createOrShowILatexDocumentFromActiveEditor({
-					enableVisualisations: true
+					enableVisualisations: true,
+					enableLogging:
+						vscode.workspace.getConfiguration("ilatex").get("enableLogging")! as boolean
 				});
 			}),
 	
 			vscode.commands.registerCommand("ilatex.createDocumentFromActiveEditorWithoutVisualisations", async () => {
 				this.ilatexDocumentManager.createOrShowILatexDocumentFromActiveEditor({
-					enableVisualisations: false
+					enableVisualisations: false,
+					enableLogging:
+						vscode.workspace.getConfiguration("ilatex").get("enableLogging")! as boolean
 				});
 			}),
 	

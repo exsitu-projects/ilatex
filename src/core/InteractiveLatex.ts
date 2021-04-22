@@ -10,6 +10,7 @@ import { TaskDebouncer } from "../shared/tasks/TaskDebouncer";
 
 export interface InteractiveLatexOptions {
     enableVisualisations: boolean;
+    enableLogging: boolean;
 }
 
 export class InteractiveLatex {
