@@ -86,10 +86,21 @@ export class PDFManager {
                 this.hasAlreadrBuiltPdfOnce = true;
             });
 
-            // Prepare some command arguments
-            const extraOptions: string[] = [];
+            // List of arguments for latexmk
+            const extraOptions: string[] = [
+                // Generate a PDF file (not a DVI)
+                "-pdf",
+                // Remove unnecessary output information
+                "-silent", 
+                // Do not pause on errors
+                "-interaction=nonstopmode",
+                // Ensure a .fls file is procuded
+                // (required to get absolute paths with the currfile LaTeX package)
+                "-recorder",
+            ];
 
-            // If the last build failed, or if this is the first build of this instance, force a full re-compilation
+            // If the last build failed, or if this is the first build of this instance,
+            // force a full re-compilation
             if (this.lastBuildFailed || !this.hasAlreadrBuiltPdfOnce) {
                 extraOptions.push(`-g`);
             }
@@ -100,7 +111,7 @@ export class PDFManager {
             const terminalSafeMainFilePath = this.ilatex.mainSourceFileUri.path.replace(/ /g, "\\ ");
 
             terminal.sendText(`cd ${path.dirname(terminalSafeMainFilePath)}`);
-            terminal.sendText(`latexmk -silent -interaction=nonstopmode ${extraOptions.join(" ")} ${terminalSafeMainFilePath}`);
+            terminal.sendText(`latexmk ${extraOptions.join(" ")} ${terminalSafeMainFilePath}`);
             terminal.sendText(`exit`);
         })
         .catch(() => {
