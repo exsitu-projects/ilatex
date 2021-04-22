@@ -4,6 +4,7 @@
 
 .pdf-page-container {
     z-index: 0;
+    background-color: #666;
 }
 
 .pdf-annotation-mask-container {
