@@ -14,7 +14,7 @@ export interface ExtensionFile {
 export class ExtensionFileReader {
     // Absolute path to the root directory of this extension.
     private static readonly EXTENSION_ROOT_PATH = vscode.extensions
-        .getExtension("exsitu.interactive-latex")!
+        .getExtension("exsitu.ilatex")!
         .extensionPath;
 
     // Resolve a relative path rooted in the root directory of this VSC extension.
