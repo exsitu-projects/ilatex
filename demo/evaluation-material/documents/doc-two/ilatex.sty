@@ -48,8 +48,8 @@
     \immediate\write\Output@ilatex{length_macro_parskip \convertto{pt}{\parskip}}%
     \immediate\write\Output@ilatex{length_macro_hsize \convertto{pt}{\hsize}}%
     \immediate\write\Output@ilatex{length_macro_vsize \convertto{pt}{\vsize}}%
-    \immediate\write\Output@ilatex{length_macro_rowheight \convertto{pt}{\rowheight}}% cf. gridlayout.sty
-    \immediate\write\Output@ilatex{length_macro_cellwidth \convertto{pt}{\cellwidth}}% cf. gridlayout.sty
+    \immediate\write\Output@ilatex{length_macro_rowheight \convertto{pt}{\rowheight}}%
+    \immediate\write\Output@ilatex{length_macro_cellwidth \convertto{pt}{\cellwidth}}%
     \immediate\write\Output@ilatex{length_unit_em \convertto{pt}{1em}}%
     \immediate\write\Output@ilatex{length_unit_ex \convertto{pt}{1ex}}%
     % End of the mapping
@@ -124,8 +124,8 @@
 \NewEnviron{imaths}
 {%
     \let\CurrentAnnotationValue@ilatex\theAnnotation@ilatex%
-    \vspace{\abovedisplayskip}
     \par\noindent
+    \vspace{\abovedisplayskip}
     \pdftooltip{%
     \begin{minipage}{\linewidth}%
     \begin{align*}%
@@ -142,6 +142,62 @@
 \AtBeginEnvironment{imaths}{%
     \WriteMapToCurrentLine@ilatex{mathematics}%
 }
+
+
+% Provide the gridlayout, row and cell environments.
+% Note: these environments used to be provided by the 'gridlayout' package.
+
+\newlength{\gridlayout@gridwidth}
+\newlength{\gridlayout@gridheight}
+\newlength{\rowheight}
+\newlength{\cellwidth}
+
+\newlength{\gridlayout@savedfboxsep}
+\setlength{\gridlayout@savedfboxsep}{\fboxsep}
+
+% The gridlayout environements seems to suffer from the same limitations
+% than the itabular environement regarding the usage of the \ilatex command.
+% For this reason, the writing of a new mapping, the PDF annotation
+% and the counter increment are directly performed inside gridlayout's definition.
+% Read the comments about the definition of itabular for more details.
+\NewEnviron{gridlayout}[2]
+{%
+    \setlength{\fboxsep}{0pt}%
+    \setlength{\gridlayout@gridwidth}{#1}%
+    \setlength{\gridlayout@gridheight}{#2}%
+    \par
+    \pdftooltip{{\begin{minipage}[b]{\gridlayout@gridwidth}%
+        \BODY%
+    \end{minipage}}}{ilatex-code-mapping-id-\CurrentAnnotationValue@ilatex}%
+    \stepcounter{Annotation@ilatex}%
+    \setlength{\fboxsep}{\gridlayout@savedfboxsep}
+    \par
+}
+{}
+
+\AtBeginEnvironment{gridlayout}{%
+    \WriteMapToCurrentLine@ilatex{gridlayout}%
+    \let\CurrentAnnotationValue@ilatex\theAnnotation@ilatex%
+}
+
+\NewEnviron{row}[1]
+{%
+    \setlength{\rowheight}{#1\gridlayout@gridheight}%
+    \makebox{\begin{minipage}[b]{\gridlayout@gridwidth}%
+        \BODY%
+    \end{minipage}}%
+    \par
+}
+{}
+
+\NewEnviron{cell}[1]
+{%
+    \setlength{\cellwidth}{#1\gridlayout@gridwidth}%
+    \makebox{\begin{minipage}[b][\rowheight][t]{\cellwidth}%
+        \BODY%
+    \end{minipage}}%
+}
+{}
 
 
 \endinput
