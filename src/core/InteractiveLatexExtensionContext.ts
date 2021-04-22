@@ -45,9 +45,7 @@ export class InteractiveLatexExtensionContext {
 			title: "Select the main LaTeX file to open with i-LaTeX"
 		}).then(uri => {
 			if (uri && uri.length > 0) {
-				this.ilatexDocumentManager.createOrShowILatexDocumentFromMainFileAt(uri[0], {
-					enableVisualisations: true
-				});
+				this.ilatexDocumentManager.createOrShowILatexDocumentFromMainFileAt(uri[0], options);
 			}
 		});
 	}
