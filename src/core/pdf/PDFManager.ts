@@ -97,21 +97,11 @@ export class PDFManager {
             // Run latexnk to compile the document and close the terminal afterwards
             // (if no exit code is specified, the exit command reuses the exit code
             // of the last command ran in the terminal, i.e. in this case, latexmk)
-            if (process.platform === "win32") {
-                // Based on https://stackoverflow.com/a/6378038
-                const terminalSafeMainFilePath = `${this.ilatex.mainSourceFileUri.path}"`;
+            const terminalSafeMainFilePath = this.ilatex.mainSourceFileUri.path.replace(/ /g, "\\ ");
 
-                terminal.sendText(`"cd ${path.dirname(terminalSafeMainFilePath)}"`);
-                terminal.sendText(`"latexmk -silent -interaction=nonstopmode ${extraOptions.join(" ")} ${terminalSafeMainFilePath}"`);
-                terminal.sendText(`exit`);
-            }
-            else {
-                const terminalSafeMainFilePath = this.ilatex.mainSourceFileUri.path.replace(/ /g, "\\ ");
-
-                terminal.sendText(`cd ${path.dirname(terminalSafeMainFilePath)}`);
-                terminal.sendText(`latexmk -silent -interaction=nonstopmode ${extraOptions.join(" ")} ${terminalSafeMainFilePath}`);
-                terminal.sendText(`exit`);
-            }
+            terminal.sendText(`cd ${path.dirname(terminalSafeMainFilePath)}`);
+            terminal.sendText(`latexmk -silent -interaction=nonstopmode ${extraOptions.join(" ")} ${terminalSafeMainFilePath}`);
+            terminal.sendText(`exit`);
         })
         .catch(() => {
             vscode.window.showErrorMessage(
