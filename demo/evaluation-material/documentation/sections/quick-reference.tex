@@ -1,0 +1,44 @@
+\section*{Quick reference of the special commands and environments}
+\label{sec:quick-reference}
+\addcontentsline{toc}{section}{\nameref{sec:quick-reference}}
+
+This list contains concise examples of all the special commands and environments that can be used to create visualisable pieces of code in \iLaTeX{}.
+Their purpose is explained in \autoref{ssec:how-to-enable-iirs}, and they are presented in more details in \autoref{sec:list-of-irrs}.
+
+If you copy-paste code from here, do not forget to adapt the parameters as needed!
+
+\subsection*{Mathematics}
+
+\commanddesc{Insert a single- or multi-line formula}
+\hfill
+\lstinline[style=custom-latex]|\begin{imaths} f(x) = 1 \end{imaths}|
+
+
+
+\subsection*{Images}
+
+\commanddesc{Insert an image}
+\hfill
+\lstinline[style=custom-latex]|\iincludegraphics[width=\textwidth]{image.png}|
+
+
+\subsection*{Tables}
+
+\commanddesc{Insert tabulated data}
+\hfill
+\lstinline[style=custom-latex]|\begin{itabular}{ll} a & b \\ c & d \end{itabular}|
+
+
+\subsection*{Grid layouts}
+
+\commanddesc{Insert a grid layout}
+\hfill
+\lstinline[style=custom-latex]|\begin{gridlayout}{\textwidth}{8cm} ... \end{gridlayout}|
+
+\commanddesc{Insert a row (in a grid layout)}
+\hfill
+\lstinline[style=custom-latex]|\begin{row}{0.5} ... \end{row}|
+
+\commanddesc{Insert a cell (in a row)}
+\hfill
+\lstinline[style=custom-latex]|\begin{cell}{0.5} ... \end{cell}|

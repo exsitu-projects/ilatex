@@ -1,7 +1,11 @@
-% \usepackage{FiraMono}
-\usepackage{lmodern}
-\usepackage[tt = false]{libertine}
-% \usepackage{zlmtt}
+% Set the fonts of the document
+\usepackage{inconsolata} % Monospace font
+\usepackage{helvet} % Sans-serif font
+\usepackage[
+    libertine, % do not override the sans-serif-font
+    tt = false % do not override the monospace font
+]{libertine} % Main font (serif)
+
 \usepackage[
     top = 3cm,
     bottom = 3cm,
@@ -22,9 +26,12 @@
 \usepackage{float}
 \usepackage{listings}
 \usepackage{parskip}
-\usepackage{caption}
+\usepackage[
+    labelfont = {small, bf},
+    textfont = {small}
+]{caption}
 \usepackage{subcaption}
-% \usepackage{wrapfig}
+\usepackage{circledsteps}
 \usepackage{hyperref}
 
 % ====================================================================
@@ -44,9 +51,10 @@
 \begin{center}
     \color{black!75}
     {\Large{Longitudinal study of \iLaTeX}} \\
-    \noindent\rule{8cm}{0.4pt} \\[1em]
+    \noindent\rule{12cm}{0.4pt} \\[1.5em]
     \color{black}
-    {\Huge{#1}}
+    {\Huge{#1}} \\[0.5em]
+    % \noindent\rule{16cm}{0.4pt}
 \end{center}
 }
 
@@ -62,6 +70,7 @@
     frametitlebackgroundcolor = red!5,
     % startinnercode = \centering\bgroup,
     % endinnercode = \egroup
+    nobreak = true
 ]{warning}
 
 \newmdenv[
@@ -75,6 +84,7 @@
     frametitlebackgroundcolor = blue!5,
     % startinnercode = \centering\bgroup,
     % endinnercode = \egroup
+    nobreak = true
 ]{info}
 
 \newmdenv[
@@ -87,7 +97,8 @@
     frametitle = {Example},
     frametitlebackgroundcolor = green!5,
     % startinnercode = \centering\bgroup,
-    % endinnercode = \egroup
+    % endinnercode = \egroup,
+    % nobreak = true
 ]{example}
 
 % Style of code blocks
@@ -108,4 +119,33 @@
     belowskip={0.7em}
 }
 
+\lstdefinestyle{custom-latex-example}{
+    language={[LaTeX]TeX},
+    commentstyle=\color{black!50},
+    keywordstyle=\color{green!50!black},
+    numberstyle=\tiny\color{red!50!black},
+    stringstyle=\color{blue!50!black},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,
+    keepspaces=true,
+    numbers=none,
+    tabsize=4,
+    aboveskip={1em},
+    belowskip={-1ex}
+}
+
+% Description of a command/environment (for the cheat sheet)
 \newcommand{\commanddesc}[1]{{\color{black!80}{#1}}}
+
+
+% Command to produce a circled number to reference a step represented in a figure
+\definecolor{FigStepColor}{HTML}{BC43F0}
+
+\DeclareRobustCommand{\figstep}[1]{%
+    \Circled[%
+        inner color=white,%
+        outer color=white,%
+        fill color=FigStepColor%
+    ]{\sffamily\textbf{#1}}%
+}
