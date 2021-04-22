@@ -1,0 +1,449 @@
+\documentclass[11pt, a4paper]{article}
+\input{preamble}
+\usepackage{ilatex}
+
+\begin{document}
+
+\makedoctitle{Documentation of the \iLaTeX{} editor}
+\vfill
+\tableofcontents
+\vfill
+% \newpage
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% START OF CONTENT
+
+
+\section*{Quick reference of the special commands and environments}
+This list contains concise examples of all the special commands and environments that can be used to create visualisable pieces of code in \iLaTeX{}.
+Their purpose is explained in \autoref{ssec:how-to-enable-iirs}, and they are presented in more details in \autoref{sec:list-of-irrs}.
+
+If you copy-paste code from here, do not forget to adapt the parameters as needed!
+
+\subsection*{Mathematics}
+
+\commanddesc{Insert a single- or multi-line formula}
+\hfill
+\lstinline[style=custom-latex]|\begin{imaths} f(x) = 1 \end{imaths}|
+
+
+
+\subsection*{Images}
+
+\commanddesc{Insert an image}
+\hfill
+\lstinline[style=custom-latex]|\iincludegraphics[width=\textwidth]{image.png}|
+
+
+\subsection*{Tables}
+
+\commanddesc{Insert tabulated data}
+\hfill
+\lstinline[style=custom-latex]|\begin{itabular}{ll} a & b \\ c & d \end{itabular}|
+
+
+\subsection*{Grid layouts}
+
+\commanddesc{Insert a grid layout}
+\hfill
+\lstinline[style=custom-latex]|\begin{gridlayout}{\textwidth}{8cm} ... \end{gridlayout}|
+
+\commanddesc{Insert a row (in a grid layout)}
+\hfill
+\lstinline[style=custom-latex]|\begin{row}{0.5} ... \end{row}|
+
+\commanddesc{Insert a cell (in a row)}
+\hfill
+\lstinline[style=custom-latex]|\begin{cell}{0.5} ... \end{cell}|
+
+
+
+\newpage
+\section{Introduction}
+\iLaTeX{} is a research prototype of a new kind of editor for \LaTeX{} documents.
+It is built on top of \vsc, an open-source code editor.
+\iLaTeX{} looks and works like other \LaTeX{} editors such as TeXstudio and Overleaf (\autoref{fig:ilatex-ui}), but it also offers a new kind of features we call \emph{interactive intermediate representations}---or IIR for short.
+
+IIRs constitute an alternative way to visualise and manipulate certain parts of a \LaTeX{} document than the source code or the generated PDF.
+Each IIR is bound to a piece of \emph{visualisable code}, \ie code that can be visualised through an IIR.
+
+IIRs are an optional feature of \iLaTeX{}: since the source code of your documents remains accessible at all times, you can also use \iLaTeX{} like a standard \LaTeX{} editor and simply edit the code.
+While \iLaTeX{} may not always be able to parse and understand the code you write, in which case IIRs will be disabled, it will never prevent you from compiling a \LaTeX{} document whose code is accepted by the \LaTeX{} compiler itself.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width = \textwidth]{img/ilatex-editor-ui.png}
+    \caption{A typical layout to edit a \LaTeX{} document opened with \iLaTeX{}: the code of the document is on the left, and the interactive PDF is on the right.}
+    \label{fig:ilatex-ui}
+\end{figure}
+
+
+
+\newpage
+\section{General usage of \iLaTeX{}}
+
+\subsection{How to setup the \iLaTeX{} extension?}
+The \iLaTeX{} extension is provided as a regular extension for the \vsc editor.
+It comes in the form of a single file with a \texttt{.vsix} extension.
+To install the extension from this file, you should open the extensions panel by clicking the Extensions button in the Activity bar (that is normally on the left-hand side of every \vsc window). From there, you should click the icon with three dots in the top-right hand corner, select the ``Install from VSIX...'' entry, and select the \texttt{ilatex.vsix} file that was provided by the investigator.
+The procedure is illustrated in \autoref{fig:install-procedure}.
+Note that you can also uninstall the extension from this panel (by clicking on the gear icon next to the entry corresponding to the \iLaTeX{} extension in the list and selecting the ``Uninstall'' option).
+
+Once the \iLaTeX{} extension in installed in \vsc, it will be automatically running in the background every time you open the editor.
+You can tell the \iLaTeX{} extension is activated by checking if there is an ``i-LaTeX'' button in the status bar.
+It is normally displayed in the bottom-left hand corner of every \vsc window (\autoref{subfig:status-bar-with-ilatex-button})).
+
+When the extension is idle, the circle in the button is empty.
+On the contrary, when one or more interactive \LaTeX{} documents are currently open, the circle in the button is filled, and the number of active documents is displayed between parentheses (\autoref{subfig:status-bar-buttons}).
+
+\begin{figure}[b!]
+    \centering
+    \includegraphics[width=0.8\textwidth]{img/installation-procedure.png}
+    \caption{Procedure to install the \iLaTeX{} extension: (1) open the Extensions panel; (2) open the menu of the panel; (3) select the VSIX file of the extension.}
+    \label{fig:install-procedure}
+\end{figure}
+
+\subsection{How to open a \LaTeX{} document with \iLaTeX{}?}
+In order to compile and view a \LaTeX{} document with \iLaTeX{}, you must tell \iLaTeX{} which file is the \emph{main} file of your document (\ie the \emph{Main document} in Overleaf, the file you would compile with a command-line tool like \texttt{pdflatex} or \texttt{latexmk}).
+The simplest way to do this is to click the \iLaTeX{} button in the status bar: it will display a popup menu that contains different options to open a new \LaTeX{} document with \iLaTeX{} (\autoref{fig:open-with-ilatex-menu}).
+From this menu, you can either choose ``Create from the active editor'' to use the document open in the editor panel that currently has the focus, or you can choose ``Create from file\dots'' to open a file selector.
+Every option has a variant that opens the file with \iLaTeX{} but disables the interactive visualisations (the PDF will still be displayed, but there will be no IIR).
+
+Finally, note that you can close an interactive document at any time by closing the panel that displays the PDF of that document.
+
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}[b]{0.6\textwidth}
+        \centering
+        \includegraphics[width=0.6\textwidth]{img/vsc-status-bar-2.png}
+        \caption{The left-hand side of the status bar.}
+        \label{subfig:status-bar-with-ilatex-button}
+    \end{subfigure}%
+    \begin{subfigure}[b]{0.4\textwidth}
+        \centering
+        \includegraphics[scale = 0.5]{img/ilatex-button-off.png} \qquad
+        \includegraphics[scale = 0.5]{img/ilatex-button-on.png}
+        \caption{The two states of the \iLaTeX{} button.}
+        \label{subfig:status-bar-buttons}
+    \end{subfigure}
+    \caption{The status bar of \vsc when the \iLaTeX{} extension is activated.}
+    \label{fig:status-bar}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width = 0.8\textwidth]{img/ilatex-menu.png}
+    \caption{The popup menu that can be used to open a \LaTeX{} document with \iLaTeX{}.}
+    \label{fig:open-with-ilatex-menu}
+\end{figure}
+
+\subsection{How to enable IIRs?}
+\label{ssec:how-to-enable-iirs}
+Every time you open a \LaTeX{} document with \iLaTeX{} and every time you save a file, \iLaTeX{} will (1) recompile the \LaTeX{} documents you opened with it and (2) attempt to locate every piece of visualisable code in your document and to create an IIR for every of them.
+Visualisable code is detected by the usage of \textbf{special \LaTeX{} commands and environments} that are known to be visualisable by \iLaTeX{}.
+They are covered in more details in \autoref{sec:list-of-irrs}.
+
+In order to have access to these special commands and environments, you \textbf{must} use a special package named \texttt{ilatex}.
+To do so, you must put a copy of the \texttt{ilatex.sty} file in the same directory than the main file of every \LaTeX{} document you would like to open with \iLaTeX{}, and you must include the package in the preamble of every document (\ie before the \verb|\begin{document}| command) using
+
+\begin{lstlisting}[style=custom-latex]
+\usepackage{ilatex}
+\end{lstlisting}
+
+\begin{warning}
+    When you edit the code of the document, \iLaTeX{} does its best to keep track of the start and the end of every piece of visualisable code in the document.
+    However, in some situations, \iLaTeX{} may be \textbf{unable to understand} the syntax of your code, or it may \textbf{loose track} of a piece of visualisable code.
+    In particular, the latter is likely to happen if you edit a selection that contains text that is both within and outside the range of a visualisable piece of code.
+    
+    When it happens, \iLaTeX{} will show you it lost track of a piece of visualisable code by highlighting this piece of code in red.
+    You have two options to fix this kind of problem:
+    
+    \begin{itemize}
+        \item \textbf{In case of a syntax error} (\eg a curly bracket ``\verb|{|'' that has no matching closing bracket ``\verb|}|''), you can simply edit the code to fix the error, and \iLaTeX{} will remove the red highlighting as soon as the syntax becomes valid again.
+        
+        \item \textbf{Otherwise}, you should recompile the document to force \iLaTeX{} to re-detect all the visualisable pieces of code and re-create all IIRs.
+        This can be done by clicking the message displayed above the piece of code highlighted in red, by clicking the ``Recompile'' button displayed on top of the PDF, or by saving the document.
+    \end{itemize}
+\end{warning}
+
+
+\subsection{How to display IIRs?}
+
+Each piece of visualisable code is normally associated with an element in the PDF (the element that was created by this piece of code).
+Every such element will be \textbf{surrounded by a blue halo} in the PDF displayed by \iLaTeX{}, and you can display the IIR related to that element by clicking on it.
+Depending on the position of the clicked element on your screen, the IIR will be displayed either below or above the element in the PDF---so that you can always look at the element while you use the IIR.
+
+Some features are common to all IIRs:
+\begin{itemize}%[noitemsep]
+    \item You can \textbf{show the code} that is being visualised in an IIR by clicking on the title bar of the title of the visualisation (at the top of the popup). \iLaTeX{} will automatically open the file that contains the code (or give the focus to the panel where it is currently open) and scroll to it.
+    \item You can \textbf{close the IIR} by either (1) clicking the button in the top-right hand corner or (2) clicking anywhere on the darkened background displayed on top of the PDF. If you modified the code of the document by interacting with the IIR, the document will automatically be \textbf{saved and recompiled} when the IIR is closed.
+\end{itemize}
+
+In some cases, the halo of one or several element may also turn grey (\autoref{subfig:grey-halo}).
+A \textbf{grey halo} means that an IIR exists for this element but is \textbf{not available} at the moment.
+
+The halo of an element will become grey if \iLaTeX{} is unable to parse the syntax of the code of this element
+In addition, all halos will turn grey every time \textbf{your document is being compiled} (you cannot use an IIR while compiling), and every time \textbf{the last compilation of your document failed} (you will be notified by a popup message when it fails).
+If you fix all the errors and recompile your document, the halo should eventually turn blue again.
+
+\begin{info}
+    When an IIR is displayed, you can of course interact with it, but you can also keep editing the source code of your document.
+    \iLaTeX{} will automatically update the IIR to keep in synchronised with the piece of code it is associated to.
+    This can be used to see how a certain change in the code affects the visualisation without having to recompile the entire document.
+        
+    In case you introduce a syntax error while you edit the code, the IIR will turn yellow and display an error message (\autoref{subfig:syntax-error-in-iir}).
+    The content of the IIR should be restored as soon as the syntax becomes valid again.
+    If an IIR is stuck in this state, try closing and reopening it.
+    If it does not work, try saving the changes and recompiling the document.
+
+\end{info}
+
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}[b]{0.5\textwidth}
+        \centering
+        \includegraphics[width=0.8\textwidth]{img/disabled-table.png}
+        \caption{A PDF element with a disabled IIR.}
+        \label{subfig:grey-halo}
+    \end{subfigure}%
+    \begin{subfigure}[b]{0.5\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/syntax-error-in-visualisation.png}
+        \caption{An IIR displaying an error.}
+        \label{subfig:syntax-error-in-iir}
+    \end{subfigure}%
+    \caption{(\subref{subfig:grey-halo}) When an IIR becomes disabled, the halo around the element it corresponds to in the PDF becomes grey. (\subref{subfig:syntax-error-in-iir}) If the visualisation is already displayed when it happens, it will turn yellow and display an error message.}
+    \label{fig:disabled-visualisations}
+\end{figure}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\section{List of IIRs available in \iLaTeX{}}
+\label{sec:list-of-irrs}
+
+There are four kind of IIRs available in \iLaTeX{}.
+Each IIR is specialised for a particular kind of content, and each IIR is associated with a single command or environment.
+They are described in this section, along with their commands/environments.
+
+If you are reading this in \iLaTeX{}, you are more than encouraged to interact with every blue halo you can spot in the PDF, and see how it affects the code!
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+% \newpage
+\subsection{Mathematics}
+
+An IIR for mathematics can be created with the \texttt{imaths} environment:
+
+\begin{lstlisting}[style=custom-latex]
+\begin{imaths}
+    x = \alpha x + \beta y + \gamma
+\end{imaths}
+\end{lstlisting}
+
+It behaves like the \texttt{align*} environment provided by the \texttt{amsmath} package: you can use all the commands accepted by \LaTeX{} in math mode inside, and you can align several formulae by using \verb|&| to align symbols vertically and \verb|\\| to break lines.
+
+This IIR enables you to edit the code of the formula and \textbf{see the change in the typeset formula in real time}, as well as to \textbf{find} (by pointing) and to \textbf{select} (by clicking) the piece of code related to almost every symbol of the typeset formula.
+
+\begin{info}
+    When you edit the code of the formula in the IIR, the actual code of your \LaTeX{} document will \textbf{not} be updated until you click outside of the text area or press Enter.
+\end{info}
+
+\begin{warning}
+    User-defined commands are not supported (it will compile, but the IIR will not work correctly),
+    unless the commands are defined \emph{within} the \texttt{imaths} environment.
+\end{warning}
+
+\begin{example}
+    \begin{imaths}
+        \int_{\mathbb{R}}\left(f-\overline{f}\right)^2 e^H dx \leq C \int \chi_{[-\frac{1}{2},\frac{1}{2}]}|\nabla f|^2 e^H dx +\frac{C}{\gamma^2}  \int \chi_{[-\frac{1}{2},\frac{1}{2}]^c}|\nabla f|^2 e^H dx.
+    \end{imaths}
+\end{example}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\newpage
+\subsection{Images}
+
+An IIR for images can be created with the \verb|\iincludegraphics| command (with two \texttt{i}s!):
+
+\begin{lstlisting}[style=custom-latex]
+\iincludegraphics[width=\textwidth]{path/to/your/image.png}
+\end{lstlisting}
+
+It behaves like the \verb|\includegraphics| command provided by the \texttt{graphicx} package.
+Only the \texttt{width}, \texttt{height}, \texttt{trim} and \texttt{clip} options are recognised by \iLaTeX{}.
+You can still use all the other options supported by \verb|\includegraphics|, but the IIR will ignore them and may delete them.
+
+This IIR enables you to \textbf{resize} and to \textbf{crop} the image (\ie only display a certain region of the image). To resize the image (top widget) or the cropped region (bottom widget), click and drag one of the handles displayed around the frame.
+
+\begin{info}
+    \iLaTeX{} supports the most common \emph{length macros} like \verb|\textwidth|, so you can freely use them in the options.
+    If you are unsure whether a less common length macro is supported and want to use it, please ask the investigator.
+\end{info}
+
+\begin{warning}
+    PDF images are not supported (it will compile, but the IIR will not work correctly).
+\end{warning}
+
+\begin{example}
+    \centering
+    \iincludegraphics[width = 0.5\textwidth]{img/bird.jpg}
+\end{example}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\newpage
+\subsection{Tables}
+
+An IIR for tables can be created with the \texttt{itabular} environment:
+
+\begin{lstlisting}[style=custom-latex]
+\begin{itabular}{llr}
+    Item      & Description & Price \\
+    Chocolate & ...         & 2.20  \\
+    Baguette  & ...         & 0.90
+\end{itabular}
+\end{lstlisting}
+
+It behaves like the \texttt{tabular} environment, and expects a mandatory argument (the list of column types).
+
+This IIR enables you to \textbf{edit any cell} (by double-clicking it), to \textbf{insert and delete} rows and columns (via a contextual menu displayed on right click), and to \textbf{move} rows and columns (by dragging and dropping the header cell of the row/column).
+
+\begin{info}
+    Common formatting commands for tables such as \verb|\hline|, \verb|\toprule|, \verb|\midrule| and \verb|\bottomrule| are not considered as ``cell content'' by this IIR. You can safely use them, and \iLaTeX{} will do its best to ignore them and leave them in place.
+\end{info}
+
+\begin{warning}
+    This IIR expects every line to contain the same number of cells, and is likely to dysfunction if it is not the case.
+    In particular, that means that merged cells are not supported (it will compile, but the IIR will not work correctly).
+\end{warning}
+
+\begin{example}
+    \centering
+    \begin{itabular}{llr}
+        \toprule
+        Item  & Description & Price \\
+        \midrule
+        Chocolate & Delicious treat & 2.20  \\
+        Baguette & French classic & 0.90  \\
+        Cheese & Another one & 3.00  \\
+        Beer & Alcoholic beverage & 4.50  \\
+        \bottomrule
+    \end{itabular}
+\end{example}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\newpage
+\subsection{Grid layouts}
+
+An IIR for grid layouts can be created with the \texttt{gridlayout} environment.
+A grid can contain rows (\texttt{row} environments), and a row can contain cells (\texttt{cell} environments).
+A cell can contain \textbf{arbitrary content} (text, image, table, etc), but it \textbf{cannot contain visualisable code}.
+
+\begin{lstlisting}[style=custom-latex]
+% this grid is as wide as the text (\textwidth) and 8cm tall
+\begin{gridlayout}{\textwidth}{8cm}
+    \begin{row}{0.6}
+        \begin{cell}{1}
+            % A cell as wide as the row that contains it
+        \end{cell}
+    \end{row}
+    \begin{row}{0.4}
+        \begin{cell}{0.33}
+            % Bottom-left cell taking 1/3 of the row
+        \end{cell}
+        \begin{cell}{0.67}
+            % Bottom-right cell taking 2/3 of the row
+        \end{cell}
+    \end{row}
+\end{gridlayout}
+\end{lstlisting}
+
+Contrary to the other IIRs, this IIR is not a wrapper around an existing command or environment.
+Internally, every row and every cell is a \texttt{minipage} whose dimensions and position.
+
+The \texttt{grid} environment expects two mandatory arguments: the \textbf{width} and the \textbf{height} of the grid.
+The \texttt{row} and \texttt{cell} environments expect one mandatory argument each: the \textbf{relative height} of the row and the \textbf{relative width} of the cell.
+These relative dimensions are \textbf{unitless numbers between 0 and 1} that must sum to 1 over all the cells of a row and over all the rows of the grid.
+If they do not sum to 1, the document will compile, but the cells and the rows may not be positioned correctly, and the IIR 
+
+This IIR enables you to \textbf{insert a new row}, a \textbf{new cell}, and to \textbf{delete an existing cell} by clicking the appropriate button (some will appear when you hover a cell). It also enables you to \textbf{resize cells and rows} (by dragging the separator between two of them), as well as to \textbf{move a cell} (by dragging and dropping the cell).
+
+\begin{info}
+    In every cell, you can use \verb|\cellwidth| and \verb|\rowheight|, two custom length macros relative to the current size of the cell that you can freely use (\eg to make an image have the same width or height than the cell).
+\end{info}
+
+\begin{warning}
+    You should always use at least one row with at least one cell in a \texttt{gridlayout} environment, and you should avoid putting anything outside of a \texttt{cell} environment.
+    Doing so is likely to break the layout, and the IIR will not represent it correctly anymore.
+\end{warning}
+
+\begin{warning}
+    Empty cells, such as cells acting as white space, appear to be ignored when the \texttt{cell} environements contain no symbol.
+    You can fix this issue by putting a white space character in the body of the environment, such as a non-breaking space (\verb|~|).
+\end{warning}
+
+\begin{example}
+    \begin{gridlayout}{\textwidth}{11cm}
+        \begin{row}{0.65}
+            \begin{cell}{0.65}
+                \includegraphics[width=\cellwidth]{img/bird.jpg}
+            \end{cell}
+            \begin{cell}{0.05}
+                ~
+            \end{cell}
+            \begin{cell}{0.3}
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus eget mauris sed ligula blandit tristique. Quisque laoreet ac odio hendrerit pretium. Sed hendrerit id elit id lobortis. Aliquam ante eros, euismod et ultricies in, suscipit at lectus. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Cras eu massa congue justo egestas ornare pellentesque in quam.
+            \end{cell}
+        \end{row}
+        \begin{row}{0.05}
+            \begin{cell}{1}
+                ~ 
+            \end{cell}
+        \end{row}
+        \begin{row}{0.3}
+            \begin{cell}{0.3}
+                \includegraphics[width=\cellwidth, height=\rowheight, keepaspectratio]{img/cat.jpg}
+            \end{cell}
+            \begin{cell}{0.05}
+                ~
+            \end{cell}
+            \begin{cell}{0.3}
+                \includegraphics[width=\cellwidth, height=\rowheight, keepaspectratio]{img/dolphin.jpg}
+            \end{cell}
+            \begin{cell}{0.05}
+                ~
+            \end{cell}
+            \begin{cell}{0.3}
+                \centering
+                \vspace{1em}
+                \begin{tabular}{lr}
+                    \toprule
+                    Animal & Comment \\
+                    \midrule
+                    Bird & Colorful back \\
+                    Cat & Cute look \\
+                    Dolphin & Underwater \\
+                    \bottomrule
+                \end{tabular}
+            \end{cell}
+        \end{row}
+    \end{gridlayout}
+\end{example}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END OF CONTENT
+
+\end{document}

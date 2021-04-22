@@ -1,0 +1,111 @@
+% \usepackage{FiraMono}
+\usepackage{lmodern}
+\usepackage[tt = false]{libertine}
+% \usepackage{zlmtt}
+\usepackage[
+    top = 3cm,
+    bottom = 3cm,
+    left = 2.5cm,
+    right = 2.5cm
+]{geometry}
+
+\usepackage[english]{babel}
+\usepackage{xspace}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage[xcolor]{mdframed}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{mathrsfs}
+\usepackage{stmaryrd}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{parskip}
+\usepackage{caption}
+\usepackage{subcaption}
+% \usepackage{wrapfig}
+\usepackage{hyperref}
+
+% ====================================================================
+
+\newcommand{\eg}{e.g.,\xspace}
+\newcommand{\ie}{i.e.\xspace}
+\newcommand{\etal}{\textit{et~al.}\xspace}
+
+\newcommand{\todo}[1]{{\centering\textbf{\textcolor{red}{[TODO : #1]}}\xspace}}
+
+\newcommand{\vsc}{Visual Studio Code\xspace}
+
+\DeclareRobustCommand{\iLaTeX}{\mbox{{{\itshape i}-\hspace{-0.25mm}}\LaTeX{}}}
+
+% Document title
+\newcommand{\makedoctitle}[1]{%
+\begin{center}
+    \color{black!75}
+    {\Large{Longitudinal study of \iLaTeX}} \\
+    \noindent\rule{8cm}{0.4pt} \\[1em]
+    \color{black}
+    {\Huge{#1}}
+\end{center}
+}
+
+% Custom framed environments
+\newmdenv[
+    linecolor = red!50!black,
+    backgroundcolor = red!2,
+    skipabove = 1em,
+    skipbelow = 1em,
+    innertopmargin = 1em,
+    innerbottommargin = 1em,
+    frametitle = {Warning},
+    frametitlebackgroundcolor = red!5,
+    % startinnercode = \centering\bgroup,
+    % endinnercode = \egroup
+]{warning}
+
+\newmdenv[
+    linecolor = blue!50!black,
+    backgroundcolor = blue!2,
+    skipabove = 1em,
+    skipbelow = 1em,
+    innertopmargin = 1em,
+    innerbottommargin = 1em,
+    frametitle = {Good to know},
+    frametitlebackgroundcolor = blue!5,
+    % startinnercode = \centering\bgroup,
+    % endinnercode = \egroup
+]{info}
+
+\newmdenv[
+    linecolor = green!50!black,
+    backgroundcolor = green!2,
+    skipabove = 1em,
+    skipbelow = 1em,
+    innertopmargin = 1em,
+    innerbottommargin = 1em,
+    frametitle = {Example},
+    frametitlebackgroundcolor = green!5,
+    % startinnercode = \centering\bgroup,
+    % endinnercode = \egroup
+]{example}
+
+% Style of code blocks
+\lstdefinestyle{custom-latex}{
+    language={[LaTeX]TeX},
+    backgroundcolor=\color{white},
+    commentstyle=\color{black!50},
+    keywordstyle=\color{green!50!black},
+    numberstyle=\tiny\color{red!50!black},
+    stringstyle=\color{blue!50!black},
+    basicstyle=\ttfamily\small,
+    breakatwhitespace=false,         
+    breaklines=true,
+    keepspaces=true,
+    numbers=none,
+    tabsize=4,
+    aboveskip={1em},
+    belowskip={0.7em}
+}
+
+\newcommand{\commanddesc}[1]{{\color{black!80}{#1}}}
