@@ -13,6 +13,11 @@
     right = 2.5cm
 ]{geometry}
 
+\usepackage{xcolor}
+\usepackage{graphicx}
+\definecolor{DocPurple}{HTML}{BC43F0}
+% \definecolor{DocDarkPurple}{HTML}{541D6C}
+
 \usepackage[english]{babel}
 \usepackage{xspace}
 \usepackage{booktabs}
@@ -32,7 +37,7 @@
 ]{caption}
 \usepackage{subcaption}
 \usepackage{circledsteps}
-\usepackage{hyperref}
+\usepackage[hidelinks]{hyperref}
 
 % ====================================================================
 
@@ -140,12 +145,10 @@
 
 
 % Command to produce a circled number to reference a step represented in a figure
-\definecolor{FigStepColor}{HTML}{BC43F0}
-
 \DeclareRobustCommand{\figstep}[1]{%
     \Circled[%
         inner color=white,%
         outer color=white,%
-        fill color=FigStepColor%
+        fill color=DocPurple%
     ]{\sffamily\textbf{#1}}%
 }

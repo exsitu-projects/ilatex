@@ -1,13 +1,20 @@
-% \usepackage{FiraMono}
-\usepackage{lmodern}
-\usepackage[tt = false]{libertine}
-% \usepackage{zlmtt}
+\usepackage{inconsolata} % Monospace font
+\usepackage{helvet} % Sans-serif font
+\usepackage[
+    libertine, % do not override the sans-serif-font
+    tt = false % do not override the monospace font
+]{libertine} % Main font (serif)
+
 \usepackage[
     top = 3cm,
     bottom = 3cm,
     left = 2.5cm,
     right = 2.5cm
 ]{geometry}
+
+\usepackage{xcolor}
+\usepackage{graphicx}
+\definecolor{DocPurple}{HTML}{BC43F0}
 
 \usepackage[english]{babel}
 \usepackage{xspace}
@@ -22,6 +29,12 @@
 \usepackage{float}
 \usepackage{listings}
 \usepackage{parskip}
+\usepackage[
+    labelfont = {small, bf},
+    textfont = {small}
+]{caption}
+\usepackage{circledsteps}
+\usepackage[hidelinks]{hyperref}
 
 % ====================================================================
 
@@ -82,6 +95,7 @@
     frametitlebackgroundcolor = green!5,
     % startinnercode = \centering\bgroup,
     % endinnercode = \egroup
+    nobreak
 ]{example}
 
 % Style of code blocks
@@ -103,3 +117,12 @@
 }
 
 \newcommand{\commanddesc}[1]{{\color{black!80}{#1}}}
+
+% Command to produce a circled number to reference a step represented in a figure
+\DeclareRobustCommand{\figstep}[1]{%
+    \Circled[%
+        inner color=white,%
+        outer color=white,%
+        fill color=DocPurple%
+    ]{\sffamily\textbf{#1}}%
+}

@@ -64,13 +64,20 @@ In some situations however, an IIR may be \textbf{disabled}. In this case, you m
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
+\newpage
 \section{List of IIRs available in \iLaTeX{}}
 
 % \newpage
 \subsection{Mathematics}
 
-An IIR for mathematics can be created with the \texttt{imaths} environment:
+\begin{figure}[hb!]
+    \centering
+    \includegraphics[width = \textwidth]{img/iir-imaths.png}
+    \caption{The IIR of \texttt{imaths} environments. \figstep{1} The editable code of the formula. You can click it to \textbf{modify the code}, and the typeset formula will be \textbf{updated in real time}. \figstep{2} A typeset formula representing the code displayed above. \figstep{3} You can \textbf{point} and \textbf{click} most symbols in the typeset formula to respectively \textbf{highlight} or \textbf{select the piece of code} that generated it.}
+    \label{fig:iir-imaths}
+\end{figure}
+
+An IIR for mathematics (\autoref{fig:iir-imaths}) can be created with the \texttt{imaths} environment:
 
 \begin{lstlisting}[style=custom-latex]
 \begin{imaths}
@@ -80,11 +87,11 @@ An IIR for mathematics can be created with the \texttt{imaths} environment:
 
 It behaves like the \texttt{align*} environment provided by the \texttt{amsmath} package: you can use all the commands accepted by \LaTeX{} in math mode inside, and you can align several formulae by using \verb|&| to align symbols vertically and \verb|\\| to break lines.
 
-This IIR enables you to edit the code of the formula and \textbf{see the change in the typeset formula in real time}, as well as to \textbf{find} (by pointing) and to \textbf{select} (by clicking) the piece of code related to almost every symbol of the typeset formula.
+% This IIR enables you to edit the code of the formula and \textbf{see the change in the typeset formula in real time}, as well as to \textbf{find} (by pointing) and to \textbf{select} (by clicking) the piece of code related to almost every symbol of the typeset formula.
 
-\begin{info}
-    When you edit the code of the formula in the IIR, the actual code of your \LaTeX{} document will \textbf{not} be updated until you click outside of the text area or press Enter.
-\end{info}
+% \begin{info}
+%     When you edit the code of the formula in the IIR, the actual code of your \LaTeX{} document will \textbf{not} be updated until you click outside of the text area or press Enter.
+% \end{info}
 
 \begin{warning}
     User-defined commands are not supported (it will compile, but the IIR will not work correctly).
@@ -105,7 +112,14 @@ This IIR enables you to edit the code of the formula and \textbf{see the change 
 \newpage
 \subsection{Images}
 
-An IIR for images can be created with the \verb|\iincludegraphics| command (with two \texttt{i}s!):
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width = .75\textwidth]{img/iir-iincludegraphics.png}
+    \caption{The IIR of \texttt{iincludegraphics} commands. \figstep{1} The expected output of the command. You can \textbf{resize it} by dragging one of the handles around the image. \figstep{2} The area of the image to display. You can \textbf{move it} by dragging it and \textbf{resize it} by dragging one of the handles around the visible area. \figstep{3} You can display or hide the image cropper by clicking this bar. \figstep{4} You can hold the Shift key or uncheck this box to resize the image with a \textbf{non-natural aspect ratio}. If the image has a non-natural aspect ratio when the IIR is opened, the box will be unchecked by default. \figstep{5} You can resize the image to \textbf{restore its natural aspect ratio} by clicking this button.}
+    \label{fig:iir-iincludegraphics}
+\end{figure}
+
+An IIR for images (\autoref{fig:iir-inicluegraphics}) can be created with the \verb|\iincludegraphics| command (with two \texttt{i}s!):
 
 \begin{lstlisting}[style=custom-latex]
 \iincludegraphics[width=\textwidth]{path/to/your/image.png}
@@ -115,16 +129,16 @@ It behaves like the \verb|\includegraphics| command provided by the \texttt{grap
 Only the \texttt{width}, \texttt{height}, \texttt{trim} and \texttt{clip} options are recognised by \iLaTeX{}.
 You can still use all the other options supported by \verb|\includegraphics|, but the IIR will ignore them and may delete them.
 
-This IIR enables you to \textbf{resize} and to \textbf{crop} the image (\ie only display a certain region of the image). To resize the image (top widget) or the cropped region (bottom widget), click and drag one of the handles displayed around the frame.
+% This IIR enables you to \textbf{resize} and to \textbf{crop} the image (\ie only display a certain region of the image). To resize the image (top widget) or the cropped region (bottom widget), click and drag one of the handles displayed around the frame.
 
 \begin{info}
     \iLaTeX{} supports the most common \emph{length macros} like \verb|\textwidth|, so you can freely use them in the options.
     If you are unsure whether a less common length macro is supported and want to use it, please ask the investigator.
 \end{info}
 
-\begin{warning}
-    PDF images are not supported (it will compile, but the IIR will not work correctly).
-\end{warning}
+% \begin{warning}
+%     PDF images are not supported (it will compile, but the IIR will not work correctly).
+% \end{warning}
 
 \begin{example}
     Try to click the image below and to edit it using the IIR.
@@ -140,7 +154,14 @@ This IIR enables you to \textbf{resize} and to \textbf{crop} the image (\ie only
 \newpage
 \subsection{Tables}
 
-An IIR for tables can be created with the \texttt{itabular} environment:
+\begin{figure}[hb!]
+    \centering
+    \includegraphics[width = \textwidth]{img/iir-itabular.png}
+    \caption{The IIR of \texttt{itabular} environments. \figstep{1} A cell of the table. You can \textbf{edit} its content by double-clicking on it. \figstep{2} The header cell of a column. If \iLaTeX{} was able to parse the type of this column (\eg \texttt{l}, \texttt{c}, \texttt{r}), this cell contains it. You can \textbf{drag it} to \textbf{move the column}. \figstep{3} The header cell of a row. You can \textbf{drag it} to \textbf{move the row}. \figstep{4} You can display a \textbf{contextual menu} by right-clicking any cell of the table. It enables you to \textbf{insert} and \textbf{delete} \textbf{rows and columns}.}
+    \label{fig:iir-itabular}
+\end{figure}
+
+An IIR for tables (\autoref{fig:iir-itabular}) can be created with the \texttt{itabular} environment:
 
 \begin{lstlisting}[style=custom-latex]
 \begin{itabular}{llr}
@@ -150,17 +171,17 @@ An IIR for tables can be created with the \texttt{itabular} environment:
 \end{itabular}
 \end{lstlisting}
 
-It behaves like the \texttt{tabular} environment, and expects a mandatory argument (the list of column types).
+It behaves like the \texttt{tabular} environment, and expects one mandatory argument (the specification of the columns, such as \texttt{l}, \texttt{r}, etc).
 
-This IIR enables you to \textbf{edit any cell} (by double-clicking it), to \textbf{insert and delete} rows and columns (via a contextual menu displayed on right click), and to \textbf{move} rows and columns (by dragging and dropping the header cell of the row/column).
+% This IIR enables you to \textbf{edit any cell} (by double-clicking it), to \textbf{insert and delete} rows and columns (via a contextual menu displayed on right click), and to \textbf{move} rows and columns (by dragging and dropping the header cell of the row/column).
 
-\begin{info}
-    Common formatting commands for tables such as \verb|\hline|, \verb|\toprule|, \verb|\midrule| and \verb|\bottomrule| are not considered as ``cell content'' by this IIR. You can safely use them, and \iLaTeX{} will do its best to ignore them and leave them in place.
-\end{info}
+% \begin{info}
+%     Common formatting commands for tables such as \verb|\hline|, \verb|\toprule|, \verb|\midrule| and \verb|\bottomrule| are not considered as ``cell content'' by this IIR. You can safely use them, and \iLaTeX{} will do its best to ignore them and leave them in place.
+% \end{info}
 
-\begin{warning}
-    Merged cells are not supported (it will compile, but the IIR will not work correctly).
-\end{warning}
+% \begin{warning}
+%     Merged cells are not supported (it will compile, but the IIR will not work correctly).
+% \end{warning}
 
 \begin{example}
     Try to click the table below and to edit it using the IIR.
@@ -185,9 +206,16 @@ This IIR enables you to \textbf{edit any cell} (by double-clicking it), to \text
 \newpage
 \subsection{Grid layouts}
 
-An IIR for grid layouts can be created with the \texttt{gridlayout} environment.
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width = .95\textwidth]{img/iir-gridlayout.png}
+    \caption{The IIR of \texttt{gridlayout} environments. \figstep{1} A cell of the layout that is pointed by the mouse. It can be dragged to be moved before or after another cell. \figstep{2} Buttons to insert a new cell. \figstep{3} Button to remove the cell. \figstep{4} Separator between two cells. It can be dragged to resize the adjacent cells. \figstep{5} Separator between two rows. It can be dragged to resize the adjacent rows. \figstep{6} Button to insert a new row at the bottom of the grid.}
+    \label{fig:iir-gridlayout}
+\end{figure}
+
+An IIR for grid layouts (\autoref{fig:iir-gridlayout}) can be created with the \texttt{gridlayout} environment.
 A grid can contain rows (\texttt{row} environments), and a row can contain cells (\texttt{cell} environments).
-A cell can contain \textbf{arbitrary content} (text, image, table, etc), but it \textbf{cannot contain visualisable code}.
+A cell can contain \textbf{arbitrary content} (text, image, table, etc), but it \textbf{cannot contain} other special commands and environments provided by \iLaTeX{}!
 
 \begin{lstlisting}[style=custom-latex]
 % this grid is as wide as the text (\textwidth) and 8cm tall
@@ -209,21 +237,21 @@ A cell can contain \textbf{arbitrary content} (text, image, table, etc), but it 
 \end{lstlisting}
 
 Contrary to the other IIRs, this IIR is not a wrapper around an existing command or environment.
-Internally, every row and every cell is a \texttt{minipage} whose dimensions and position are managed for you.
+Internally, every row and every cell is implemented as a \texttt{minipage}.
 
 The \texttt{grid} environment expects two mandatory arguments: the \textbf{width} and the \textbf{height} of the grid.
 The \texttt{row} and \texttt{cell} environments expect one mandatory argument each: the \textbf{relative height} of the row and the \textbf{relative width} of the cell. These relative dimensions are \textbf{unitless numbers between 0 and 1} that must sum to 1 over all the cells of a row and over all the rows of the grid.
 
-This IIR enables you to \textbf{insert a new row}, a \textbf{new cell}, and to \textbf{delete an existing cell} by clicking the appropriate button (some will appear when you hover a cell). It also enables you to \textbf{resize cells and rows} (by dragging the separator between two of them), as well as to \textbf{move a cell} (by dragging and dropping the cell).
+% This IIR enables you to \textbf{insert a new row}, a \textbf{new cell}, and to \textbf{delete an existing cell} by clicking the appropriate button (some will appear when you hover a cell). It also enables you to \textbf{resize cells and rows} (by dragging the separator between two of them), as well as to \textbf{move a cell} (by dragging and dropping the cell).
 
 \begin{info}
     In every cell, \iLaTeX{} defines \verb|\cellwidth| and \verb|\rowheight|, two custom length macros relative to the current size of the cell that you can freely use (\eg to make an image have the same width or height than the cell).
 \end{info}
 
-\begin{warning}
-    You should always use at least one row with at least one cell in a \texttt{gridlayout} environment, and you should avoid putting anything outside of a \texttt{cell} environment.
-    Doing so is likely to break the layout, and the IIR will not represent it correctly anymore.
-\end{warning}
+% \begin{warning}
+%     You should always use at least one row with at least one cell in a \texttt{gridlayout} environment, and you should avoid putting anything outside of a \texttt{cell} environment.
+%     Doing so is likely to break the layout, and the IIR will not represent it correctly anymore.
+% \end{warning}
 
 \begin{example}
     Try to click the layout below, to understand how it is built, and to edit it using the IIR.
@@ -280,6 +308,7 @@ This IIR enables you to \textbf{insert a new row}, a \textbf{new cell}, and to \
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
+\newpage
 \section{Summary of every special commands and environments}
 Do not forget to adapt the parameters as needed!
 
