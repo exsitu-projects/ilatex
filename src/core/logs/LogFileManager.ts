@@ -37,7 +37,7 @@ export class LogFileManager {
         const fullEntry = {
             mainFileName: path.basename(this.ilatex.mainSourceFileUri.path),
             activeFileName: path.basename(vscode.window.activeTextEditor?.document.uri.path ?? ""),
-            timestamp: Date.now(),
+            timestamp: new Date().getTime(),
 
             ...entry
         };
