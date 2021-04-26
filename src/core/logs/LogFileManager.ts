@@ -19,13 +19,11 @@ export type ErrorLogEntryData = LogDataForSource<LogEntrySource.Error>;
 export class LogFileManager {
     private ilatex: InteractiveLatex;
 
-    private logEntries: LogEntry[];
     private logFile: LogFile | null; // null if logging is disabled
 
     constructor(ilatex: InteractiveLatex) {
         this.ilatex = ilatex;
 
-        this.logEntries = [];
         this.logFile = this.ilatex.options.enableLogging
             ? new LogFile(this.ilatex.mainSourceFileUri.path)
             : null;
@@ -44,7 +42,6 @@ export class LogFileManager {
             ...entry
         };
 
-        this.logEntries.push(fullEntry);
         this.logFile.writeLogEntry(fullEntry);
     }
 
