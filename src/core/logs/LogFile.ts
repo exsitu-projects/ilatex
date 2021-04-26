@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import * as path from "path";
 import { LogEntry } from "./LogEntry";
 import { FileWriter, FileWriterMode } from "../utils/FileWriter";
 
@@ -38,9 +39,9 @@ export class LogFile {
     private readonly path: string;
     private logFileWriter: FileWriter;
 
-    constructor(mainSourceFilePath: string) {
+    constructor(mainSourceFilePath: string, useHiddenFile: boolean) {
         this.mainSourceFilePath = mainSourceFilePath;
-        this.path = LogFile.getLogFilePathFromMainSourceFilePath(mainSourceFilePath);
+        this.path = LogFile.getLogFilePathFromMainSourceFilePath(mainSourceFilePath, useHiddenFile);
 
         // Note: the existence of the log file must be tested BEFORE creating the file writer,
         // as it will create the file if it does not exist yet!
@@ -123,10 +124,14 @@ export class LogFile {
         }
     }
 
-    private static getLogFilePathFromMainSourceFilePath(mainSourceFilePath: string): string {
-        const lastDotIndex = mainSourceFilePath.lastIndexOf(".");
-        return mainSourceFilePath
-            .substring(0, lastDotIndex >= 0 ? lastDotIndex : undefined)
-            .concat(".ilatex-logs");
+    private static getLogFilePathFromMainSourceFilePath(mainSourceFilePath: string, useHiddenFile: boolean): string {
+        const directoryPath = path.dirname(mainSourceFilePath);
+        const fileName = path.basename(mainSourceFilePath);
+
+        const lastFileNameDotIndex = fileName.lastIndexOf(".");
+        const regularLogFileName = fileName.substring(0, lastFileNameDotIndex >= 0 ? lastFileNameDotIndex : undefined);
+        const logFileName = `${useHiddenFile ? "." : ""}${regularLogFileName}.ilatex-logs`;
+        
+        return path.join(directoryPath, logFileName);
     }
 }

@@ -25,7 +25,10 @@ export class LogFileManager {
         this.ilatex = ilatex;
 
         this.logFile = this.ilatex.options.enableLogging
-            ? new LogFile(this.ilatex.mainSourceFileUri.path)
+            ? new LogFile(
+                this.ilatex.mainSourceFileUri.path,
+                this.ilatex.options.logFileType === "hidden"
+            )
             : null;
     }
 

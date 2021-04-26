@@ -83,11 +83,16 @@ export class InteractiveLatexExtensionContext {
 				return;
 			}
 
+			const enableLoggingConfigurationValue = vscode.workspace.getConfiguration("ilatex").get("enableLogging")! as string;
 			const ilatexOptions = {
 				enableVisualisations:
 					!item.description && item.description !== "(disable code visualisations)",
 				enableLogging:
-					vscode.workspace.getConfiguration("ilatex").get("enableLogging")! as boolean
+					enableLoggingConfigurationValue.toLowerCase().startsWith("enable"),
+				logFileType:
+					enableLoggingConfigurationValue.toLowerCase().includes("hidden")
+						? "hidden" as const
+						: "regular" as const
 			};
 				
 			if (item.label === "$(default-view-icon) Create from the active editor") {
@@ -111,18 +116,28 @@ export class InteractiveLatexExtensionContext {
 			// Commands to initialise iLaTeX with and without interactive visualisations
 			// from the file opened in the current active editor (if any)
 			vscode.commands.registerCommand("ilatex.createDocumentFromActiveEditor", async () => {
+				const enableLoggingConfigurationValue = vscode.workspace.getConfiguration("ilatex").get("enableLogging")! as string;
 				this.ilatexDocumentManager.createOrShowILatexDocumentFromActiveEditor({
 					enableVisualisations: true,
 					enableLogging:
-						vscode.workspace.getConfiguration("ilatex").get("enableLogging")! as boolean
+						enableLoggingConfigurationValue.toLowerCase().startsWith("enable"),
+					logFileType:
+						enableLoggingConfigurationValue.toLowerCase().includes("hidden")
+							? "hidden" as const
+							: "regular" as const
 				});
 			}),
 	
 			vscode.commands.registerCommand("ilatex.createDocumentFromActiveEditorWithoutVisualisations", async () => {
+				const enableLoggingConfigurationValue = vscode.workspace.getConfiguration("ilatex").get("enableLogging")! as string;
 				this.ilatexDocumentManager.createOrShowILatexDocumentFromActiveEditor({
 					enableVisualisations: false,
 					enableLogging:
-						vscode.workspace.getConfiguration("ilatex").get("enableLogging")! as boolean
+						enableLoggingConfigurationValue.toLowerCase().startsWith("enable"),
+					logFileType:
+						enableLoggingConfigurationValue.toLowerCase().includes("hidden")
+							? "hidden" as const
+							: "regular" as const
 				});
 			}),
 	

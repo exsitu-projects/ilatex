@@ -52,10 +52,16 @@
 			"title": "i-LaTeX",
 			"properties": {
 			  "ilatex.enableLogging": {
-				"type": "boolean",
-				"default": true,
+				"type": "string",
+				"enum": ["Enable (regular files)", "Enable (hidden files)", "Disable"],
+				"default": "Enable (regular files)",
 				"scope": "application",
-				"description": "Enable the automatic logging of various events in .ilatex-logs files."
+				"description": "Control the automatic logging of various events in .ilatex-logs files.",
+				"enumDescriptions": [
+					"Log events in a regular <filename>.ilatex-logs file.",
+					"Log events in a hidden .<filename>.ilatex-logs file.",
+					"Do not log event (selecting this option will not create any log file)."
+				]
 			  }
 			}
 		  }
