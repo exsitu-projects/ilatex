@@ -153,7 +153,7 @@ export abstract class AbstractVisualisationModel<T extends ASTNode> implements V
             {
                 title: "reveal-code-in-editor",
                 handler: async notifiction => {
-                    await this.astNode.selectRangeInEditor();
+                    await this.astNode.selectRangeInEditor(true);
                     this.logEvent("reveal-code-in-editor");
                 }
             },

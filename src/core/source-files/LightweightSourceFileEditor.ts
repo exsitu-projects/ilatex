@@ -1,3 +1,4 @@
+import * as vscode from "vscode";
 import { StringUtils } from "../../shared/utils/StringUtils";
 import { SourceFile } from "./SourceFile";
 import { SourceFilePosition } from "./SourceFilePosition";
@@ -23,12 +24,25 @@ export class LightweightSourceFileEditor {
     private sortedEditableSectionNames: string[];
     private editableSectionNamesToData: Map<string, EditableSectionData>;
 
-    constructor(sourceFile: SourceFile, sortedEditableSections: EditableSection[]) {
+    private skipTemporaryEditsIfSourceFileIsNotVisible: boolean;
+
+    constructor(
+        sourceFile: SourceFile,
+        sortedEditableSections: EditableSection[],
+        skipTemporaryEditsIfSourceFileIsNotVisible: boolean = true
+    ) {
         this.sourceFile = sourceFile;
 
         this.sortedEditableSections = sortedEditableSections;
         this.sortedEditableSectionNames = sortedEditableSections.map(section => section.name);
         this.editableSectionNamesToData = new Map();
+
+        this.skipTemporaryEditsIfSourceFileIsNotVisible = skipTemporaryEditsIfSourceFileIsNotVisible;
+    }
+
+    get shouldSkipTemporaryEdits(): boolean {
+        return this.skipTemporaryEditsIfSourceFileIsNotVisible
+            && !this.sourceFile.isOpenInVisibleEditor;
     }
 
     async init(): Promise<void> {
@@ -54,15 +68,20 @@ export class LightweightSourceFileEditor {
             return;
         }
 
-        this.sourceFile.ignoreChanges = true;
+        // In some cases, skip temporary section edits
+        // This enables to avoid giving focus to an editor when temporary edits are performed
+        // (VS Code workspace edits are not an option here, as they do not offer control on undo stops)
+        if (!this.shouldSkipTemporaryEdits) {
+            this.sourceFile.ignoreChanges = true;
 
-        const editor = await this.sourceFile.getOrOpenInEditor();
-        await editor.edit(
-            editBuilder => editBuilder.replace(sectionData.currentRange.asVscodeRange, newContent),
-            { undoStopBefore: false, undoStopAfter: false}
-        );
-
-        this.sourceFile.ignoreChanges = false;
+            const editor = await this.sourceFile.getOrOpenInEditor();
+            await editor.edit(
+                editBuilder => editBuilder.replace(sectionData.currentRange.asVscodeRange, newContent),
+                { undoStopBefore: false, undoStopAfter: false}
+            );
+    
+            this.sourceFile.ignoreChanges = false;
+        }
 
         this.shiftSectionRangesBeforeReplacementInSection(sectionName, newContent);
         sectionData.currentContent = newContent;
@@ -122,29 +141,31 @@ export class LightweightSourceFileEditor {
             .reverse()
             .map(name => this.editableSectionNamesToData.get(name)!);
 
-        // First, replace the current content by the initial content
+        // First, if temporary edits have not been not skipped, replace the current content by the initial content
         // This is required to ensure the change that will be processed by the source file and its AST
         // is performed on the same content than before the very first lightweight edit
         // (without this trick, if the final new content is long enough, it might produce undesired accross-node changes!)
-        this.sourceFile.ignoreChanges = true;
+        if (!this.shouldSkipTemporaryEdits) {
+            this.sourceFile.ignoreChanges = true;
 
-        const editor = await this.sourceFile.getOrOpenInEditor();
-        await editor.edit(
-            editBuilder => {
-                for (let sectionData of reverseSortedSectionData) {
-                    editBuilder.replace(sectionData.currentRange.asVscodeRange, sectionData.initialContent);
-                }
-            },
-            { undoStopBefore: false, undoStopAfter: false}
-        );
+            const editor = new vscode.WorkspaceEdit();
+            for (let sectionData of reverseSortedSectionData) {
+                editor.replace(
+                    this.sourceFile.uri,
+                    sectionData.currentRange.asVscodeRange,
+                    sectionData.initialContent
+                );
+            }
+    
+            await vscode.workspace.applyEdit(editor);
+    
+            this.sourceFile.ignoreChanges = false;
+        }
+
 
         // Then, replace the initial content by the last new content WITHOUT making the source file ignore the change
-        this.sourceFile.ignoreChanges = false;
-        
-        await this.sourceFile.applyEdits(editBuilder => {
-            for (let sectionData of reverseSortedSectionData) {
-                editBuilder.replace(sectionData.initialRange.asVscodeRange, sectionData.currentContent);
-            }
-        });
+        await this.sourceFile.applyEdits(...reverseSortedSectionData.map(sectionData => 
+            vscode.TextEdit.replace(sectionData.initialRange.asVscodeRange, sectionData.currentContent)
+        ));        
     }
 }

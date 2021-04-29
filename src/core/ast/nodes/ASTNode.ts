@@ -70,8 +70,15 @@ export abstract class ASTNode {
 
     abstract get childNodes(): ASTNode[];
 
-    async selectRangeInEditor(): Promise<void> {
-        await this.sourceFile.selectRangeInEditor(this.range);
+    async selectRangeInEditor(
+        openIfNotVisible: boolean = false,
+        scrollIfNotVisible: boolean = true
+    ): Promise<void> {
+        await this.sourceFile.selectRangeInEditor(
+            this.range,
+            openIfNotVisible,
+            scrollIfNotVisible
+        );
     }
 
     protected startTemporarilyPreventingReparsing(): void {

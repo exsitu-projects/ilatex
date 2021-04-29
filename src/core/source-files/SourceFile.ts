@@ -70,32 +70,41 @@ export class SourceFile {
         });
     }
 
-    get editor(): vscode.TextEditor | null {
-        return vscode.window.visibleTextEditors.find(editor => {
-            return editor.document.uri.path === this.uri.path;
-        }) ?? null;
+    get isOpenInVisibleEditor(): boolean {
+        return vscode.window.visibleTextEditors.some(editor => {
+                return editor.document.uri.path === this.uri.path;
+            });
     }
 
-    get isOpenInEditor(): boolean {
-        return this.editor !== null;
+    isOpenInEditor(editor: vscode.TextEditor): boolean {
+        return this.isRepresentedByDocument(editor.document);
     }
 
     isRepresentedByDocument(document: vscode.TextDocument): boolean {
         return this.uri.path === document.uri.path;
     }
 
-    async openInEditor(): Promise<vscode.TextEditor> {
-        return vscode.window.showTextDocument(await this.document, vscode.ViewColumn.One);
+    async getOrOpenInEditor(focus: boolean = false): Promise<vscode.TextEditor> {
+        return vscode.window.showTextDocument(
+            await this.document,
+            vscode.ViewColumn.One,
+            !focus
+        );
     }
 
-    async getOrOpenInEditor(): Promise<vscode.TextEditor> {
-        return this.editor ?? await this.openInEditor();
-    }
+    async selectRangeInEditor(
+        range: SourceFileRange,
+        openIfNotVisible: boolean = false,
+        scrollIfNotVisible: boolean = true
+    ): Promise<void> {
+        if (!openIfNotVisible && !this.isOpenInVisibleEditor) {
+            return;
+        }
 
-    async selectRangeInEditor(range: SourceFileRange, scrollIfNotVisible: boolean = true): Promise<void> {
         const editor = await this.getOrOpenInEditor();
 
         // If the selected range is not visible, possibly scroll to the selection
+        editor.selections = [range.asVscodeSelection];
         editor.revealRange(
             range.asVscodeRange,
             scrollIfNotVisible

@@ -36,6 +36,13 @@ export class SourceFileRange {
         );
     }
 
+    get asVscodeSelection(): vscode.Selection {
+        return new vscode.Selection(
+            this.from.asVscodePosition,
+            this.to.asVscodePosition,
+        );
+    }
+
     get raw(): RawSourceFileRange {
         return {
             from: this.from.raw,

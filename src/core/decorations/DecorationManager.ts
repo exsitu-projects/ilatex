@@ -67,11 +67,11 @@ export class DecorationManager {
         // Map each visible editor to 0+ visualisation models
         const visibleEditors = vscode.window.visibleTextEditors;
         const modelsWithVisibleEditors: ModelWithEditor[] = models
-            .filter(model => model.sourceFile.editor !== null && visibleEditors.includes(model.sourceFile.editor))
+            .filter(model => model.sourceFile.isOpenInVisibleEditor)
             .map(model => {
                 return {
                     model: model,
-                    editor: model.sourceFile.editor as vscode.TextEditor
+                    editor: visibleEditors.find(editor => model.sourceFile.isOpenInEditor(editor))!
                 };
             });
 
