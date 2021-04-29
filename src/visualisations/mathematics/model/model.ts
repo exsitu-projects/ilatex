@@ -16,6 +16,10 @@ export class MathematicsModel extends AbstractVisualisationModel<EnvironmentNode
         this.trimmedMathCode = null;
     }
 
+    private get mathCode(): Promise<string> {
+        return this.astNode.body.textContent;
+    }
+
     protected get contentDataAsHtml(): string {
         return this.trimmedMathCode || "";
     }
@@ -25,7 +29,13 @@ export class MathematicsModel extends AbstractVisualisationModel<EnvironmentNode
             ...super.viewMessageHandlerSpecifications,
 
             {
-                title: "math-region-selected",
+                title: "hover-math-region",
+                handler: async payload => {
+                    this.logEvent("math-region-hovered");
+                }
+            },
+            {
+                title: "select-math-region",
                 handler: async payload => {
                     this.logEvent("math-region-selected");
                 }
@@ -35,10 +45,16 @@ export class MathematicsModel extends AbstractVisualisationModel<EnvironmentNode
                 handler: async payload => {
                     const { trimmedMathCode } = payload;
 
+                    // If the new code is the same than the old code (trimmed), do nothing
+                    const isSameCode = await this.isTrimmedMathCodeEqualTo(trimmedMathCode);
+                    if (isSameCode) {
+                        return;
+                    }
+
                     await this.setNewMathCode(trimmedMathCode);
                     this.registerChangeRequestedByTheView();
 
-                    this.logEvent("set-math-code");
+                    this.logEvent("set-new-math-code");
                 }
             }
         ];
@@ -54,6 +70,11 @@ export class MathematicsModel extends AbstractVisualisationModel<EnvironmentNode
             this.contentUpdateEndEventEmitter.fire(false);
 
         }
+    }
+
+    private async isTrimmedMathCodeEqualTo(otherTrimmedMathCode: string): Promise<boolean> {
+        const trimmedMathCode = (await this.mathCode).trim();
+        return trimmedMathCode === otherTrimmedMathCode;
     }
 
     private async setNewMathCode(trimmedMathCode: string): Promise<void> {

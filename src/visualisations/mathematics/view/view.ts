@@ -5,6 +5,7 @@ import { WebviewToCoreMessageType } from "../../../shared/messenger/messages";
 import { VisualisationMetadata } from "../../../shared/visualisations/types";
 import { VisualisationViewContext } from "../../../webview/visualisations/VisualisationViewContext";
 import { HtmlUtils } from "../../../shared/utils/HtmlUtils";
+import { TaskThrottler } from "../../../shared/tasks/TaskThrottler";
 
 function nodeContainsPosition(node: HTMLElement, offsetX: number, offsetY: number): boolean {
     const nodeBox = node.getBoundingClientRect();
@@ -28,6 +29,7 @@ export class NoHoveredMathRegionError {};
 
 class MathematicsView extends AbstractVisualisationView {
     static readonly visualisationName = "mathematics";
+    private static readonly MIN_TIME_BETWEEN_MATH_REGION_HOVER_NOTIFICATION: number = 500; // ms
     readonly visualisationName = MathematicsView.visualisationName;
 
     private mathCode: string;
@@ -41,6 +43,8 @@ class MathematicsView extends AbstractVisualisationView {
 
     private hoveredMathRegionNode: HTMLElement | null;
     private mathCodeIsEditable: boolean;
+
+    private mathCodeRegionHoverNotificationThrottler: TaskThrottler;
 
     // Unique event callbacks
     private viewClickCallback =
@@ -81,6 +85,10 @@ class MathematicsView extends AbstractVisualisationView {
     
         this.hoveredMathRegionNode = null;
         this.mathCodeIsEditable = false;
+
+        this.mathCodeRegionHoverNotificationThrottler = new TaskThrottler(
+            MathematicsView.MIN_TIME_BETWEEN_MATH_REGION_HOVER_NOTIFICATION
+        );
 
         this.updateInstructionsNode();
         this.updateCompleteMathCodeNode();
@@ -326,6 +334,14 @@ class MathematicsView extends AbstractVisualisationView {
             catch (error) {
                 this.enterMathCodeEditMode();
             }
+
+            // Notify the model a math region has been selected
+            this.messenger.sendMessage({
+                type: WebviewToCoreMessageType.NotifyVisualisationModel,
+                visualisationUid: this.modelUid,
+                title: "select-math-region",
+                notification: {}
+            });
         }
     }
 
@@ -352,12 +368,14 @@ class MathematicsView extends AbstractVisualisationView {
         // update the math code node in any case
         this.updateCompleteMathCodeNode();
 
-        // Notify the model a math region has been selected
-        this.messenger.sendMessage({
-            type: WebviewToCoreMessageType.NotifyVisualisationModel,
-            visualisationUid: this.modelUid,
-            title: "math-region-selected",
-            notification: {}
+        // Notify the model a math region has been pointed
+        this.mathCodeRegionHoverNotificationThrottler.add(async () => {
+            this.messenger.sendMessage({
+                type: WebviewToCoreMessageType.NotifyVisualisationModel,
+                visualisationUid: this.modelUid,
+                title: "hover-math-region",
+                notification: {}
+            });
         });
     }
 
