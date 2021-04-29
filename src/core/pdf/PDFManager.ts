@@ -86,6 +86,9 @@ export class PDFManager {
                 this.hasAlreadrBuiltPdfOnce = true;
             });
 
+            // Log the start of the compilation
+            this.ilatex.logFileManager.logCoreEvent({ event: "pdf-compilation-start" });
+
             // List of arguments for latexmk
             const extraOptions: string[] = [
                 // Generate a PDF file (not a DVI)
