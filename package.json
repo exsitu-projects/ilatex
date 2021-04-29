@@ -51,20 +51,24 @@
 		"configuration": {
 			"title": "i-LaTeX",
 			"properties": {
-			  "ilatex.enableLogging": {
-				"type": "string",
-				"enum": ["Enable (regular files)", "Enable (hidden files)", "Disable"],
-				"default": "Enable (regular files)",
-				"scope": "application",
-				"description": "Control the automatic logging of various events in .ilatex-logs files.",
-				"enumDescriptions": [
-					"Log events in a regular <filename>.ilatex-logs file.",
-					"Log events in a hidden .<filename>.ilatex-logs file.",
-					"Do not log event (selecting this option will not create any log file)."
-				]
-			  }
+				"ilatex.enableLogging": {
+					"type": "string",
+					"enum": [
+						"Enable (regular files)",
+						"Enable (hidden files)",
+						"Disable"
+					],
+					"default": "Enable (regular files)",
+					"scope": "application",
+					"description": "Control the automatic logging of various events in .ilatex-logs files.",
+					"enumDescriptions": [
+						"Log events in a regular <filename>.ilatex-logs file.",
+						"Log events in a hidden .<filename>.ilatex-logs file.",
+						"Do not log event (selecting this option will not create any log file)."
+					]
+				}
 			}
-		  }
+		}
 	},
 	"extensionDependencies": [
 		"torn4dom4n.latex-support"
@@ -83,8 +87,8 @@
 		"@types/node": "^12.11.7",
 		"@types/parsimmon": "^1.10.1",
 		"@types/vscode": "^1.42.0",
-		"@typescript-eslint/eslint-plugin": "^2.18.0",
-		"@typescript-eslint/parser": "^2.18.0",
+		"@typescript-eslint/eslint-plugin": "^4.22.0",
+		"@typescript-eslint/parser": "4.22.0",
 		"eslint": "^6.8.0",
 		"glob": "^7.1.6",
 		"html-minifier": "^4.0.0",
@@ -93,6 +97,6 @@
 		"typescript": "^4.2.0"
 	},
 	"dependencies": {
-		"parsimmon": "^1.13.0"
+		"parsimmon": "1.16.0"
 	}
 }
