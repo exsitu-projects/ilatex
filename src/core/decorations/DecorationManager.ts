@@ -59,7 +59,7 @@ export class DecorationManager {
             .filter(model => model.sourceFile.isRepresentedByDocument(document) && !model.metadata.available)
             .map(model => new vscode.CodeLens(model.astNode.range.asVscodeRange, {
                 title: "iLaTeX is out-of-sync with this piece of code. Click to recompile the document and recompute code visualisations.",
-                command: "ilatex.recompile"
+                command: "ilatex.recompileDocumentsUsingActiveEditor"
             }));
     }
 
