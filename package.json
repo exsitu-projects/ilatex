@@ -51,21 +51,31 @@
 		"configuration": {
 			"title": "i-LaTeX",
 			"properties": {
-				"ilatex.enableLogging": {
+				"ilatex.enableLocalLogging": {
 					"type": "string",
 					"enum": [
-						"Enable (regular files)",
-						"Enable (hidden files)",
+						"Enable (using regular files)",
+						"Enable (using hidden files)",
 						"Disable"
 					],
-					"default": "Enable (regular files)",
+					"default": "Enable (using regular files)",
 					"scope": "application",
-					"description": "Control the automatic logging of various events in .ilatex-logs files.",
+					"markdownDescription": "Control the automatic logging of i-LaTeX usage events in .ilatex-logs files that are located **in the same directories** than the edited LaTeX files.",
 					"enumDescriptions": [
-						"Log events in a regular <filename>.ilatex-logs file.",
-						"Log events in a hidden .<filename>.ilatex-logs file.",
-						"Do not log event (selecting this option will not create any log file)."
+						"Log events in regular <filename>.ilatex-logs files.",
+						"Log events in hidden .<filename>.ilatex-logs files.",
+						"Do not log any event at this location."
 					]
+				},
+				"ilatex.enableCentralisedLogging": {
+					"type": "boolean",
+					"default": true,
+					"markdownDescription": "Enable the automatic logging of i-LaTeX usage events **in a unique, centralised directory**. If enabled, log files will be written in the directory specified by `#ilatex.centralisedLoggingDirectoryPath#`."
+				},
+				"ilatex.centralisedLoggingDirectoryPath": {
+					"type": "string",
+					"default": "~/.ilatex/logs/",
+					"markdownDescription": "Absolute path to the directory where centralised log files should be written. i-LaTeX will attempt to create every missing directory in the path. Only applies when `#ilatex.enableCentralisedLogging#` is enabled."
 				}
 			}
 		}

@@ -39,9 +39,12 @@ export class LogFile {
     private readonly path: string;
     private logFileWriter: FileWriter;
 
-    constructor(mainSourceFilePath: string, useHiddenFile: boolean) {
+    constructor(
+        logFilePath: string,
+        mainSourceFilePath: string
+    ) {
+        this.path = logFilePath;
         this.mainSourceFilePath = mainSourceFilePath;
-        this.path = LogFile.getLogFilePathFromMainSourceFilePath(mainSourceFilePath, useHiddenFile);
 
         // Note: the existence of the log file must be tested BEFORE creating the file writer,
         // as it will create the file if it does not exist yet!
@@ -122,16 +125,5 @@ export class LogFile {
                 console.warn(`A log entry field that is neither a number, a boolean or a string is being written to the log file (key = ${key}, value = ${fieldValue}).`);
                 return `"${fieldValue}"`;
         }
-    }
-
-    private static getLogFilePathFromMainSourceFilePath(mainSourceFilePath: string, useHiddenFile: boolean): string {
-        const directoryPath = path.dirname(mainSourceFilePath);
-        const fileName = path.basename(mainSourceFilePath);
-
-        const lastFileNameDotIndex = fileName.lastIndexOf(".");
-        const regularLogFileName = fileName.substring(0, lastFileNameDotIndex >= 0 ? lastFileNameDotIndex : undefined);
-        const logFileName = `${useHiddenFile ? "." : ""}${regularLogFileName}.ilatex-logs`;
-        
-        return path.join(directoryPath, logFileName);
     }
 }

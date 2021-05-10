@@ -9,9 +9,16 @@ import { LogFileManager } from "./logs/LogFileManager";
 import { TaskDebouncer } from "../shared/tasks/TaskDebouncer";
 
 export interface InteractiveLatexOptions {
+    // Globally enable or disable visualisations
     enableVisualisations: boolean;
-    enableLogging: boolean;
-    logFileType: "regular" | "hidden";
+
+    // Local log files
+    enableLocalLogging: boolean;
+    localLogFileType: "regular" | "hidden";
+
+    // Centralised log files
+    enableCentralisedLogging: boolean;
+    centralisedLoggingDirectoryPath: string;
 }
 
 export class InteractiveLatex {

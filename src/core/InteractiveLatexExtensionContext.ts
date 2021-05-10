@@ -83,16 +83,10 @@ export class InteractiveLatexExtensionContext {
 				return;
 			}
 
-			const enableLoggingConfigurationValue = vscode.workspace.getConfiguration("ilatex").get("enableLogging")! as string;
 			const ilatexOptions = {
+				...InteractiveLatexExtensionContext.getPartialILatexOptionsFromExtensionSettings(),
 				enableVisualisations:
-					!item.description && item.description !== "(disable code visualisations)",
-				enableLogging:
-					enableLoggingConfigurationValue.toLowerCase().startsWith("enable"),
-				logFileType:
-					enableLoggingConfigurationValue.toLowerCase().includes("hidden")
-						? "hidden" as const
-						: "regular" as const
+					!item.description && item.description !== "(disable code visualisations)"
 			};
 				
 			if (item.label === "$(default-view-icon) Create from the active editor") {
@@ -116,28 +110,17 @@ export class InteractiveLatexExtensionContext {
 			// Commands to initialise iLaTeX with and without interactive visualisations
 			// from the file opened in the current active editor (if any)
 			vscode.commands.registerCommand("ilatex.createDocumentFromActiveEditor", async () => {
-				const enableLoggingConfigurationValue = vscode.workspace.getConfiguration("ilatex").get("enableLogging")! as string;
 				this.ilatexDocumentManager.createOrShowILatexDocumentFromActiveEditor({
-					enableVisualisations: true,
-					enableLogging:
-						enableLoggingConfigurationValue.toLowerCase().startsWith("enable"),
-					logFileType:
-						enableLoggingConfigurationValue.toLowerCase().includes("hidden")
-							? "hidden" as const
-							: "regular" as const
+					...InteractiveLatexExtensionContext.getPartialILatexOptionsFromExtensionSettings(),
+					enableVisualisations: true
 				});
 			}),
 	
 			vscode.commands.registerCommand("ilatex.createDocumentFromActiveEditorWithoutVisualisations", async () => {
-				const enableLoggingConfigurationValue = vscode.workspace.getConfiguration("ilatex").get("enableLogging")! as string;
 				this.ilatexDocumentManager.createOrShowILatexDocumentFromActiveEditor({
+					...InteractiveLatexExtensionContext.getPartialILatexOptionsFromExtensionSettings(),
 					enableVisualisations: false,
-					enableLogging:
-						enableLoggingConfigurationValue.toLowerCase().startsWith("enable"),
-					logFileType:
-						enableLoggingConfigurationValue.toLowerCase().includes("hidden")
-							? "hidden" as const
-							: "regular" as const
+					
 				});
 			}),
 	
@@ -181,6 +164,29 @@ export class InteractiveLatexExtensionContext {
 
 	private dispose(): void {
 		this.nbILatexDocumentChangeObserverDisposable.dispose();
+	}
+
+	static getPartialILatexOptionsFromExtensionSettings() {
+		const settings = vscode.workspace.getConfiguration("ilatex");
+
+		// Local log files
+		const enableLocalLoggingSettingValue = settings.get("enableLocalLogging")! as string;
+		const enableLocalLogging = enableLocalLoggingSettingValue.toLowerCase().startsWith("enable");
+		const localLogFileType = enableLocalLoggingSettingValue.toLowerCase().includes("hidden")
+			? "hidden" as const
+			: "regular" as const;
+		
+		// Centralised log files
+		const enableCentralisedLogging = settings.get("enableCentralisedLogging")! as boolean;
+		const centralisedLoggingDirectoryPath = settings.get("centralisedLoggingDirectoryPath")! as string;
+
+		return {
+			enableLocalLogging: enableLocalLogging,
+			localLogFileType: localLogFileType,
+
+			enableCentralisedLogging: enableCentralisedLogging,
+			centralisedLoggingDirectoryPath: centralisedLoggingDirectoryPath
+		};
 	}
 
 	static get uniqueInstance(): InteractiveLatexExtensionContext | null {
