@@ -1,0 +1,188 @@
+\usepackage{inconsolata} % Monospace font
+\usepackage{helvet} % Sans-serif font
+\usepackage[
+    libertine, % do not override the sans-serif-font
+    tt = false % do not override the monospace font
+]{libertine} % Main font (serif)
+
+\usepackage[
+    top = 3cm,
+    bottom = 3cm,
+    left = 2.5cm,
+    right = 2.5cm
+]{geometry}
+
+\usepackage{xcolor}
+\usepackage{graphicx}
+\definecolor{DocPurple}{HTML}{BC43F0}
+
+\usepackage[english]{babel}
+\usepackage{xspace}
+\usepackage{nopageno}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage[xcolor]{mdframed}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{mathrsfs}
+\usepackage{stmaryrd}
+\usepackage{float}
+\usepackage{ragged2e}
+\usepackage{listings}
+\usepackage{parskip}
+\usepackage[
+    labelfont = {small, bf},
+    textfont = {small}
+]{caption}
+\usepackage{circledsteps}
+\usepackage[hidelinks]{hyperref}
+
+\usepackage{ilatex}
+
+% ====================================================================
+
+\newcommand{\eg}{e.g.,\xspace}
+\newcommand{\ie}{i.e.\xspace}
+\newcommand{\etal}{\textit{et~al.}\xspace}
+
+
+\DeclareRobustCommand{\iLaTeX}{\mbox{{{\itshape i}-\hspace{-0.25mm}}\LaTeX{}}}
+
+% Document titles
+\newcommand{\makedoctitle}[1]{%
+\begin{center}
+    \color{black!75}
+    {\Large{Evaluation of \iLaTeX}} \\
+    \noindent\rule{8cm}{0.4pt} \\[1em]
+    \color{black}
+    {\Huge{#1}}
+\end{center}
+}
+
+% Task titles
+\newcommand{\largetitle}[1]{
+    \begin{center}
+        \Huge
+        \textbf{#1}
+    \end{center}
+    \vspace{2em}
+}
+
+% Various "blocks" defined with mdframed
+\newmdenv[
+    linecolor = black!50,
+    backgroundcolor = white,
+    skipabove = 1em,
+    skipbelow = 1em,
+    frametitle = {Instructions},
+    frametitlebackgroundcolor = black!5
+]{instructions}
+
+\newmdenv[
+    linecolor = blue!50!black,
+    backgroundcolor = white,
+    skipabove = 1em,
+    skipbelow = 1em,
+    innertopmargin = 1em,
+    innerbottommargin = 1em,
+    frametitle = {What you must edit},
+    frametitlebackgroundcolor = blue!5,
+    startinnercode = \centering\bgroup,
+    endinnercode = \egroup
+]{task}
+
+\newmdenv[
+    linecolor = red!50!black,
+    backgroundcolor = red!2,
+    skipabove = 1em,
+    skipbelow = 1em,
+    innertopmargin = 1em,
+    innerbottommargin = 1em,
+    frametitle = {Warning},
+    frametitlebackgroundcolor = red!5,
+    % startinnercode = \centering\bgroup,
+    % endinnercode = \egroup
+]{warning}
+
+\newmdenv[
+    linecolor = blue!50!black,
+    backgroundcolor = blue!2,
+    skipabove = 1em,
+    skipbelow = 1em,
+    innertopmargin = 1em,
+    innerbottommargin = 1em,
+    frametitle = {Good to know},
+    frametitlebackgroundcolor = blue!5,
+    % startinnercode = \centering\bgroup,
+    % endinnercode = \egroup
+]{info}
+
+\newmdenv[
+    linecolor = green!50!black,
+    backgroundcolor = green!2,
+    skipabove = 1em,
+    skipbelow = 1em,
+    innertopmargin = 1em,
+    innerbottommargin = 1em,
+    frametitle = {Example},
+    frametitlebackgroundcolor = green!5,
+    % startinnercode = \centering\bgroup,
+    % endinnercode = \egroup
+    nobreak
+]{example}
+
+% Style of code blocks
+\lstdefinestyle{custom-latex}{
+    language={[LaTeX]TeX},
+    backgroundcolor=\color{white},
+    commentstyle=\color{black!50},
+    keywordstyle=\color{green!50!black},
+    numberstyle=\tiny\color{red!50!black},
+    stringstyle=\color{blue!50!black},
+    basicstyle=\ttfamily\small,
+    breakatwhitespace=false,         
+    breaklines=true,
+    keepspaces=true,
+    numbers=none,
+    tabsize=4,
+    aboveskip={1em},
+    belowskip={0.7em}
+}
+
+% Global list configuration
+\setlist{noitemsep}
+
+% "Tasks"
+\newcommand{\taskone}{
+    \begin{instructions}
+        Reorganise the cells to make the images form the following pattern (on two rows instead of three): \\[1ex]
+        
+        \centering
+        \begin{tabular}{cccccc}
+            1 & 3 & 5 & 7 & 9 & 11 \\
+            2 & 4 & 6 & 8 & 10 & 12
+        \end{tabular} \\[1em]
+        
+        All the images must have the same size and there must be no overlapping.
+    \end{instructions}
+}
+
+\newcommand{\tasktwo}{
+    \begin{instructions}
+        Make the necessary changes so that each logo of this fake front cover
+        \begin{itemize}
+            \item has the same width as the colored box below it;
+            \item is aligned with the colored box below it.
+        \end{itemize}
+    \end{instructions}
+}
+
+% Command to produce a circled number to reference a step represented in a figure
+\DeclareRobustCommand{\figstep}[1]{%
+    \Circled[%
+        inner color=white,%
+        outer color=white,%
+        fill color=DocPurple%
+    ]{\sffamily\textbf{#1}}%
+}

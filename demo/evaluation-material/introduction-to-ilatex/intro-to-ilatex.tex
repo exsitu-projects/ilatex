@@ -204,111 +204,6 @@ It behaves like the \texttt{tabular} environment, and expects one mandatory argu
 
 
 \newpage
-\subsection{Grid layouts}
-
-\begin{figure}[h!]
-    \centering
-    \includegraphics[width = .95\textwidth]{img/iir-gridlayout.png}
-    \caption{The IIR of \texttt{gridlayout} environments. \figstep{1} A cell of the layout that is pointed by the mouse. It can be dragged to be moved before or after another cell. \figstep{2} Buttons to insert a new cell. \figstep{3} Button to remove the cell. \figstep{4} Separator between two cells. It can be dragged to resize the adjacent cells. \figstep{5} Separator between two rows. It can be dragged to resize the adjacent rows. \figstep{6} Button to insert a new row at the bottom of the grid.}
-    \label{fig:iir-gridlayout}
-\end{figure}
-
-An IIR for grid layouts (\autoref{fig:iir-gridlayout}) can be created with the \texttt{gridlayout} environment.
-A grid can contain rows (\texttt{row} environments), and a row can contain cells (\texttt{cell} environments).
-A cell can contain \textbf{arbitrary content} (text, image, table, etc), but it \textbf{cannot contain} other special commands and environments provided by \iLaTeX{}!
-
-\begin{lstlisting}[style=custom-latex]
-% this grid is as wide as the text (\textwidth) and 8cm tall
-\begin{gridlayout}{\textwidth}{8cm}
-    \begin{row}{0.6}
-        \begin{cell}{1}
-            % A cell as wide as the row that contains it
-        \end{cell}
-    \end{row}
-    \begin{row}{0.4}
-        \begin{cell}{0.33}
-            % Bottom-left cell taking 1/3 of the row
-        \end{cell}
-        \begin{cell}{0.67}
-            % Bottom-right cell taking 2/3 of the row
-        \end{cell}
-    \end{row}
-\end{gridlayout}
-\end{lstlisting}
-
-Contrary to the other IIRs, this IIR is not a wrapper around an existing command or environment.
-Internally, every row and every cell is implemented as a \texttt{minipage}.
-
-The \texttt{grid} environment expects two mandatory arguments: the \textbf{width} and the \textbf{height} of the grid.
-The \texttt{row} and \texttt{cell} environments expect one mandatory argument each: the \textbf{relative height} of the row and the \textbf{relative width} of the cell. These relative dimensions are \textbf{unitless numbers between 0 and 1} that must sum to 1 over all the cells of a row and over all the rows of the grid.
-
-% This IIR enables you to \textbf{insert a new row}, a \textbf{new cell}, and to \textbf{delete an existing cell} by clicking the appropriate button (some will appear when you hover a cell). It also enables you to \textbf{resize cells and rows} (by dragging the separator between two of them), as well as to \textbf{move a cell} (by dragging and dropping the cell).
-
-\begin{info}
-    In every cell, \iLaTeX{} defines \verb|\cellwidth| and \verb|\rowheight|, two custom length macros relative to the current size of the cell that you can freely use (\eg to make an image have the same width or height than the cell).
-\end{info}
-
-% \begin{warning}
-%     You should always use at least one row with at least one cell in a \texttt{gridlayout} environment, and you should avoid putting anything outside of a \texttt{cell} environment.
-%     Doing so is likely to break the layout, and the IIR will not represent it correctly anymore.
-% \end{warning}
-
-\begin{example}
-    Try to click the layout below, to understand how it is built, and to edit it using the IIR.
-
-    \begin{gridlayout}{\textwidth}{11cm}
-        \begin{row}{0.65}
-            \begin{cell}{0.65}
-                \includegraphics[width=\cellwidth]{img/bird.jpg}
-            \end{cell}
-            \begin{cell}{0.05}
-                ~
-            \end{cell}
-            \begin{cell}{0.3}
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus eget mauris sed ligula blandit tristique. Quisque laoreet ac odio hendrerit pretium. Sed hendrerit id elit id lobortis. Aliquam ante eros, euismod et ultricies in, suscipit at lectus. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Cras eu massa congue justo egestas ornare pellentesque in quam.
-            \end{cell}
-        \end{row}
-        \begin{row}{0.05}
-            \begin{cell}{1}
-                ~ 
-            \end{cell}
-        \end{row}
-        \begin{row}{0.3}
-            \begin{cell}{0.3}
-                \includegraphics[width=\cellwidth, height=\rowheight, keepaspectratio]{img/cat.jpg}
-            \end{cell}
-            \begin{cell}{0.05}
-                ~
-            \end{cell}
-            \begin{cell}{0.3}
-                \includegraphics[width=\cellwidth, height=\rowheight, keepaspectratio]{img/dolphin.jpg}
-            \end{cell}
-            \begin{cell}{0.05}
-                ~
-            \end{cell}
-            \begin{cell}{0.3}
-                \centering
-                \vspace{1em}
-                \begin{tabular}{lr}
-                    \toprule
-                    Animal & Comment \\
-                    \midrule
-                    Bird & Colorful back \\
-                    Cat & Cute look \\
-                    Dolphin & Underwater \\
-                    \bottomrule
-                \end{tabular}
-            \end{cell}
-        \end{row}
-    \end{gridlayout}
-\end{example}
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-\newpage
 \section{Summary of every special commands and environments}
 Do not forget to adapt the parameters as needed!
 
@@ -333,22 +228,6 @@ Do not forget to adapt the parameters as needed!
 \commanddesc{Insert tabulated data}
 \hfill
 \lstinline[style=custom-latex]|\begin{itabular}{ll} a & b \\ c & d \end{itabular}|
-
-
-
-\subsection*{Grid layouts}
-\commanddesc{Insert a grid layout}
-\hfill
-\lstinline[style=custom-latex]|\begin{gridlayout}{\textwidth}{8cm} ... \end{gridlayout}|
-
-\commanddesc{Insert a row (in a grid layout)}
-\hfill
-\lstinline[style=custom-latex]|\begin{row}{0.5} ... \end{row}|
-
-\commanddesc{Insert a cell (in a row)}
-\hfill
-\lstinline[style=custom-latex]|\begin{cell}{0.5} ... \end{cell}|
-
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END OF CONTENT
