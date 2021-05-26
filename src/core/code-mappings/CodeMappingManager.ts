@@ -54,12 +54,21 @@ export class CodeMappingManager {
 
         const mappingsAsText = this.readCodeMappingFile();
         
-        // The filter operation is used to remove the last string returned by split
+        // The first filter operation is used to remove the last string returned by split
         // since it is always empty (it originates from the separator following the last mapping)
         return mappingsAsText
             .split("---\n")
             .filter(mappingAsText => mappingAsText.length > 0)
-            .map(mappingAsText => CodeMapping.fromLatexGeneratedMapping(mappingAsText));
+            .map(mappingAsText => {
+                // If a mapping could not be parsed without error, silently skip the mapping
+                try {
+                    return CodeMapping.fromLatexGeneratedMapping(mappingAsText, this.ilatex.mainSourceFileUri);
+                }
+                catch (error) {
+                    return null;
+                }
+            })
+            .filter(codeMappingOrNull => codeMappingOrNull !== null) as CodeMapping[];
     }
 
     updateCodeMappingsFromLatexGeneratedFile(): void {
