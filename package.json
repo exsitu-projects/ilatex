@@ -76,6 +76,11 @@
 					"type": "string",
 					"default": "~/.ilatex/logs/",
 					"markdownDescription": "Absolute path to the directory where centralised log files should be written. i-LaTeX will attempt to create every missing directory in the path. Only applies when `#ilatex.enableCentralisedLogging#` is enabled."
+				},
+				"ilatex.extraLatexmkOptions": {
+					"type": "string",
+					"default": "",
+					"markdownDescription": "Extra options to append to the `latexmk` command, that is used to compile LaTeX documents."
 				}
 			}
 		}

@@ -19,6 +19,9 @@ export interface InteractiveLatexOptions {
     // Centralised log files
     enableCentralisedLogging: boolean;
     centralisedLoggingDirectoryPath: string;
+
+    // Extra options for latexmk (the tool used to compile LaTeX documents)
+    extraLatexmkOptions: string;
 }
 
 export class InteractiveLatex {

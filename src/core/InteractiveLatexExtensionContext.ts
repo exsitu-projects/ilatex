@@ -180,12 +180,17 @@ export class InteractiveLatexExtensionContext {
 		const enableCentralisedLogging = settings.get("enableCentralisedLogging")! as boolean;
 		const centralisedLoggingDirectoryPath = settings.get("centralisedLoggingDirectoryPath")! as string;
 
+		// Extra options for latexmk
+		const extraLatexmkOptions = settings.get("extraLatexmkOptions")! as string;
+
 		return {
 			enableLocalLogging: enableLocalLogging,
 			localLogFileType: localLogFileType,
 
 			enableCentralisedLogging: enableCentralisedLogging,
-			centralisedLoggingDirectoryPath: centralisedLoggingDirectoryPath
+			centralisedLoggingDirectoryPath: centralisedLoggingDirectoryPath,
+
+			extraLatexmkOptions: extraLatexmkOptions
 		};
 	}
 

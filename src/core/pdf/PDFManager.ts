@@ -100,6 +100,8 @@ export class PDFManager {
                 // Ensure a .fls file is procuded
                 // (required to get absolute paths with the currfile LaTeX package)
                 "-recorder",
+                // Extra options (may be empty)
+                ` ${this.ilatex.options.extraLatexmkOptions}`
             ];
 
             // If the last build failed, or if this is the first build of this instance,
