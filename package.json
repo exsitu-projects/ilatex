@@ -102,6 +102,7 @@
 		"@types/node": "^12.11.7",
 		"@types/parsimmon": "^1.10.1",
 		"@types/vscode": "^1.42.0",
+		"@types/vscode-webview": "^1.57.0",
 		"@typescript-eslint/eslint-plugin": "^4.22.0",
 		"@typescript-eslint/parser": "4.22.0",
 		"eslint": "^6.8.0",
