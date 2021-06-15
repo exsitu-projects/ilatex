@@ -13,8 +13,17 @@ export class WebviewManager {
         this.pdfManager = new PDFManager(this.messenger);
         this.visualisationViewManager = new VisualisationViewManager(this.messenger);
 
+        this.configureWebview();
+
         this.startHandlingWebviewMessages();
         this.messenger.startHandlingMessages();
+    }
+
+    private configureWebview(): void {
+        // Disable the contextual menu added to webview in VS Code 1.57
+        document.body.addEventListener("contextmenu", event => {
+            event.preventDefault();
+        });
     }
 
     private updateGlobalOptions(newGlobalOptions: UpdateGlobalOptionsMessage["options"]): void {
