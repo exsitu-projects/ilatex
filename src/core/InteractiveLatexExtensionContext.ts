@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { InteractiveLatexOptions } from "./InteractiveLaTeX";
+import { InteractiveLatexOptions } from "./InteractiveLatex";
 import { InteractiveLatexDocumentManager } from "./InteractiveLatexDocumentManager";
 
 
