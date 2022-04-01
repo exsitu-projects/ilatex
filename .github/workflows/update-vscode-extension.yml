@@ -31,6 +31,10 @@ jobs:
     - name: Package i-LaTeX as a .vsix VSCode extension
       run: yarn run package
 
+    # Note: the 'git rm -rf .' command is required because we are pushing to
+    # an orphan branch that (currently) only contains the ilatex.vsix file.
+    # If the command is not used, all the files from the 'master' branch
+    # appear to be staged and to be pushed along the ilatex.vsix file.
     - name: Commit the newly created extension
       run: |
         git config --local user.name "github-action"
