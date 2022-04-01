@@ -238,7 +238,7 @@ class MathematicsView extends AbstractVisualisationView {
             this.updateTypesetMathNodeScale();
         }
         // If it fails (i.e. throws an exception), display an appropriate error message instead
-        catch (error) {
+        catch (error: any) {
             this.typesetMathNode.innerHTML = `
                 <div class="katex-error">
                     <div class="error">The math code cannot be parsed by iLaTeX: <pre>${error.message}</pre></div>

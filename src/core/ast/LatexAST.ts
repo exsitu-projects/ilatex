@@ -76,7 +76,7 @@ export class LatexAST {
 
             return true;
         }
-        catch (parsingError) {
+        catch (parsingError: any) {
             console.warn(`The parsing of the AST of ${this.sourceFile.name} failed:`, parsingError);
             this.parsingErrorEventEmitter.fire(parsingError);
 
