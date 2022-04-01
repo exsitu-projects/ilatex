@@ -1,0 +1,45 @@
+name: update-vscode-extension
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+  # This key is required to enable manual triggers of this workflow.
+  workflow_dispatch:
+
+jobs:
+  build-update-deploy-extension:
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Checkout the source code from the repository
+      uses: actions/checkout@v3
+
+    - name: Setup the development environement
+      uses: actions/setup-node@v3
+      with:
+        node-version: "16"
+
+    - name: Install all the dependencies
+      run: yarn
+
+    - name: Build i-LaTeX
+      run: yarn run build
+
+    - name: Package i-LaTeX as a .vsix VSCode extension
+      run: yarn run package
+
+    - name: Commit the newly created extension
+      run: |
+        git config --local user.name "github-action"
+        git config --local user.email "<>"
+        git add "ilatex.vsix"
+        git commit -m "Update the VSCode extension"
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: "ci-vscode-extension"
+        force: true

@@ -90,11 +90,12 @@
 	],
 	"scripts": {
 		"lint": "eslint src --ext ts",
-		"build-core": "tsc --build ./",
-		"build-webview": "rollup -c",
 		"watch-core": "tsc --build --watch ./",
 		"watch-webview": "rollup -cw",
-		"package": "yarn run build-webview; yarn run build-core; vsce package -o ilatex.vsix",
+		"build-core": "tsc --build ./",
+		"build-webview": "rollup -c",
+		"build": "yarn run build-webview; yarn run build-core",
+		"package": "vsce package -o ilatex.vsix",
 		"clean": "rm -rf out"
 	},
 	"devDependencies": {
