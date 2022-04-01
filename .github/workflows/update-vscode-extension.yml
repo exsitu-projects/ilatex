@@ -35,6 +35,7 @@ jobs:
       run: |
         git config --local user.name "github-action"
         git config --local user.email "<>"
+        git rm -rf .
         git add -f "ilatex.vsix"
         git commit -m "Update the VSCode extension"
     - name: Push the commit to a dedicated branch
