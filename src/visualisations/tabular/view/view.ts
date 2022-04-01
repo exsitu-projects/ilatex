@@ -1,4 +1,4 @@
-import "../../../webview/static-library-apis/HandsontableApi";
+import "../../../webview/static-library-apis/handsontableApi";
 import { AbstractVisualisationView } from "../../../webview/visualisations/AbstractVisualisationView";
 import { VisualisationViewFactory, VisualisationView } from "../../../webview/visualisations/VisualisationView";
 import { WebviewToCoreMessageType } from "../../../shared/messenger/messages";
