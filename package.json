@@ -2,7 +2,13 @@
 	"name": "ilatex",
 	"displayName": "i-LaTeX",
 	"description": "Interactive code visualisations for LaTeX documents.",
+	"icon": "misc/vscode-icon.png",
 	"version": "0.0.1",
+	"license": "SEE LICENSE IN LICENSE.md",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/exsitu-projects/ilatex"
+	},
 	"publisher": "exsitu",
 	"private": true,
 	"engines": {
