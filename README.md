@@ -3,7 +3,7 @@
 _i_-LaTeX is an extension that turns the [Visual Studio Code editor](https://code.visualstudio.com/) into a prototypal editor for [LaTeX](https://www.latex-project.org/) featuring _transitionals_, visual representations of fragments of code that can be manipulated interactively by clicking their output in the generated PDF.
 The current version offers transitionals for mathematical formaluae, tables, images, and custom grid layouts.
 
-![Screenshot of VS Code running i-LaTeX]([./misc/ilatex-screenshot.png)
+![Screenshot of VS Code running i-LaTeX](./misc/ilatex-screenshot.png)
 
 > ⚠️ At the moment, _i_-LaTeX only supports MacOS and Linux, and does not support Windows. If you are interested in adapting the extension to make it work with Windows, please contact us!
 
