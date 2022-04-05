@@ -3,6 +3,8 @@
 _i_-LaTeX is an extension that turns the [Visual Studio Code editor](https://code.visualstudio.com/) into a prototypal editor for [LaTeX](https://www.latex-project.org/) featuring _transitionals_, visual representations of fragments of code that can be manipulated interactively by clicking their output in the generated PDF.
 The current version offers transitionals for mathematical formaluae, tables, images, and custom grid layouts.
 
+![Screenshot of VS Code running i-LaTeX]([./misc/ilatex-screenshot.png)
+
 > ⚠️ At the moment, _i_-LaTeX only supports MacOS and Linux, and does not support Windows. If you are interested in adapting the extension to make it work with Windows, please contact us!
 
 
@@ -20,7 +22,7 @@ The extension is provided as a VSIX file that must be installed manually in Visu
 
 ## Usage
 
-📖 [**Read the full manual for more detailed explanations**](https://github.com/exsitu-projects/ilatex/raw/ci-vscode-extension/ilatex.vsix)
+📖 [**Read the user guide for more detailed explanations**](./misc/user-guide.pdf)
 
 ### Compiling a document and displaying the generated PDF
 
@@ -39,12 +41,12 @@ _i_-LaTeX currently features four kinds of transitionals, which require to use c
 
 The four transitionals are described in more details in the aformentioned manual. In a nutshell:
 
-- Use the `imath` environment for mathematical formulae (instead of `\[ … \]`, `equation`, `align`, etc)
+- Use the `imaths` environment for mathematical formulae (instead of `\[ … \]`, `equation`, `align`, etc)
 - Use the `itabular` environment for tables (instead of `tabular`)
 - Use the `\iincludegraphics` command for images (instead of `\includegraphics`, which has only one `i`!)
 - Refer to the manual for information on the custom grid layout environements (they are experimental!)
 
-Elements with transitionals will be surrounded with blue halos can be clicked to display the transitionals.
+Elements with transitionals will be surrounded with blue halos and can be clicked to display the transitionals.
 The fragment of code represented by a transitional can be shown in the code editor by clicking the title bar of the transitional (with the name and the location of the code).
 When a transitional is closed, the document is automatically recompiled, unless there was no change in the code.
 
@@ -64,23 +66,21 @@ For technical details on how _i_-LaTeX works and how to extend it, such as for a
 _i_-LaTeX is a research prototype developed by Camille Gobert during his PhD in the [ex)situ](https://ex-situ.lri.fr/) team (Paris-Saclay University, CNRS, Inria, Laboratoire Interdisciplinaire des Sciences du Numérique).
 You can read more about _i_-LaTeX and the underlying concept of transitional in the following papers:
 
-> [**Représentations intermédiaires interactives pour la manipulation de code LaTeX**]()
+> [**Représentations intermédiaires interactives pour la manipulation de code LaTeX**](https://dl.acm.org/doi/10.1145/3450522.3451325)
 > (Gobert & Beaudouin-Lafon, 2021), published at the IHM'20'21 conference (in French).
 
-> [**_i_-LaTeX: Manipulating Transitional Representations between LaTeX Code and Generated Documents**]()
-> (Gobert & Beaudouin-Lafon, 2022), published at the ACM CHI 2022 conference.
+> [**_i_-LaTeX: Manipulating Transitional Representations between LaTeX Code and Generated Documents**](https://doi.org/10.1145/3491102.3517494)
+> (Gobert & Beaudouin-Lafon, 2022), to be published at the ACM CHI 2022 conference.
 
 
 
-## Licence
+## License and credits
 
-The code of _i_-LaTeX is released under the MIT licence.
+The code of _i_-LaTeX is released under the MIT license.
 You can freely use and adapt the code of _i_-LaTeX, and we'd be glad to hear about it if you do!
 
 
-## Credits
-
-In addition to the dependencies listed in [`package.json`](./package.json) (such as [Rollup](https://rollupjs.org) for bundling the webview's code and [Parsimmon](https://github.com/jneen/parsimmon) for the LaTeX parser), the webview of the extension uses a number of libraries that are _not_ listed as dependencies and are currently [part of the source code](./src/webview/template/static):
+However, the licenses of some dependencies may be more restrictive. In addition to the dependencies listed in [`package.json`](./package.json) (such as [Rollup](https://rollupjs.org) for bundling the webview's code and [Parsimmon](https://github.com/jneen/parsimmon) for creating the parser), the webview of the extension uses a number of libraries that are _not_ listed as dependencies and are currently [part of the source code](./src/webview/template/static):
 
 - [PDF.js](https://mozilla.github.io/pdf.js/) ([Apache 2.0 license](https://github.com/mozilla/pdf.js/blob/master/LICENSE))
 - [KaTeX](https://katex.org/), customised to trace the where-provenance of symbols and groups of symbols (MIT license)
