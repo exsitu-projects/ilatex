@@ -37,7 +37,7 @@ Once the PDF has been displayed, you can manually recompile the document by clic
 
 ### Using transitionals
 
-_i_-LaTeX currently features four kinds of transitionals, which require to use custom commands and environments in order to be detected by _i_-LaTeX. They are provided by the `ilatex.sty` package, which must be imported in your LaTeX document: put the file in the same directory, and use the `\usepackage{ilatex}` command.
+_i_-LaTeX currently features four kinds of transitionals, which require to use custom commands and environments in order to be detected by _i_-LaTeX. They are provided by the [`ilatex.sty`](./latex/ilatex.sty) package, which must be imported in your LaTeX document: put the file in the same directory, and use the `\usepackage{ilatex}` command.
 
 The four transitionals are described in more details in the aformentioned manual. In a nutshell:
 
