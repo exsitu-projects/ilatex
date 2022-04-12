@@ -57,7 +57,7 @@ If the code cannot be parsed by _i_-LaTeX (e.g., because of a syntax error), an 
 
 ## Development
 
-For technical details on how _i_-LaTeX works and how to extend it, such as for adding new kinds of transitionals, please refer to this [**technical guide**]().
+For technical details on how _i_-LaTeX works and how to extend it, such as for adding new kinds of transitionals, please refer to this [**technical guide**](./TECHNICAL-GUIDE.md).
 
 
 
