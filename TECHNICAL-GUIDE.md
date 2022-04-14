@@ -1,18 +1,85 @@
-# Overall architecture
+# General information
 
-- Core (node env.) / Webview (web env.)
-- Two sets of TypeScript compiler settings + Rollup with plugin => single HTML file for the webview
-- Scripts for yarn, vsce
+## Structure of the repository
+
+This repository is organised according to the following architecture:
+
+| Directory     | Description                                                  |
+|---------------|--------------------------------------------------------------|
+| `demo`        | LaTeX documents that can be used to try or demo ilatex.      |
+| `latex`       | LaTeX-related files used by ilatex (including `ilatex.sty`). |
+| `misc`        | Miscellaneous (e.g., user guide, screenshots).               |
+| `snippets`    | Code snippets for ilatex.                                    |
+| `src`         | Source code of the Visual Studio Code extension.             |
+| `node_module` | Dependencies installed by ther package manager.              |
+| `out`         | JavaScript output of the code (compiled from TypeScript).    |
+
+The root directory also contains a number of configuration files:
+
+| File                                | Description                                                                                                                           |
+|-------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
+| `demo`                              |                                                                                                                                       |
+| `rollup-plugin-template-inliner.js` | A custom Rollup plugin for inlining JavaScript and CSS files in an HTML file.                                                         |
+| `rollup.config.js`                  | The configuration of Rollup, a JavaScript bundler used to package all the webview's code into a single HTML file.                     |
+| `package.json`                      | The manifest of the extension, which includes metadata (name, version, authors, etc), contribution points, scripts, and dependencies. |
+| `tsconfig.json`                     | The root configuration of the TypeScript compiler.                                                                                    |
+| `tsconfig.core.json`                | The configuration of the TypeScript compiler for the _core_ part of the extension (compiled for a Node.js environement).              |
+| `tsconfig.webview.json`             | The configuration of the TypeScript compiler for the _webview_ part of the extension (compiled for a web environement).               |
+| `.vscodeignore`                     | The list of files and directories that must **not** be included in the Visual Studio Code extension.                                  |
+
+Other files and directories include configuration files for Git, GitHub Workflows and ESLint.
+
+The code of the extension is organised into two different parts called the **core** and the **webview**.
+This separation is due to a technical constraint imposed by Visual Studio Code: the extension itself is executed in a Node.js environement, but the code of the webview (i.e., the part where the PDF is rendered) is executed in a web environement, in a separate process; and the two parts can only communicate through message passing.
+
+This division implies that the code of the core and the code of the webview must be compiled and bundled in different ways.
+Some parts of the code are compiled for a Node.js environement (as specified in `tsconfig.core.json`), while some other parts are compiled for a web environement (as specified in `tsconfig.webview.json`).
+For this reason, the `src` directory is subdivided into the four following subdirectories:
+
+- The `core` subdirectory contains files used by the core (compiled for Node.js);
+- The `webview` subdirectory contains files used by the webview (compiled for the web);
+- The `shared` subdirectory contains files that can be used in both the core and the webview;
+- The `visualisations` subdirectory contains one directory per transitional. Each of them must contain two directories: one for the model (`model`), which is only included in the core, and one for the view (`view`), which is only included in the webview.
+
+In addition, the `webview/template` and `visualisations/*/view` directories can contain a `static` directory, which is meant to contain JavaScript (in a `js` directory) and CSS (in a `css` directory) files that must be included in the code of the webview, which is turned into a single HTML file during the build process.
 
 
 
+## Build process
 
-# External dependencies
+To build the extension for Visual Studio Code, the code of ilatex must be compiled and bundled into a single .vsce file.
+In order to do this, the following steps must be performed:
+
+1. The code of the webview must be compiled (from TypeScript to JavaScript);
+2. The resulting JavaScript, along with static JavaScript libraries and CSS files, must be inlined into a single HTML file;
+3. The code of the core must be compiled (from TypeScript to JavaScript);
+4. The code must be bundled into an `ilatex.vsce` file using the `vsce` utility.
+
+The scripts defined in `package.json` can be used to perform these steps.
+Steps 1 to 3 can be performed by running the `build` command, and step 4 can be performed by running the `package` command (e.g., `yarn run build && yarn run package`).
+
+
+
+## Dependencies
+
+### External dependencies
 
 Since _i_-LaTeX is implemented as an extension for the Visual Studio Code, it must be installed on a sufficiently recent version of the editor.
-
 In addition, a recent distribution of LaTeX must be installed.
 It must include the packages required by [`ilatex.sty`], as well as the `latexmk` utility, which must be available via a terminal, as it is used internally by ilatex to compile LaTeX documents.
+
+
+### Internal dependencies
+
+Internally, ilatex uses a number of dependencies listed in `package.json` and managed by a package manager such as `yarn` or `npm`.
+After cloning the repository, you can install them by running `yarn` or `npm install`.
+
+In addition, the webview uses several libraries that are not specified in `package.json`.
+This choice was motivated by two reasons:
+
+- Rollup has not been configured to search packages in `node_modules` when packaging the webview's code;
+- Some libraries (KaTeX, Handsontable) have been manually fixed/customised.
+
 
 
 
@@ -37,7 +104,7 @@ The package also performs a few other housekeeping tasks, such as creating a cou
 
 
 
-## Entry point of the extension
+## Starting the extension
 
 The entry point of the extension is [`extension.ts`], as specified in the [`package.json`] manifest, along with a number of contributions points.
 The contribution points describe the commmands (e.g., to open and close a LaTeX document with ilatex), code snippets (defined in [`snippets/ilatex.json`]) and settings (e.g., enable/disable logging, specify extra arguments for `latexmk`) that are provided by ilatex.
@@ -51,7 +118,17 @@ It owns a number of managers, with different concerns, which all keep a referenc
 
 
 
-## Compiling a LaTeX document
+## Initialising the webview
+
+The webview of each LaTeX document is created by `InteractiveLatexDocumentManager` during their instanciation (using the `createWebview` function).
+However, the webview does not contain anything by default, and the only way to set its content provided by the Visual Studio Code API is to replace the content of the entire HTML page displayed by the webview.
+This is why (1) the code is separated between the _core_ and the _webview_ and (2) all the files used by the webview must be inlined into a single HTML file (`out/webview/webview.inlined.html`), so that the core can read it once and use it to initialise the webview.
+In ilatex, this is the responsability of the webview manager (`WebviewManager`) of each LaTeX document (using the `setInitialWebviewHtml` method).
+Once both the core and the webview are initialised, they can communicate to exchange information and update each other, without having to change the code of the entire webpage each time (see the _Communication between the core and the webview_ section for more details).
+
+
+
+## Compiling LaTeX documents
 
 When a LaTeX document is opened or saved with ilatex, it is (re)compiled by ilatex to produce (1) a new PDF document and (2) a new file of code mappings.
 The compilation is handled by the PDF manager ([`PDFManager`]) of the corresponding `InteractiveLatex` instance.
@@ -62,7 +139,7 @@ If the compilation fails, an error message is displayed by the PDF manager.
 
 
 
-## Source files and code mappings
+## Reading source files and code mappings
 
 Once the document has been recompiled, the code mapping manager ([`CodeMappingManager`]) is responsible of reading the file of code mappings (generated by the LaTeX compiler) and creating objects representing all the code mappings ([`CodeMapping`]).
 From there, the source file manager ([`SourceFileManager`]) creates an object representing a source file (`SourceFile`) for each unique path in all the code mapping objects.
@@ -76,7 +153,7 @@ Changes are detected by the source file manager, logged if required, and forward
 
 
 
-## Abstract syntax trees
+## Working with abstract syntax trees
 
 While the interface with the file system is delegated to Visual Studio Code, which is responsible for reading and writing the content of each source file, the construction and the management of the syntactic structure of each source file is performed by ilatex.
 
@@ -105,7 +182,7 @@ If the reparser fails (e.g., because the new content of the range of the AST nod
 
 
 
-## Transitionals
+## Defining transitionals
 
 **[TODO: ADD AN INTRO HERE]**
 
@@ -140,7 +217,7 @@ Instead, they are created by special objects named model providers and view fact
 
 
 
-## Creating models of transitionals
+## Creating transitional models from code mappings
 
 Once all the source files referenced by code mappings have been created and parsed, the AST nodes that can benefit from transitionals can finally (1) be identified using the information contained in code mappings and (2) be used to create the models of the transitionals ([`VisualisationModel`], [`AbstractVisualisationModel`]).
 These tasks are under the responsability of the visualisation model manager ([`VisualisationModelManager`]).
@@ -159,7 +236,7 @@ Once all the models have been created, the model manager performs two last steps
 
 
 
-## Communication between the core and the webview
+## Exchanging messages with the webview
 
 To facilitate message passing between views and models, communication endpoints between the core and the webview are both represented by an abstract _messenger_ ([`AbstractMessenger`]), which is parametrised by the types of the messages it can send and receive.
 It is concretised differently on the model side, in the core of the extension ([`WebviewMessenger`]), and on the view side, in the webview ([`Messenger`]).
@@ -205,7 +282,7 @@ They enable to:
 - Set up the view when it is created (`onBeforeVisualisationDisplay`, `onAfterVisualisationDisplay`);
 - Clean up the view when it is deleted (`onBeforeVisualisationRemoval`, `onAfterVisualisationRemoval`);
 - Update the view when it is replaced by an error (`onBeforeVisualisationErrorDisplay`, `onAfterVisualisationErrorDisplay`) or restored when the error is fixed (`onBeforeVisualisationErrorRemoval`, `onAfterVisualisationErrorRemoval`);
-- Process a change of the size of the PDF (`onBeforePdfResize`, `onAfterPdfResize`);
+- Process a change of the size of the PDF (`onBeforePdfResize`, `onAfterPdfResize`).
 
 Each view is also given a reference to the webview's messenger, which can be used to send messages to the model.
 
