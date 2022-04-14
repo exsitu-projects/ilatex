@@ -4,36 +4,35 @@
 
 This repository is organised according to the following architecture:
 
-| Directory     | Description                                                  |
-|---------------|--------------------------------------------------------------|
-| `demo`        | LaTeX documents that can be used to try or demo ilatex.      |
-| `latex`       | LaTeX-related files used by ilatex (including `ilatex.sty`). |
-| `misc`        | Miscellaneous (e.g., user guide, screenshots).               |
-| `snippets`    | Code snippets for ilatex.                                    |
-| `src`         | Source code of the Visual Studio Code extension.             |
-| `node_module` | Dependencies installed by ther package manager.              |
-| `out`         | JavaScript output of the code (compiled from TypeScript).    |
+| Directory     | Description                                                   |
+|---------------|---------------------------------------------------------------|
+| `demo`        | LaTeX documents that can be used to try or demo ilatex.       |
+| `latex`       | LaTeX-related files used by ilatex (including `ilatex.sty`).  |
+| `misc`        | Miscellaneous (e.g., user guide, screenshots).                |
+| `snippets`    | Code snippets for ilatex.                                     |
+| `src`         | Source code of the Visual Studio Code extension.              |
+| `node_module` | Dependencies installed by the package manager such as `yarn`. |
+| `out`         | JavaScript output of the code (compiled from TypeScript).     |
 
-The root directory also contains a number of configuration files:
+The root directory also contains several configuration files:
 
-| File                                | Description                                                                                                                           |
-|-------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
-| `demo`                              |                                                                                                                                       |
-| `rollup-plugin-template-inliner.js` | A custom Rollup plugin for inlining JavaScript and CSS files in an HTML file.                                                         |
-| `rollup.config.js`                  | The configuration of Rollup, a JavaScript bundler used to package all the webview's code into a single HTML file.                     |
-| `package.json`                      | The manifest of the extension, which includes metadata (name, version, authors, etc), contribution points, scripts, and dependencies. |
-| `tsconfig.json`                     | The root configuration of the TypeScript compiler.                                                                                    |
-| `tsconfig.core.json`                | The configuration of the TypeScript compiler for the _core_ part of the extension (compiled for a Node.js environement).              |
-| `tsconfig.webview.json`             | The configuration of the TypeScript compiler for the _webview_ part of the extension (compiled for a web environement).               |
-| `.vscodeignore`                     | The list of files and directories that must **not** be included in the Visual Studio Code extension.                                  |
+| File                                | Description                                                                                                                      |
+|-------------------------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| `rollup-plugin-template-inliner.js` | A custom Rollup plugin for inlining JavaScript and CSS files in an HTML file.                                                    |
+| `rollup.config.js`                  | The configuration of Rollup, a JavaScript bundler used to package all the webview's code into a single HTML file.                |
+| `package.json`                      | The extension's manifest, which includes metadata (name, version, authors, etc), contribution points, scripts, and dependencies. |
+| `tsconfig.json`                     | The root configuration of the TypeScript compiler.                                                                               |
+| `tsconfig.core.json`                | The configuration of the TypeScript compiler for the _core_ part of the extension (compiled for a Node.js environment).          |
+| `tsconfig.webview.json`             | The configuration of the TypeScript compiler for the _webview_ part of the extension (compiled for a web environment).           |
+| `.vscodeignore`                     | The list of files and directories that must **not** be included in the Visual Studio Code extension.                             |
 
 Other files and directories include configuration files for Git, GitHub Workflows and ESLint.
 
 The code of the extension is organised into two different parts called the **core** and the **webview**.
-This separation is due to a technical constraint imposed by Visual Studio Code: the extension itself is executed in a Node.js environement, but the code of the webview (i.e., the part where the PDF is rendered) is executed in a web environement, in a separate process; and the two parts can only communicate through message passing.
+This separation is due to a technical constraint imposed by Visual Studio Code: the extension itself is executed in a Node.js environment, but the code of the webview (i.e., the part where the PDF is rendered) is executed in a web environment, in a separate process; and the two parts can only communicate through message passing.
 
 This division implies that the code of the core and the code of the webview must be compiled and bundled in different ways.
-Some parts of the code are compiled for a Node.js environement (as specified in `tsconfig.core.json`), while some other parts are compiled for a web environement (as specified in `tsconfig.webview.json`).
+Some parts of the code are compiled for a Node.js environment (as specified in `tsconfig.core.json`), while some other parts are compiled for a web environment (as specified in `tsconfig.webview.json`).
 For this reason, the `src` directory is subdivided into the four following subdirectories:
 
 - The `core` subdirectory contains files used by the core (compiled for Node.js);
@@ -53,7 +52,7 @@ In order to do this, the following steps must be performed:
 1. The code of the webview must be compiled (from TypeScript to JavaScript);
 2. The resulting JavaScript, along with static JavaScript libraries and CSS files, must be inlined into a single HTML file;
 3. The code of the core must be compiled (from TypeScript to JavaScript);
-4. The code must be bundled into an `ilatex.vsce` file using the `vsce` utility.
+4. All the files used by the extension must be bundled into an `ilatex.vsce` file using the [`vsce`](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#vsce) utility.
 
 The scripts defined in `package.json` can be used to perform these steps.
 Steps 1 to 3 can be performed by running the `build` command, and step 4 can be performed by running the `package` command (e.g., `yarn run build && yarn run package`).
@@ -84,20 +83,20 @@ This choice was motivated by two reasons:
 
 
 
-# How does _i_-LateX works?
+# How does _i_-LateX work?
 
 ## Special LaTeX commands and environments
 
-As explained in [_i_-LaTeX's user guide](./misc/user-guide.pdf), transitionals are only available for _special_ commands and environements, which must be used in place of their counterparts.
+As explained in [_i_-LaTeX's user guide](./misc/user-guide.pdf), transitionals are only available for _special_ commands and environments, which must be used in place of their counterparts.
 For instance, in order to use the interactive grid provided by the transitional for tables, one must use the `itabular` environment instead of the regular `tabular` environment.
 
-This requirement is due to the fact that using these special commands have two additional side effects that are required for ilatex's to work:
+This requirement is due to the fact that using these special commands has two additional side effects that are required for ilatex's to work:
 
 - they surround the content they generate with a PDF annotation tagged with a unique ID;
-- they append an entry to an external file of _code mappings_ (`<main file name>.ilatex-mappings`), which contains the same ID along with other medadata (file name, position in the file, type of content, normalised value of several length macros and units, etc).
+- they append an entry to an external file of _code mappings_ (`<main filename>.ilatex-mappings`), which contains the same ID along with other metadata (filename, position in the file, type of content, normalised value of several length macros and units, etc).
 
-Note that regular commands and environements can also be patched to produce the same side effects!
-It was not done in this prototype, because patching commands such as `\includegraphics` was more tricky than expected, and the way these side effects are currently implemented may break other commands and environments, but it is technically feasible.
+Note that regular commands and environments can also be patched to produce the same side effects!
+It was not done in this prototype because patching commands such as `\includegraphics` was more tricky than expected, and the way these side effects are currently implemented may break other commands and environments, but it is technically feasible.
 
 In the current implementation, these special commands and environments are defined in the [`ilatex.sty`] LaTeX package, which must be imported in a LaTeX document to make it benefit from transitionals.
 The package also performs a few other housekeeping tasks, such as creating a counter for the unique IDs, creating the file of code mappings, and patching the `\graphicspath` commands to collect the list of paths that can be used with `\includegraphics`. 
@@ -107,24 +106,24 @@ The package also performs a few other housekeeping tasks, such as creating a cou
 ## Starting the extension
 
 The entry point of the extension is [`extension.ts`], as specified in the [`package.json`] manifest, along with a number of contributions points.
-The contribution points describe the commmands (e.g., to open and close a LaTeX document with ilatex), code snippets (defined in [`snippets/ilatex.json`]) and settings (e.g., enable/disable logging, specify extra arguments for `latexmk`) that are provided by ilatex.
+The contribution points describe the commands (e.g., to open and close a LaTeX document with ilatex), code snippets (defined in [`snippets/ilatex.json`]) and settings (e.g., enable/disable logging, specify extra arguments for `latexmk`) that are provided by ilatex.
 
 The only role of `extension.ts` is to export `activate` and `deactivate` functions, which are executed by Visual Studio Code when loading/unloading the extension.
-The actual initialisation is delegated to a `InteractiveLatexExtensionContext` singleton, which sets up the integration of ilatex in Visual Studio Code (e.g., defining the commands described by the contribution points, adding UI elements).
-The management of the LaTeX document themselves is further delegated to an instance of `InteractiveLatexDocumentManager`, which is reponsible for creating and deleting one instance of `InteractiveLatex` for each unique path to a main LaTeX file.
+The actual initialisation is delegated to an extension context singleton ([`InteractiveLatexExtensionContext`]), which sets up the integration of ilatex in Visual Studio Code (e.g., defining the commands described by the contribution points, adding UI elements).
+The management of the LaTeX document themselves is further delegated to an instance of [`InteractiveLatexDocumentManager`], which is responsible for creating and deleting one instance of [`InteractiveLatex`] for each unique path to the main LaTeX file of a LaTeX document.
 
 `InteractiveLatex` represents a single latex document opened with ilatex.
-It owns a number of managers, with different concerns, which all keep a reference to their parent `InteractiveLatex` instance, so that they can directly access the other managers' APIs.
+It owns a number of managers with different concerns, which all keep a reference to their parent `InteractiveLatex` instance, so that they can directly access the other managers' APIs.
 
 
 
 ## Initialising the webview
 
-The webview of each LaTeX document is created by `InteractiveLatexDocumentManager` during their instanciation (using the `createWebview` function).
+The webview of each LaTeX document is created by `InteractiveLatexDocumentManager` during their instantiation (using the `createWebview` function).
 However, the webview does not contain anything by default, and the only way to set its content provided by the Visual Studio Code API is to replace the content of the entire HTML page displayed by the webview.
-This is why (1) the code is separated between the _core_ and the _webview_ and (2) all the files used by the webview must be inlined into a single HTML file (`out/webview/webview.inlined.html`), so that the core can read it once and use it to initialise the webview.
-In ilatex, this is the responsability of the webview manager (`WebviewManager`) of each LaTeX document (using the `setInitialWebviewHtml` method).
-Once both the core and the webview are initialised, they can communicate to exchange information and update each other, without having to change the code of the entire webpage each time (see the _Communication between the core and the webview_ section for more details).
+This is why (1) the code is separated between the _core_ and the _webview_ and (2) all the files used by the webview must be inlined into a single HTML file (`out/webview/webview.inlined.html`) so that the core can read it once and use it to initialise the webview.
+In ilatex, this is the responsibility of the webview manager ([`WebviewManager`]) of each LaTeX document (using the `setInitialWebviewHtml` method).
+Once both the core and the webview are initialised, they can communicate to exchange information and update each other without having to change the code of the entire webpage each time (see the _Communication between the core and the webview_ section for more details).
 
 
 
@@ -141,10 +140,10 @@ If the compilation fails, an error message is displayed by the PDF manager.
 
 ## Reading source files and code mappings
 
-Once the document has been recompiled, the code mapping manager ([`CodeMappingManager`]) is responsible of reading the file of code mappings (generated by the LaTeX compiler) and creating objects representing all the code mappings ([`CodeMapping`]).
+Once the document has been recompiled, the code mapping manager ([`CodeMappingManager`]) is responsible for reading the file of code mappings (generated by the LaTeX compiler) and creating objects representing all the code mappings ([`CodeMapping`]).
 From there, the source file manager ([`SourceFileManager`]) creates an object representing a source file (`SourceFile`) for each unique path in all the code mapping objects.
 
-Internally, sources files are represented by two different structures: a text document representing the content of the file ([`TextDocument`] objects provided by Visual Studio Code), and an abstract syntax tree (AST) representing the structure of the code ([`LatexAST`]).
+Internally, sources files are represented by two different structures: a text document representing the content of the file ([`TextDocument`] objects provided by Visual Studio Code) and an abstract syntax tree (AST) representing the structure of the code ([`LatexAST`]).
 They are related to a number of other concepts, including _positions_ and _ranges_ in the file ([`SourceFilePosition`], [`SourceFileRange`]), two kinds of _editors_ for performing edits ([`AtomicSourceFileEditor`], [`LightweightSourceFileEditor`]), and _changes_ in the file ([`SourceFileChange`]), which are used in various locations in the code, as they are helpful for manipulating source files.
 Changes are detected by the source file manager, logged if required, and forwarded to the AST.
 
@@ -157,24 +156,24 @@ Changes are detected by the source file manager, logged if required, and forward
 
 While the interface with the file system is delegated to Visual Studio Code, which is responsible for reading and writing the content of each source file, the construction and the management of the syntactic structure of each source file is performed by ilatex.
 
-Unlike most programming languages, LaTeX has no predefined grammar; and there is no way to build a parser accepting all the LaTeX documents that compile using traditionnal parser generators, as explained here.
+Unlike most programming languages, LaTeX has no predefined grammar; and there is no way to build a parser accepting all the LaTeX documents that compile using traditional parser generators, as explained here.
 However, by making a number of assumptions, such as `\` representing the start of a macro and the structure of environments, it is possible to create a parser that accepts a large subset of all valid LaTeX documents, though it may fail in certain situations.
 To maximise parsing success, and unlike more specialised parsers (such as those of [KaTeX] and [MathJax] for mathematics), ilatex uses a fairly high-level grammar, with mostly generic nodes.
 In our experience, this makes the parser more robust for parsing files that mainly contain content (which is what current transitionals are designed for), in contrast with files with a lot of macro definitions, low-level TeX syntax, etc.
 
 Each file is represented by an abstract syntax tree ([`LatexAST`]), which contains a hierarchical structure of nodes that all extend the same class ([`ASTNode`]).
-Most commands and environments are represented by generic nodes ([`CommandNode`], [`EnvironmentNode`]), with no parameter.
-If there are any, they will simply be treated as text or blocks by the parser, and will not belong to the node that represents the command or the start of the environement that preceeds them.
+Most commands and environments are represented by generic nodes ([`CommandNode`], [`EnvironmentNode`]) with no parameter.
+If there are any, they will simply be treated as text or blocks by the parser and will not belong to the node that represents the command or the start of the environment that preceeds them.
 The few exceptions are either motivated by a technical necessity (such as parsing verbatim content, e.g., `\verb`) or by the need to parse mandatory or optional parameters for commands and envronments that can be visualised in transitionals (such as the settings and the path following the `\iincludegraphics` command).
 
 All the production rules listed in the `LatexParsers` type generate a node in the AST.
-Each rule is implemented in two ways in the `LatexParser` class: a _parser_, and a _reparser_:
+Each rule is implemented in two ways in the `LatexParser` class: a _parser_ and a _reparser_:
 
 - The parsers are meant to be used when parsing an entire file, e.g., after recompiling the document;
-- The reparsers are meant to re-parse a fragment of the file once it has been parsed into an AST node at least once, under the assumption that the fragment of the file still represents the same type of node.
+- The reparsers are meant to reparse a fragment of the file once it has been parsed into an AST node at least once, under the assumption that the fragment of the file still represents the same type of node.
 
 Reparsers are used to update the AST when the content of the file is modified (as notified by the source file manager).
-Beyond improving performance, this design enables to update a transitional when the code it represents is modified in real time (e.g., after each keystroke), without having to parse the whole file again and to either (1) match old AST nodes with new AST nodes or (2) re-create all transitionals, at the risk of resetting the internal state of the transitional whose code is modified.
+Beyond improving performance, this design allows to update a transitional when the code it represents is modified in real-time (e.g., after each keystroke), without having to parse the whole file again and to either (1) match old AST nodes with new AST nodes or (2) re-create all transitionals, at the risk of resetting the internal state of the transitional whose code is modified.
 If the reparser fails (e.g., because the new content of the range of the AST node does not represent the same type of node anymore), the user has two options:
 
 - They can keep editing the document, e.g., to fix a syntax error that was introduced in the last edit, until the reparser suceeds and generates a new valid AST node;
@@ -186,30 +185,30 @@ If the reparser fails (e.g., because the new content of the range of the AST nod
 
 **[TODO: ADD AN INTRO HERE]**
 
-Transitionals are organised under a pattern similar to MVC: they all have a model, a view, and a controller for reacting to events and communicate through message passing mediated by a controller.
+Transitionals are organised under a pattern similar to MVC: they all have a model, a view, and a controller for reacting to events and communicating through asynchronous messages.
 Each type of transitional must have a unique _name_.
 In addition:
 
-- each model-view couple (corresponding to one code mapping) share the same _code mapping ID_, which only changes when the file is recompiled, and persists accross changes in the meantime;
-- each model has _unique identifier_ (UID), which changes every time the model is re-created (e.g., after the AST node it represents was reparsed and updated).
+- each model-view couple (corresponding to one code mapping) shares the same _code mapping ID_, which only changes when the file is recompiled and persists across changes in the meantime;
+- each model has a _unique identifier_ (UID), which changes every time the model is re-created (e.g., after the AST node it represents was reparsed and updated).
 
 On the one side, the _model_ of each transitional ([`VisualisationModel`]) is given an AST node to represent and is responsible for
 
-- Extracting all the appropriate information from the node. For instance, this might be the path and the dimension for an image, or the structure and the content of each cell for a table;
-- Creating a data structure that contains all the information required by the view and that can be serialised, since the data must be sent to the view through message passing. At the moment, the format chosen for this data is HTML; but this might change, e.g., for JSON.
-- Implementing handlers to process messages sent by the view and transform the underlying document (and more specifically the fragment represented by the AST node) to reify interactions performed by the user in the view (e.g., resizing an image, reordering the columns of a table).
+- Extracting all the appropriate information from the node. For instance, this might be the path and the dimension for an image or the structure and the content of each cell for a table;
+- Creating a data structure that contains all the information required by the view and that can be serialised (since the data must be sent to the view through message passing). At the moment, the format chosen for this data is HTML; but this might change, e.g., for JSON.
+- Implementing handlers to process messages sent by the view and transform the underlying document (and more specifically, the fragment represented by the AST node) to reify interactions performed by the user in the view (e.g., resizing an image, reordering the columns of a table).
 
 On the other side, the _view_ of each transitional ([`VisualisationView`]) is given a container to populate and is responsible for
 
-- Processing the data sent by the model, to turn it into appropriate data structures;
+- Processing the data sent by the model to turn it into appropriate data structures;
 - Populating the container to display the interactive representation of the code that must be visualised using the DOM API;
 - Notifying the model of events of interest (e.g., the size of an image or the content of a table cell has changed).
 
-There is no single instance of a _controller_ in the traditional sense of the term, since model and view objects exist in two separate processes that can only communicate through message passing.
+There is no single instance of a _controller_ in the traditional sense of the term since model and view objects exist in two separate processes that can only communicate through message passing.
 Instead, for each transitional, the controller mainly takes the form of a number of objects and methods used for sending and receiving messages and reacting to events (extension events in the model, DOM events in the view).
 To facilitate message passing between views and models, communication endpoints between the core and the webview are both represented by a single abstract class ([`AbstractMessenger`]), which is concretised differently on the model side ([`WebviewMessenger`]) and on the view side ([`Messenger`]).
 
-In order to make ilatex easy to extend with new transitionals, the model and the view of each transitional are not directly instanciated by the objects that deal with transitionals in the core and in the webview.
+In order to make ilatex easy to extend with new transitionals, the model and the view of each transitional are not directly instantiated by the objects that deal with transitionals in the core and in the webview.
 Instead, they are created by special objects named model providers and view factories:
 
 - Each transitional must have a _model provider_ ([`VisualisationModelProvider`]), which is responsible for providing tests checking whether the model it can create is fit for a given code mapping (`canProvideForCodeMapping`) and a given AST node (`canProvideForASTNode`);
@@ -220,19 +219,18 @@ Instead, they are created by special objects named model providers and view fact
 ## Creating transitional models from code mappings
 
 Once all the source files referenced by code mappings have been created and parsed, the AST nodes that can benefit from transitionals can finally (1) be identified using the information contained in code mappings and (2) be used to create the models of the transitionals ([`VisualisationModel`], [`AbstractVisualisationModel`]).
-These tasks are under the responsability of the visualisation model manager ([`VisualisationModelManager`]).
+These tasks are under the responsibility of the visualisation model manager ([`VisualisationModelManager`]).
 
 The task of pairing certain nodes of each AST with appropriate models is delegated to an instance of [`VisualisationModelExtractor`], which contains a static list of all the model providers available in ilatex (`MODEL_PROVIDERS`).
-The current algorithm iterates over all the source files and all the model providers.
-It works in two phases:
+The current algorithm iterates over all the source files and all the model providers and works in two phases:
 
-1. First, the algorithm attempts to make _perfect mappings_. For each code mapping, it attempts to find the first AST node that (1) starts on the same line number than the one specified in the code mapping, (2) can be used by the current model provider, and (3) has not been used by another model provider. This last rule accounts for potential conflicts, e.g., if two AST nodes starting on the same line can be visualised by the same transitional.
-2. Then, if there remains unused code mappings or unused AST node that can be used by the current model providers, some heuristics are used to create _approximate mappings_, in an attempt to bypass errors found in some code mappings (such as incorrect line numbers). This technique has more or less success depending on the situation, and might be made optional, improved or removed in the future.
+1. First, the algorithm attempts to make _perfect mappings_. For each code mapping, it attempts to find the first AST node that (1) starts on the same line number as the one specified in the code mapping, (2) can be used by the current model provider, and (3) has not been used by another model provider. This last rule accounts for potential conflicts, e.g., if two AST nodes starting on the same line can be visualised by the same transitional.
+2. Then, if there remains unused code mappings or unused AST node that can be used by the current model providers, some heuristics are used to create _approximate mappings_ to attempt to bypass errors found in some code mappings (such as incorrect line numbers). This technique has more or less success depending on the situation and might be made optional, improved or removed in the future.
 
 Once all the models have been created, the model manager performs two last steps:
 
-1. It starts observing each model for (1) metadata or (2) content changes, and notify the webview when it happens, so that it can update itself;
-2. It initialises each model ([`init`]), which calls the abstract [`updateContentData`] method. This abstract method must be implented by each model and is responsible for (1) updating the data used by the model to generate content for the view and (2) signalling when the update finishes (whether it was successful or not) by emitting an event via `contentUpdateEndEventEmitter`, which further triggers events that signal content and/or metadata changes (which can now be caught by the model manager!).
+1. It starts observing each model for (1) metadata or (2) content changes, and notify the webview when it happens so that it can update itself;
+2. It initialises each model ([`init`]), which calls the abstract [`updateContentData`] method. This abstract method must be implemented by each model and is responsible for (1) updating the data used by the model to generate content for the view and (2) signalling when the update finishes (whether it was successful or not) by emitting an event via `contentUpdateEndEventEmitter`, which further triggers events that signal content and/or metadata changes (which can now be caught by the model manager!).
 
 
 
@@ -293,14 +291,14 @@ Each view is also given a reference to the webview's messenger, which can be use
 ### Code decorations
 
 The code displayed in the code editor can be _decorated_ using Visual Studio Code's Decoration API.
-In ilatex, this is the responsability of the decoration manager ([`DecorationManager`]).
+In ilatex, this is the responsibility of the decoration manager ([`DecorationManager`]).
 By default, it only decorates the code of transitionals when they cannot be reparsed; but it can also be used to display more information, e.g., for debugging the abstract syntax tree (check the code that was commented out if you would like to enable this kind of decorations).
 
 
 
 ### Logging
 
-ilatex has a logging mechanism which can be used to record a number of events to run statistics or do user studies.
+ilatex has a logging mechanism that can be used to record a number of events to run statistics or do user studies.
 Each logged event is called a _log entry_ ([`LogEntry`]).
 It is meant to be appended to a _log file_ ([`LogFile`]), which is managed by a dedicated manager ([`LogFileManager`]).
 
@@ -310,7 +308,7 @@ ilatex can write these log files in two places:
 - In the same directory as the main LaTeX file of the logged document (_local_ log file);
 - In a unique directory (which defaults to `~/.ilatex/logs/`), in a file named after a hash of the path of the main LaTeX file of the logged document (_centralised_ log file).
 
-Modifying the settings of the extension allows to enable/disable logging, as well as to customise a number of parameters (such as the path of the directory containing centralised log files and whether log files should be regular or hidden files).
+Modifying the settings of the extension allows to disable logging and customise a number of parameters (such as the path of the directory containing centralised log files and whether log files should be regular or hidden files).
 
 
 
@@ -320,9 +318,9 @@ ilatex provides a concept of _task_, which is basically an asynchronous function
 
 - The task queuer ([`TaskQueuer`]) executes all the tasks it receives one after the other;
 - The task throttler ([`TaskThrottler`]) waits a certain amount of time (`timeBetweenTasks`) after executing one task before running the next one;
-- The task debouncer ([`TaskDebouncer`]) waits a certain amount of time (`waitingTime`) when given a task (without executing it!), and only executes the last task received during that period of time (which may be different from the task that triggered that waiting period!).
+- The task debouncer ([`TaskDebouncer`]) waits a certain amount of time (`waitingTime`) when given a task (without executing it!) and only executes the last task received during that period of time (which may be different from the task that triggered that waiting period!).
 
-> **Note:** these runners are not designed to be immune to race conditions due to the asynchronicity of the tasks the run and the timers they use.
+> **Note:** these runners are not designed to be immune to race conditions due to the asynchronicity of the tasks they run and the timers they use.
 > Future versions may further investigate these issues and consider relying on mechanisms such as mutexes (e.g., [https://github.com/DirtyHairy/async-mutex](https://github.com/DirtyHairy/async-mutex)).
 
 
@@ -338,7 +336,7 @@ The parser supports lengths that are encoded as `<value> <unit> <suffix>`, where
 
 - `value` is a number, or possibly empty if the unit is a length macro;
 - `unit` is a string representing either (1) a standard unit or (2) an arbitrary length macro;
-- `suffix` is an optional suffix. It is stored in the object, but currently has no use. It was included to support glue specification of rubber lengths using the `plus X minus Y` syntax (see, e.g., [http://latexref.xyz/Lengths.html](http://latexref.xyz/Lengths.html)).
+- `suffix` is an optional suffix. It is stored in the object but currently has no use. It was included to support the glue specification of rubber lengths using the `plus X minus Y` syntax (see, e.g., [http://latexref.xyz/Lengths.html](http://latexref.xyz/Lengths.html)).
 
 Each element can be separated by an arbitrary number of whitespace characters. See the definition of the `parse` static method for details.
 
@@ -353,7 +351,7 @@ If this happens, there are two possibilities:
 
 #### Parameters
 
-LaTeX parameters are represented by [`LatexParameterAstNode`] objects in the AST, but can also be encapsulated into [`LatexParameter`] objects, which pair the value of the parameter (of an arbitrary type) with the AST node (which only contains the content of the parameter as a string).
+LaTeX parameters are represented by [`LatexParameterAstNode`] objects in the AST but can also be encapsulated into [`LatexParameter`] objects, which pair the value of the parameter (of an arbitrary type) with the AST node (which only contains the content of the parameter as a string).
 They also expose a `rawValue` property to easily export the value of a parameter in a serialisable format (e.g., to send the value of a parameter to the view of a transitional).
 Implementations are provided for some common types (boolean, number, text and length).
 
