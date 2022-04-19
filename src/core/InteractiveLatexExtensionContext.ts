@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { InteractiveLatexOptions } from "./InteractiveLatex";
+import { InteractiveLatexDocumentOptions } from "./InteractiveLatexDocument";
 import { InteractiveLatexDocumentManager } from "./InteractiveLatexDocumentManager";
 
 
@@ -37,7 +37,7 @@ export class InteractiveLatexExtensionContext {
     }
 
 	private showFileSelectorToCreateNewILatexDocument(
-		options: InteractiveLatexOptions
+		options: InteractiveLatexDocumentOptions
 	): void {
 		vscode.window.showOpenDialog({
 			canSelectMany: false,

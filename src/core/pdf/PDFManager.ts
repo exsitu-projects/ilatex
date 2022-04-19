@@ -1,17 +1,17 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
-import { InteractiveLatex } from "../InteractiveLatex";
+import { InteractiveLatexDocument } from "../InteractiveLatexDocument";
 
 export class PDFManager {
-    private ilatex: InteractiveLatex;
+    private ilatexDocument: InteractiveLatexDocument;
 
     private buildTaskIsRunning: boolean;
     private lastBuildFailed: boolean;
     private hasAlreadrBuiltPdfOnce: boolean;
 
-    constructor(ilatex: InteractiveLatex) {
-        this.ilatex = ilatex;
+    constructor(ilatexDocument: InteractiveLatexDocument) {
+        this.ilatexDocument = ilatexDocument;
 
         this.buildTaskIsRunning = false;
         this.lastBuildFailed = false;
@@ -19,11 +19,11 @@ export class PDFManager {
     }
 
     get pdfUri(): vscode.Uri {
-        return vscode.Uri.file(this.ilatex.mainSourceFileUri.path.replace(".tex", ".pdf"));
+        return vscode.Uri.file(this.ilatexDocument.mainSourceFileUri.path.replace(".tex", ".pdf"));
     }
 
     get compilationLogUri(): vscode.Uri {
-        return vscode.Uri.file(this.ilatex.mainSourceFileUri.path.replace(".tex", ".log"));
+        return vscode.Uri.file(this.ilatexDocument.mainSourceFileUri.path.replace(".tex", ".log"));
     }
 
     get pdfExists(): boolean {
@@ -47,7 +47,7 @@ export class PDFManager {
 
         return new Promise<void>((resolveCompilation, rejectCompilation) => {
             if (notifyWebview) {
-                this.ilatex.webviewManager.sendNewPDFCompilationStatus(true);
+                this.ilatexDocument.webviewManager.sendNewPDFCompilationStatus(true);
             }
 
             // Create a new terminal and use it to run latexmk to build a PDF from the sources
@@ -65,20 +65,20 @@ export class PDFManager {
                 // returned by the buildPDF method
                 if (closedTerminal.exitStatus && closedTerminal.exitStatus.code !== 0) {
                     this.lastBuildFailed = true;
-                    this.ilatex.logFileManager.logCoreEvent({ event: "pdf-compilation-failure" });
+                    this.ilatexDocument.logFileManager.logCoreEvent({ event: "pdf-compilation-failure" });
                     rejectCompilation("LaTeX compilation error");
 
                     if (notifyWebview) {
-                        this.ilatex.webviewManager.sendNewPDFCompilationStatus(false, true);
+                        this.ilatexDocument.webviewManager.sendNewPDFCompilationStatus(false, true);
                     }
                 }
                 else {
                     this.lastBuildFailed = false;
-                    this.ilatex.logFileManager.logCoreEvent({ event: "pdf-compilation-success" });
+                    this.ilatexDocument.logFileManager.logCoreEvent({ event: "pdf-compilation-success" });
                     resolveCompilation();
 
                     if (notifyWebview) {
-                        this.ilatex.webviewManager.sendNewPDFCompilationStatus(false, false);
+                        this.ilatexDocument.webviewManager.sendNewPDFCompilationStatus(false, false);
                     }
                 }
 
@@ -87,7 +87,7 @@ export class PDFManager {
             });
 
             // Log the start of the compilation
-            this.ilatex.logFileManager.logCoreEvent({ event: "pdf-compilation-start" });
+            this.ilatexDocument.logFileManager.logCoreEvent({ event: "pdf-compilation-start" });
 
             // List of arguments for latexmk
             const extraOptions: string[] = [
@@ -101,7 +101,7 @@ export class PDFManager {
                 // (required to get absolute paths with the currfile LaTeX package)
                 "-recorder",
                 // Extra options (may be empty)
-                ` ${this.ilatex.options.extraLatexmkOptions}`
+                ` ${this.ilatexDocument.options.extraLatexmkOptions}`
             ];
 
             // If the last build failed, or if this is the first build of this instance,
@@ -113,7 +113,7 @@ export class PDFManager {
             // Run latexnk to compile the document and close the terminal afterwards
             // (if no exit code is specified, the exit command reuses the exit code
             // of the last command ran in the terminal, i.e. in this case, latexmk)
-            const terminalSafeMainFilePath = this.ilatex.mainSourceFileUri.path.replace(/ /g, "\\ ");
+            const terminalSafeMainFilePath = this.ilatexDocument.mainSourceFileUri.path.replace(/ /g, "\\ ");
 
             terminal.sendText(`cd ${path.dirname(terminalSafeMainFilePath)}`);
             terminal.sendText(`latexmk ${extraOptions.join(" ")} ${terminalSafeMainFilePath}`);
@@ -136,7 +136,7 @@ export class PDFManager {
     }
 
     updateWebviewPDF(): void {
-        this.ilatex.webviewManager.sendNewPDF();
+        this.ilatexDocument.webviewManager.sendNewPDF();
     }
 
     recompilePDFAndUpdateWebview(): Promise<void> {

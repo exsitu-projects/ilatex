@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { InteractiveLatex, InteractiveLatexOptions } from "./InteractiveLatex";
+import { InteractiveLatexDocument, InteractiveLatexDocumentOptions } from "./InteractiveLatexDocument";
 
 function createWebview(title: string): vscode.WebviewPanel {
 	return vscode.window.createWebviewPanel(
@@ -17,7 +17,7 @@ function createWebview(title: string): vscode.WebviewPanel {
 export class InteractiveLatexDocumentManager implements vscode.Disposable {
     // Map from the paths of main LaTeX files paths to their interactive LaTeX document instance
     // This data structure encodes the fact there must be at most one iLaTeX instance per path
-	private mainLatexFilePathsToInteractiveLatexDocuments: Map<string, InteractiveLatex>;
+	private mainLatexFilePathsToInteractiveLatexDocuments: Map<string, InteractiveLatexDocument>;
 
     readonly nbInteractiveLatexDocumentsChangeEventEmitter: vscode.EventEmitter<void>;
 
@@ -35,11 +35,11 @@ export class InteractiveLatexDocumentManager implements vscode.Disposable {
         return [...this.mainLatexFilePathsToInteractiveLatexDocuments.keys()];
     }
 
-    get ilatexDocuments(): InteractiveLatex[] {
+    get ilatexDocuments(): InteractiveLatexDocument[] {
         return [...this.mainLatexFilePathsToInteractiveLatexDocuments.values()];
     }
 
-    hasDocument(ilatexDocument: InteractiveLatex): boolean {
+    hasDocument(ilatexDocument: InteractiveLatexDocument): boolean {
         return this.ilatexDocuments.includes(ilatexDocument);
     }
 
@@ -47,21 +47,21 @@ export class InteractiveLatexDocumentManager implements vscode.Disposable {
         return this.mainLatexFilePathsToInteractiveLatexDocuments.has(path);
     }
 
-    getDocumentWithMainFilePath(path: string): InteractiveLatex | undefined {
+    getDocumentWithMainFilePath(path: string): InteractiveLatexDocument | undefined {
         return this.mainLatexFilePathsToInteractiveLatexDocuments.get(path);
     }
 
     private createNewILatexDocumentFromMainFileAt(
         uri: vscode.Uri,
-        options: InteractiveLatexOptions
-    ): Promise<InteractiveLatex> {
+        options: InteractiveLatexDocumentOptions
+    ): Promise<InteractiveLatexDocument> {
         // Create and show a new webview panel
         const fileName = path.basename(uri.path);
         const webviewPanel = createWebview(`i-LaTeX — ${fileName}`);
 
         // Create and return a new instance of iLaTeX
         // The editor is mapped to the instance of iLateX until it is destroyed
-        return InteractiveLatex.fromMainLatexFileAt(uri, webviewPanel, options)
+        return InteractiveLatexDocument.fromMainLatexFileAt(uri, webviewPanel, options)
             .then(ilatexDocument => {
                 webviewPanel.onDidDispose(() => {
                     this.destroyILatexDocument(ilatexDocument);
@@ -73,7 +73,7 @@ export class InteractiveLatexDocumentManager implements vscode.Disposable {
 
     createOrShowILatexDocumentFromMainFileAt(
         uri: vscode.Uri,
-        options: InteractiveLatexOptions
+        options: InteractiveLatexDocumentOptions
     ): void {
         const path = uri.path;
 
@@ -102,7 +102,7 @@ export class InteractiveLatexDocumentManager implements vscode.Disposable {
         }
     }
 
-    createOrShowILatexDocumentFromActiveEditor(options: InteractiveLatexOptions): void {
+    createOrShowILatexDocumentFromActiveEditor(options: InteractiveLatexDocumentOptions): void {
         // If there is no active editor,
         // display an error message and abort
         const activeEditor = vscode.window.activeTextEditor;
@@ -139,7 +139,7 @@ export class InteractiveLatexDocumentManager implements vscode.Disposable {
         }
     }
 
-    destroyILatexDocument(ilatexDocument: InteractiveLatex): void {
+    destroyILatexDocument(ilatexDocument: InteractiveLatexDocument): void {
         const mainLatexFilePath = ilatexDocument.mainSourceFileUri.path;
         const mainLatexFileName = path.basename(mainLatexFilePath);
 

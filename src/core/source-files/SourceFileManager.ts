@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { CodeMapping } from "../code-mappings/CodeMapping";
-import { InteractiveLatex } from "../InteractiveLatex";
+import { InteractiveLatexDocument } from "../InteractiveLatexDocument";
 import { SourceFile } from "./SourceFile";
 import { SourceFileChange } from "./SourceFileChange";
 import { SourceFilePosition } from "./SourceFilePosition";
@@ -8,7 +8,7 @@ import { SourceFileRange } from "./SourceFileRange";
 
 
 export class SourceFileManager {
-    private ilatex: InteractiveLatex;
+    private ilatexDocument: InteractiveLatexDocument;
     private files: SourceFile[];
 
     readonly sourceFileChangeEventEmitter: vscode.EventEmitter<SourceFile>;
@@ -18,8 +18,8 @@ export class SourceFileManager {
     private textDocumentChangeObserverDisposable: vscode.Disposable;
     private textDocumentSaveObserverDisposable: vscode.Disposable;
 
-    constructor(ilatex: InteractiveLatex) {
-        this.ilatex = ilatex;
+    constructor(ilatexDocument: InteractiveLatexDocument) {
+        this.ilatexDocument = ilatexDocument;
         this.files = [];
 
         this.sourceFileChangeEventEmitter = new vscode.EventEmitter();
@@ -78,7 +78,7 @@ export class SourceFileManager {
     async updateSourceFilesFromCodeMappings(): Promise<void> {
         const absolutePathsOfCurrentSourceFiles = this.files.map(file => file.uri.path);
         const absolutePathsOfCodeMappings = new Set(
-            this.ilatex.codeMappingManager.codeMappings.map(codeMapping => codeMapping.absolutePath)
+            this.ilatexDocument.codeMappingManager.codeMappings.map(codeMapping => codeMapping.absolutePath)
         );
 
         // Remove source files whose paths do not appear in the new set of code mappings' paths
@@ -110,7 +110,7 @@ export class SourceFileManager {
             this.sourceFilesToParsingErrorObserverDisposables.set(
                 newSourceFile,
                 newSourceFile.astNodeParsingErrorEventEmitter.event(parsingError => {
-                    this.ilatex.logFileManager.logError({
+                    this.ilatexDocument.logFileManager.logError({
                         event: "parsing-error",
                         fileName: newSourceFile.name
                     });
@@ -133,7 +133,7 @@ export class SourceFileManager {
                 const changeProcessingResult = await sourceFileInChangedDocument.processChange(sourceFileChange);
 
                 if (changeProcessingResult.changeIsLoggable) {
-                    const editedVisualisationModel = this.ilatex.visualisationModelManager.findModelContainingRange(new SourceFileRange(
+                    const editedVisualisationModel = this.ilatexDocument.visualisationModelManager.findModelContainingRange(new SourceFileRange(
                         SourceFilePosition.fromVscodePosition(sourceFileChange.start),
                         SourceFilePosition.fromVscodePosition(sourceFileChange.end)
                     ));
@@ -147,7 +147,7 @@ export class SourceFileManager {
                         };
                     }
 
-                    this.ilatex.logFileManager.logUserEditEvent({
+                    this.ilatexDocument.logFileManager.logUserEditEvent({
                         fileName: sourceFileInChangedDocument.name,
                         event: "text-edit",
                         editKind: sourceFileChange.kind.toLowerCase(),

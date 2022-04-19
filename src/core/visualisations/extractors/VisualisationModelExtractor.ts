@@ -6,7 +6,7 @@ import { MathematicsVisualisationModelProvider } from "../../../visualisations/m
 import { TabularVisualisationModelProvider } from "../../../visualisations/tabular/model/provider";
 import { ASTNode } from "../../ast/nodes/ASTNode";
 import { CodeMapping, CodeMappingID } from "../../code-mappings/CodeMapping";
-import { InteractiveLatex } from "../../InteractiveLatex";
+import { InteractiveLatexDocument } from "../../InteractiveLatexDocument";
 import { SourceFile } from "../../source-files/SourceFile";
 import { SourceFilePosition } from "../../source-files/SourceFilePosition";
 import { VisualisationModel } from "../VisualisationModel";
@@ -23,24 +23,24 @@ export class VisualisationModelExtractor {
         new IncludegraphicsVisualisationModelProvider()
     ];
 
-    private ilatex: InteractiveLatex;
+    private ilatexDocument: InteractiveLatexDocument;
     private astNodeCandidatesExtractor: ASTNodeCandidatesExtractor;
 
-    constructor(ilatex: InteractiveLatex) {
-        this.ilatex = ilatex;
+    constructor(ilatexDocument: InteractiveLatexDocument) {
+        this.ilatexDocument = ilatexDocument;
         this.astNodeCandidatesExtractor = new ASTNodeCandidatesExtractor(VisualisationModelExtractor.MODEL_PROVIDERS);
     }
 
     private get modelUtilities(): VisualisationModelUtilities {
-        return VisualisationModelUtilities.from(this.ilatex);
+        return VisualisationModelUtilities.from(this.ilatexDocument);
     }
 
     private mapSourceFilesToCodeMappings(): ArrayMap<SourceFile, CodeMapping> {
-        const codeMappings = this.ilatex.codeMappingManager.codeMappings;
+        const codeMappings = this.ilatexDocument.codeMappingManager.codeMappings;
         const sourceFilesToCodeMappings = new ArrayMap<SourceFile, CodeMapping>();
 
         for (let codeMapping of codeMappings) {
-            const sourceFile = this.ilatex.sourceFileManager.getSourceFileOfCodeMapping(codeMapping);
+            const sourceFile = this.ilatexDocument.sourceFileManager.getSourceFileOfCodeMapping(codeMapping);
             if (sourceFile) {
                 sourceFilesToCodeMappings.add(sourceFile, codeMapping);
             }

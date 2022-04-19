@@ -3,14 +3,14 @@ import { MessageHandler } from "../../shared/messenger/AbstractMessenger";
 import { CoreToWebviewMessage, CoreToWebviewMessageType, NotifyVisualisationModelMessage, WebviewToCoreMessage, WebviewToCoreMessageType } from "../../shared/messenger/messages";
 import { SILENT_TASK_ERROR_HANDLER } from "../../shared/tasks/Task";
 import { TaskQueuer } from "../../shared/tasks/TaskQueuer";
-import { InteractiveLatex } from "../InteractiveLatex";
+import { InteractiveLatexDocument } from "../InteractiveLatexDocument";
 import { ExtensionFileReader } from "../utils/ExtensionFileReader";
 import { VisualisationModel } from "../visualisations/VisualisationModel";
 import { Messenger } from "./Messenger";
 
 
 export class WebviewManager {
-    private ilatex: InteractiveLatex;
+    private ilatexDocument: InteractiveLatexDocument;
 
     private webviewPanel: vscode.WebviewPanel;
     private webview: vscode.Webview;
@@ -25,8 +25,8 @@ export class WebviewManager {
     private webviewPanelDidDisposeObserverDisposable: vscode.Disposable;
     private webviewPanelStateChangeObserverDisposable: vscode.Disposable;
 
-    constructor(ilatex: InteractiveLatex, webviewPanel: vscode.WebviewPanel) {
-        this.ilatex = ilatex;
+    constructor(ilatexDocument: InteractiveLatexDocument, webviewPanel: vscode.WebviewPanel) {
+        this.ilatexDocument = ilatexDocument;
         this.webviewPanel = webviewPanel;
         this.webview = webviewPanel.webview;
 
@@ -73,7 +73,7 @@ export class WebviewManager {
             WebviewToCoreMessageType.NotifyVisualisationModel,
             async (message) => {
                 this.incomingMessageDispatchQueuer.add(async () => {
-                    await this.ilatex.visualisationModelManager.dispatchWebviewMessage(
+                    await this.ilatexDocument.visualisationModelManager.dispatchWebviewMessage(
                         message as NotifyVisualisationModelMessage
                     );
                 });
@@ -83,8 +83,8 @@ export class WebviewManager {
         this.setHandlerFor(
             WebviewToCoreMessageType.SaveAndRecompileRequest,
             async (message) => {
-                await this.ilatex.sourceFileManager.saveAllSourceFiles();
-                this.ilatex.recompileAndUpdate();
+                await this.ilatexDocument.sourceFileManager.saveAllSourceFiles();
+                this.ilatexDocument.recompileAndUpdate();
             }
         );
     }
@@ -135,7 +135,7 @@ export class WebviewManager {
 
     sendNewPDF(): void {
         console.info("📦 Sending a new PDF to the webview.");
-        const pdfUri = this.ilatex.pdfManager.pdfUri;
+        const pdfUri = this.ilatexDocument.pdfManager.pdfUri;
 
         this.sendMessageIfWebviewIsAvailable({
             type: CoreToWebviewMessageType.UpdatePDF,
@@ -164,7 +164,7 @@ export class WebviewManager {
     }
 
     sendNewVisualisationMetadataForAllModels(): void {
-        for (let model of this.ilatex.visualisationModelManager.models) {
+        for (let model of this.ilatexDocument.visualisationModelManager.models) {
             this.sendNewVisualisationMetadataFor(model);
         }
     }
@@ -180,13 +180,13 @@ export class WebviewManager {
     }
 
     sendNewVisualisationContentForAllModels(): void {
-        for (let model of this.ilatex.visualisationModelManager.models) {
+        for (let model of this.ilatexDocument.visualisationModelManager.models) {
             this.sendNewVisualisationContentFor(model);
         }
     }
 
     sendNewVisualisationContentAndMetadataForAllModels(): void {
-        for (let model of this.ilatex.visualisationModelManager.models) {
+        for (let model of this.ilatexDocument.visualisationModelManager.models) {
             this.sendNewVisualisationContentFor(model);
             this.sendNewVisualisationMetadataFor(model);
         }        
@@ -198,7 +198,7 @@ export class WebviewManager {
         this.sendMessageIfWebviewIsAvailable({
             type: CoreToWebviewMessageType.UpdateGlobalOptions,
             options: {
-                enableVisualisations: this.ilatex.options.enableVisualisations
+                enableVisualisations: this.ilatexDocument.options.enableVisualisations
             }
         });
     }

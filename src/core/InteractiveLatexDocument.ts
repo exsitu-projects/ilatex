@@ -8,7 +8,7 @@ import { CodeMappingManager } from "./code-mappings/CodeMappingManager";
 import { LogFileManager } from "./logs/LogFileManager";
 import { TaskDebouncer } from "../shared/tasks/TaskDebouncer";
 
-export interface InteractiveLatexOptions {
+export interface InteractiveLatexDocumentOptions {
     // Globally enable or disable visualisations
     enableVisualisations: boolean;
 
@@ -24,10 +24,10 @@ export interface InteractiveLatexOptions {
     extraLatexmkOptions: string;
 }
 
-export class InteractiveLatex {
+export class InteractiveLatexDocument {
     readonly mainSourceFileUri: vscode.Uri;
 
-    readonly options: InteractiveLatexOptions;
+    readonly options: InteractiveLatexDocumentOptions;
 
     readonly logFileManager: LogFileManager;
     readonly sourceFileManager: SourceFileManager;
@@ -45,7 +45,7 @@ export class InteractiveLatex {
     private constructor(
         mainSourceFileUri: vscode.Uri,
         webviewPanel: vscode.WebviewPanel,
-        options: InteractiveLatexOptions
+        options: InteractiveLatexDocumentOptions
     ) {
         this.mainSourceFileUri = mainSourceFileUri;
 
@@ -127,7 +127,7 @@ export class InteractiveLatex {
 
     private processUpdateError(error: any): void {
         console.error("An unexpected error occured during the re-compilation/update phase of iLaTeX:", error);
-        this.logFileManager.logError({ event: "unexpected-recompilation-error" });
+        this.logFileManager.logError({ event: "unexpected-recompilation-error" });
 
         this.isUpdating = false;
     }
@@ -135,11 +135,11 @@ export class InteractiveLatex {
     static fromMainLatexFileAt(
         uri: vscode.Uri,
         webviewPanel: vscode.WebviewPanel,
-        options: InteractiveLatexOptions
-    ): Promise<InteractiveLatex> {
+        options: InteractiveLatexDocumentOptions
+    ): Promise<InteractiveLatexDocument> {
         return new Promise(async (resolve, reject) => {
             try {
-                const ilatex = new InteractiveLatex(uri, webviewPanel, options);
+                const ilatex = new InteractiveLatexDocument(uri, webviewPanel, options);
                 await ilatex.init();
                 resolve(ilatex);
             }

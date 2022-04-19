@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
 import * as crypto from "crypto";
-import { InteractiveLatex } from "../InteractiveLatex";
+import { InteractiveLatexDocument } from "../InteractiveLatexDocument";
 import { LogEntry, LogEntrySource, PartialLogEntry } from "./LogEntry";
 import { LogFile } from "./LogFile";
 import { PathUtils } from "../utils/PathUtils";
@@ -20,21 +20,21 @@ export type ErrorLogEntryData = LogDataForSource<LogEntrySource.Error>;
 
 
 export class LogFileManager {
-    private ilatex: InteractiveLatex;
+    private ilatexDocument: InteractiveLatexDocument;
 
     private localLogFile: LogFile | null; // null if local logging is disabled
     private centralisedLogFile: LogFile | null; // null if centralised logging is disabled
 
-    constructor(ilatex: InteractiveLatex) {
-        this.ilatex = ilatex;
+    constructor(ilatexDocument: InteractiveLatexDocument) {
+        this.ilatexDocument = ilatexDocument;
 
         this.localLogFile = this.createLocalLogFileOrNull();
         this.centralisedLogFile = this.createCentralisedLogFileOrNull();
     }
 
     get localLogFilePath(): string {
-        const mainSourceFilePath = this.ilatex.mainSourceFileUri.path;
-        const useHiddenFile = this.ilatex.options.localLogFileType === "hidden";
+        const mainSourceFilePath = this.ilatexDocument.mainSourceFileUri.path;
+        const useHiddenFile = this.ilatexDocument.options.localLogFileType === "hidden";
 
         const directoryPath = path.dirname(mainSourceFilePath);
         const fileName = path.basename(mainSourceFilePath);
@@ -47,8 +47,8 @@ export class LogFileManager {
     }
 
     get centralisedLogFilePath(): string {
-        const mainSourceFilePath = this.ilatex.mainSourceFileUri.path;
-        const centralisedLoggingDirectoryPath = PathUtils.resolveLeadingTilde(this.ilatex.options.centralisedLoggingDirectoryPath);
+        const mainSourceFilePath = this.ilatexDocument.mainSourceFileUri.path;
+        const centralisedLoggingDirectoryPath = PathUtils.resolveLeadingTilde(this.ilatexDocument.options.centralisedLoggingDirectoryPath);
 
         // Use the first 48 characters of an hexadecimal hash of the path of the main source file,
         // so that the entire filename (with the extension) fits in less than 64 bytes.
@@ -68,18 +68,18 @@ export class LogFileManager {
     }
 
     private createLocalLogFileOrNull(): LogFile | null {
-        if (!this.ilatex.options.enableLocalLogging) {
+        if (!this.ilatexDocument.options.enableLocalLogging) {
             return null;
         }
 
         return new LogFile(
             this.localLogFilePath,
-            this.ilatex.mainSourceFileUri.path
+            this.ilatexDocument.mainSourceFileUri.path
         );
     }
 
     private createCentralisedLogFileOrNull(): LogFile | null {
-        if (!this.ilatex.options.enableCentralisedLogging) {
+        if (!this.ilatexDocument.options.enableCentralisedLogging) {
             return null;
         }
 
@@ -98,7 +98,7 @@ export class LogFileManager {
             
             return new LogFile(
                 centralisedLogFilePath,
-                this.ilatex.mainSourceFileUri.path
+                this.ilatexDocument.mainSourceFileUri.path
             );   
         }
         catch (error) {
@@ -118,7 +118,7 @@ export class LogFileManager {
         }
 
         const fullEntry = {
-            mainFileName: path.basename(this.ilatex.mainSourceFileUri.path),
+            mainFileName: path.basename(this.ilatexDocument.mainSourceFileUri.path),
             activeFileName: path.basename(vscode.window.activeTextEditor?.document.uri.path ?? ""),
             timestamp: new Date().getTime(),
 

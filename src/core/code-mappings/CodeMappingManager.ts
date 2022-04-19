@@ -1,17 +1,17 @@
 import * as fs from "fs";
 import * as path from "path";
-import { InteractiveLatex } from "../InteractiveLatex";
+import { InteractiveLatexDocument } from "../InteractiveLatexDocument";
 import { ExtensionFileReader } from "../utils/ExtensionFileReader";
 import { CodeMapping } from "./CodeMapping";
 
 export class NoLatexGeneratedMappingFileError {}
 
 export class CodeMappingManager {
-    private ilatex: InteractiveLatex;
+    private ilatexDocument: InteractiveLatexDocument;
     private mappings: CodeMapping[];
 
-    constructor(ilatex: InteractiveLatex) {
-        this.ilatex = ilatex;
+    constructor(ilatexDocument: InteractiveLatexDocument) {
+        this.ilatexDocument = ilatexDocument;
         this.mappings = [];
     }
 
@@ -21,8 +21,8 @@ export class CodeMappingManager {
 
     private get codeMappingFilePath(): string {
         return path.join(
-            path.dirname(this.ilatex.mainSourceFileUri.path),
-            path.basename(this.ilatex.mainSourceFileUri.path, ".tex").concat(".ilatex-mappings")
+            path.dirname(this.ilatexDocument.mainSourceFileUri.path),
+            path.basename(this.ilatexDocument.mainSourceFileUri.path, ".tex").concat(".ilatex-mappings")
         );
     }
 
@@ -62,7 +62,7 @@ export class CodeMappingManager {
             .map(mappingAsText => {
                 // If a mapping could not be parsed without error, silently skip the mapping
                 try {
-                    return CodeMapping.fromLatexGeneratedMapping(mappingAsText, this.ilatex.mainSourceFileUri);
+                    return CodeMapping.fromLatexGeneratedMapping(mappingAsText, this.ilatexDocument.mainSourceFileUri);
                 }
                 catch (error) {
                     return null;

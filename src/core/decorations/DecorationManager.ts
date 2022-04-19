@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { ArrayMap } from "../../shared/utils/ArrayMap";
 import { ASTNodeCollecter } from "../ast/visitors/ASTNodeCollecter";
-import { InteractiveLatex } from "../InteractiveLatex";
+import { InteractiveLatexDocument } from "../InteractiveLatexDocument";
 import { VisualisationModel } from "../visualisations/VisualisationModel";
 import { textDecorations } from "./text-decorations";
 
@@ -11,15 +11,15 @@ interface ModelWithEditor {
 }
 
 export class DecorationManager {
-    private ilatex: InteractiveLatex;
+    private ilatexDocument: InteractiveLatexDocument;
 
     private onRedecorateEditorsEventEmitter: vscode.EventEmitter<void>;
 
     private codeLensProviderDisposable: vscode.Disposable;
     private redecorationTriggerEventsObserverDisposables: vscode.Disposable[];
 
-    constructor(ilatex: InteractiveLatex) {
-        this.ilatex = ilatex;
+    constructor(ilatexDocument: InteractiveLatexDocument) {
+        this.ilatexDocument = ilatexDocument;
 
         this.onRedecorateEditorsEventEmitter = new vscode.EventEmitter<void>();
 
@@ -51,11 +51,11 @@ export class DecorationManager {
 
     private computeCodeLensesForDocument(document: vscode.TextDocument): vscode.CodeLens[] {
         // If visualisations are not enabled, do not provide any code lens
-        if (!this.ilatex.options.enableVisualisations) {
+        if (!this.ilatexDocument.options.enableVisualisations) {
             return [];
         }
 
-        return this.ilatex.visualisationModelManager.models
+        return this.ilatexDocument.visualisationModelManager.models
             .filter(model => model.sourceFile.isRepresentedByDocument(document) && !model.metadata.available)
             .map(model => new vscode.CodeLens(model.astNode.range.asVscodeRange, {
                 title: "iLaTeX is out-of-sync with this piece of code. Click to recompile the document and recompute code visualisations.",
@@ -85,7 +85,7 @@ export class DecorationManager {
 
     private redecorateEditorWithVisualisations(editor: vscode.TextEditor, models: VisualisationModel[]): void {
         // If visualisations are not enabled, do not decorate any editor
-        if (!this.ilatex.options.enableVisualisations) {
+        if (!this.ilatexDocument.options.enableVisualisations) {
             return;
         }
 
@@ -136,7 +136,7 @@ export class DecorationManager {
     }
 
     redecorateVisibleEditors(): void {
-        this.redecorateVisibleEditorsWithVisualisations(this.ilatex.visualisationModelManager.models);
+        this.redecorateVisibleEditorsWithVisualisations(this.ilatexDocument.visualisationModelManager.models);
     }
 
     private removeVisualisationDecorationsFromVisibleEditors(): void {
@@ -149,15 +149,15 @@ export class DecorationManager {
 
     private startObservingEventsThatTriggerRedecoration(): void {
         this.redecorationTriggerEventsObserverDisposables.push(
-            this.ilatex.visualisationModelManager.modelMetadataChangeEventEmitter.event(
+            this.ilatexDocument.visualisationModelManager.modelMetadataChangeEventEmitter.event(
                 async model => this.redecorateVisibleEditors()
             ),
 
-            this.ilatex.visualisationModelManager.modelContentChangeEventEmitter.event(
+            this.ilatexDocument.visualisationModelManager.modelContentChangeEventEmitter.event(
                 async model => this.redecorateVisibleEditors()
             ),
 
-            this.ilatex.visualisationModelManager.modelChangeEventEmitter.event(
+            this.ilatexDocument.visualisationModelManager.modelChangeEventEmitter.event(
                 async model => this.redecorateVisibleEditors()
             ),
         );
