@@ -9,19 +9,19 @@ import { LatexLength } from "../../../shared/latex-length/LatexLength";
 import { SourceFileRange } from "../../../core/source-files/SourceFileRange";
 import { CurlyBracesParameterBlockNode } from "../../../core/ast/nodes/CurlyBracesParameterBlockNode";
 import { SquareBracesParameterBlockNode } from "../../../core/ast/nodes/SquareBracesParameterBlockNode";
-import { LightweightSourceFileEditor } from "../../../core/source-files/LightweightSourceFileEditor";
+import { TransientSourceFileEditor } from "../../../core/source-files/TransientSourceFileEditor";
 
 export class IncludegraphicsVisualisationModel extends AbstractVisualisationModel<CommandNode> {
     readonly name = "includegraphics";
     private image: Image | null;
 
-    private lightweightImageOptionsEditor: LightweightSourceFileEditor | null;
+    private transientImageOptionsEditor: TransientSourceFileEditor | null;
 
     constructor(context: VisualisableCodeContext<CommandNode>, utilities: VisualisationModelUtilities) {
         super(context, utilities);
         this.image = null;
 
-        this.lightweightImageOptionsEditor = null;
+        this.transientImageOptionsEditor = null;
     }
 
     protected get contentDataAsHtml(): string {
@@ -118,23 +118,23 @@ export class IncludegraphicsVisualisationModel extends AbstractVisualisationMode
             .join(", ");
         const newOptionParameterBlock = `[${newOptionParameterBlockContent}]`;
 
-        if (!this.lightweightImageOptionsEditor) {
+        if (!this.transientImageOptionsEditor) {
             const editRange = new SourceFileRange(
                 this.astNode.nameEnd,
                 (this.astNode.parameters[1] as CurlyBracesParameterBlockNode).range.from
             );
     
-            this.lightweightImageOptionsEditor = this.sourceFile.createLightweightEditorFor([{
+            this.transientImageOptionsEditor = this.sourceFile.createTransientEditor([{
                 name: "options",
                 range: editRange
             }]);
-            await this.lightweightImageOptionsEditor.init();
+            await this.transientImageOptionsEditor.init();
         }
         
-        await this.lightweightImageOptionsEditor.replaceSectionContent("options", newOptionParameterBlock);
+        await this.transientImageOptionsEditor.replaceSectionContent("options", newOptionParameterBlock);
         if (isFinalUpdate) {
-            await this.lightweightImageOptionsEditor.applyChange();
-            this.lightweightImageOptionsEditor = null;
+            await this.transientImageOptionsEditor.applyChange();
+            this.transientImageOptionsEditor = null;
         }
     }
 

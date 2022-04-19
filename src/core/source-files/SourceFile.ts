@@ -3,8 +3,8 @@ import * as path from "path";
 import { LatexAST } from "../ast/LatexAST";
 import { SourceFileChange } from "./SourceFileChange";
 import { SourceFileRange } from "../source-files/SourceFileRange";
-import { EditableSection, LightweightSourceFileEditor } from "./LightweightSourceFileEditor";
-import { AtomicSourceFileEditor, SourceFileEdit, SourceFileEditProvider } from "./AtomicSourceFileEditor";
+import { EditableSection, TransientSourceFileEditor } from "./TransientSourceFileEditor";
+import { SourceFileEditor, SourceFileEdit, SourceFileEditProvider } from "./SourceFileEditor";
 import { ASTParsingError } from "../ast/ASTParser";
 
 export class NotInitialisedError {}
@@ -119,17 +119,17 @@ export class SourceFile {
     }
 
     async applyEdits(...edits: SourceFileEdit[]): Promise<void> {
-        const editor = this.createAtomicEditor();
+        const editor = this.createEditor();
         editor.addEdits(...edits);
         await editor.apply();
     }
 
-    createAtomicEditor(editProviders: SourceFileEditProvider[] = []): AtomicSourceFileEditor {
-        return new AtomicSourceFileEditor(this, editProviders);
+    createEditor(editProviders: SourceFileEditProvider[] = []): SourceFileEditor {
+        return new SourceFileEditor(this, editProviders);
     }
 
-    createLightweightEditorFor(editableSections: EditableSection[]): LightweightSourceFileEditor {
-        return new LightweightSourceFileEditor(this, editableSections);
+    createTransientEditor(editableSections: EditableSection[]): TransientSourceFileEditor {
+        return new TransientSourceFileEditor(this, editableSections);
     }
 
     async parseNewAST(): Promise<void> {

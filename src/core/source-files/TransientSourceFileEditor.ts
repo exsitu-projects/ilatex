@@ -17,7 +17,7 @@ interface EditableSectionData {
     currentContent: string;
 }
 
-export class LightweightSourceFileEditor {
+export class TransientSourceFileEditor {
     private sourceFile: SourceFile;
 
     private sortedEditableSections: EditableSection[];
@@ -64,7 +64,7 @@ export class LightweightSourceFileEditor {
     async replaceSectionContent(sectionName: string, newContent: string): Promise<void> {
         const sectionData = this.editableSectionNamesToData.get(sectionName);
         if (!sectionData) {
-            console.warn(`The content of this lightweight editor cannot be replaced: there is no editable section named "${sectionName}".`);
+            console.warn(`The content of this transient editor cannot be replaced: there is no editable section named "${sectionName}".`);
             return;
         }
 
@@ -143,7 +143,7 @@ export class LightweightSourceFileEditor {
 
         // First, if temporary edits have not been not skipped, replace the current content by the initial content
         // This is required to ensure the change that will be processed by the source file and its AST
-        // is performed on the same content than before the very first lightweight edit
+        // is performed on the same content than before the very first transient edit
         // (without this trick, if the final new content is long enough, it might produce undesired accross-node changes!)
         if (!this.shouldSkipTemporaryEdits) {
             this.sourceFile.ignoreChanges = true;

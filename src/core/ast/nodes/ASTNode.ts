@@ -4,7 +4,7 @@ import { SourceFileRange, RelativeRangePosition } from "../../source-files/Sourc
 import { SourceFileChange } from "../../source-files/SourceFileChange";
 import { SourceFile } from "../../source-files/SourceFile";
 import { ASTAsyncVisitor, ASTSyncVisitor } from "../visitors/visitors";
-import { AtomicSourceFileEditor, SourceFileEditProvider } from "../../source-files/AtomicSourceFileEditor";
+import { SourceFileEditor, SourceFileEditProvider } from "../../source-files/SourceFileEditor";
 import { edits } from "./ast-node-edits";
 
 
@@ -105,11 +105,11 @@ export abstract class ASTNode {
         }
     }
 
-    async applyEditsWithoutReparsing(editor: AtomicSourceFileEditor): Promise<void>;
+    async applyEditsWithoutReparsing(editor: SourceFileEditor): Promise<void>;
     async applyEditsWithoutReparsing(editProviders: SourceFileEditProvider[]): Promise<void>;
-    async applyEditsWithoutReparsing(editorOrEditProviders: AtomicSourceFileEditor | SourceFileEditProvider[]): Promise<void> {
+    async applyEditsWithoutReparsing(editorOrEditProviders: SourceFileEditor | SourceFileEditProvider[]): Promise<void> {
         const editor = Array.isArray(editorOrEditProviders)
-            ? this.sourceFile.createAtomicEditor(editorOrEditProviders)
+            ? this.sourceFile.createEditor(editorOrEditProviders)
             : editorOrEditProviders;
         
         this.preventReparsingDuring(
@@ -129,15 +129,6 @@ export abstract class ASTNode {
             this.edits.deleteTextContent(trimSurroundingWhitespace)
         ]);
     }
-
-    // async makeAtomicChangeWithinNode(edit: SourceFileEdit): Promise<void>;
-    // async makeAtomicChangeWithinNode(edits: SourceFileEdit[]): Promise<void>;
-    // async makeAtomicChangeWithinNode(editOrEdits: SourceFileEdit | SourceFileEdit[]): Promise<void> {
-    //     // TODO: possibly check that all the given edits are indeed located within this node
-    //     this.beginAtomicChange();
-    //     await this.sourceFile.makeAtomicChange(editOrEdits);
-    //     this.endAtomicChange();
-    // }
 
     // Dispatch a source file change to this node + every of its children in the AST
     // Return a promiseresolving to a boolean indicating whether the node requires reparsing or not

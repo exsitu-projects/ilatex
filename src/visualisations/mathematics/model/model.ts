@@ -93,7 +93,7 @@ export class MathematicsModel extends AbstractVisualisationModel<EnvironmentNode
             );
         }
 
-        const editor = this.sourceFile.createAtomicEditor();
+        const editor = this.sourceFile.createEditor();
         editor.replace(rangeToEdit, trimmedMathCode);
         
         await this.astNode.applyEditsWithoutReparsing(editor);

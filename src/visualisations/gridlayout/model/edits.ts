@@ -1,4 +1,4 @@
-import { AtomicSourceFileEditor, SourceFileEditProvider } from "../../../core/source-files/AtomicSourceFileEditor";
+import { SourceFileEditor, SourceFileEditProvider } from "../../../core/source-files/SourceFileEditor";
 import { SourceFilePosition } from "../../../core/source-files/SourceFilePosition";
 import { MathUtils } from "../../../shared/utils/MathUtils";
 import { Row, Cell, Layout } from "./Layout";
@@ -42,7 +42,7 @@ function getInsertPositionOfCell(row: Row, cellIndex: number): SourceFilePositio
 
 export const edits = {
     normalizeRowSizes(rows: Row[], totalSize: number = 1): SourceFileEditProvider {
-        return async (editor: AtomicSourceFileEditor) => {
+        return async (editor: SourceFileEditor) => {
             // Compute the sum of the relative sizes over all the given rows
             // If they already sum to 1, there is nothing to do
             const rowSizesSum = rows.reduce((sum, row) => sum + row.options.relativeSize, 0);
@@ -62,7 +62,7 @@ export const edits = {
     },
 
     normalizeCellSizes(cells: Cell[], totalSize: number = 1): SourceFileEditProvider {
-        return async (editor: AtomicSourceFileEditor) => {
+        return async (editor: SourceFileEditor) => {
             // Compute the sum of the relative sizes over all the given cells
             // If they already sum to 1, there is nothing to do
             const cellSizesSum = cells.reduce((sum, cell) => sum + cell.options.relativeSize, 0);
@@ -82,7 +82,7 @@ export const edits = {
     },
 
     createRow(layout: Layout, rowIndex: number): SourceFileEditProvider {
-        return async (editor: AtomicSourceFileEditor) => {
+        return async (editor: SourceFileEditor) => {
             const nbRows = layout.nbRows;
             const rows = layout.rows;
             const isNewLastRow = rowIndex > layout.lastRow.rowIndex;
@@ -140,7 +140,7 @@ export const edits = {
             skipResizing?: boolean
         } = {}
     ) : SourceFileEditProvider {
-        return async (editor: AtomicSourceFileEditor) => {
+        return async (editor: SourceFileEditor) => {
             if (rowIndex > layout.rows.length - 1) {
                 console.warn(`The grid layout's cell cannot be created: there is no row at index ${rowIndex}.`);
                 return;
@@ -207,7 +207,7 @@ export const edits = {
             skipResizing?: boolean
         } = {}
     ): SourceFileEditProvider {
-        return async (editor: AtomicSourceFileEditor) => {
+        return async (editor: SourceFileEditor) => {
             editor.addEditProviders(row.astNode.edits.deleteTextContent());
 
             if (!options.skipResizing) {
@@ -226,7 +226,7 @@ export const edits = {
             skipResizingAfterDeletingRow?: boolean
         } = {}
     ): SourceFileEditProvider {
-        return async (editor: AtomicSourceFileEditor) => {
+        return async (editor: SourceFileEditor) => {
             const row = layout.getRowAt(cell.rowIndex);
             if (row.nbCells === 1 && options.deleteRowIfLastCellOfRow) {
                 editor.addEditProviders(
@@ -256,7 +256,7 @@ export const edits = {
         cell: Cell,
         target: { rowIndex: number, cellIndex: number }
     ): SourceFileEditProvider {
-        return async (editor: AtomicSourceFileEditor) => {
+        return async (editor: SourceFileEditor) => {
             const sameRowIndex = cell.rowIndex === target.rowIndex;
             const sameCellIndex = cell.cellIndex === target.cellIndex;
 

@@ -5,7 +5,7 @@ import { VisualisableCodeContext } from "../../../core/visualisations/Visualisat
 import { VisualisationModelUtilities } from "../../../core/visualisations/VisualisationModelUtilities";
 import { Cell, Layout, Row } from "./Layout";
 import { HtmlUtils } from "../../../shared/utils/HtmlUtils";
-import { LightweightSourceFileEditor } from "../../../core/source-files/LightweightSourceFileEditor";
+import { TransientSourceFileEditor } from "../../../core/source-files/TransientSourceFileEditor";
 import { MathUtils } from "../../../shared/utils/MathUtils";
 import { edits } from "./edits";
 
@@ -13,11 +13,11 @@ export function getRelativeSizeAsString(relativeSize: number): string {
     return MathUtils.round(relativeSize, 3).toString();
 }
 
-function nameLightweightEditorSectionAfterCell(cell: Cell) {
+function nameTransientEditorSectionAfterCell(cell: Cell) {
     return `${cell.rowIndex}-${cell.cellIndex}`;
 }
 
-function nameLightweightEditorSectionAfterRow(row: Row) {
+function nameTransientEditorSectionAfterRow(row: Row) {
     return `${row.rowIndex}`;
 }
 
@@ -25,15 +25,15 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
     readonly name = "grid layout";
     private layout: Layout | null;
 
-    private lightweightCellSizeEditor: LightweightSourceFileEditor | null;
-    private lightweightRowSizeEditor: LightweightSourceFileEditor | null;
+    private transientCellSizeEditor: TransientSourceFileEditor | null;
+    private transientRowSizeEditor: TransientSourceFileEditor | null;
 
     constructor(context: VisualisableCodeContext<EnvironmentNode>, utilities: VisualisationModelUtilities) {
         super(context, utilities);
         this.layout = null;
 
-        this.lightweightCellSizeEditor = null;
-        this.lightweightRowSizeEditor = null;
+        this.transientCellSizeEditor = null;
+        this.transientRowSizeEditor = null;
     }
 
     protected get contentDataAsHtml(): string {
@@ -197,31 +197,31 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
                 const cell = layout.getCellAt(rowIndex, cellIndex);
                 return {
                     cell: cell,
-                    name: nameLightweightEditorSectionAfterCell(cell),
+                    name: nameTransientEditorSectionAfterCell(cell),
                     range: cell.options.relativeSizeParameterNode.range,
                     newRelativeSize: newRelativeSize
                 };
             });
 
-            // Create and initialise a lightweight editor for cell sizes if there isn't any
-            if (!this.lightweightCellSizeEditor) {
-                this.lightweightCellSizeEditor = this.sourceFile.createLightweightEditorFor(cellUpdateData);
-                await this.lightweightCellSizeEditor.init();
+            // Create and initialise a transient editor for cell sizes if there isn't any
+            if (!this.transientCellSizeEditor) {
+                this.transientCellSizeEditor = this.sourceFile.createTransientEditor(cellUpdateData);
+                await this.transientCellSizeEditor.init();
             }
             
             // Update the size of the cells
-            const lightweightEditor = this.lightweightCellSizeEditor!;
+            const transientEditor = this.transientCellSizeEditor!;
 
             for (let { cell, newRelativeSize } of cellUpdateData) {
-                await lightweightEditor.replaceSectionContent(
-                    nameLightweightEditorSectionAfterCell(cell),
+                await transientEditor.replaceSectionContent(
+                    nameTransientEditorSectionAfterCell(cell),
                     getRelativeSizeAsString(newRelativeSize)
                 );
             }
 
             if (isFinalUpdate) {
-                await lightweightEditor.applyChange();
-                this.lightweightCellSizeEditor = null;
+                await transientEditor.applyChange();
+                this.transientCellSizeEditor = null;
             } 
         });
     }
@@ -236,31 +236,31 @@ export class GridLayoutModel extends AbstractVisualisationModel<EnvironmentNode>
                 const row = layout.getRowAt(rowIndex);
                 return {
                     row: row,
-                    name: nameLightweightEditorSectionAfterRow(row),
+                    name: nameTransientEditorSectionAfterRow(row),
                     range: row.options.relativeSizeParameterNode.range,
                     newRelativeSize: newRelativeSize
                 };
             });
 
-            // Create and initialise a lightweight editor for row sizes if there isn't any
-            if (!this.lightweightRowSizeEditor) {
-                this.lightweightRowSizeEditor = this.sourceFile.createLightweightEditorFor(rowUpdateData);
-                await this.lightweightRowSizeEditor.init();
+            // Create and initialise a transient editor for row sizes if there isn't any
+            if (!this.transientRowSizeEditor) {
+                this.transientRowSizeEditor = this.sourceFile.createTransientEditor(rowUpdateData);
+                await this.transientRowSizeEditor.init();
             }
             
             // Update the size of the cells
-            const lightweightEditor = this.lightweightRowSizeEditor!;
+            const transientEditor = this.transientRowSizeEditor!;
 
             for (let { row, newRelativeSize } of rowUpdateData) {
-                await lightweightEditor.replaceSectionContent(
-                    nameLightweightEditorSectionAfterRow(row),
+                await transientEditor.replaceSectionContent(
+                    nameTransientEditorSectionAfterRow(row),
                     getRelativeSizeAsString(newRelativeSize)
                 );
             }
 
             if (isFinalUpdate) {
-                await lightweightEditor.applyChange();
-                this.lightweightRowSizeEditor = null;
+                await transientEditor.applyChange();
+                this.transientRowSizeEditor = null;
             }
         });
     }

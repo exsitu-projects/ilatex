@@ -4,9 +4,9 @@ import { SourceFilePosition } from "./SourceFilePosition";
 import { SourceFileRange } from "./SourceFileRange";
 
 export type SourceFileEdit = vscode.TextEdit;
-export type SourceFileEditProvider = (editor: AtomicSourceFileEditor) => Promise<void>;
+export type SourceFileEditProvider = (editor: SourceFileEditor) => Promise<void>;
 
-export class AtomicSourceFileEditor {
+export class SourceFileEditor {
     protected sourceFile: SourceFile;
     protected editProviders: SourceFileEditProvider[];
 

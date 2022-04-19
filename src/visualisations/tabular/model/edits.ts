@@ -1,18 +1,18 @@
 import { WhitespaceNode } from "../../../core/ast/nodes/WhitespaceNode";
-import { AtomicSourceFileEditor, SourceFileEditProvider } from "../../../core/source-files/AtomicSourceFileEditor";
+import { SourceFileEditor, SourceFileEditProvider } from "../../../core/source-files/SourceFileEditor";
 import { SourceFileRange } from "../../../core/source-files/SourceFileRange";
 import { MathUtils } from "../../../shared/utils/MathUtils";
 import { Cell, Grid } from "./Grid";
 
 export const edits = {
     replaceCellContent(cell: Cell, newContent: string): SourceFileEditProvider {
-        return async (editor: AtomicSourceFileEditor) => {
+        return async (editor: SourceFileEditor) => {
             editor.replace(cell.contentRange, newContent);
         };
     },
 
     insertColumnType(grid: Grid, columnIndex: number, columnType: string): SourceFileEditProvider {
-        return async (editor: AtomicSourceFileEditor) => {
+        return async (editor: SourceFileEditor) => {
             const options = grid.options;
 
             let columnTypeInsertPosition = options.columnTypesParameterNode.range.to;
@@ -28,7 +28,7 @@ export const edits = {
     },
 
     deleteColumnType(grid: Grid, columnIndex: number): SourceFileEditProvider {
-        return async (editor: AtomicSourceFileEditor) => {
+        return async (editor: SourceFileEditor) => {
             const columnTypeRange = grid.options.getSpecificationRangeOfColumnWithIndex(columnIndex);
             if (columnTypeRange) {
                 editor.delete(columnTypeRange);
@@ -37,7 +37,7 @@ export const edits = {
     },
 
     replaceColumnType(grid: Grid, columnIndex: number, newColumnType: string): SourceFileEditProvider {
-        return async (editor: AtomicSourceFileEditor) => {
+        return async (editor: SourceFileEditor) => {
             const columnTypeRange = grid.options.getSpecificationRangeOfColumnWithIndex(columnIndex);
             if (columnTypeRange) {
                 editor.replace(columnTypeRange, newColumnType);
@@ -47,7 +47,7 @@ export const edits = {
 
     // TODO: handle the special case of an empty grid
     createColumn(grid: Grid, newColumnIndex: number): SourceFileEditProvider {
-        return async (editor: AtomicSourceFileEditor) => {
+        return async (editor: SourceFileEditor) => {
             // Insert a new column type at the appropriate position
             const defaultNewColumnType = "l";
             editor.addEditProviders(this.insertColumnType(grid, newColumnIndex, defaultNewColumnType));
@@ -79,7 +79,7 @@ export const edits = {
 
     // TODO: handle the special case of an empty grid
     createRow(grid: Grid, newRowIndex: number): SourceFileEditProvider {
-        return async (editor: AtomicSourceFileEditor) => {
+        return async (editor: SourceFileEditor) => {
             const nbColumnTypes = grid.options.nbColumnSpecifications;
             if (nbColumnTypes === 0) {
                 console.warn("No row can be added: no column type is specified.");
@@ -112,7 +112,7 @@ export const edits = {
     },
 
     deleteColumn(grid: Grid, columnIndex: number): SourceFileEditProvider {
-        return async (editor: AtomicSourceFileEditor) => {
+        return async (editor: SourceFileEditor) => {
             // Delete the appropriate column type
             editor.addEditProviders(this.deleteColumnType(grid, columnIndex));
 
@@ -156,7 +156,7 @@ export const edits = {
     },
 
     deleteRow(grid: Grid, rowIndex: number): SourceFileEditProvider {
-        return async (editor: AtomicSourceFileEditor) => {
+        return async (editor: SourceFileEditor) => {
             const rowToDelete = grid.rows[rowIndex];
             const isLastRow = rowIndex === grid.rows.length - 1;
             const nextRow = grid.rows[rowIndex + 1];
@@ -183,7 +183,7 @@ export const edits = {
     },
 
     moveColumn(grid: Grid, oldColumnIndex: number, newColumnIndex: number): SourceFileEditProvider {
-        return async (editor: AtomicSourceFileEditor) => {
+        return async (editor: SourceFileEditor) => {
             const options = grid.options;
             const rows = grid.rows;
     
@@ -290,7 +290,7 @@ export const edits = {
     },
 
     moveRow(grid: Grid, oldRowIndex: number, newRowIndex: number): SourceFileEditProvider {
-        return async (editor: AtomicSourceFileEditor) => {
+        return async (editor: SourceFileEditor) => {
             const rows = grid.rows;
             const textReplacements: {range: SourceFileRange, newContent: string}[] = [];
     

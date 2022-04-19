@@ -1,18 +1,18 @@
-import { AtomicSourceFileEditor, SourceFileEditProvider } from "../../source-files/AtomicSourceFileEditor";
+import { SourceFileEditor, SourceFileEditProvider } from "../../source-files/SourceFileEditor";
 import { SourceFilePosition } from "../../source-files/SourceFilePosition";
 import { SourceFileRange } from "../../source-files/SourceFileRange";
 import { ASTNode } from "./ASTNode";
 
 export const edits = {
     setTextContent(node: ASTNode, newContent: string): SourceFileEditProvider {
-        return async (editor: AtomicSourceFileEditor) => {
+        return async (editor: SourceFileEditor) => {
             editor.replace(node.range, newContent);
         };
     },
     
     // Note: "surrounding whitespace" does not include newline characters
     deleteTextContent(node: ASTNode, trimSurroundingWhitespace: boolean = true): SourceFileEditProvider {
-        return async (editor: AtomicSourceFileEditor) => {
+        return async (editor: SourceFileEditor) => {
             let rangeToDelete = node.range;
             if (trimSurroundingWhitespace) {
                 const document = await node.sourceFile.document;
