@@ -51,7 +51,7 @@
 		"snippets": [
 			{
 				"language": "latex",
-				"path": "./snippets/ilatex.json"
+				"path": "./misc/vscode-latex-snippets.json"
 			}
 		],
 		"configuration": {
