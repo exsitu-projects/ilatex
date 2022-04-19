@@ -6,7 +6,7 @@ import { TaskQueuer } from "../../shared/tasks/TaskQueuer";
 import { InteractiveLatex } from "../InteractiveLatex";
 import { ExtensionFileReader } from "../utils/ExtensionFileReader";
 import { VisualisationModel } from "../visualisations/VisualisationModel";
-import { WebviewMessenger } from "./WebviewMessenger";
+import { Messenger } from "./Messenger";
 
 
 export class WebviewManager {
@@ -14,7 +14,7 @@ export class WebviewManager {
 
     private webviewPanel: vscode.WebviewPanel;
     private webview: vscode.Webview;
-    private messenger: WebviewMessenger;
+    private messenger: Messenger;
 
     // Asycnhronous queues to manage async message dispatch/sending more easily
     private incomingMessageDispatchQueuer: TaskQueuer;
@@ -30,7 +30,7 @@ export class WebviewManager {
         this.webviewPanel = webviewPanel;
         this.webview = webviewPanel.webview;
 
-        this.messenger = new WebviewMessenger(this.webview);
+        this.messenger = new Messenger(this.webview);
         this.messenger.startHandlingMessages();
 
         this.incomingMessageDispatchQueuer = new TaskQueuer(SILENT_TASK_ERROR_HANDLER);

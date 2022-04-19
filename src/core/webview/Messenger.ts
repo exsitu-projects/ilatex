@@ -3,7 +3,7 @@ import * as vscode from "vscode";
 import { AbstractMessenger } from "../../shared/messenger/AbstractMessenger";
 import { CoreToWebviewMessageType, WebviewToCoreMessageType, CoreToWebviewMessage } from "../../shared/messenger/messages";
 
-export class WebviewMessenger extends AbstractMessenger<
+export class Messenger extends AbstractMessenger<
     CoreToWebviewMessageType,
     WebviewToCoreMessageType
 >{
