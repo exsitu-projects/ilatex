@@ -37,8 +37,7 @@ jobs:
         files: ilatex.vsix latex/ilatex.sty
         dest: ilatex.zip
 
-    # Note: the 'git rm -rf .' command is required because we are pushing to
-    # an orphan branch that (currently) only contains the ilatex.vsix file.
+    # Note: the 'git rm -rf .' command is required because we are pushing to an orphan branch.
     # If the command is not used, all the files from the 'master' branch
     # appear to be staged and to be pushed along the ilatex.vsix file.
     - name: Commit the newly created extension
@@ -46,8 +45,9 @@ jobs:
         git config --local user.name "github-action"
         git config --local user.email "<>"
         git rm -rf .
-        git add -f "ilatex.vsix" "latex/ilatex.sty" "ilatex.zip"
+        git add -f "ilatex.vsix" "latex/ilatex.sty" 
         git commit -m "Update the VSCode extension"
+  
     - name: Push the commit to a dedicated branch
       uses: ad-m/github-push-action@master
       with:
