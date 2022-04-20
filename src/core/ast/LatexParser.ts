@@ -81,8 +81,8 @@ interface CommandSpecification {
     parameters: ParameterSpecification[];
 }
 
-// Builder for parsers of environements
-interface EnvironementSpecification {
+// Builder for parsers of environments
+interface EnvironmentSpecification {
     name: string;
     nameParser?: P.Parser<string>;  // use P.string(name) if absent
     parameters: ParameterSpecification[];
@@ -95,8 +95,8 @@ type LatexParsers = {
     latex: LatexNode,
     text: TextNode,
     whitespace: WhitespaceNode,
-    specificEnvironement: EnvironmentNode,
-    anyEnvironement: EnvironmentNode,
+    specificEnvironment: EnvironmentNode,
+    anyEnvironment: EnvironmentNode,
     specificCommand: CommandNode,
     verbCommand: VerbCommandNode,
     anyCommand: CommandNode,
@@ -208,8 +208,8 @@ export class LatexParser {
             ));
     }
 
-    private createEnvironementParser(environement: EnvironementSpecification): P.Parser<EnvironmentNode> {
-        const nameParser = (environement.nameParser ?? P.string(environement.name))
+    private createEnvironmentParser(environment: EnvironmentSpecification): P.Parser<EnvironmentNode> {
+        const nameParser = (environment.nameParser ?? P.string(environment.name))
             .thru(this.contextualiseParserOutput(
                 this.reparsers.parameter, // TODO: improve?
                 (value, context, reparser) => new ParameterNode(value, context, reparser)
@@ -232,24 +232,24 @@ export class LatexParser {
             }]
         });
     
-        // Create parsers for the environement parameters
-        const parametersParsers = this.createParameterParsers(environement.parameters);
+        // Create parsers for the environment parameters
+        const parametersParsers = this.createParameterParsers(environment.parameters);
     
         // Return a parser which expects the begin command, followed by all the env. parameters,
-        // followed by the content of the environement, followed by the end command
+        // followed by the content of the environment, followed by the end command
         //const seq = P.seq as (...parsers: P.Parser<ASTNode>[]) => P.Parser<ASTNode[]>;
         return P.seq(
             beginParser,
             P.seq(...parametersParsers),
-            environement.contentParser,
+            environment.contentParser,
             endParser
         )
             .thru(this.contextualiseParserOutput(this.reparsers.environment, (value, context, reparser) => {
-                // If a name parser is specified, use the value it output as the environement name
+                // If a name parser is specified, use the value it output as the environment name
                 // Otherwise, use the given name
-                const name = (environement.nameParser
+                const name = (environment.nameParser
                     ? ((value[0].parameters[0] as CurlyBracesParameterBlockNode).content as ParameterNode).value
-                    : environement.name);
+                    : environment.name);
                 
                 return new EnvironmentNode(
                     name,
@@ -275,9 +275,9 @@ export class LatexParser {
                     .thru(this.contextualiseParserOutput(this.reparsers.whitespace, (value, context, reparser) => new WhitespaceNode(context, reparser)));
             },
             
-            specificEnvironement: lang => {
-                // Specifications of the environements of interest
-                const specifiedEnvironements: EnvironementSpecification[] = [
+            specificEnvironment: lang => {
+                // Specifications of the environments of interest
+                const specifiedEnvironments: EnvironmentSpecification[] = [
                     {
                         name: "itabular",
                         parameters: [
@@ -320,13 +320,13 @@ export class LatexParser {
                 ];
         
                 return P.alt(
-                    ...specifiedEnvironements.map(environement => this.createEnvironementParser(environement))
+                    ...specifiedEnvironments.map(environment => this.createEnvironmentParser(environment))
                 );
             },
         
-            anyEnvironement: lang => {
-                return this.createEnvironementParser({
-                    name: "<non-specific environement>",
+            anyEnvironment: lang => {
+                return this.createEnvironmentParser({
+                    name: "<non-specific environment>",
                     nameParser: alphastar,
                     parameters: [],
                     contentParser: lang.latex
@@ -397,13 +397,13 @@ export class LatexParser {
             },
 
             environment: lang => {
-                return lang.specificEnvironement.or(lang.anyEnvironement);
+                return lang.specificEnvironment.or(lang.anyEnvironment);
             },
         
             commandOrEnvironment: lang => {
-                const specificEnvironementNames = ["itabular", "itemize", "gridlayout", "row", "cell", "imaths"];
-                function isStartingWithSpecificEnvironementBeginning(input: string): boolean {
-                    return specificEnvironementNames.some(name => input.startsWith(`begin{${name}}`));
+                const specificEnvironmentNames = ["itabular", "itemize", "gridlayout", "row", "cell", "imaths"];
+                function isStartingWithSpecificEnvironmentBeginning(input: string): boolean {
+                    return specificEnvironmentNames.some(name => input.startsWith(`begin{${name}}`));
                 }
 
                 // TODO: check if names are equal, not only prefixes
@@ -430,18 +430,18 @@ export class LatexParser {
                             return P.makeSuccess(index, lang.verbCommand);
                         }
         
-                        // Case 2 — it is the beginning of an environement
+                        // Case 2 — it is the beginning of an environment
                         else if (remainingInput.startsWith("begin{")) {
-                            // Case 2.1 — it is a specific environement (with a known name)
-                            if (isStartingWithSpecificEnvironementBeginning(remainingInput)) {
-                                return P.makeSuccess(index, lang.specificEnvironement);
+                            // Case 2.1 — it is a specific environment (with a known name)
+                            if (isStartingWithSpecificEnvironmentBeginning(remainingInput)) {
+                                return P.makeSuccess(index, lang.specificEnvironment);
                             }
         
-                            // Case 2.2 — it is an unknown environement
-                            return P.makeSuccess(index, lang.anyEnvironement);
+                            // Case 2.2 — it is an unknown environment
+                            return P.makeSuccess(index, lang.anyEnvironment);
                         }
         
-                        // Case 3 — it is the end of an environement
+                        // Case 3 — it is the end of an environment
                         // This should not happen: \end commands should only be read by env. parsers.
                         // They must NOT be consumed as regular commands; otherwise, env. parsers
                         // will not be able to read the \end command they expect!
@@ -612,7 +612,7 @@ export class LatexParser {
                     // Comments
                     lang.comment,
         
-                    // Commands and environements
+                    // Commands and environments
                     lang.commandOrEnvironment,
         
                     // Special blocks
@@ -677,8 +677,8 @@ export class LatexParser {
             latex: createASTNodeReparserFor(this.parsers.latex),
             text: createASTNodeReparserFor(this.parsers.text),
             whitespace: createASTNodeReparserFor(this.parsers.whitespace),
-            specificEnvironement: createASTNodeReparserFor(this.parsers.specificEnvironement),
-            anyEnvironement: createASTNodeReparserFor(this.parsers.anyEnvironement),
+            specificEnvironment: createASTNodeReparserFor(this.parsers.specificEnvironment),
+            anyEnvironment: createASTNodeReparserFor(this.parsers.anyEnvironment),
             specificCommand: createASTNodeReparserFor(this.parsers.specificCommand),
             verbCommand: createASTNodeReparserFor(this.parsers.verbCommand),
             anyCommand: createASTNodeReparserFor(this.parsers.anyCommand),
