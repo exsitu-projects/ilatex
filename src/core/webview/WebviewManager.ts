@@ -135,7 +135,7 @@ export class WebviewManager {
 
     sendNewPDF(): void {
         console.info("📦 Sending a new PDF to the webview.");
-        const pdfUri = this.ilatexDocument.pdfManager.pdfUri;
+        const pdfUri = this.ilatexDocument.latexCompilerManager.pdfUri;
 
         this.sendMessageIfWebviewIsAvailable({
             type: CoreToWebviewMessageType.UpdatePDF,
