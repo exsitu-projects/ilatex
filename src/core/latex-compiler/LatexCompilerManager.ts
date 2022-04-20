@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { InteractiveLatexDocument } from "../InteractiveLatexDocument";
 
-export class PDFManager {
+export class LatexCompilerManager {
     private ilatexDocument: InteractiveLatexDocument;
 
     private buildTaskIsRunning: boolean;
@@ -133,17 +133,5 @@ export class PDFManager {
                 }
             });
         });
-    }
-
-    updateWebviewPDF(): void {
-        this.ilatexDocument.webviewManager.sendNewPDF();
-    }
-
-    recompilePDFAndUpdateWebview(): Promise<void> {
-        // Use the terminal closing as a signal to trigger an update of the webview PDF
-        // This is a workaround to the fact that there is no built-in way
-        // to wait for the end of a running process in a VSCode terminal
-        return this.recompilePDF()
-            .then(() => { this.updateWebviewPDF(); });
     }
 }

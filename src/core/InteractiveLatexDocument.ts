@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { PDFManager } from "./pdf/PDFManager";
+import { LatexCompilerManager } from "./latex-compiler/LatexCompilerManager";
 import { WebviewManager } from "./webview/WebviewManager";
 import { TransitionalModelManager } from "./transitionals/TransitionalModelManager";
 import { DecorationManager } from "./decorations/DecorationManager";
@@ -32,7 +32,7 @@ export class InteractiveLatexDocument {
     readonly logFileManager: LogFileManager;
     readonly sourceFileManager: SourceFileManager;
     readonly codeMappingManager: CodeMappingManager;
-    readonly pdfManager: PDFManager;
+    readonly latexCompilerManager: LatexCompilerManager;
     readonly webviewManager: WebviewManager;
     readonly transitionalModelManager: TransitionalModelManager;
     readonly decorationManager: DecorationManager;
@@ -54,7 +54,7 @@ export class InteractiveLatexDocument {
         this.logFileManager = new LogFileManager(this);
         this.sourceFileManager = new SourceFileManager(this);
         this.codeMappingManager = new CodeMappingManager(this);
-        this.pdfManager = new PDFManager(this);
+        this.latexCompilerManager = new LatexCompilerManager(this);
         this.webviewManager = new WebviewManager(this, webviewPanel);
         this.transitionalModelManager = new TransitionalModelManager(this);
         this.decorationManager = new DecorationManager(this);
@@ -75,7 +75,7 @@ export class InteractiveLatexDocument {
 
     dispose(): void {
         this.codeMappingManager.dispose();
-        this.pdfManager.dispose();
+        this.latexCompilerManager.dispose();
         this.webviewManager.dispose();
         this.transitionalModelManager.dispose();
         this.decorationManager.dispose();
@@ -101,20 +101,25 @@ export class InteractiveLatexDocument {
                 // 1. Ensure the global options are up-to-date in the webview
                 this.webviewManager.sendNewGlobalOptions();
     
-                // 3. Recompile the PDF and update it in the webview
-                await this.pdfManager.recompilePDFAndUpdateWebview();
+                // 2. Recompile the PDF
+                await this.latexCompilerManager.recompilePDF();
+
+                // 3. Send the new PDF to the webview
+                this.webviewManager.sendNewPDF();
     
-                // 3. Update the code mappings from the new code mapping file
+                // 4. Update the code mappings from the new code mapping file
                 this.codeMappingManager.updateCodeMappingsFromLatexGeneratedFile();
 
-                // 4. Update the source files
+                // 5. Update the source files
                 // TODO: use another way to update source files (not just from code mappings...)
                 await this.sourceFileManager.updateSourceFilesFromCodeMappings();
 
-                // 5. Update the transitionals (models + views in the webview)
+                // 6. Update the transitionals
+                // This includes generating new models, which will send content and metadata
+                // to the webview, where the views can be created on demand.
                 await this.transitionalModelManager.extractNewModels();
 
-                // 6. Update the decorations in the editor
+                // 7. Update the decorations in the code editor
                 this.decorationManager.redecorateVisibleEditors();
                 
                 this.logFileManager.logCoreEvent({ event: "ilatex-updated" });
