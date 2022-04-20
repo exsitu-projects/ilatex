@@ -31,6 +31,12 @@ jobs:
     - name: Package i-LaTeX as a .vsix VSCode extension
       run: yarn run package
 
+    - name: Create an archive with the VSCode extension and the LaTeX package
+      uses: papeloto/action-zip@v1
+      with:
+        files: ilatex.vsix latex/ilatex.sty
+        dest: ilatex.zip
+
     # Note: the 'git rm -rf .' command is required because we are pushing to
     # an orphan branch that (currently) only contains the ilatex.vsix file.
     # If the command is not used, all the files from the 'master' branch
@@ -40,7 +46,7 @@ jobs:
         git config --local user.name "github-action"
         git config --local user.email "<>"
         git rm -rf .
-        git add -f "ilatex.vsix"
+        git add -f "ilatex.vsix" "latex/ilatex.sty" "ilatex.zip"
         git commit -m "Update the VSCode extension"
     - name: Push the commit to a dedicated branch
       uses: ad-m/github-push-action@master
