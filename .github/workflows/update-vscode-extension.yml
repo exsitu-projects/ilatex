@@ -45,8 +45,7 @@ jobs:
         git config --local user.name "github-action"
         git config --local user.email "<>"
         git rm -rf .
-        ls -al
-        ls -al ./latex
+        git checkout HEAD -- "latex/ilatex.sty"
         git add -f "ilatex.vsix" "latex/ilatex.sty" "ilatex.zip"
         git commit -m "Update the files to publish"
   
