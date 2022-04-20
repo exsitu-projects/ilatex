@@ -35,15 +35,15 @@ body.pdf-currently-compiled .annotation-mask,
 body.pdf-currently-compiled .annotation-mask:hover,
 body.last-pdf-compilation-failed .annotation-mask,
 body.last-pdf-compilation-failed .annotation-mask:hover,
-body.visualisations-unavailable .annotation-mask,
-body.visualisations-unavailable .annotation-mask:hover {
+body.transitionals-unavailable .annotation-mask,
+body.transitionals-unavailable .annotation-mask:hover {
     --box-shadow-color: #777777;
     --box-shadow-spread: 5px;
 
     cursor: not-allowed;
 }
 
-body.visualisations-disabled .annotation-mask,
-body.visualisations-disabled .annotation-mask:hover {
+body.transitionals-disabled .annotation-mask,
+body.transitionals-disabled .annotation-mask:hover {
     display: none !important;
 }

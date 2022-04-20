@@ -1,4 +1,4 @@
-.visualisation-popup .popup-background {
+.transitional-popup .popup-background {
     position: fixed;
     top: 0;
     left: 0;
@@ -8,11 +8,11 @@
     z-index: 200;
 }
 
-.visualisation-popup .popup-frame {
+.transitional-popup .popup-frame {
     background-color: #FFFFFF;
 }
 
-.visualisation-popup .popup-title-bar {
+.transitional-popup .popup-title-bar {
     display: flex;
     height: 25px;
     background-color: #00000022;
@@ -22,19 +22,19 @@
     vertical-align: middle;
 }
 
-.visualisation-popup .popup-title-bar .title {
+.transitional-popup .popup-title-bar .title {
     position: relative;
     flex-grow: 1;
     padding: 0 10px;
     cursor: pointer;
 }
 
-.visualisation-popup .popup-title-bar .title:hover,
-.visualisation-popup .popup-title-bar .title:active {
+.transitional-popup .popup-title-bar .title:hover,
+.transitional-popup .popup-title-bar .title:active {
     background-color: #00000033;
 }
 
-.visualisation-popup .popup-title-bar .title:hover::after {
+.transitional-popup .popup-title-bar .title:hover::after {
     content: "click to show the code";
     position: absolute;
     height: 25px;
@@ -46,18 +46,18 @@
     vertical-align: middle;
 }
 
-.visualisation-popup .popup-title-bar .name {
+.transitional-popup .popup-title-bar .name {
     font-family: monospace;
 }
 
-.visualisation-popup .popup-title-bar .location {
+.transitional-popup .popup-title-bar .location {
     padding: 0 5px;
     color: #00000066;
     font-size: 0.85em;
 }
 
 
-.visualisation-popup .popup-title-bar .close-button {
+.transitional-popup .popup-title-bar .close-button {
     width: 25px;
     height: 25px;
     margin: 0;
@@ -70,17 +70,17 @@
     cursor: pointer;
 }
 
-.visualisation-popup .popup-title-bar .close-button:hover,
-.visualisation-popup .popup-title-bar .close-button:active {
+.transitional-popup .popup-title-bar .close-button:hover,
+.transitional-popup .popup-title-bar .close-button:active {
     background-color: #FF4136;
     background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23FFFFFF" width="18px" height="18px"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
 }
 
-.visualisation-popup .popup-title-bar .close-button:focus {
+.transitional-popup .popup-title-bar .close-button:focus {
     outline: none;
 }
 
-.visualisation-popup .popup-frame {
+.transitional-popup .popup-frame {
     position: absolute;
     left: 0;
     width: 100%;
@@ -89,7 +89,7 @@
     z-index: 500;
 }
 
-.visualisation-popup .popup-content {
+.transitional-popup .popup-content {
     margin: 0;
     /* padding: 15px; */
     background-color: #FFF;
@@ -103,15 +103,15 @@
 /* Errors */
 
 
-.visualisation-popup.error .popup-frame {
+.transitional-popup.error .popup-frame {
     background-color: #f7d999;
 }
 
-.visualisation-popup.error .popup-content {
+.transitional-popup.error .popup-content {
     display: none;
 }
 
-.visualisation-popup .popup-error {
+.transitional-popup .popup-error {
     display: none;
     height: 100%;
     padding: 10px;
@@ -149,6 +149,6 @@
     border-radius: 2px;
 }
 
-.visualisation-popup.error .popup-error.unavailable-visualisation-error {
+.transitional-popup.error .popup-error.unavailable-transitional-error {
     display: block;
 }

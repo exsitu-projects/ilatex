@@ -59,7 +59,7 @@ export class InteractiveLatexExtensionContext {
 				},
 				{
 					label: "$(default-view-icon) Create from the active editor",
-					description: "(disable code visualisations)",
+					description: "(disable transitionals)",
 					alwaysShow: true
 				},
 				{
@@ -68,7 +68,7 @@ export class InteractiveLatexExtensionContext {
 				},
 				{
 					label: "$(search-view-icon) Create from file...",
-					description: "(disable code visualisations)",
+					description: "(disable transitionals)",
 					alwaysShow: true
 				},
 			],
@@ -83,10 +83,10 @@ export class InteractiveLatexExtensionContext {
 				return;
 			}
 
-			const ilatexOptions = {
+			const ilatexOptions: InteractiveLatexDocumentOptions = {
 				...InteractiveLatexExtensionContext.getPartialILatexOptionsFromExtensionSettings(),
-				enableVisualisations:
-					!item.description && item.description !== "(disable code visualisations)"
+				enableTransitionals:
+					!item.description && item.description !== "(disable transitionals)"
 			};
 				
 			if (item.label === "$(default-view-icon) Create from the active editor") {
@@ -107,19 +107,19 @@ export class InteractiveLatexExtensionContext {
 				this.showILatexDocumentCreationMenu();
 			}),
 
-			// Commands to initialise iLaTeX with and without interactive visualisations
+			// Commands to initialise iLaTeX with and without transitionals
 			// from the file opened in the current active editor (if any)
 			vscode.commands.registerCommand("ilatex.createDocumentFromActiveEditor", async () => {
 				this.ilatexDocumentManager.createOrShowILatexDocumentFromActiveEditor({
 					...InteractiveLatexExtensionContext.getPartialILatexOptionsFromExtensionSettings(),
-					enableVisualisations: true
+					enableTransitionals: true
 				});
 			}),
 	
-			vscode.commands.registerCommand("ilatex.createDocumentFromActiveEditorWithoutVisualisations", async () => {
+			vscode.commands.registerCommand("ilatex.createDocumentFromActiveEditorWithoutTransitionals", async () => {
 				this.ilatexDocumentManager.createOrShowILatexDocumentFromActiveEditor({
 					...InteractiveLatexExtensionContext.getPartialILatexOptionsFromExtensionSettings(),
-					enableVisualisations: false,
+					enableTransitionals: false,
 					
 				});
 			}),

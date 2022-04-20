@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { PDFManager } from "./pdf/PDFManager";
 import { WebviewManager } from "./webview/WebviewManager";
-import { VisualisationModelManager } from "./visualisations/VisualisationModelManager";
+import { TransitionalModelManager } from "./transitionals/TransitionalModelManager";
 import { DecorationManager } from "./decorations/DecorationManager";
 import { SourceFileManager } from "./source-files/SourceFileManager";
 import { CodeMappingManager } from "./code-mappings/CodeMappingManager";
@@ -9,8 +9,8 @@ import { LogFileManager } from "./logs/LogFileManager";
 import { TaskDebouncer } from "../shared/tasks/TaskDebouncer";
 
 export interface InteractiveLatexDocumentOptions {
-    // Globally enable or disable visualisations
-    enableVisualisations: boolean;
+    // Globally enable or disable transitionals
+    enableTransitionals: boolean;
 
     // Local log files
     enableLocalLogging: boolean;
@@ -34,7 +34,7 @@ export class InteractiveLatexDocument {
     readonly codeMappingManager: CodeMappingManager;
     readonly pdfManager: PDFManager;
     readonly webviewManager: WebviewManager;
-    readonly visualisationModelManager: VisualisationModelManager;
+    readonly transitionalModelManager: TransitionalModelManager;
     readonly decorationManager: DecorationManager;
 
     private updateDebouncer: TaskDebouncer;
@@ -56,7 +56,7 @@ export class InteractiveLatexDocument {
         this.codeMappingManager = new CodeMappingManager(this);
         this.pdfManager = new PDFManager(this);
         this.webviewManager = new WebviewManager(this, webviewPanel);
-        this.visualisationModelManager = new VisualisationModelManager(this);
+        this.transitionalModelManager = new TransitionalModelManager(this);
         this.decorationManager = new DecorationManager(this);
 
         this.updateDebouncer = new TaskDebouncer(5, error => this.processUpdateError(error));
@@ -77,7 +77,7 @@ export class InteractiveLatexDocument {
         this.codeMappingManager.dispose();
         this.pdfManager.dispose();
         this.webviewManager.dispose();
-        this.visualisationModelManager.dispose();
+        this.transitionalModelManager.dispose();
         this.decorationManager.dispose();
         
         // Dispose the log file manager last in case it needs to be used to log an error
@@ -111,8 +111,8 @@ export class InteractiveLatexDocument {
                 // TODO: use another way to update source files (not just from code mappings...)
                 await this.sourceFileManager.updateSourceFilesFromCodeMappings();
 
-                // 5. Update the visualisations (models + views in the webview)
-                await this.visualisationModelManager.extractNewModels();
+                // 5. Update the transitionals (models + views in the webview)
+                await this.transitionalModelManager.extractNewModels();
 
                 // 6. Update the decorations in the editor
                 this.decorationManager.redecorateVisibleEditors();

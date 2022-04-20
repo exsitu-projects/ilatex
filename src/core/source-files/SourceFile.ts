@@ -139,7 +139,7 @@ export class SourceFile {
             this.latexAst.parsingErrorEventEmitter.event(parsingError => {
                 this.astNodeParsingErrorEventEmitter.fire(parsingError);
                 vscode.window.showWarningMessage(
-                    `File '${this.name}' could not be parsed by iLaTeX\n(code visualisations will not be available in this file).`
+                    `File '${this.name}' could not be parsed by iLaTeX\n(transitionals will not be available in this file).`
                 );
             });
 

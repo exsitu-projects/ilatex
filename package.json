@@ -33,8 +33,8 @@
 				"enablement": "resourceLangId == latex"
 			},
 			{
-				"command": "ilatex.createDocumentFromActiveEditorWithoutVisualisations",
-				"title": "Create an iLaTeX document from the active editor (disable visualisations)",
+				"command": "ilatex.createDocumentFromActiveEditorWithoutTransitionals",
+				"title": "Create an iLaTeX document from the active editor (disable transitionals)",
 				"enablement": "resourceLangId == latex"
 			},
 			{

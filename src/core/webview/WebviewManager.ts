@@ -1,11 +1,11 @@
 import * as vscode from "vscode";
 import { MessageHandler } from "../../shared/messenger/AbstractMessenger";
-import { CoreToWebviewMessage, CoreToWebviewMessageType, NotifyVisualisationModelMessage, WebviewToCoreMessage, WebviewToCoreMessageType } from "../../shared/messenger/messages";
+import { CoreToWebviewMessage, CoreToWebviewMessageType, NotifyTransitionalModelMessage, WebviewToCoreMessage, WebviewToCoreMessageType } from "../../shared/messenger/messages";
 import { SILENT_TASK_ERROR_HANDLER } from "../../shared/tasks/Task";
 import { TaskQueuer } from "../../shared/tasks/TaskQueuer";
 import { InteractiveLatexDocument } from "../InteractiveLatexDocument";
+import { TransitionalModel } from "../transitionals/TransitionalModel";
 import { ExtensionFileReader } from "../utils/ExtensionFileReader";
-import { VisualisationModel } from "../visualisations/VisualisationModel";
 import { Messenger } from "./Messenger";
 
 
@@ -43,13 +43,13 @@ export class WebviewManager {
         });
 
         this.webviewPanelStateChangeObserverDisposable = this.webviewPanel.onDidChangeViewState(event => {
-            // If the webview panel becomes visible again, force update the PDF and the visualisations.
+            // If the webview panel becomes visible again, force update the PDF and the transitionals.
             // This is required to ensure the webview content is up-to-date
             // because VSCode does not enable hidden webviews to handle messages
             // (see retainContextWhenHidden in https://code.visualstudio.com/api/references/vscode-api#WebviewPanelOptions).
             if (event.webviewPanel.visible) {
                 this.sendNewPDF(); // TODO: not if the last compilation failed
-                this.sendNewVisualisationContentAndMetadataForAllModels();
+                this.sendNewTransitionalContentAndMetadataForAllModels();
             };
         });
         
@@ -66,15 +66,15 @@ export class WebviewManager {
     }
 
     private initWebviewMessageHandlers(): void {
-        // Dispatch a webview notification to the right visualisation.
+        // Dispatch a webview notification to the right transitional model.
         // Since notification handlers can perform asynchronous operations,
         // notification message are queued and dispatched one after the other.
         this.setHandlerFor(
-            WebviewToCoreMessageType.NotifyVisualisationModel,
+            WebviewToCoreMessageType.NotifyTransitionalModel,
             async (message) => {
                 this.incomingMessageDispatchQueuer.add(async () => {
-                    await this.ilatexDocument.visualisationModelManager.dispatchWebviewMessage(
-                        message as NotifyVisualisationModelMessage
+                    await this.ilatexDocument.transitionalModelManager.dispatchWebviewMessage(
+                        message as NotifyTransitionalModelMessage
                     );
                 });
             }
@@ -153,42 +153,42 @@ export class WebviewManager {
         });        
     }
 
-    sendNewVisualisationMetadataFor(model: VisualisationModel): void {
-        console.info("📦 Sending new metadata for one visualisation to the webview.");
+    sendNewTransitionalMetadataFor(model: TransitionalModel): void {
+        console.info("📦 Sending new metadata for one transitional to the webview.");
 
         this.sendMessageIfWebviewIsAvailable({
-            type: CoreToWebviewMessageType.UpdateVisualisationMetadata,
+            type: CoreToWebviewMessageType.UpdateTransitionalMetadata,
             codeMappingId: model.codeMapping.id,
             metadata: model.metadata
         });
     }
 
-    sendNewVisualisationMetadataForAllModels(): void {
-        for (let model of this.ilatexDocument.visualisationModelManager.models) {
-            this.sendNewVisualisationMetadataFor(model);
+    sendNewTransitionalMetadataForAllModels(): void {
+        for (let model of this.ilatexDocument.transitionalModelManager.models) {
+            this.sendNewTransitionalMetadataFor(model);
         }
     }
 
-    sendNewVisualisationContentFor(model: VisualisationModel): void {
-        console.info("📦 Sending new content for one visualisation to the webview.");
+    sendNewTransitionalContentFor(model: TransitionalModel): void {
+        console.info("📦 Sending new content for one transitional to the webview.");
 
         this.sendMessageIfWebviewIsAvailable({
-            type: CoreToWebviewMessageType.UpdateVisualisationContent,
+            type: CoreToWebviewMessageType.UpdateTransitionalContent,
             codeMappingId: model.codeMapping.id,
             contentAsHtml: model.content
         });
     }
 
-    sendNewVisualisationContentForAllModels(): void {
-        for (let model of this.ilatexDocument.visualisationModelManager.models) {
-            this.sendNewVisualisationContentFor(model);
+    sendNewTransitionalContentForAllModels(): void {
+        for (let model of this.ilatexDocument.transitionalModelManager.models) {
+            this.sendNewTransitionalContentFor(model);
         }
     }
 
-    sendNewVisualisationContentAndMetadataForAllModels(): void {
-        for (let model of this.ilatexDocument.visualisationModelManager.models) {
-            this.sendNewVisualisationContentFor(model);
-            this.sendNewVisualisationMetadataFor(model);
+    sendNewTransitionalContentAndMetadataForAllModels(): void {
+        for (let model of this.ilatexDocument.transitionalModelManager.models) {
+            this.sendNewTransitionalContentFor(model);
+            this.sendNewTransitionalMetadataFor(model);
         }        
     }
 
@@ -198,7 +198,7 @@ export class WebviewManager {
         this.sendMessageIfWebviewIsAvailable({
             type: CoreToWebviewMessageType.UpdateGlobalOptions,
             options: {
-                enableVisualisations: this.ilatexDocument.options.enableVisualisations
+                enableTransitionals: this.ilatexDocument.options.enableTransitionals
             }
         });
     }

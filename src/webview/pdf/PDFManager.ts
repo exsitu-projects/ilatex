@@ -7,7 +7,7 @@ import { TaskDebouncer } from "../../shared/tasks/TaskDebouncer";
 import { PDFOverlayManager } from "./overlay/PDFOverlayManager";
 import { PDFOverlayNotification, PDFOverlayNotificationType } from "./overlay/PDFOverlayNotification";
 import { PDFOverlayButton } from "./overlay/PDFOverlayButton";
-import { VisualisationAvailabilityData, VisualisationViewManager } from "../visualisations/VisualisationViewManager";
+import { TransitionalAvailabilityData, TransitionalViewManager } from "../transitionals/TransitionalViewManager";
 
 const pdfIsCurrentlyCompiledNotification = new PDFOverlayNotification(
     PDFOverlayNotificationType.Loading,
@@ -32,7 +32,7 @@ export class PDFManager {
     private currentPdf: pdfjs.PDFDocument | null;
     private pdfIsCurrentlyCompiled: boolean;
 
-    private codeMappingIdsToVisualisationAvailabilities: Map<number, boolean>;
+    private codeMappingIdsToTransitionalAvailabilities: Map<number, boolean>;
 
     private pdfSyncTaskRunner: TaskQueuer;
     private pdfResizeDebouncer: TaskDebouncer;
@@ -60,7 +60,7 @@ export class PDFManager {
         this.currentPdf = null;
         this.pdfIsCurrentlyCompiled = false;
 
-        this.codeMappingIdsToVisualisationAvailabilities = new Map();
+        this.codeMappingIdsToTransitionalAvailabilities = new Map();
 
         this.pdfSyncTaskRunner = new TaskQueuer();
         this.pdfResizeDebouncer = new TaskDebouncer(PDFManager.WAITING_TIME_BEFORE_PDF_RESIZE);
@@ -68,7 +68,7 @@ export class PDFManager {
         this.startHandlingPdfUpdates();
         this.startHandlingWindowResizes();
         this.startHandlingCompilationStatusChanges();
-        this.startHandlingVisualisationAvailabilityChange();
+        this.startHandlingTransitionalAvailabilityChange();
 
         this.displayPermanentActionButtons();
     }
@@ -105,13 +105,13 @@ export class PDFManager {
     }
 
     updateAnnotationMaskNodes(): void {
-        // Update the availability of the visualisations
-        for (let [codeMappingId, visualisationIsAvailable] of this.codeMappingIdsToVisualisationAvailabilities.entries()) {
+        // Update the availability of the transitionals
+        for (let [codeMappingId, transitionalIsAvailable] of this.codeMappingIdsToTransitionalAvailabilities.entries()) {
             const maskNode = this.pdfContainerNode
                 .querySelector(`.annotation-mask[data-code-mapping-id="${codeMappingId}"]`);
-            maskNode?.classList.toggle("unavailable", !visualisationIsAvailable);
+            maskNode?.classList.toggle("unavailable", !transitionalIsAvailable);
 
-            // console.log(`New availability for the annotation mask with code mapping ID "${codeMappingId}": ${visualisationIsAvailable}.`);
+            // console.log(`New availability for the annotation mask with code mapping ID "${codeMappingId}": ${transitionalIsAvailable}.`);
         }
     }
 
@@ -144,9 +144,9 @@ export class PDFManager {
         document.body.classList.toggle(PDFManager.LAST_PDF_COMPILATION_FAILED_BODY_CLASS, lastCompilationFailed);
     }
 
-    updateAnnotationMaskAvailabilities(availabilityData: VisualisationAvailabilityData[]): void {
+    updateAnnotationMaskAvailabilities(availabilityData: TransitionalAvailabilityData[]): void {
         for (let data of availabilityData) {
-            this.codeMappingIdsToVisualisationAvailabilities.set(
+            this.codeMappingIdsToTransitionalAvailabilities.set(
                 data.codeMappingId,
                 data.isAvailable
             );
@@ -182,11 +182,11 @@ export class PDFManager {
         });
     }
 
-    startHandlingVisualisationAvailabilityChange() {
+    startHandlingTransitionalAvailabilityChange() {
         window.addEventListener(
-            VisualisationViewManager.VISUALISATION_AVAILABILITY_CHANGE_EVENT,
+            TransitionalViewManager.TRANSITIONAL_AVAILABILITY_CHANGE_EVENT,
             (event: Event) => {
-                const customEvent = event as CustomEvent<VisualisationAvailabilityData[]>;
+                const customEvent = event as CustomEvent<TransitionalAvailabilityData[]>;
                 this.updateAnnotationMaskAvailabilities(customEvent.detail);
             }
         );

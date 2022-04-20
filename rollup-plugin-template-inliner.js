@@ -4,7 +4,7 @@ import { minify } from "html-minifier";
 
 
 function collectStaticDataFromDirectory(pathToStaticDirectory) {
-    const staticVisualisationData = {
+    const staticTransitionalData = {
         cssFiles: [],
         jsFiles: []
     };
@@ -17,7 +17,7 @@ function collectStaticDataFromDirectory(pathToStaticDirectory) {
         for (let fileName of cssDirectoryFileNames) {
             const pathToCssFile = path.join(pathToCssDirectory, fileName);
 
-            staticVisualisationData.cssFiles.push({
+            staticTransitionalData.cssFiles.push({
                 fileName: fileName,
                 path: pathToCssFile,
                 content: fs.readFileSync(pathToCssFile, "utf-8")
@@ -33,7 +33,7 @@ function collectStaticDataFromDirectory(pathToStaticDirectory) {
         for (let fileName of jsDirectoryFileNames) {
             const pathToJsFile = path.join(pathToJsDirectory, fileName);
 
-            staticVisualisationData.jsFiles.push({
+            staticTransitionalData.jsFiles.push({
                 fileName: fileName,
                 path: pathToJsFile,
                 content: fs.readFileSync(pathToJsFile, "utf-8")
@@ -41,17 +41,17 @@ function collectStaticDataFromDirectory(pathToStaticDirectory) {
         }
     }
 
-    return staticVisualisationData;
+    return staticTransitionalData;
 }
 
-function collectStaticDataFromVisualisationDirectories() {
+function collectStaticDataFromTransitionalDirectories() {
     const staticData = [];
 
-    const visualisationDirectoryNames = fs.readdirSync("./src/visualisations/");
-    for (let directoryName of visualisationDirectoryNames) {
-        const pathToDirectory = path.resolve("./src/visualisations/", directoryName, "view/static/");
-        const currentStaticVisualisationData = collectStaticDataFromDirectory(pathToDirectory);
-        staticData.push(currentStaticVisualisationData);
+    const transitionalDirectoryNames = fs.readdirSync("./src/transitionals/");
+    for (let directoryName of transitionalDirectoryNames) {
+        const pathToDirectory = path.resolve("./src/transitionals/", directoryName, "view/static/");
+        const currentStaticTransitionalData = collectStaticDataFromDirectory(pathToDirectory);
+        staticData.push(currentStaticTransitionalData);
     }
 
     return staticData;
@@ -66,7 +66,7 @@ function collectStaticDataFromTemplateDirectory() {
 
 function getAllStaticDataByType() {
     return [
-        ...collectStaticDataFromVisualisationDirectories(),
+        ...collectStaticDataFromTransitionalDirectories(),
         ...collectStaticDataFromTemplateDirectory()
     ]
     .reduce((staticDataByType, staticDataByDirectory) => {
@@ -124,7 +124,7 @@ export default function templateInliner(pluginOptions = {}) {
         name: "template-inliner",
 
         load() {
-            this.addWatchFile(path.resolve("./src/visualisations/"));
+            this.addWatchFile(path.resolve("./src/transitionals/"));
             this.addWatchFile(path.resolve("./src/webview/template/"));
         },
 

@@ -1,6 +1,6 @@
 export const enum LogEntrySource {
     CoreEvent = "core",
-    VisualisationEvent = "visualisation",
+    TransitionalEvent = "transitional",
     UserEditEvent = "user-edit",
     Error = "error"
 }
@@ -9,13 +9,13 @@ export type PartialLogEntry = {
     source: LogEntrySource.CoreEvent;
     event: string;
 } | {
-    source: LogEntrySource.VisualisationEvent;
+    source: LogEntrySource.TransitionalEvent;
     event: string;
     fileName: string;
 
-    visualisationUid: number;
-    visualisationCodeMappingId: number;
-    visualisationName: string;
+    transitionalUid: number;
+    transitionalCodeMappingId: number;
+    transitionalName: string;
 } | {
     source: LogEntrySource.UserEditEvent;
     event: string;
@@ -25,11 +25,11 @@ export type PartialLogEntry = {
     editKind: string;
     editSize: number;
 
-    // Optional details about the visualisation associated to
+    // Optional details about the transitional associated to
     // the piece of code affected by the edit (if any)
-    visualisationUid?: number;
-    visualisationCodeMappingId?: number;
-    visualisationName?: number;
+    transitionalUid?: number;
+    transitionalCodeMappingId?: number;
+    transitionalName?: number;
 } | {
     source: LogEntrySource.Error;
     event: string;
@@ -37,10 +37,10 @@ export type PartialLogEntry = {
     // Optional file related to the error (if any)
     fileName?: string;
 
-    // Optional details about the visualisation related to the error (if any)
-    visualisationUid?: number;
-    visualisationCodeMappingId?: number;
-    visualisationName?: number;
+    // Optional details about the transitional related to the error (if any)
+    transitionalUid?: number;
+    transitionalCodeMappingId?: number;
+    transitionalName?: number;
 };
 
 export type LogEntry = {

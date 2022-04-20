@@ -2,11 +2,11 @@ import * as vscode from "vscode";
 import { ArrayMap } from "../../shared/utils/ArrayMap";
 import { ASTNodeCollecter } from "../ast/visitors/ASTNodeCollecter";
 import { InteractiveLatexDocument } from "../InteractiveLatexDocument";
-import { VisualisationModel } from "../visualisations/VisualisationModel";
+import { TransitionalModel } from "../transitionals/TransitionalModel";
 import { textDecorations } from "./text-decorations";
 
 interface ModelWithEditor {
-    model: VisualisationModel;
+    model: TransitionalModel;
     editor: vscode.TextEditor;
 }
 
@@ -33,7 +33,7 @@ export class DecorationManager {
         this.codeLensProviderDisposable.dispose();
         this.stopObservingEventsThatTriggerRedecoration();
 
-        this.removeVisualisationDecorationsFromVisibleEditors();
+        this.removeTransitionalDecorationsFromVisibleEditors();
     }
 
     private createCodeLensesProvider(): vscode.Disposable {
@@ -50,21 +50,21 @@ export class DecorationManager {
     }
 
     private computeCodeLensesForDocument(document: vscode.TextDocument): vscode.CodeLens[] {
-        // If visualisations are not enabled, do not provide any code lens
-        if (!this.ilatexDocument.options.enableVisualisations) {
+        // If transitionals are not enabled, do not provide any code lens
+        if (!this.ilatexDocument.options.enableTransitionals) {
             return [];
         }
 
-        return this.ilatexDocument.visualisationModelManager.models
+        return this.ilatexDocument.transitionalModelManager.models
             .filter(model => model.sourceFile.isRepresentedByDocument(document) && !model.metadata.available)
             .map(model => new vscode.CodeLens(model.astNode.range.asVscodeRange, {
-                title: "iLaTeX is out-of-sync with this piece of code. Click to recompile the document and recompute code visualisations.",
+                title: "iLaTeX is out-of-sync with this piece of code. Click to recompile the document and recompute code transitionals.",
                 command: "ilatex.recompileDocumentsUsingActiveEditor"
             }));
     }
 
-    private mapVisibleEditorsToVisualisations(models: VisualisationModel[]): ArrayMap<vscode.TextEditor, VisualisationModel> {
-        // Map each visible editor to 0+ visualisation models
+    private mapVisibleEditorsToTransitionals(models: TransitionalModel[]): ArrayMap<vscode.TextEditor, TransitionalModel> {
+        // Map each visible editor to 0+ transitional models
         const visibleEditors = vscode.window.visibleTextEditors;
         const modelsWithVisibleEditors: ModelWithEditor[] = models
             .filter(model => model.sourceFile.isOpenInVisibleEditor)
@@ -75,7 +75,7 @@ export class DecorationManager {
                 };
             });
 
-        const visibleEditorsToModels = new ArrayMap<vscode.TextEditor, VisualisationModel>();
+        const visibleEditorsToModels = new ArrayMap<vscode.TextEditor, TransitionalModel>();
         for (let { model, editor } of modelsWithVisibleEditors) {
             visibleEditorsToModels.add(editor!, model);
         }
@@ -83,17 +83,17 @@ export class DecorationManager {
         return visibleEditorsToModels;
     }
 
-    private redecorateEditorWithVisualisations(editor: vscode.TextEditor, models: VisualisationModel[]): void {
-        // If visualisations are not enabled, do not decorate any editor
-        if (!this.ilatexDocument.options.enableVisualisations) {
+    private redecorateEditorWithTransitionals(editor: vscode.TextEditor, models: TransitionalModel[]): void {
+        // If transitionals are not enabled, do not decorate any editor
+        if (!this.ilatexDocument.options.enableTransitionals) {
             return;
         }
 
-        // Individual AST of visualisations should be decorated for debug purposes only
+        // Individual AST of transitionals should be decorated for debug purposes only
         // const astNodeCollecter = new ASTNodeCollecter();
         // models.forEach(model => model.astNode.syncVisitWith(astNodeCollecter));
 
-        // editor.setDecorations(textDecorations.visualisationAstNode, astNodeCollecter.nodes.map(node => {
+        // editor.setDecorations(textDecorations.transitionalAstNode, astNodeCollecter.nodes.map(node => {
         //     const start = node.range.from;
         //     const end = node.range.to;
 
@@ -112,52 +112,52 @@ export class DecorationManager {
         //     };
         // }));        
 
-        // Available visualisations should be decorated for debug purposes only
-        const codeRangesOfAvailableVisualisations = models
+        // Available transitionals should be decorated for debug purposes only
+        const codeRangesOfAvailableTransitionals = models
             .filter(model => model.metadata.available)
             .map(model => model.astNode.range.asVscodeRange);
-        editor.setDecorations(textDecorations.availableVisualisableCode, codeRangesOfAvailableVisualisations);
+        editor.setDecorations(textDecorations.availableTransitionalCode, codeRangesOfAvailableTransitionals);
 
-        const codeRangesOfUnavailableVisualisations = models
+        const codeRangesOfUnavailableTransitionals = models
             .filter(model => !model.metadata.available)
             .map(model => model.astNode.range.asVscodeRange);
-        editor.setDecorations(textDecorations.unavailableVisualisableCode, codeRangesOfUnavailableVisualisations);
+        editor.setDecorations(textDecorations.unavailableTransitionalCode, codeRangesOfUnavailableTransitionals);
     }
 
-    private redecorateVisibleEditorsWithVisualisations(models: VisualisationModel[]): void {
-        const visibleEditorsToModels = this.mapVisibleEditorsToVisualisations(models);
+    private redecorateVisibleEditorsWithTransitionals(models: TransitionalModel[]): void {
+        const visibleEditorsToModels = this.mapVisibleEditorsToTransitionals(models);
 
         // For each editor, redecorate it using the models located in the source file it displays
         for (let [editor, models] of visibleEditorsToModels.entries) {
-            this.redecorateEditorWithVisualisations(editor, models);
+            this.redecorateEditorWithTransitionals(editor, models);
         }
 
         this.onRedecorateEditorsEventEmitter.fire();
     }
 
     redecorateVisibleEditors(): void {
-        this.redecorateVisibleEditorsWithVisualisations(this.ilatexDocument.visualisationModelManager.models);
+        this.redecorateVisibleEditorsWithTransitionals(this.ilatexDocument.transitionalModelManager.models);
     }
 
-    private removeVisualisationDecorationsFromVisibleEditors(): void {
+    private removeTransitionalDecorationsFromVisibleEditors(): void {
         // Redecorate each visible editor as if there was no model
         // (to remove every existing visualisable code decorations)
         for (let editor of vscode.window.visibleTextEditors) {
-            this.redecorateEditorWithVisualisations(editor, []);
+            this.redecorateEditorWithTransitionals(editor, []);
         }
     }
 
     private startObservingEventsThatTriggerRedecoration(): void {
         this.redecorationTriggerEventsObserverDisposables.push(
-            this.ilatexDocument.visualisationModelManager.modelMetadataChangeEventEmitter.event(
+            this.ilatexDocument.transitionalModelManager.modelMetadataChangeEventEmitter.event(
                 async model => this.redecorateVisibleEditors()
             ),
 
-            this.ilatexDocument.visualisationModelManager.modelContentChangeEventEmitter.event(
+            this.ilatexDocument.transitionalModelManager.modelContentChangeEventEmitter.event(
                 async model => this.redecorateVisibleEditors()
             ),
 
-            this.ilatexDocument.visualisationModelManager.modelChangeEventEmitter.event(
+            this.ilatexDocument.transitionalModelManager.modelChangeEventEmitter.event(
                 async model => this.redecorateVisibleEditors()
             ),
         );

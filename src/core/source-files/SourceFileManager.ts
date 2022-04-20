@@ -133,17 +133,18 @@ export class SourceFileManager {
                 const changeProcessingResult = await sourceFileInChangedDocument.processChange(sourceFileChange);
 
                 if (changeProcessingResult.changeIsLoggable) {
-                    const editedVisualisationModel = this.ilatexDocument.visualisationModelManager.findModelContainingRange(new SourceFileRange(
-                        SourceFilePosition.fromVscodePosition(sourceFileChange.start),
-                        SourceFilePosition.fromVscodePosition(sourceFileChange.end)
-                    ));
+                    const editedTransitionalModel = this.ilatexDocument.transitionalModelManager.findModelContainingRange(new SourceFileRange(
+                            SourceFilePosition.fromVscodePosition(sourceFileChange.start),
+                            SourceFilePosition.fromVscodePosition(sourceFileChange.end)
+                        )
+                    );
 
-                    let editedVisualisationDataToLog = {};
-                    if (editedVisualisationModel) {
-                        editedVisualisationDataToLog = {
-                            visualisationName: editedVisualisationModel.name,
-                            visualisationUid: editedVisualisationModel.uid,
-                            visualisationCodeMappingId: editedVisualisationModel.codeMapping.id,
+                    let editedTransitionalDataToLog = {};
+                    if (editedTransitionalModel) {
+                        editedTransitionalDataToLog = {
+                            transitionalName: editedTransitionalModel.name,
+                            transitionalUid: editedTransitionalModel.uid,
+                            transitionalCodeMappingId: editedTransitionalModel.codeMapping.id,
                         };
                     }
 
@@ -153,7 +154,7 @@ export class SourceFileManager {
                         editKind: sourceFileChange.kind.toLowerCase(),
                         editSize: sourceFileChange.size,
 
-                        ...editedVisualisationDataToLog
+                        ...editedTransitionalDataToLog
                     });
                 }
             }

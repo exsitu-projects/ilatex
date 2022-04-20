@@ -14,7 +14,8 @@
 
 	"include": [
 		"src/webview/**/*.ts",
-		"src/visualisations/*/view/**/*.ts",
+		"src/transitionals/*/view/**/*.ts",
+		"src/transitionals/view-providers.ts",
 		"src/shared/**/*.ts"
 	]
 }

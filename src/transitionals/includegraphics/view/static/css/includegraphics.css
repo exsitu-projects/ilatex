@@ -1,0 +1,234 @@
+/* Container of image transitionals */
+[data-transitional-name="includegraphics"] {
+    min-height: 100px;
+    overflow: hidden;
+    user-select: none;
+}
+
+/* Required to cancel a CSS rule enforced by VSCode. */
+[data-transitional-name="includegraphics"] img {
+    max-width: none;
+    max-height: none;
+}
+
+[data-transitional-name="includegraphics"] .preloaded-image {
+    display: none;
+}
+
+[data-transitional-name="includegraphics"] .comment {
+    color: #999;
+}
+
+[data-transitional-name="includegraphics"] .image-resizer-container,
+[data-transitional-name="includegraphics"] .image-cropper-container {
+    display: block;
+    width: 100%;
+}
+
+[data-transitional-name="includegraphics"] .image-resizer-container {
+    padding: 0 0 20px 0;
+    min-height: 50px;
+}
+
+[data-transitional-name="includegraphics"] .image-cropper-container {
+    /* max-height: 25vh; */
+    /* margin: 0 20px 20px 20px; */
+    background-color: #FAFAFA;
+}
+
+[data-transitional-name="includegraphics"] .image-cropper-container .header-bar {
+    padding: 10px;
+    border-top: 1px solid #EEE;
+    border-bottom: 1px solid transparent;
+    cursor: pointer;
+}
+
+[data-transitional-name="includegraphics"] .image-cropper-container .header-bar .header-bar-message::before {
+    content: " ";
+    display: inline-block;
+    width: 1.25em;
+    height: 1.25em;
+    margin: 0 1ex 0 0;
+    background-color: transparent;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="black" width="18px" height="18px"><path d="M0 0h24v24H0z" fill="none"/><path d="M17 15h2V7c0-1.1-.9-2-2-2H9v2h8v8zM7 17V1H5v4H1v2h4v10c0 1.1.9 2 2 2h10v4h2v-4h4v-2H7z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 100%;
+    vertical-align: middle;
+}
+
+[data-transitional-name="includegraphics"] .image-cropper-container .header-bar:hover {
+    background-color: #EEE;
+    border-color: #CACACA;
+}
+
+[data-transitional-name="includegraphics"] .image-cropper-container > .cropper-wrapper {
+    display: none;
+    width: calc(100% - 20px);
+    margin: 10px;
+}
+
+[data-transitional-name="includegraphics"] .image-cropper-container > .cropper-wrapper.cropper-visible {
+    display: block;
+}
+
+/* Some rules are required by the Cropper library used in the view */
+[data-transitional-name="includegraphics"] .image-cropper-container .invisible-image {
+    display: block;
+    max-width: 100%;
+    visibility: hidden;
+}
+
+[data-transitional-name="includegraphics"] .image-resizer-container .command-bar {
+    display: flex;
+    margin: 0 0 20px 0;
+    padding: 5px;
+    background-color: #FAFAFA;
+    border-bottom: 1px solid #EEE;
+}
+
+[data-transitional-name="includegraphics"] .image-resizer-container .command-bar .aspect-ratio-lock-wrapper {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+[data-transitional-name="includegraphics"] .image-resizer-container .command-bar .aspect-ratio-lock input {
+    margin: 0 0.5ex;
+    vertical-align: middle;;
+}
+
+[data-transitional-name="includegraphics"] .image-resizer-container .command-bar .restore-aspect-ratio-button {
+    flex-grow: 0;
+    padding: 5px 10px;
+    background-color: #00498a;
+    border: none;
+    border-radius: 2px;
+    color: #FFF;
+    cursor: pointer;
+    user-select: none;
+    outline: none;
+    animation: fade-in 250ms ease-in-out;
+}
+
+[data-transitional-name="includegraphics"] .image-resizer-container .command-bar .restore-aspect-ratio-button::before {
+    content: " ";
+    display: inline-block;
+    width: 1.25em;
+    height: 1.25em;
+    margin: 0 1ex 0 0;
+    background-color: transparent;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="18px" height="18px"><path d="M24 24H0V0h24v24z" fill="none"/><path d="M21 15h2v2h-2v-2zm0-4h2v2h-2v-2zm2 8h-2v2c1 0 2-1 2-2zM13 3h2v2h-2V3zm8 4h2v2h-2V7zm0-4v2h2c0-1-1-2-2-2zM1 7h2v2H1V7zm16-4h2v2h-2V3zm0 16h2v2h-2v-2zM3 3C2 3 1 4 1 5h2V3zm6 0h2v2H9V3zM5 3h2v2H5V3zm-4 8v8c0 1.1.9 2 2 2h12V11H1zm2 8l2.5-3.21 1.79 2.15 2.5-3.22L13 19H3z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 100%;
+    vertical-align: middle;
+}
+
+[data-transitional-name="includegraphics"] .image-resizer-container .command-bar .restore-aspect-ratio-button:hover {
+    background-color: #0e5ca0;    
+}
+
+[data-transitional-name="includegraphics"] .image-resizer-container .command-bar .restore-aspect-ratio-button:active {
+    background-color: #043764;    
+}
+
+[data-transitional-name="includegraphics"] .image-resizer-container .image-resizer-frame {
+    position: relative;
+    margin: auto;
+    padding: 3px;
+    box-sizing: border-box;
+    touch-action: none;
+}
+
+[data-transitional-name="includegraphics"] .image-resizer-container .image-resizer {
+    position: relative;
+    margin: auto;
+    background-color: #EEE;
+    outline: 1px solid #FFF;
+    box-shadow: 0 0 0 1px #000;
+    z-index: 1000;
+}
+
+[data-transitional-name="includegraphics"] .image-resizer-container .image-resizer .image {
+    position: absolute;
+}
+
+[data-transitional-name="includegraphics"] .image-resizer-container .image-resizer-frame .handle {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    background-color: #FFF;
+    outline: 1px solid #000;
+    z-index: 1500;
+}
+
+[data-transitional-name="includegraphics"] .image-resizer-container .image-resizer-frame .handle.top-left {
+    top: 0;
+    left: 0;
+}
+
+[data-transitional-name="includegraphics"] .image-resizer-container .image-resizer-frame .handle.top {
+    top: 0;
+    left: calc(50% - 3px);
+}
+
+[data-transitional-name="includegraphics"] .image-resizer-container .image-resizer-frame .handle.top-right {
+    top: 0;
+    right: 0;
+}
+
+[data-transitional-name="includegraphics"] .image-resizer-container .image-resizer-frame .handle.left {
+    bottom: 50%;
+    left: 0;
+}
+
+[data-transitional-name="includegraphics"] .image-resizer-container .image-resizer-frame .handle.right {
+    bottom: 50%;
+    right: 0;
+}
+
+[data-transitional-name="includegraphics"] .image-resizer-container .image-resizer-frame .handle.bottom-left {
+    bottom: 0;
+    left: 0;
+}
+
+[data-transitional-name="includegraphics"] .image-resizer-container .image-resizer-frame .handle.bottom {
+    bottom: 0;
+    left: calc(50% - 3px);
+}
+
+[data-transitional-name="includegraphics"] .image-resizer-container .image-resizer-frame .handle.bottom-right {
+    bottom: 0;
+    right: 0;
+}
+
+
+/*
+ * Make all the handles of the Cropper's cropbox the same size, no matter the size of the screen.
+ * Therules below have been adapted from the CSS file of Cropper's library (v1.5.11).
+ */
+
+.cropper-point.point-se { height: 5px !important; width: 5px !important; }
+@media (min-width:768px)  { .cropper-point.point-se { height: 5px !important; width: 5px !important; }}
+@media (min-width:992px)  { .cropper-point.point-se { height: 5px !important; width: 5px !important; }}
+@media (min-width:1200px) { .cropper-point.point-se { height: 5px !important; width: 5px !important; }}
+
+
+/* Change the style of the cropbox */
+
+.cropper-point {
+    background-color: #FFF !important;
+    outline: 1px solid black !important;
+    opacity: 1 !important;
+}
+
+.cropper-line {
+    background: none !important;
+}
+
+.cropper-view-box {
+    outline: 1px solid #FFF !important;
+    box-shadow: 0 0 0 1px #000 !important;
+}

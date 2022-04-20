@@ -1,5 +1,5 @@
 import * as pdfjs from "../static-library-apis/PdfJsApi";
-import { VisualisationViewManager, VisualisationDisplayRequest } from "../visualisations/VisualisationViewManager";
+import { TransitionalViewManager, TransitionalDisplayRequest } from "../transitionals/TransitionalViewManager";
 import { PDFManager } from "./PDFManager";
 
 export type AnnotationMaskCoordinates = [
@@ -24,8 +24,8 @@ export class PDFPageRenderer {
     private viewport: pdfjs.PDFPageViewmport | null;
 
     private annotations: pdfjs.PDFAnnotation[];
-    private visualisationAnnotations: pdfjs.PDFAnnotation[];
-    private visualisationAnnotationMaskNodes: HTMLElement[];
+    private transitionalAnnotations: pdfjs.PDFAnnotation[];
+    private transitionalAnnotationMaskNodes: HTMLElement[];
 
     constructor(page: pdfjs.PDFPage, pageNumber: number) {
         this.page = page;
@@ -43,11 +43,11 @@ export class PDFPageRenderer {
 
         // PDF annotations
         this.annotations = [];
-        this.visualisationAnnotations = [];
+        this.transitionalAnnotations = [];
 
-        // Masks for visualisation annotations (DOM nodes acting as masks to detect events,
+        // Masks for transitional annotations (DOM nodes acting as masks to detect events,
         // positionned on top of the annotations, in absolute webpage coordinates)
-        this.visualisationAnnotationMaskNodes = [];
+        this.transitionalAnnotationMaskNodes = [];
     }
 
     private async init(): Promise<void> {
@@ -59,7 +59,7 @@ export class PDFPageRenderer {
     }
 
     getAnnotationMasks(): HTMLElement[] {
-        return this.visualisationAnnotationMaskNodes;
+        return this.transitionalAnnotationMaskNodes;
     }
 
     private createCanvas(): void {
@@ -110,7 +110,7 @@ export class PDFPageRenderer {
 
     private async extractAnnotations(): Promise<void> {
         this.annotations = await this.page.getAnnotations();
-        this.visualisationAnnotations = this.annotations.filter(annotation => {
+        this.transitionalAnnotations = this.annotations.filter(annotation => {
             return annotation.annotationType === 20 // tooltip
                 && annotation.alternativeText.startsWith("ilatex-code-mapping-id");
         });
@@ -119,8 +119,8 @@ export class PDFPageRenderer {
     // Warning: this method requires the canvas to be appended in the DOM
     // to retrieve the correct absolute coordinates
     createAnnotationMasks(): void {
-        for (let annotation of this.visualisationAnnotations) {
-            // Extract the code mapping ID from the visualisation
+        for (let annotation of this.transitionalAnnotations) {
+            // Extract the code mapping ID from the annotation
             const [_, codeMappingIdString] = annotation.alternativeText.match(/[^\d]+(\d+)/);
             const codeMappingId = parseInt(codeMappingIdString);
 
@@ -139,7 +139,7 @@ export class PDFPageRenderer {
 
             // Handle clicks on this mask
             // Note: those click events must be discarded when the PDF is being recompiled
-            // (to avoid opening a visualisation while its model is about to change)
+            // (to avoid displaying a transitional while its model is being updated)
             maskNode.addEventListener("click", event => {
                 if (document.body.classList.contains(PDFManager.PDF_CURRENTLY_RECOMPILED_BODY_CLASS)) {
                     return;
@@ -148,16 +148,16 @@ export class PDFPageRenderer {
                 this.handleAnnotationMaskClick(codeMappingId, maskCoordinates);
             });
 
-            this.visualisationAnnotationMaskNodes.push(maskNode);
+            this.transitionalAnnotationMaskNodes.push(maskNode);
         }
     }
 
     removeAnnotationMasks(): void {
-        for (let maskNode of this.visualisationAnnotationMaskNodes) {
+        for (let maskNode of this.transitionalAnnotationMaskNodes) {
             maskNode.remove();
         }
 
-        this.visualisationAnnotationMaskNodes = [];
+        this.transitionalAnnotationMaskNodes = [];
     }
 
     private async drawPage(): Promise<void> {
@@ -259,12 +259,12 @@ export class PDFPageRenderer {
 
         await this.drawPage();
         // this.drawAnnotationFrames(this.annotations);
-        // this.drawAnnotationFrames(this.visualisationAnnotations);
+        // this.drawAnnotationFrames(this.transitionalAnnotations);
     }
 
     private handleAnnotationMaskClick(codeMappingId: number, maskCoordinates: AnnotationMaskCoordinates): void {
-        const event = new CustomEvent<VisualisationDisplayRequest>(
-            VisualisationViewManager.REQUEST_VISUALISATION_DISPLAY_EVENT,
+        const event = new CustomEvent<TransitionalDisplayRequest>(
+            TransitionalViewManager.REQUEST_TRANSITIONAL_DISPLAY_EVENT,
             {
                 detail: {
                     codeMappingId: codeMappingId,

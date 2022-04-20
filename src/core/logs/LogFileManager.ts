@@ -14,7 +14,7 @@ type LogDataForSource<
 > = Omit<T, "source">;
 
 export type CoreEventLogEntryData = LogDataForSource<LogEntrySource.CoreEvent>;
-export type VisualisationEventLogEntryData = LogDataForSource<LogEntrySource.VisualisationEvent>;
+export type TransitionalEventLogEntryData = LogDataForSource<LogEntrySource.TransitionalEvent>;
 export type UserEditEventLogEntryData = LogDataForSource<LogEntrySource.UserEditEvent>;
 export type ErrorLogEntryData = LogDataForSource<LogEntrySource.Error>;
 
@@ -132,8 +132,8 @@ export class LogFileManager {
         this.log({ source: LogEntrySource.CoreEvent, ...entry });
     }
 
-    logVisualisationEvent(entry: VisualisationEventLogEntryData): void {
-        this.log({ source: LogEntrySource.VisualisationEvent, ...entry });
+    logTransitionalEvent(entry: TransitionalEventLogEntryData): void {
+        this.log({ source: LogEntrySource.TransitionalEvent, ...entry });
     }
 
     logUserEditEvent(entry: UserEditEventLogEntryData): void {

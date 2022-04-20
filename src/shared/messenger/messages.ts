@@ -1,16 +1,16 @@
-import { VisualisationMetadata } from "../visualisations/types";
+import { TransitionalMetadata } from "../transitionals/types";
 
 // Types of messages which can be exchanged between the core and the webview
 export const enum CoreToWebviewMessageType {
-    UpdateVisualisationContent = "UpdateVisualisationContent",
-    UpdateVisualisationMetadata = "UpdateVisualisationMetadata",
+    UpdateTransitionalContent = "UpdateTransitionalContent",
+    UpdateTransitionalMetadata = "UpdateTransitionalMetadata",
     UpdatePDF = "UpdatePDF",
     UpdateCompilationStatus = "UpdateCompilationStatus",
     UpdateGlobalOptions = "UpdateGlobalOptions"
 }
 
 export const enum WebviewToCoreMessageType {
-    NotifyVisualisationModel = "NotifyVisualisationModel",
+    NotifyTransitionalModel = "NotifyTransitionalModel",
     SaveAndRecompileRequest = "SaveAndRecompileRequest",
 }
 
@@ -19,16 +19,16 @@ export type MessageType =
 
 
 // Specification of each type of message which can be sent by the core to the webview
-export interface UpdateVisualisationContentMessage {
-    type: CoreToWebviewMessageType.UpdateVisualisationContent;
+export interface UpdateTransitionalContentMessage {
+    type: CoreToWebviewMessageType.UpdateTransitionalContent;
     codeMappingId: number;
     contentAsHtml: string;
 }
 
-export interface UpdateVisualisationMetadataMessage {
-    type: CoreToWebviewMessageType.UpdateVisualisationMetadata;
+export interface UpdateTransitionalMetadataMessage {
+    type: CoreToWebviewMessageType.UpdateTransitionalMetadata;
     codeMappingId: number;
-    metadata: VisualisationMetadata;
+    metadata: TransitionalMetadata;
 }
 
 export interface UpdatePDFMessage {
@@ -45,22 +45,22 @@ export interface UpdateCompilationStatusMessage {
 export interface UpdateGlobalOptionsMessage {
     type: CoreToWebviewMessageType.UpdateGlobalOptions;
     options: {
-        enableVisualisations: boolean;
+        enableTransitionals: boolean;
     }
 }
 
 export type CoreToWebviewMessage =
-    | UpdateVisualisationContentMessage
-    | UpdateVisualisationMetadataMessage
+    | UpdateTransitionalContentMessage
+    | UpdateTransitionalMetadataMessage
     | UpdatePDFMessage
     | UpdateCompilationStatusMessage
     | UpdateGlobalOptionsMessage;
 
 
 // Specification of each type of message which can be sent by the webview to the core
-export interface NotifyVisualisationModelMessage {
-    type: WebviewToCoreMessageType.NotifyVisualisationModel;
-    visualisationUid: number;
+export interface NotifyTransitionalModelMessage {
+    type: WebviewToCoreMessageType.NotifyTransitionalModel;
+    transitionalUid: number;
     title: string;
     notification: object;
 };
@@ -70,7 +70,7 @@ export interface SaveAndRecompileRequestMessage {
 }
 
 export type WebviewToCoreMessage =
-    NotifyVisualisationModelMessage | SaveAndRecompileRequestMessage;
+    NotifyTransitionalModelMessage | SaveAndRecompileRequestMessage;
 
 
 // Generic type of a message exchanged between the core and the webview
