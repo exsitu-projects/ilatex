@@ -221,7 +221,6 @@ On the other side, the _view_ of each transitional ([`TransitionalView`](src/web
 There is no single instance of a _controller_ in the traditional sense of the term since model and view objects exist in two separate processes that can only communicate through message passing.
 Instead, for each transitional, the controller mainly takes the form of a number of objects and methods implemented in the model and the view.
 They are used for sending and receiving messages and reacting to events (extension events in the model, DOM events in the view).
-To facilitate message passing between views and models, communication endpoints between the core and the webview are both represented by a single abstract class ([`AbstractMessenger`](src/shared/messenger/AbstractMessenger.ts)), which is concretised differently on the model side ([`Messenger`](src/core/webview/Messenger.ts)) and on the view side ([`Messenger`](src/webview/Messenger.ts)).
 
 In order to make _i_-LaTeX easy to extend with new transitionals, the model and the view of each transitional are not directly instantiated by the objects that deal with transitionals in the core and in the webview.
 Instead, they are created by special objects named providers:
@@ -247,13 +246,13 @@ The current algorithm iterates over all the source files and all the model provi
 Once all the models have been created, the model manager performs two last steps:
 
 1. It starts observing each model for (1) metadata or (2) content changes, and notify the webview when it happens so that it can update itself;
-2. It initialises each model by calling the [`init`] method, which calls the abstract [`updateContentData`] method. This abstract method must be implemented by each model and is responsible for (1) updating the data used by the model to generate content for the view and (2) signalling when the update finishes (whether it was successful or not) by emitting an event via `contentUpdateEndEventEmitter`, which further triggers events that signal content and/or metadata changes (which can now be caught by the model manager!).
+2. It initialises each model by calling the `init` method, which calls the abstract `updateContentData` method. This abstract method must be implemented by each model and is responsible for (1) updating the data used by the model to generate content for the view and (2) signalling when the update finishes (whether it was successful or not) by emitting an event via `contentUpdateEndEventEmitter`, which further triggers events that signal content and/or metadata changes (which can now be caught by the model manager!).
 
 
 
 ## Exchanging messages with the webview
 
-To facilitate message passing between views and models, communication endpoints between the core and the webview are both represented by an abstract _messenger_ ([`AbstractMessenger`]), which is parametrised by the types of the messages it can send and receive.
+To facilitate message passing between views and models, communication endpoints between the core and the webview are both represented by an abstract _messenger_ ([`AbstractMessenger`](src/shared/messenger/AbstractMessenger.ts)), which is parametrised by the types of the messages it can send and receive.
 It is concretised differently on the model side, in the core of the extension ([`Messenger`](src/core/webview/Messenger.ts)), and on the view side, in the webview ([`Messenger`](src/webview/Messenger.ts)).
 Both messengers are managed by dedicated managers ([`WebviewManager`](src/core/webview/WebviewManager.ts) in the core, [`WebviewManager`](src/webview/WebviewManager.ts) in the webview).
 
@@ -266,7 +265,7 @@ They include messages to tell the webview a new PDF is available (`UpdatePDFMess
 
 The webview updates the PDF it displays every time it receives a message signalling that a new PDF is available (starting from the first successful compilation of the document).
 
-The PDF manager ([`PDFManager`]) is responsible for loading the PDF file given its path (that must be in [the special path format used by Visual Studio Code](https://code.visualstudio.com/api/extension-guides/webview#loading-local-content)), displaying overlay user interface elements (such as the "Recompile" button and notification), and updating the availability of each _annotation mask_ (the elements with blue halos that display transitionals on click).
+The PDF manager ([`PDFManager`](src/webview/pdf/PDFManager.ts)) is responsible for loading the PDF file given its path (that must be in [the special path format used by Visual Studio Code](https://code.visualstudio.com/api/extension-guides/webview#loading-local-content)), displaying overlay user interface elements (such as the "Recompile" button and notification), and updating the availability of each _annotation mask_ (the elements with blue halos that display transitionals on click).
 
 The rendering of the PDF and the extraction of the special annotations inserted by special commands and environments are performed page-by-page by PDF page renderers ([`PDFPageRenderer`](src/webview/pdf/PDFPageRenderer.ts)), which are orchestrated by a PDF renderer ([`PDFRenderer`](src/webview/pdf/PDFRenderer.ts)).
 They re-render the PDF every time (1) the view is notified that a new PDF file is available or (2) the webview panel is resized.
@@ -368,7 +367,7 @@ If this happens, there are two possibilities:
 
 #### Parameters
 
-LaTeX parameters are represented by [`LatexParameterAstNode`](src/core/utils/latex-parameters.ts) objects in the AST but can also be encapsulated into [`LatexParameter`] objects, which pair the value of the parameter (of an arbitrary type) with the AST node (which only contains the content of the parameter as a string).
+LaTeX parameters are represented by [`LatexParameterAstNode`](src/core/utils/latex-parameters.ts) objects in the AST but can also be encapsulated into [`LatexParameter`](src/core/utils/latex-parameters.ts) objects, which pair the value of the parameter (of an arbitrary type) with the AST node (which only contains the content of the parameter as a string).
 They also expose a `rawValue` property to easily export the value of a parameter in a serialisable format (e.g., to send the value of a parameter to the view of a transitional).
 Implementations are provided for some common types (boolean, number, text and length).
 
