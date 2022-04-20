@@ -15,7 +15,7 @@ export class GridLayoutTransitionalModelProvider implements TransitionalModelPro
             && node.name === "gridlayout";
     }
 
-    provideModelWith(
+    createModel(
         context: VisualisableCodeContext<ASTNode>,
         utilities: TransitionalModelUtilities
     ): GridLayoutTransitionalModel {

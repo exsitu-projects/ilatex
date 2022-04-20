@@ -20,7 +20,7 @@ export interface TransitionalModelProvider {
     canProvideForCodeMapping(mapping: CodeMapping): boolean;
     canProvideForASTNode(node: ASTNode): boolean;
 
-    provideModelWith<T extends ASTNode>(
+    createModel<T extends ASTNode>(
         context: VisualisableCodeContext<T>,
         utilities: TransitionalModelUtilities
     ): TransitionalModel;

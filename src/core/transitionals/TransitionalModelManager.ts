@@ -119,7 +119,7 @@ export class TransitionalModelManager {
 
         console.log("New transitional models have been extracted:");
         for (let model of this.transitionalModels) {
-            console.log(`UID ${model.uid}\tMapping ${model.uid}\t${model.name.padEnd(16)}\t${model.sourceFile.name} (line ${model.codeMapping.lineNumber})`);
+            console.log(`UID ${model.uid}\tMapping ${model.uid}\t${model.transitionalName.padEnd(16)}\t${model.sourceFile.name} (line ${model.codeMapping.lineNumber})`);
         }
     }
 }

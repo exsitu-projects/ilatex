@@ -16,7 +16,7 @@ export class TableTransitionalModelProvider implements TransitionalModelProvider
             && node.name === "itabular";
     }
 
-    provideModelWith(
+    createModel(
         context: VisualisableCodeContext<ASTNode>,
         utilities: TransitionalModelUtilities
     ): TableTransitionalModel {

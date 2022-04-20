@@ -12,7 +12,7 @@ import { SquareBracesParameterBlockNode } from "../../../core/ast/nodes/SquareBr
 import { TransientSourceFileEditor } from "../../../core/source-files/TransientSourceFileEditor";
 
 export class ImageTransitionalModel extends TransitionalModel<CommandNode> {
-    readonly name = "includegraphics";
+    readonly transitionalName = "includegraphics";
     private image: Image | null;
 
     private transientImageOptionsEditor: TransientSourceFileEditor | null;
@@ -150,7 +150,7 @@ export class ImageTransitionalModel extends TransitionalModel<CommandNode> {
             // console.log("New image model:", this.image);
         }
         catch (error) {
-            console.log(`The content data update of the transitional with UID ${this.uid} (${this.name}) failed.`);
+            console.log(`The content data update of the transitional with UID ${this.uid} (${this.transitionalName}) failed.`);
             this.contentUpdateEndEventEmitter.fire(false);
         }
     }

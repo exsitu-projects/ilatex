@@ -16,7 +16,7 @@ export class ImageTransitionalModelProvider implements TransitionalModelProvider
             && node.name === "iincludegraphics";
     }
 
-    provideModelWith(
+    createModel(
         context: VisualisableCodeContext<ASTNode>,
         utilities: TransitionalModelUtilities
     ): ImageTransitionalModel {

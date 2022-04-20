@@ -62,7 +62,7 @@ export class TransitionalModelExtractor {
             codeMapping: CodeMapping,
             sourceFile: SourceFile
         ) => {
-            extractedModels.push(provider.provideModelWith({
+            extractedModels.push(provider.createModel({
                 astNode: node,
                 codeMapping: codeMapping,
                 sourceFile: sourceFile

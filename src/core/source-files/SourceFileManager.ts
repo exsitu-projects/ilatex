@@ -142,7 +142,7 @@ export class SourceFileManager {
                     let editedTransitionalDataToLog = {};
                     if (editedTransitionalModel) {
                         editedTransitionalDataToLog = {
-                            transitionalName: editedTransitionalModel.name,
+                            transitionalName: editedTransitionalModel.transitionalName,
                             transitionalUid: editedTransitionalModel.uid,
                             transitionalCodeMappingId: editedTransitionalModel.codeMapping.id,
                         };

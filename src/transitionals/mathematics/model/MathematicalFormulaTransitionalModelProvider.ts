@@ -16,7 +16,7 @@ export class MathematicalFormulaTransitionalModelProvider implements Transitiona
             && node.name === "imaths";
     }
 
-    provideModelWith(
+    createModel(
         context: VisualisableCodeContext<ASTNode>,
         utilities: TransitionalModelUtilities
     ): MathematicalFormulaTransitionalModel {

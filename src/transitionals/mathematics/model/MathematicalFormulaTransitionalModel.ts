@@ -8,7 +8,7 @@ import { ArrayUtils } from "../../../shared/utils/ArrayUtils";
 import { SourceFileRange } from "../../../core/source-files/SourceFileRange";
 
 export class MathematicalFormulaTransitionalModel extends TransitionalModel<EnvironmentNode> {
-    readonly name = "mathematics";
+    readonly transitionalName = "mathematics";
     private trimmedMathCode: string | null;
 
     constructor(context: VisualisableCodeContext<EnvironmentNode>, utilities: TransitionalModelUtilities) {
@@ -66,7 +66,7 @@ export class MathematicalFormulaTransitionalModel extends TransitionalModel<Envi
             this.contentUpdateEndEventEmitter.fire(true);
         }
         catch (error) {
-            console.log(`The content data update of the transitional with UID ${this.uid} (${this.name}) failed.`);
+            console.log(`The content data update of the transitional with UID ${this.uid} (${this.transitionalName}) failed.`);
             this.contentUpdateEndEventEmitter.fire(false);
 
         }

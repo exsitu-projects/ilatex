@@ -22,7 +22,7 @@ function nameTransientEditorSectionAfterRow(row: Row) {
 }
 
 export class GridLayoutTransitionalModel extends TransitionalModel<EnvironmentNode> {
-    readonly name = "grid layout";
+    readonly transitionalName = "grid layout";
     private layout: Layout | null;
 
     private transientCellSizeEditor: TransientSourceFileEditor | null;
@@ -271,7 +271,7 @@ export class GridLayoutTransitionalModel extends TransitionalModel<EnvironmentNo
             this.contentUpdateEndEventEmitter.fire(true);
         }
         catch (error) {
-            console.log(`The content data update of the transitional with UID ${this.uid} (${this.name}) failed.`);
+            console.log(`The content data update of the transitional with UID ${this.uid} (${this.transitionalName}) failed.`);
             this.contentUpdateEndEventEmitter.fire(false);
 
         }

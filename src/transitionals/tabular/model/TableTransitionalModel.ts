@@ -12,7 +12,7 @@ export class NoGridError {}
 
 
 export class TableTransitionalModel extends TransitionalModel<EnvironmentNode> {
-    readonly name = "tabular";
+    readonly transitionalName = "tabular";
     private grid: Grid | null;
 
     constructor(context: VisualisableCodeContext<EnvironmentNode>, utilities: TransitionalModelUtilities) {
@@ -183,7 +183,7 @@ export class TableTransitionalModel extends TransitionalModel<EnvironmentNode> {
             this.contentUpdateEndEventEmitter.fire(true);
         }
         catch (error) {
-            console.log(`The content data update of the transitional with UID ${this.uid} (${this.name}) failed.`);
+            console.log(`The content data update of the transitional with UID ${this.uid} (${this.transitionalName}) failed.`);
             this.contentUpdateEndEventEmitter.fire(false);
 
         }

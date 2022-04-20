@@ -29,7 +29,7 @@ abstract class TransitionalModelUIDGenerator {
 export type TransitionalModelContentUpdateResult = boolean;
 
 export abstract class TransitionalModel<T extends ASTNode = ASTNode> {
-    abstract readonly name: string;
+    abstract readonly transitionalName: string;
     readonly uid: TransitionalModelUID;
     private readonly context: VisualisableCodeContext<T>;
     protected readonly utilities: TransitionalModelUtilities;
@@ -110,7 +110,7 @@ export abstract class TransitionalModel<T extends ASTNode = ASTNode> {
     get metadata(): TransitionalMetadata {
         return {
             // General data
-            name: this.name,
+            name: this.transitionalName,
             uid: this.uid,
             codeMappingId: this.codeMapping.id,
             available: !this.astNode.requiresReparsing && !this.lastContentUpdateFailed,
@@ -137,7 +137,7 @@ export abstract class TransitionalModel<T extends ASTNode = ASTNode> {
         // TODO: remove the useless attributes
         return {
             "class": "transitional",
-            "data-name": this.name,
+            "data-name": this.transitionalName,
             "data-uid": this.uid.toString(),
             "data-code-mapping-id": this.codeMapping.id.toString(),
             "data-source-file-name": this.sourceFile.name,
