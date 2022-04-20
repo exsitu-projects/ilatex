@@ -10,13 +10,15 @@ The current version offers transitionals for mathematical formaluae, tables, ima
 
 ## Installation
 
-⬇️ [**Download the latest version of the extension (VSIX file)**](https://github.com/exsitu-projects/ilatex/raw/ci-vscode-extension/ilatex.vsix)
+⬇️ [**Download the extension (.vsix) and the LaTeX package (.sty)**](https://github.com/exsitu-projects/ilatex/raw/ci-vscode-extension/ilatex.zip)
 
 
 
 In order to use _i_-LaTeX, you must have the [Visual Studio Code editor](https://code.visualstudio.com/) and a recent distribution of LaTeX (such as [MacTeX](https://tug.org/mactex/) or [TeX Live](https://www.tug.org/texlive/)) with [`latexmk`](https://ctan.org/pkg/latexmk) installed on your system.
 
-The extension is provided as a VSIX file that must be installed manually in Visual Studio Code, as explained in [this guide](https://code.visualstudio.com/docs/editor/extension-marketplace#_install-from-a-vsix).
+The extension is provided as a .vsix file that must be installed manually in Visual Studio Code, as explained in [this guide](https://code.visualstudio.com/docs/editor/extension-marketplace#_install-from-a-vsix).
+
+The LaTeX package is provided as a .sty file that must be placed in the same directory than the LaTeX files that import it. Its purpose is explained below.
 
 
 
