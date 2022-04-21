@@ -118,7 +118,7 @@ The package also performs a few other housekeeping tasks, such as creating a cou
 ## Starting the extension
 
 The entry point of the extension is [`extension.ts`](src/core/extension.ts), as specified in the [`package.json`](package.json) manifest, along with a number of contributions points.
-The contribution points describe the commands (e.g., to open and close a LaTeX document with _i_-LaTeX), code snippets (defined in [`snippets/ilatex.json`](snippets/ilatex.json)) and settings (e.g., enable/disable logging, specify extra arguments for `latexmk`) that are provided by _i_-LaTeX.
+The contribution points describe the commands (e.g., to open and close a LaTeX document with _i_-LaTeX), code snippets (defined in [`misc/vscode-latex-snippets.json`](misc/vscode-latex-snippets.json)) and settings (e.g., enable/disable logging, specify extra arguments for `latexmk`) that are provided by _i_-LaTeX.
 
 The only role of `extension.ts` is to export `activate` and `deactivate` functions, which are executed by Visual Studio Code when loading/unloading the extension.
 The actual initialisation is delegated to an extension context singleton ([`InteractiveLatexExtensionContext`](src/core/InteractiveLatexExtensionContext.ts)), which sets up the integration of _i_-LaTeX in Visual Studio Code (e.g., defining the commands described by the contribution points, adding UI elements).
@@ -145,7 +145,7 @@ When a LaTeX document is opened or saved with _i_-LaTeX, it is (re)compiled by _
 The compilation is handled by the LaTeX compiler manager ([`LatexCompilerManager`](src/core/latex-compiler/LatexCompilerManager.ts)) of the corresponding `InteractiveLatex` instance.
 It creates a virtual terminal, uses it to run the `latexmk` utility on the main LaTeX file with a number of arguments, and waits for its completion.
 
-If the compilation succeeds, a message indicating that a new PDF is available is sent to the webview by to the webview manager ([`WebviewManager`](src/core/webview/WebviewManager.ts)), which is responsible for loading and displaying it.
+If the compilation succeeds, a message indicating that a new PDF is available is sent to the webview by the webview manager ([`WebviewManager`](src/core/webview/WebviewManager.ts)), which is responsible for loading and displaying it.
 If the compilation fails, an error message is displayed by the LaTeX compiler manager.
 
 
@@ -194,7 +194,7 @@ If the reparser fails (e.g., because the new content of the range of the AST nod
 
 ## Defining transitionals
 
-Transitionals are implemented according to pattern inspired by to MVC.
+Transitionals are implemented according to pattern inspired by MVC.
 Each transitional is split between a _model_ (executed in the core) and a _view_ (executed in the webview).
 In addition, the model and the view act as controllers, as they both react to events and communicate with each other through asynchronous messages.
 
