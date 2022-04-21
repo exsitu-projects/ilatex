@@ -135,7 +135,7 @@ The webview of each LaTeX document is created by `InteractiveLatexDocumentManage
 However, the webview does not contain anything by default, and the only way to set its content provided by the Visual Studio Code API is to replace the content of the entire HTML page displayed by the webview.
 This is why (1) the code is separated between the _core_ and the _webview_ and (2) all the files used by the webview must be inlined into a single HTML file (`out/webview/webview.inlined.html`) so that the core can read it once and use it to initialise the webview.
 In _i_-LaTeX, this is the responsibility of the webview manager ([`WebviewManager`](src/core/webview/WebviewManager.ts)) of each LaTeX document (using the `setInitialWebviewHtml` method).
-Once both the core and the webview are initialised, they can communicate to exchange information and update each other without having to change the code of the entire webpage each time (see the _Communication between the core and the webview_ section for more details).
+Once both the core and the webview are initialised, they can communicate to exchange information and update each other without having to change the code of the entire webpage each time (see the _Exchanging messages with the webview_ section for more details).
 
 
 
@@ -167,7 +167,7 @@ They are related to a number of concepts, which are used in various locations in
 
 While the interface with the file system is delegated to Visual Studio Code, which is responsible for reading and writing the content of each source file, the construction and the management of the syntactic structure of each source file is performed by _i_-LaTeX.
 
-Unlike most programming languages, LaTeX has no predefined grammar; and there is no way to build a parser accepting all the LaTeX documents that compile using traditional parser generators, as explained here.
+Unlike most programming languages, LaTeX has no predefined grammar; and there is no way to build a parser accepting all the LaTeX documents that compile using traditional parser generators, as explained in [this StackExchange thread](https://tex.stackexchange.com/questions/4201/is-there-a-bnf-grammar-of-the-tex-language).
 However, by making a number of assumptions, such as `\` representing the start of a macro and the structure of environments, it is possible to create a parser that accepts a large subset of all valid LaTeX documents, though it may fail in certain situations.
 To maximise parsing success, and unlike more specialised parsers (such as those of [KaTeX](https://katex.org/) and [MathJax](https://www.mathjax.org/) for mathematics), _i_-LaTeX uses a fairly high-level grammar, with mostly generic nodes.
 In our experience, this makes the parser more robust for parsing files that mainly contain content (which is what current transitionals are designed for), in contrast with files with a lot of macro definitions, low-level TeX syntax, etc.

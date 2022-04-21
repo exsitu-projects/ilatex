@@ -18,7 +18,7 @@ In order to use _i_-LaTeX, you must have the [Visual Studio Code editor](https:/
 
 The extension is provided as a .vsix file that must be installed manually in Visual Studio Code, as explained in [this guide](https://code.visualstudio.com/docs/editor/extension-marketplace#_install-from-a-vsix).
 
-The LaTeX package is provided as a .sty file that must be placed in the same directory than the LaTeX files that import it. Its purpose is explained below.
+The LaTeX package is provided as a .sty file that must be placed in the same directory as the LaTeX files that import it. Its purpose is explained below.
 
 
 
