@@ -122,10 +122,10 @@ The contribution points describe the commands (e.g., to open and close a LaTeX d
 
 The only role of `extension.ts` is to export `activate` and `deactivate` functions, which are executed by Visual Studio Code when loading/unloading the extension.
 The actual initialisation is delegated to an extension context singleton ([`InteractiveLatexExtensionContext`](src/core/InteractiveLatexExtensionContext.ts)), which sets up the integration of _i_-LaTeX in Visual Studio Code (e.g., defining the commands described by the contribution points, adding UI elements).
-The management of the LaTeX document themselves is further delegated to an instance of [`InteractiveLatexDocumentManager`](src/core/InteractiveLatexDocumentManager.ts), which is responsible for creating and deleting one instance of [`InteractiveLatex`](src/core/InteractiveLatex.ts) for each unique path to the main LaTeX file of a LaTeX document.
+The management of the LaTeX document themselves is further delegated to an instance of [`InteractiveLatexDocumentManager`](src/core/InteractiveLatexDocumentManager.ts), which is responsible for creating and deleting one instance of [`InteractiveLatexDocument`](src/core/InteractiveLatexDocument.ts.ts) for each unique path to the main LaTeX file of a LaTeX document.
 
-`InteractiveLatex` represents a single latex document opened with _i_-LaTeX.
-It owns a number of managers with different concerns, which all keep a reference to their parent `InteractiveLatex` instance, so that they can directly access the other managers' APIs.
+`InteractiveLatexDocument` represents a single latex document opened with _i_-LaTeX.
+It owns a number of managers with different concerns, which all keep a reference to their parent `InteractiveLatexDocument` instance, so that they can directly access the other managers' APIs.
 
 
 
