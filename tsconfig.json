@@ -1,8 +1,0 @@
-{
-	"references": [
-		{ "path": "tsconfig.core.json" },
-		{ "path": "tsconfig.webview.json" }
-	],
-	
-	"include": []
-}
