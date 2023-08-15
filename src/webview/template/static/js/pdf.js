@@ -21295,7 +21295,7 @@ exports.SVGGraphics = SVGGraphics;
         if (parseInt(process.versions.node) >= 8) {
           input = literals;
         } else {
-          input = new Buffer(literals);
+          input = Buffer.from(literals);
         }
 
         var output = require('zlib').deflateSync(input, {
