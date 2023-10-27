@@ -72,7 +72,9 @@ You can read more about _i_-LaTeX and the underlying concept of transitional in 
 > (Gobert & Beaudouin-Lafon, 2021), published at the IHM'20'21 conference (in French).
 
 > [**_i_-LaTeX: Manipulating Transitional Representations between LaTeX Code and Generated Documents**](https://doi.org/10.1145/3491102.3517494)
-> (Gobert & Beaudouin-Lafon, 2022), to be published at the ACM CHI 2022 conference.
+> (Gobert & Beaudouin-Lafon, 2022), published at the ACM CHI 2022 conference.
+
+To cite i-LaTeX, please cite the second paper!
 
 
 
