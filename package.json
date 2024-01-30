@@ -3,7 +3,7 @@
 	"displayName": "i-LaTeX",
 	"description": "Interactive code visualisations for LaTeX documents.",
 	"icon": "misc/vscode-icon.png",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"license": "SEE LICENSE IN LICENSE.md",
 	"repository": {
 		"type": "git",
