@@ -1,4 +1,4 @@
-import "../../../webview/static-library-apis/CropperjsApi";
+import "../../../webview/static-library-apis/cropperjsApi";
 import { WebviewToCoreMessageType } from "../../../shared/messenger/messages";
 import { TransitionalMetadata } from "../../../shared/transitionals/types";
 import { TaskThrottler } from "../../../shared/tasks/TaskThrottler";
