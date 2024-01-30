@@ -64,7 +64,7 @@
 						"Enable (using hidden files)",
 						"Disable"
 					],
-					"default": "Enable (using regular files)",
+					"default": "Disable",
 					"scope": "application",
 					"markdownDescription": "Control the automatic logging of i-LaTeX usage events in .ilatex-logs files that are located **in the same directories** than the edited LaTeX files.",
 					"enumDescriptions": [
@@ -75,7 +75,7 @@
 				},
 				"ilatex.enableCentralisedLogging": {
 					"type": "boolean",
-					"default": true,
+					"default": false,
 					"markdownDescription": "Enable the automatic logging of i-LaTeX usage events **in a unique, centralised directory**. If enabled, log files will be written in the directory specified by `#ilatex.centralisedLoggingDirectoryPath#`."
 				},
 				"ilatex.centralisedLoggingDirectoryPath": {
