@@ -29,7 +29,12 @@ export class Messenger extends AbstractMessenger<
     }
 
     async sendMessage(message: CoreToWebviewMessage): Promise<void> {
-        await this.webview.postMessage(message);
+        // The postMessage method returns a promise that should normally be awaited.
+        // Yet, i-LaTeX seems to be in a situation in which VS Code never resolves it,
+        // as noted in https://github.com/microsoft/vscode/issues/159431.
+        // For this reason, it currently cannot be awaited; otherwise, it causes
+        // task runners awaiting for the promise to resolve to never run future tasks.
+        this.webview.postMessage(message);
     }
 
 }
