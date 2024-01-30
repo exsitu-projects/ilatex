@@ -8,6 +8,9 @@ demo/**
 latex/**
 src/**
 
+out/**/*.ts
+out/**/*.js.map
+
 .DS_Store
 .eslintignore
 .eslintrc.json
