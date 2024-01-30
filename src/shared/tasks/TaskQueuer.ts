@@ -5,7 +5,7 @@ const defaultTaskErrorHandler = (error: TaskError) => {
 };
 
 export class TaskQueuer {
-    private queue: Array<Task>;
+    private queue: Task[];
     private isRunningTask: boolean;
 
     private taskErrorHandler: TaskErrorHandler;
@@ -40,14 +40,15 @@ export class TaskQueuer {
             this.isRunningTask = true;
 
             try {
-                await nextTask!();
+                await nextTask();
             }
             catch (error) {
                 this.taskErrorHandler(error);
             }
-
-            await this.runAllTasks();
-            this.isRunningTask = false;
+            finally {
+                await this.runAllTasks();
+                this.isRunningTask = false;
+            }
         }
     }
 }

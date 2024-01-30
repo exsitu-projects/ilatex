@@ -1,4 +1,4 @@
-import { AnnotationMaskCoordinates } from "../pdf/PDFPageRenderer";
+import { type AnnotationMaskCoordinates } from "../pdf/PDFPageRenderer";
 import { Messenger } from "../Messenger";
 import { TransitionalPopup } from "./TransitionalPopup";
 import {  CoreToWebviewMessageType, UpdateTransitionalContentMessage, UpdateTransitionalMetadataMessage } from "../../shared/messenger/messages";
