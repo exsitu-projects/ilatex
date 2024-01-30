@@ -34,6 +34,19 @@ export class LatexCompilerManager {
         return this.buildTaskIsRunning;
     }
 
+    get pdfLastModifiedDate(): Date | null {
+        const pdfFilePath = this.pdfUri.path;
+
+        try {
+            const pdfFileStats = fs.statSync(pdfFilePath, { throwIfNoEntry: true });
+            return pdfFileStats.mtime;
+        }
+        catch (exception) {
+            console.error("The stats of the PDF file could not be retrieved: an exception was encountered.", exception);
+            return null;
+        }
+    }
+
     dispose(): void {
 
     }
@@ -50,6 +63,10 @@ export class LatexCompilerManager {
                 this.ilatexDocument.webviewManager.sendNewPDFCompilationStatus(true);
             }
 
+            // Get the current timestamp
+            // (to later check whether the PDF was modified at a later date or not).
+            const timestampAtCompilationStart = Date.now();
+
             // Create a new terminal and use it to run latexmk to build a PDF from the sources
             const terminal = vscode.window.createTerminal("iLaTeX");
             const observer = vscode.window.onDidCloseTerminal(closedTerminal => {
@@ -63,7 +80,26 @@ export class LatexCompilerManager {
 
                 // Depending on the exit code, either resolve or reject the promise
                 // returned by the buildPDF method
-                if (closedTerminal.exitStatus && closedTerminal.exitStatus.code !== 0) {
+                // if (closedTerminal.exitStatus && closedTerminal.exitStatus.code !== 0) {
+                //     this.lastBuildFailed = true;
+                //     this.ilatexDocument.logFileManager.logCoreEvent({ event: "pdf-compilation-failure" });
+                //     rejectCompilation("LaTeX compilation error");
+
+                //     if (notifyWebview) {
+                //         this.ilatexDocument.webviewManager.sendNewPDFCompilationStatus(false, true);
+                //     }
+                // }
+
+                // Instead of relying on the exit code, which may be non-zero even if the compilation worked,
+                // as latexmk seems to yield non-zero code, e.g., 12, in some situations that should be treated
+                // as successful compilations, the following piece of code relies on the fact that the PDF file
+                // exists and has been modified since the compilation started
+                // (therefore assuming it is more recent and valid, which may not always hold!).
+                const pdfLastModifiedDate = this.pdfLastModifiedDate;
+                const pdfFileExistsAndWasModifiedAfterCompilationStarted =
+                    pdfLastModifiedDate && (timestampAtCompilationStart < pdfLastModifiedDate.getTime());
+
+                if (!pdfFileExistsAndWasModifiedAfterCompilationStarted) {
                     this.lastBuildFailed = true;
                     this.ilatexDocument.logFileManager.logCoreEvent({ event: "pdf-compilation-failure" });
                     rejectCompilation("LaTeX compilation error");
@@ -119,7 +155,10 @@ export class LatexCompilerManager {
             terminal.sendText(`latexmk ${extraOptions.join(" ")} ${terminalSafeMainFilePath}`);
             terminal.sendText(`exit`);
         })
-        .catch(() => {
+        .catch((error) => {
+            console.error("======= PDF COMPILATION ERROR =======")
+            console.log(error)
+
             vscode.window.showErrorMessage(
                 "An error occured during the compilation of the document.",
                 { title: "Open log" }
